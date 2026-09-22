@@ -68,11 +68,12 @@ class StoreUploadedMedia
             );
         }
 
-        // 5. A path built only from values we control.
+        // 5. A path built only from values we control. It is relative to the
+        // media_originals disk, whose root already ends in /media/originals.
         $uuid = (string) Str::uuid();
-        $extension = ltrim((string) image_type_to_extension($detectedType, true), '.');
+        $extension = $this->extensionFor($mimeType);
         $storedPath = sprintf(
-            'media/originals/%s/%s.%s',
+            '%s/%s.%s',
             now()->format('Y/m'),
             $uuid,
             $extension
@@ -116,5 +117,21 @@ class StoreUploadedMedia
 
         // 9.
         return $media;
+    }
+
+    /**
+     * The extension for a detected mime type, from the one shared map.
+     */
+    private function extensionFor(string $mimeType): string
+    {
+        $extension = config('media.extensions')[$mimeType] ?? null;
+
+        if ($extension === null) {
+            throw new InvalidArgumentException(
+                sprintf('No extension is configured for %s.', $mimeType)
+            );
+        }
+
+        return $extension;
     }
 }

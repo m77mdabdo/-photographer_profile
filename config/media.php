@@ -19,6 +19,17 @@ return [
     'accepted_mimes' => ['image/jpeg', 'image/png', 'image/webp'],
     'accepted_extensions' => ['jpg', 'jpeg', 'png', 'webp'],
 
+    // The single source of truth for file extensions, keyed both by detected
+    // mime type (for originals) and by variant format (for renditions).
+    'extensions' => [
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/webp' => 'webp',
+        'avif' => 'avif',
+        'webp' => 'webp',
+        'jpeg' => 'jpg',
+    ],
+
     // Low quality image placeholder.
     'lqip_width' => 16,
     'lqip_quality' => 40,

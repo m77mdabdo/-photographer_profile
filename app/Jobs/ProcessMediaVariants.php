@@ -39,15 +39,6 @@ class ProcessMediaVariants implements ShouldBeUnique, ShouldQueue
 
     public int $timeout = 300;
 
-    /**
-     * Intervention format name => the extension the variant is stored under.
-     */
-    private const EXTENSIONS = [
-        'avif' => 'avif',
-        'webp' => 'webp',
-        'jpeg' => 'jpg',
-    ];
-
     public function __construct(public Media $media) {}
 
     /**
@@ -73,11 +64,20 @@ class ProcessMediaVariants implements ShouldBeUnique, ShouldQueue
             $manager = new ImageManager(config('image.driver'));
 
             // The oriented dimensions are the real ones: an EXIF rotation of 90
-            // degrees swaps width and height, and the no-upscale guard below
-            // must compare against what we are actually about to resize.
+            // degrees swaps width and height. The row is corrected to match, so
+            // the stored dimensions always describe what the browser receives,
+            // and the no-upscale guard below compares against the same figure.
             $probe = $this->decode($manager, $temporaryPath);
             $sourceWidth = $probe->width();
+            $sourceHeight = $probe->height();
             unset($probe);
+
+            if ($this->media->width !== $sourceWidth || $this->media->height !== $sourceHeight) {
+                $this->media->update([
+                    'width' => $sourceWidth,
+                    'height' => $sourceHeight,
+                ]);
+            }
 
             $this->capturePlaceholders($manager, $temporaryPath);
             $this->generateVariants($manager, $temporaryPath, $sourceWidth);
@@ -195,9 +195,11 @@ class ProcessMediaVariants implements ShouldBeUnique, ShouldQueue
                 $image = $this->decode($manager, $path)->scale(width: $width);
                 $encoded = $image->encode($this->encoderFor($format, (int) $settings['quality']));
 
-                $extension = self::EXTENSIONS[$format];
+                $extension = $this->extensionFor($format);
+                // Relative to the media_public disk, whose root already ends
+                // in /public/media.
                 $variantPath = sprintf(
-                    'media/%s/%s/%d.%s',
+                    '%s/%s/%d.%s',
                     $this->media->created_at?->format('Y/m') ?? now()->format('Y/m'),
                     $this->media->uuid,
                     $width,
@@ -231,5 +233,19 @@ class ProcessMediaVariants implements ShouldBeUnique, ShouldQueue
             'jpeg' => new JpegEncoder(quality: $quality),
             default => throw new RuntimeException("Unsupported variant format: {$format}"),
         };
+    }
+
+    /**
+     * The extension for a variant format, from the one shared map.
+     */
+    private function extensionFor(string $format): string
+    {
+        $extension = config('media.extensions')[$format] ?? null;
+
+        if ($extension === null) {
+            throw new RuntimeException("No extension is configured for format: {$format}");
+        }
+
+        return $extension;
     }
 }

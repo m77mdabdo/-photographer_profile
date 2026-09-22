@@ -103,6 +103,29 @@ class MediaPipelineTest extends TestCase
         return app(StoreUploadedMedia::class)($file, $userId);
     }
 
+    /**
+     * A real JPEG carrying a hand-built EXIF APP1 segment whose only tag is
+     * Orientation. GD cannot write EXIF, so the segment is assembled by hand
+     * and spliced in directly after the SOI marker.
+     */
+    private function jpegBytesWithOrientation(int $width, int $height, int $orientation): string
+    {
+        $jpeg = $this->jpegBytes($width, $height);
+
+        $tiff = 'II'.pack('v', 42).pack('V', 8);          // little-endian TIFF header
+        $tiff .= pack('v', 1);                             // one IFD entry
+        $tiff .= pack('v', 0x0112)                         // tag: Orientation
+            .pack('v', 3)                                  // type: SHORT
+            .pack('V', 1)                                  // count
+            .pack('v', $orientation).pack('v', 0);         // inline value, padded
+        $tiff .= pack('V', 0);                             // no next IFD
+
+        $payload = "Exif\0\0".$tiff;
+        $app1 = "\xFF\xE1".pack('n', strlen($payload) + 2).$payload;
+
+        return substr($jpeg, 0, 2).$app1.substr($jpeg, 2);
+    }
+
     // -----------------------------------------------------------------
     // 1. Upload creates a pending record and queues the work
     // -----------------------------------------------------------------
@@ -146,8 +169,14 @@ class MediaPipelineTest extends TestCase
         $this->assertStringContainsString($media->uuid, $media->path);
         $this->assertStringNotContainsString('Holiday', $media->path);
         $this->assertStringNotContainsString(' ', $media->path);
-        $this->assertStringStartsWith('media/originals/', $media->path);
-        $this->assertStringEndsWith('.jpeg', $media->path);
+        $this->assertStringEndsWith('.jpg', $media->path);
+
+        // Relative to the disk root, with no repeated media/originals segment.
+        $this->assertMatchesRegularExpression(
+            '#^\d{4}/\d{2}/'.preg_quote($media->uuid, '#').'\.jpg$#',
+            $media->path
+        );
+        $this->assertStringNotContainsString('media/originals', $media->path);
 
         // The original name is still recorded, just not used as a path.
         $this->assertSame('Holiday Photo.JPG', $media->original_filename);
@@ -253,10 +282,22 @@ class MediaPipelineTest extends TestCase
                 $this->assertGreaterThan(0, $variant->size_bytes);
                 $this->assertGreaterThan(0, $variant->height);
                 $this->assertSame('media_public', $variant->disk);
+
+                // Disk-relative: {Y}/{m}/{uuid}/{width}.{ext}, no leading media/.
+                $this->assertMatchesRegularExpression(
+                    '#^\d{4}/\d{2}/'.preg_quote($media->uuid, '#').'/\d+\.[a-z]+$#',
+                    $variant->path
+                );
+                $this->assertStringNotContainsString('media/media', Storage::disk('media_public')->url($variant->path));
             }
         }
 
         $this->assertCount(14, $media->variants);
+
+        // Extensions come from the one config map.
+        $this->assertStringEndsWith('.jpg', $media->variantsFor('jpeg')->first()->path);
+        $this->assertStringEndsWith('.avif', $media->variantsFor('avif')->first()->path);
+        $this->assertStringEndsWith('.webp', $media->variantsFor('webp')->first()->path);
 
         // Placeholders captured alongside the variants.
         $this->assertStringStartsWith('data:image/webp;base64,', (string) $media->lqip);
@@ -370,7 +411,11 @@ class MediaPipelineTest extends TestCase
         $this->assertCount(3, $entries);
 
         foreach ($entries as $entry) {
-            $this->assertMatchesRegularExpression('#^http://localhost/storage/media/\S+\.webp \d+w$#', $entry);
+            $this->assertMatchesRegularExpression(
+                '#^http://localhost/storage/media/\d{4}/\d{2}/[0-9a-f-]{36}/\d+\.webp \d+w$#',
+                $entry
+            );
+            $this->assertStringNotContainsString('/media/media/', $entry);
         }
 
         // Ascending width order.
@@ -387,5 +432,71 @@ class MediaPipelineTest extends TestCase
         $this->assertStringContainsString('/1080.webp', (string) $media->url('webp'));
         $this->assertStringContainsString('/1080.avif', (string) $media->url('avif', 99999));
         $this->assertNull($media->url('tiff'));
+    }
+
+    // -----------------------------------------------------------------
+    // 11. EXIF orientation: stored dimensions match what the browser gets
+    // -----------------------------------------------------------------
+
+    public function test_an_exif_rotated_jpeg_ends_up_with_swapped_dimensions(): void
+    {
+        Queue::fake();
+
+        $this->assertTrue(extension_loaded('exif'), 'the exif extension is required for this test');
+
+        // 1600x900 on disk, tagged "rotate 90" -> 900x1600 once oriented.
+        $bytes = $this->jpegBytesWithOrientation(1600, 900, 6);
+        $file = $this->uploadFrom($bytes, 'rotated.jpg');
+
+        // The tag really is there, and the raw file really is landscape.
+        $probePath = (string) tempnam(sys_get_temp_dir(), 'exifprobe-');
+        $this->temporaryFiles[] = $probePath;
+        file_put_contents($probePath, $bytes);
+        $this->assertSame(6, exif_read_data($probePath)['Orientation'] ?? null);
+        $this->assertSame([1600, 900], array_slice((array) getimagesize($probePath), 0, 2));
+
+        $media = $this->store($file);
+
+        // The action records the pre-orientation dimensions from getimagesize().
+        $this->assertSame(1600, $media->width);
+        $this->assertSame(900, $media->height);
+
+        (new ProcessMediaVariants($media))->handle();
+
+        $media->refresh()->load('variants');
+
+        // The job corrects them to the oriented values.
+        $this->assertSame(900, $media->width, 'width should be the oriented width');
+        $this->assertSame(1600, $media->height, 'height should be the oriented height');
+
+        // No variant may exceed the oriented width.
+        $this->assertGreaterThan(0, $media->variants->count());
+
+        foreach ($media->variants as $variant) {
+            $this->assertLessThanOrEqual(
+                900,
+                $variant->width,
+                "variant {$variant->format}@{$variant->width} exceeds the oriented width"
+            );
+            // Portrait orientation carried through to the rendition.
+            $this->assertGreaterThan($variant->width, $variant->height);
+        }
+
+        $this->assertSame([480, 768], $media->variantsFor('avif')->pluck('width')->all());
+        $this->assertSame([480, 768], $media->variantsFor('webp')->pluck('width')->all());
+    }
+
+    public function test_a_non_rotated_jpeg_keeps_its_dimensions(): void
+    {
+        Queue::fake();
+
+        $media = $this->store($this->upload(1200, 800));
+
+        (new ProcessMediaVariants($media))->handle();
+
+        $media->refresh();
+
+        $this->assertSame(1200, $media->width);
+        $this->assertSame(800, $media->height);
     }
 }
