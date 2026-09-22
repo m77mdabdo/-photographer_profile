@@ -1,0 +1,30 @@
+/* Picture component. Deliberately minimal: behaviour only, no design system. */
+
+picture {
+    display: block;
+}
+
+picture img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/*
+ * The LQIP is set as an inline background-image on the <img> itself. Once the
+ * real image decodes it paints over its own background, so the placeholder
+ * disappears with no JavaScript, no onload handler and no extra element.
+ * A transparent PNG would show the LQIP through it, which is the correct
+ * behaviour rather than a bug.
+ */
+picture img {
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+}
+
+/* The pre-processing placeholder keeps the same footprint as the image. */
+[data-media-placeholder] {
+    display: block;
+    width: 100%;
+}
