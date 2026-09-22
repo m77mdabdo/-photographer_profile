@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Media extends Model
@@ -123,5 +125,56 @@ class Media extends Model
         }
 
         return $this->width / $this->height;
+    }
+
+    /**
+     * Variants of one format, narrowest first.
+     *
+     * @return Collection<int, MediaVariant>
+     */
+    public function variantsFor(string $format): Collection
+    {
+        return $this->variants
+            ->where('format', $format)
+            ->sortBy('width')
+            ->values();
+    }
+
+    /**
+     * A srcset attribute value: "<url> <width>w, ..." in ascending width order.
+     */
+    public function srcset(string $format): string
+    {
+        return $this->variantsFor($format)
+            ->map(fn (MediaVariant $variant): string => sprintf(
+                '%s %dw',
+                Storage::disk($variant->disk)->url($variant->path),
+                $variant->width
+            ))
+            ->implode(', ');
+    }
+
+    /**
+     * The URL of the variant closest to the requested width, or the widest
+     * available when no width is given. Null when the format was never built.
+     */
+    public function url(string $format = 'jpeg', ?int $width = null): ?string
+    {
+        $variants = $this->variantsFor($format);
+
+        if ($variants->isEmpty()) {
+            return null;
+        }
+
+        $variant = $width === null
+            ? $variants->last()
+            : $variants->sortBy(fn (MediaVariant $candidate): int => abs($candidate->width - $width))->first();
+
+        return Storage::disk($variant->disk)->url($variant->path);
+    }
+
+    public function hasFormat(string $format): bool
+    {
+        return $this->variantsFor($format)->isNotEmpty();
     }
 }
