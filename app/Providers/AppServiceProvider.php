@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Category;
 use App\Models\Media;
+use App\Models\Project;
+use App\Policies\CategoryPolicy;
 use App\Policies\MediaPolicy;
+use App\Policies\ProjectPolicy;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -35,5 +39,7 @@ class AppServiceProvider extends ServiceProvider
         // Registered explicitly rather than relying on discovery, so the
         // mapping is greppable.
         Gate::policy(Media::class, MediaPolicy::class);
+        Gate::policy(Project::class, ProjectPolicy::class);
+        Gate::policy(Category::class, CategoryPolicy::class);
     }
 }

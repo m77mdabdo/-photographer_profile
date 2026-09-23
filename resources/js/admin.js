@@ -9,11 +9,22 @@
  */
 
 import { initFocalPoint } from './admin/focal-point';
+import { initReorder } from './admin/reorder';
 import { initSidebar } from './admin/sidebar';
+import { initUnsavedGuard } from './admin/unsaved-guard';
 import { initUploader } from './admin/upload';
 
-document.addEventListener('DOMContentLoaded', () => {
+function boot() {
     initSidebar();
     initUploader();
     initFocalPoint();
-});
+    initReorder();
+    initUnsavedGuard();
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+
+// Livewire replaces DOM on every re-render, so newly rendered rows need
+// binding again. initReorder() guards against double-binding.
+document.addEventListener('livewire:navigated', boot);
+document.addEventListener('livewire:update', () => initReorder());

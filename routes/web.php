@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 use App\Enums\MediaStatus;
 use App\Http\Controllers\Admin\MediaController;
+use App\Livewire\Admin\CategoryManager;
 use App\Livewire\Admin\MediaIndex;
+use App\Livewire\Admin\ProjectForm;
+use App\Livewire\Admin\ProjectIndex;
 use App\Livewire\Admin\MediaTrash;
 use App\Models\Media;
 use Illuminate\Support\Facades\Blade;
@@ -67,6 +70,16 @@ Route::prefix('admin')
 
         Route::middleware('twofactor')->group(function () {
             Route::view('/', 'admin.dashboard')->name('dashboard');
+
+            Route::prefix('projects')->name('projects.')->group(function () {
+                Route::get('/', ProjectIndex::class)->name('index');
+                // Literal segments before the wildcard, or "create" is read
+                // as a slug and 404s.
+                Route::get('/create', ProjectForm::class)->name('create');
+                Route::get('/{project}/edit', ProjectForm::class)->name('edit');
+            });
+
+            Route::get('/categories', CategoryManager::class)->name('categories.index');
 
             Route::prefix('media')->name('media.')->group(function () {
                 // Full-page Livewire component; it owns filters and polling.

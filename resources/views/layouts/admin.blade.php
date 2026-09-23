@@ -71,6 +71,20 @@
                         Media
                     </a>
                 </li>
+                <li>
+                    <a href="{{ route('admin.projects.index') }}"
+                       @class(['is-current' => request()->routeIs('admin.projects.*')])
+                       @if (request()->routeIs('admin.projects.*')) aria-current="page" @endif>
+                        Projects
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.categories.index') }}"
+                       @class(['is-current' => request()->routeIs('admin.categories.*')])
+                       @if (request()->routeIs('admin.categories.*')) aria-current="page" @endif>
+                        Categories
+                    </a>
+                </li>
             </ul>
 
             {{--
@@ -81,7 +95,7 @@
             <p class="admin-sidebar__heading" id="planned-heading">Planned</p>
 
             <ul role="list" class="admin-sidebar__list admin-sidebar__list--disabled" aria-labelledby="planned-heading">
-                @foreach (['Stories', 'Galleries', 'Journal', 'Pages', 'Enquiries', 'Users', 'Settings'] as $planned)
+                @foreach (['Galleries', 'Journal', 'Pages', 'Enquiries', 'Users', 'Settings'] as $planned)
                     <li>
                         <span aria-disabled="true">{{ $planned }}</span>
                     </li>
