@@ -93,6 +93,13 @@
                         Categories
                     </a>
                 </li>
+                <li>
+                    <a href="{{ route('admin.settings.index') }}"
+                       @class(['is-current' => request()->routeIs('admin.settings.*')])
+                       @if (request()->routeIs('admin.settings.*')) aria-current="page" @endif>
+                        Settings
+                    </a>
+                </li>
             </ul>
 
             {{--

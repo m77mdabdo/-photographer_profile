@@ -2,30 +2,48 @@
  * Self-hosted variable fonts. No external request is made at runtime: the
  * woff2 files sit in public/fonts alongside their SIL OFL licences.
  *
- * Both families are subset to Latin and Latin Extended only. The remaining
- * scripts each font publishes — maths, symbols, Cyrillic, Greek, Vietnamese —
- * are not shipped, because nothing on this site is written in them.
+ * Three faces, three jobs that cannot be confused for one another:
+ *
+ *   Archivo         display — the wordmark and every heading
+ *   Inter Tight     sans    — anything that is read in sentences
+ *   JetBrains Mono  mono    — labels, navigation, metadata, exposure data
+ *
+ * Bodoni Moda was retired here. A Didone and a heavy condensed grotesque are
+ * both display faces competing for the same job, and a page set half in one
+ * and half in the other reads as two designs that met by accident rather than
+ * one that was decided.
+ *
+ * All three are subset to Latin and Latin Extended only. The other scripts
+ * each font publishes — Cyrillic, Greek, Vietnamese, maths, symbols — are not
+ * shipped, because nothing on this site is written in them.
+ *
+ * Archivo ships from Google with two axes, weight and width, at 90 kB for the
+ * Latin subset alone. Nothing here varies width at runtime — the design wants
+ * one condensed width and holds it — so the width axis is pinned at 70% with
+ * fontTools and the file recompressed, which is 35 kB rather than 90 kB for a
+ * face that renders on every page. The weight axis is kept: it is what the
+ * per-theme optical correction below adjusts.
  */
 
-/* ---------------- Bodoni Moda — display --------------------------------- */
+/* ---------------- Archivo — display, condensed at 70% ------------------- */
 
 @font-face {
-    font-family: 'Bodoni Moda';
+    font-family: 'Archivo';
     font-style: normal;
-    font-weight: 400 900;          /* one variable file covers the range */
+    font-weight: 100 900;          /* one variable file covers the range */
     font-display: swap;
-    src: url('/fonts/bodoni-moda-latin.woff2') format('woff2');
+    src: url('/fonts/archivo-latin.woff2') format('woff2');
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-        U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122,
+        U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
         U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-    font-family: 'Bodoni Moda';
+    font-family: 'Archivo';
     font-style: normal;
-    font-weight: 400 900;
+    font-weight: 100 900;
     font-display: swap;
-    src: url('/fonts/bodoni-moda-latin-ext.woff2') format('woff2');
+    src: url('/fonts/archivo-latin-ext.woff2') format('woff2');
     unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
         U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
         U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
@@ -55,35 +73,69 @@
         U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
+/* ---------------- JetBrains Mono — labels and technical data ------------ */
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    font-style: normal;
+    font-weight: 100 800;
+    font-display: swap;
+    src: url('/fonts/jetbrains-mono-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+        U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+        U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    font-style: normal;
+    font-weight: 100 800;
+    font-display: swap;
+    src: url('/fonts/jetbrains-mono-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+        U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+        U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 /*
  * Metric-matched fallbacks.
  *
- * font-display: swap means the page paints in a fallback and then re-paints in
- * the real face. Without adjustment that second paint moves every line, which
- * is a CLS hit on the largest text on the page. These two faces re-scale the
- * system fonts so the swap is invisible.
+ * font-display: swap paints in a fallback and then repaints in the real face.
+ * Without adjustment that second paint moves every line, which is a layout
+ * shift on the largest text on the page. These three re-scale the system fonts
+ * so the swap is invisible.
  *
- * The overrides are derived from published metrics, not measured from the
- * binaries — no subsetting or font-inspection tool is available here, and
- * installing one was out of scope. They should be verified with a real
- * measurement before this goes to production; the method is:
+ * MEASURED, not published. Task 11 derived its numbers from published figures
+ * and said so; reading the binaries shows why that warning was warranted —
+ * Bodoni Moda's real hhea ascender is 1.125em against the 0.905 that was
+ * assumed, so its ascent-override was out by a quarter of an em. Every value
+ * below was read out of the font file with fontTools:
  *
  *   size-adjust      = webfont x-height ÷ fallback x-height
  *   ascent-override  = webfont ascender ÷ size-adjust
  *   descent-override = webfont descender ÷ size-adjust
  *
- * Bodoni Moda  x-height 0.466, ascender 0.905, descender 0.220
- * Times NR     x-height 0.448                      → size-adjust 104.0%
- * Inter Tight  x-height 0.546, ascender 0.969, descender 0.241
- * Arial        x-height 0.519                      → size-adjust 105.3%
+ *   face            upm    x-height  ascender  descender
+ *   Archivo         1000   0.5260    0.8780    0.2100
+ *   Inter Tight     2048   0.5459    0.9688    0.2412
+ *   JetBrains Mono  1000   0.5500    1.0200    0.3000
+ *   Arial           2048   0.5186    0.9053    0.2119
+ *   Arial Narrow    2048   0.5186    0.9355    0.2119
+ *   Menlo           2048   0.5469    0.9282    0.2358
+ *
+ * Arial Narrow is the display fallback because Archivo is condensed: Arial
+ * Narrow is Arial compressed horizontally, so its x-height is identical to
+ * Arial's (measured: both 0.5186 em) while its advance is 0.4102 em against
+ * 0.5000. A condensed webfont falling back to a normal-width face would hold
+ * its line height and still reflow every line.
  */
 
 @font-face {
-    font-family: 'Bodoni Fallback';
-    src: local('Times New Roman'), local('Times'), local('Georgia');
-    size-adjust: 104.0%;
-    ascent-override: 87.0%;
-    descent-override: 21.2%;
+    font-family: 'Archivo Fallback';
+    src: local('Arial Narrow'), local('Helvetica Neue Condensed'), local('Arial');
+    size-adjust: 101.4%;
+    ascent-override: 86.6%;
+    descent-override: 20.7%;
     line-gap-override: 0%;
 }
 
@@ -93,5 +145,14 @@
     size-adjust: 105.3%;
     ascent-override: 92.0%;
     descent-override: 22.9%;
+    line-gap-override: 0%;
+}
+
+@font-face {
+    font-family: 'Mono Fallback';
+    src: local('Menlo'), local('Consolas'), local('DejaVu Sans Mono'), local('Courier New');
+    size-adjust: 100.6%;
+    ascent-override: 101.4%;
+    descent-override: 29.8%;
     line-gap-override: 0%;
 }

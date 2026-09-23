@@ -2,9 +2,26 @@
 
 @import 'tailwindcss';
 
-@source '../../storage/framework/views/*.php';
+/*
+ * Same rule as the public bundle: templates only.
+ *
+ * Removing the compiled cache exposed a real gap — the admin's Livewire views
+ * live under views/livewire/admin and were never listed, so their classes only
+ * survived because the cache happened to contain them.
+ */
 @source '../views/admin/**/*.blade.php';
-@source './admin.css';
+@source '../views/livewire/**/*.blade.php';
+@source '../views/auth/**/*.blade.php';
+@source '../views/components/**/*.blade.php';
+@source '../js/admin/**/*.js';
+
+/*
+ * The admin paginates in four Livewire views. The paginator's markup shipped
+ * in vendor, which Tailwind will not scan because /vendor is gitignored — an
+ * @source pointing there is silently inert. Those views are now published into
+ * resources/views/vendor/livewire, so the glob above reaches them as the real
+ * templates they are.
+ */
 
 @import './tokens.css';
 @import './base.css';

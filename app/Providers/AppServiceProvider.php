@@ -8,11 +8,14 @@ use App\Models\Category;
 use App\Models\Client;
 use App\Models\Media;
 use App\Models\Project;
+use App\Models\Setting;
 use App\Policies\CategoryPolicy;
 use App\Policies\ClientPolicy;
 use App\Policies\MediaPolicy;
 use App\Policies\ProjectPolicy;
+use App\Policies\SettingPolicy;
 use Illuminate\Support\Facades\Blade;
+use App\Support\Settings;
 use App\Support\Theme;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
@@ -50,9 +53,19 @@ class AppServiceProvider extends ServiceProvider
          */
         View::share('theme', Theme::System);
 
+        /*
+         * The settings table is laid over config before anything reads it, so
+         * every existing config('seo.…') call gets the edited value without
+         * each call site needing to know the table exists. It is one cached
+         * map, so this costs a query only when that cache is cold.
+         */
+        Settings::forgetMemo();
+        Settings::overlayConfig();
+
         Gate::policy(Media::class, MediaPolicy::class);
         Gate::policy(Project::class, ProjectPolicy::class);
         Gate::policy(Category::class, CategoryPolicy::class);
         Gate::policy(Client::class, ClientPolicy::class);
+        Gate::policy(Setting::class, SettingPolicy::class);
     }
 }

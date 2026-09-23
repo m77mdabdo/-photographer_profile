@@ -27,7 +27,8 @@ class FetchDemoMedia extends Command
 {
     protected $signature = 'media:fetch-demo
                             {--count=24 : How many photographs to fetch}
-                            {--only= : Restrict to one orientation (landscape, portrait, square)}';
+                            {--only= : Restrict to one orientation (landscape, portrait, square)}
+                            {--art-direction= : Use a directed plan instead of the general mix (hero)}';
 
     protected $description = 'Fetch marked demo photographs from Pexels';
 
@@ -52,6 +53,37 @@ class FetchDemoMedia extends Command
         ['term' => 'street photography city',          'orientation' => 'landscape', 'key' => 'mid'],
         ['term' => 'still life ceramics table',        'orientation' => 'square',    'key' => 'mid'],
         ['term' => 'square format film photography',   'orientation' => 'square',    'key' => 'mid'],
+    ];
+
+    /**
+     * A directed plan, for when the site needs a particular KIND of picture
+     * rather than a representative spread.
+     *
+     * The interlocked hero is demanding in three specific ways, and a photo
+     * that fails any one of them makes the composition look broken rather than
+     * making itself look bad:
+     *
+     *   CENTRAL SUBJECT  the plate crops a vertical column out of the frame,
+     *                    so anything important near an edge is simply cut off.
+     *   LOW KEY          the plate is a hard-edged rectangle on a near-black
+     *                    ground. A pale image reads as a white box stuck on
+     *                    the page; a dark one reads as a window into it.
+     *   ONE DOMINANT HUE the accent is derived from the frame. A grey image
+     *                    yields a grey accent, which fails the lightness band
+     *                    and falls back to the token — so the page loses the
+     *                    one thing that was supposed to come from the picture.
+     *
+     * Portraiture satisfies all three more reliably than anything else, which
+     * is why four of these five terms are portraits.
+     *
+     * @var list<array{term: string, orientation: string, key: string}>
+     */
+    private const HERO_PLAN = [
+        ['term' => 'dramatic studio portrait',  'orientation' => 'landscape', 'key' => 'low'],
+        ['term' => 'low key portrait',          'orientation' => 'portrait',  'key' => 'low'],
+        ['term' => 'moody fashion editorial',   'orientation' => 'portrait',  'key' => 'low'],
+        ['term' => 'chiaroscuro portrait',      'orientation' => 'landscape', 'key' => 'low'],
+        ['term' => 'dark still life',           'orientation' => 'square',    'key' => 'low'],
     ];
 
     public function handle(StoreUploadedMedia $store): int
@@ -83,10 +115,24 @@ class FetchDemoMedia extends Command
          * single orientation, for topping up a branch that real results left
          * thinly covered — Pexels returns few genuine squares by default.
          */
+        $direction = $this->option('art-direction');
+
+        if ($direction !== null && $direction !== '' && $direction !== 'hero') {
+            $this->error('Unknown art direction: '.$direction.'. The only directed plan is "hero".');
+
+            return self::FAILURE;
+        }
+
+        $basePlan = $direction === 'hero' ? self::HERO_PLAN : self::PLAN;
+
+        if ($direction === 'hero') {
+            $this->line('Art direction: hero — central subject, low key, one dominant hue.');
+        }
+
         $only = $this->option('only');
         $plan = $only === null || $only === ''
-            ? self::PLAN
-            : array_values(array_filter(self::PLAN, fn (array $slot): bool => $slot['orientation'] === $only));
+            ? $basePlan
+            : array_values(array_filter($basePlan, fn (array $slot): bool => $slot['orientation'] === $only));
 
         if ($plan === []) {
             $this->error('No search terms are configured for orientation: '.$only);

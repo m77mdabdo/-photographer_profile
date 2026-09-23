@@ -17,7 +17,12 @@
             the focus ring.
     --}}
     <section class="marquee" aria-labelledby="clients-heading">
-        <h2 class="sr-only" id="clients-heading">Selected clients</h2>
+        {{--
+            The heading is now visible rather than screen-reader-only: a small
+            mono label naming what the moving row is. Its text comes from the
+            settings table like every other string on the page.
+        --}}
+        <h2 class="marquee__label" id="clients-heading">{{ \App\Support\Settings::get('marquee.label', 'Clients') }}</h2>
 
         <div class="marquee__viewport">
             <ul class="marquee__track" role="list">

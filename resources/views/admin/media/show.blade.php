@@ -75,6 +75,51 @@
                 <dd>{{ $medium->usages->count() }} {{ Str::plural('place', $medium->usages->count()) }}</dd>
             </dl>
 
+            {{--
+                Camera data, read from the original when it was processed.
+
+                Only what the frame actually carries is shown. A file with no
+                camera tags — which is every stock download, because agencies
+                strip them — gets a plain statement to that effect rather than
+                a table of dashes, so "we know nothing" is never mistaken for
+                "this was shot at f/—".
+
+                There is no location row, and there is no column behind one.
+            --}}
+            <h2 class="admin-subheading">Camera</h2>
+
+            @if ($medium->hasExifData())
+                <dl class="facts">
+                    @if ($exposure = $medium->exposureLine())
+                        <dt>Exposure</dt>
+                        <dd class="facts__technical">{{ $exposure->compact() }}</dd>
+                    @endif
+
+                    @if ($medium->exif_camera)
+                        <dt>Body</dt>
+                        <dd>{{ $medium->exif_camera }}</dd>
+                    @endif
+
+                    @if ($medium->exif_lens)
+                        <dt>Lens</dt>
+                        <dd>{{ $medium->exif_lens }}</dd>
+                    @endif
+
+                    @if ($medium->captured_at)
+                        <dt>Captured</dt>
+                        <dd>{{ $medium->captured_at->format('j M Y, H:i') }}</dd>
+                    @endif
+                </dl>
+            @else
+                <p class="admin-note">
+                    @if ($medium->exif_read_at)
+                        No camera data in this file. Nothing is shown rather than a placeholder.
+                    @else
+                        The original has not been read yet. Run <code>media:backfill-exif</code>.
+                    @endif
+                </p>
+            @endif
+
             <form method="POST" action="{{ route('admin.media.update', $medium) }}" class="admin-form">
                 @csrf
                 @method('PATCH')

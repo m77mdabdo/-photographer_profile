@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Enums\MediaStatus;
 use App\Models\Media;
+use App\Support\ExifReader;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -91,6 +92,14 @@ class ProcessMediaVariants implements ShouldBeUnique, ShouldQueue
              * It is still a fresh decode per variant, just of a smaller file,
              * so no rendition is ever resized from an already-resized one.
              */
+            /*
+             * Read the camera data from the ORIGINAL, before any working copy
+             * exists. The derivatives have their EXIF stripped on purpose, so
+             * this is the only moment the data is reachable — and the original
+             * is the only file that is ever trusted to carry it.
+             */
+            $this->captureExif($temporaryPath);
+
             $workingPath = $this->workingCopy($manager, $temporaryPath, $sourceWidth, $sourceHeight);
 
             try {
@@ -125,6 +134,20 @@ class ProcessMediaVariants implements ShouldBeUnique, ShouldQueue
             'status' => MediaStatus::Failed,
             'failure_reason' => Str::limit($e->getMessage(), 1000, ''),
         ]);
+    }
+
+    /**
+     * Whatever the frame really carries, and nothing it does not.
+     *
+     * exif_read_at is always stamped, including when nothing was found: that
+     * is how a later backfill distinguishes "no camera data" from "not looked
+     * at yet" without re-reading every original on every run.
+     */
+    private function captureExif(string $originalPath): void
+    {
+        $exif = ExifReader::read($originalPath);
+
+        $this->media->update($exif + ['exif_read_at' => now()]);
     }
 
     /**

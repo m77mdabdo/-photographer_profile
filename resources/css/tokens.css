@@ -88,12 +88,22 @@
     --scrim-bottom: 0.88;
 
     /*
-     * Optical weight. Bodoni is a Didone: on a dark ground the thick stems
-     * halate and visually eat the hairlines, so display sizes carry extra
-     * weight to hold them together.
+     * Optical weight, dark register.
+     *
+     * The Didone reasoning that used to live here is now the wrong reasoning
+     * and points the wrong way. Bodoni needed MORE weight on black, because
+     * its thick stems halate and visually eat the hairlines between them, and
+     * a hairline that disappears takes the letterform with it.
+     *
+     * A heavy condensed grotesque has no hairlines to lose. What it has is
+     * tight counters — the enclosed white inside a, e, o, g — and on a dark
+     * ground the surrounding light bleeds inward and closes them. So the
+     * correction reverses: the display face is set LIGHTER here than on paper,
+     * to keep the counters open at the size the wordmark runs at.
      */
-    --wght-display: 480;
-    --wght-mid: 440;
+    --wght-display: 800;
+    --wght-mid: 620;
+    --wght-mono: 440;
 
     /* Film grain. Overlay works on a dark ground because it lifts and drops
        equally around a low midpoint. */
@@ -193,6 +203,8 @@
     /* ---------------------------------------------------------------
      * Z-index layers — named, so no one ever writes z-index: 9999.
      * --------------------------------------------------------------- */
+    /* Below the base layer: the hero's statement, which the wordmark crosses. */
+    --z-beneath: -1;
     --z-base: 0;
     --z-media: 10;
     --z-nav: 100;
@@ -222,9 +234,9 @@
      * so the swap causes no reflow, then the plain system stack as a last
      * resort. Declared here and nowhere else.
      */
-    --font-display: 'Bodoni Moda', 'Bodoni Fallback', 'Times New Roman', Georgia, serif;
+    --font-display: 'Archivo', 'Archivo Fallback', 'Arial Narrow', Arial, sans-serif;
     --font-sans: 'Inter Tight', 'Inter Fallback', -apple-system, 'Segoe UI', system-ui, sans-serif;
-    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --font-mono: 'JetBrains Mono', 'Mono Fallback', ui-monospace, Menlo, Consolas, monospace;
 }
 
 /* ===================================================================
@@ -265,8 +277,9 @@
         --scrim-mid: 0.04;
         --scrim-bottom: 0.55;
 
-        --wght-display: 410;
-        --wght-mid: 400;
+        --wght-display: 860;
+        --wght-mid: 660;
+        --wght-mono: 500;
 
         --grain-opacity: 0.022;
         --grain-blend: multiply;
@@ -307,14 +320,14 @@
     --scrim-bottom: 0.55;
 
     /*
-     * Lighter. On paper the hairlines do not halate, so the compensation that
-     * holds them together on black makes the same face look heavy and modern
-     * here — the opposite of what a Didone is for. 410 is as low as this
-     * variable font goes plus a hair; the axis floor is 400, which is why the
-     * two display steps are close together rather than proportionally spaced.
+     * Heavier. Dark ink on paper is the case where a grotesque's counters stay
+     * open by themselves, and the stems read thinner than the same weight does
+     * reversed out of black. Sixty units on the axis is what it takes for the
+     * wordmark to carry the same visual mass in both registers.
      */
-    --wght-display: 410;
-    --wght-mid: 400;
+    --wght-display: 860;
+    --wght-mid: 660;
+    --wght-mono: 500;
 
     /*
      * Multiply rather than overlay: on a light ground overlay barely registers

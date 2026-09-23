@@ -2,10 +2,18 @@
 
 @import 'tailwindcss';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
+/*
+ * Sources are TEMPLATES, never the compiled view cache.
+ *
+ * storage/framework/views/*.php used to be listed here. It is a runtime
+ * artefact: what it contains depends on which pages happen to have been
+ * rendered since the last view:clear, so the same source tree produced
+ * different CSS from one build to the next — and on a deploy, where the cache
+ * is cold, any class used only by a template nobody had rendered yet would
+ * simply be missing from production.
+ */
+@source '../views/**/*.blade.php';
+@source '../js/**/*.js';
 
 @import './fonts.css';
 @import './tokens.css';

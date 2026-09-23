@@ -33,16 +33,26 @@
 
 .site-header__mark {
     font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-mid);
     font-size: var(--fs-h3);
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
     text-decoration: none;
 }
 
+/*
+ * Navigation is a label, not a sentence, so it is set in the mono like every
+ * other label on the site. Uppercase and letterspaced, because a monospace at
+ * this size needs the air to stop reading as code.
+ */
 .site-nav__list {
     display: flex;
     flex-wrap: wrap;
     gap: var(--sp-5);
     margin: 0;
-    font-size: var(--fs-small);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    font-variation-settings: 'wght' var(--wght-mono);
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
 }

@@ -497,3 +497,57 @@
     background-color: var(--bg-elevated);
     font-size: var(--fs-caption); color: var(--text-secondary);
 }
+
+/* ---------------- Settings panel ---------------------------------------- */
+
+.settings-group {
+    padding-block: var(--sp-6);
+    border-bottom: var(--rule-hair) solid var(--border);
+}
+
+.settings-group:last-of-type { border-bottom: 0; }
+
+.settings-group__title {
+    font-size: var(--fs-small);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: var(--sp-4);
+}
+
+/* Two across where there is room; the long-form fields take the full width
+   of a cell, so a paragraph is never edited through a slot. */
+.settings-group__fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+    gap: var(--sp-5);
+}
+
+/* The address the templates ask for, shown next to the human label so the
+   two can be matched when something does not appear where it was expected. */
+.settings-key {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    color: var(--text-secondary);
+    opacity: 0.55;
+    margin-left: var(--sp-2);
+}
+
+/* ---------------- Camera data on the media detail ----------------------- */
+
+.admin-subheading {
+    margin-top: var(--sp-6);
+    margin-bottom: var(--sp-3);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    font-weight: 500;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+/* Figures are read as figures: tabular, so f/1.4 under f/11 lines up. */
+.facts__technical {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+}

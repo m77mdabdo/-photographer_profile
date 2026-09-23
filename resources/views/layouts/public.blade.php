@@ -16,13 +16,18 @@
     <x-seo :page="$seo" />
 
     {{--
-        Only the display face is preloaded. It sets the largest text on the
-        page — the thing a visitor sees first and the thing whose swap would be
-        most visible — so it is worth the early request. The sans is used at
-        small sizes where a metric-matched swap is imperceptible, so it waits
-        its turn rather than competing with the hero image for bandwidth.
+        Only the display face is preloaded, and only its Latin subset.
+
+        It sets the wordmark, which is the largest thing on the page, the first
+        thing a visitor sees and the one swap that would be plainly visible.
+        The mono is above the fold too — the stage rail, the navigation and the
+        exposure line are all set in it — but at eleven to thirteen pixels,
+        against a metric-matched Menlo or Consolas fallback, its swap costs a
+        glyph substitution nobody registers and no reflow at all. It is not
+        worth taking bandwidth from the hero photograph, which is the LCP
+        element. The sans waits for the same reason.
     --}}
-    <link rel="preload" href="/fonts/bodoni-moda-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
 
     {{--
         CSS only. The public site runs no JavaScript: nothing here needs it,
@@ -47,13 +52,17 @@
         <a class="site-header__mark" href="{{ route('home') }}">{{ config('seo.site_name') }}</a>
 
         <nav class="site-nav" aria-label="Primary">
-            {{-- Placeholder destinations: real routes land in a later task. --}}
+            {{--
+                Labels from the settings table, destinations still placeholder:
+                the real routes land in a later task. The key is the address the
+                template asks for; the word a visitor reads is the client's.
+            --}}
             <ul role="list" class="site-nav__list">
-                <li><a href="#">Work</a></li>
-                <li><a href="#">Archive</a></li>
-                <li><a href="#">About</a></li>
-                <li><a href="#">Journal</a></li>
-                <li><a href="#">Contact</a></li>
+                @foreach (['work', 'archive', 'about', 'journal', 'contact'] as $item)
+                    @if ($label = \App\Support\Settings::get('nav.'.$item))
+                        <li><a href="#">{{ $label }}</a></li>
+                    @endif
+                @endforeach
             </ul>
         </nav>
     </header>

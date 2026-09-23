@@ -27,6 +27,25 @@ class HomepageTest extends TestCase
             'url' => 'http://localhost/storage/media',
             'visibility' => 'public',
         ]);
+
+        $this->seedSettings();
+    }
+
+    /**
+     * The editable copy the page needs in order to render at all.
+     *
+     * The static memo inside Settings survives between tests in one process,
+     * and RefreshDatabase does not know about it, so it is cleared explicitly
+     * — otherwise the second test in a run reads the first one's values out of
+     * a map whose rows no longer exist.
+     */
+    private function seedSettings(): void
+    {
+        \App\Support\Settings::flush();
+
+        $this->seed(\Database\Seeders\SettingsSeeder::class);
+
+        \App\Support\Settings::flush();
     }
 
 
@@ -142,26 +161,6 @@ class HomepageTest extends TestCase
 
     // ----------------------------------------------------------------- 5
 
-    public function test_the_query_count_is_bounded(): void
-    {
-        $this->populate(8);
-
-        $queries = [];
-        DB::listen(function ($query) use (&$queries): void {
-            $queries[] = $query->sql;
-        });
-
-        $this->get('/')->assertOk();
-
-        $count = count($queries);
-
-        $this->assertLessThan(
-            10,
-            $count,
-            "expected a flat homepage, got {$count}:\n".implode("\n", $queries)
-        );
-    }
-
     // ----------------------------------------------------------------- 6
 
     public function test_the_heading_order_is_valid(): void
@@ -238,33 +237,42 @@ class HomepageTest extends TestCase
 
     // ----------------------------------------------------------------- 4
 
-    public function test_the_display_font_is_preloaded_and_the_sans_is_not(): void
+    public function test_only_the_display_face_is_preloaded(): void
     {
         $this->populate();
 
         $html = $this->get('/')->assertOk()->getContent();
 
-        // The display face sets the largest text on the page, so its swap
-        // would be the most visible; it earns the early request.
+        /*
+         * The display face sets the wordmark, which is the largest thing on
+         * the page and the only swap a visitor would plainly see. The mono is
+         * above the fold too, but at eleven pixels against a metric-matched
+         * fallback its swap costs a glyph substitution and no reflow — not
+         * worth taking bandwidth from the LCP photograph.
+         */
         $this->assertStringContainsString(
-            '<link rel="preload" href="/fonts/bodoni-moda-latin.woff2" as="font" type="font/woff2" crossorigin>',
+            '<link rel="preload" href="/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>',
             $html
         );
 
-        // The sans must not compete with it, or with the hero image.
         $this->assertStringNotContainsString('inter-tight', $html);
-        // @vite emits its own stylesheet preload, so count font preloads only.
+        $this->assertStringNotContainsString('jetbrains-mono', $html);
         $this->assertSame(1, substr_count($html, 'as="font"'), 'exactly one font is preloaded');
 
         // Nothing is fetched from a third party.
-        $this->assertStringNotContainsString('fonts.googleapis.com', $html);
-        $this->assertStringNotContainsString('fonts.gstatic.com', $html);
-        $this->assertStringNotContainsString('cdn.jsdelivr.net', $html);
+        foreach (['fonts.googleapis.com', 'fonts.gstatic.com', 'cdn.jsdelivr.net'] as $host) {
+            $this->assertStringNotContainsString($host, $html);
+        }
 
-        // And the files are actually self-hosted.
-        foreach (['bodoni-moda-latin', 'bodoni-moda-latin-ext',
-                  'inter-tight-latin', 'inter-tight-latin-ext'] as $file) {
+        // And every face is actually self-hosted, with its licence beside it.
+        foreach (['archivo-latin', 'archivo-latin-ext',
+                  'inter-tight-latin', 'inter-tight-latin-ext',
+                  'jetbrains-mono-latin', 'jetbrains-mono-latin-ext'] as $file) {
             $this->assertFileExists(public_path("fonts/{$file}.woff2"));
+        }
+
+        foreach (['archivo', 'inter-tight', 'jetbrains-mono'] as $family) {
+            $this->assertFileExists(public_path("fonts/LICENSE-{$family}.txt"));
         }
     }
 
@@ -273,19 +281,68 @@ class HomepageTest extends TestCase
         $css = file_get_contents(resource_path('css/fonts.css'));
 
         // Without these the swap reflows every line of the largest text.
-        $this->assertStringContainsString('size-adjust', $css);
-        $this->assertStringContainsString('ascent-override', $css);
-        $this->assertStringContainsString('descent-override', $css);
-        $this->assertStringContainsString('font-display: swap', $css);
+        foreach (['size-adjust', 'ascent-override', 'descent-override', 'font-display: swap'] as $property) {
+            $this->assertStringContainsString($property, $css);
+        }
 
-        $this->assertStringContainsString("font-family: 'Bodoni Fallback'", $css);
-        $this->assertStringContainsString("font-family: 'Inter Fallback'", $css);
+        foreach (["'Archivo Fallback'", "'Inter Fallback'", "'Mono Fallback'"] as $fallback) {
+            $this->assertStringContainsString('font-family: '.$fallback, $css);
+        }
+
+        /*
+         * The display fallback must itself be condensed. Archivo is drawn at
+         * 70% width here; falling back to a normal-width grotesque would hold
+         * the line height and still reflow every line of the wordmark.
+         */
+        $this->assertMatchesRegularExpression(
+            "/font-family: 'Archivo Fallback';\s*src: local\('Arial Narrow'\)/",
+            $css
+        );
 
         // The tokens are the only place the families are named.
         $tokens = file_get_contents(resource_path('css/tokens.css'));
-        $this->assertStringContainsString("--font-display: 'Bodoni Moda'", $tokens);
+        $this->assertStringContainsString("--font-display: 'Archivo'", $tokens);
         $this->assertStringContainsString("--font-sans: 'Inter Tight'", $tokens);
-        $this->assertStringContainsString('Bodoni Fallback', $tokens);
+        $this->assertStringContainsString("--font-mono: 'JetBrains Mono'", $tokens);
+
+        /*
+         * Bodoni is retired, not merely unused. A Didone and a heavy condensed
+         * grotesque are both display faces competing for one job.
+         *
+         * Comments are stripped first. Both files explain at length why the
+         * old face went and why its optical correction pointed the other way,
+         * and naming a decision must not read as still making it.
+         */
+        $strip = static fn (string $source): string => (string) preg_replace('/\/\*.*?\*\//s', '', $source);
+
+        $this->assertStringNotContainsString('Bodoni', $strip($tokens));
+        $this->assertStringNotContainsString('Bodoni', $strip($css));
+        $this->assertFileDoesNotExist(public_path('fonts/bodoni-moda-latin.woff2'));
+        $this->assertFileDoesNotExist(public_path('fonts/bodoni-moda-latin-ext.woff2'));
+    }
+
+    public function test_the_display_weight_is_retuned_per_register(): void
+    {
+        $tokens = file_get_contents(resource_path('css/tokens.css'));
+
+        preg_match_all('/--wght-display:\s*(\d+)/', $tokens, $matches);
+
+        $weights = array_map('intval', $matches[1]);
+
+        $this->assertGreaterThanOrEqual(3, count($weights), 'dark plus both light declarations');
+
+        $dark = $weights[0];
+        $light = $weights[1];
+
+        /*
+         * The direction reversed when the face did. A Didone needs MORE weight
+         * on black to stop its hairlines being eaten; a grotesque has no
+         * hairlines, but its counters close up when light bleeds into them, so
+         * it needs LESS. Anything that puts these back the old way round is a
+         * regression, not a preference.
+         */
+        $this->assertLessThan($light, $dark, 'the grotesque is set lighter on a dark ground, not heavier');
+        $this->assertGreaterThan(700, $dark, 'the display face is heavy in both registers');
     }
 
     // ----------------------------------------------------------------- 5
@@ -350,26 +407,6 @@ class HomepageTest extends TestCase
 
     // ----------------------------------------------------------------- 8
 
-    public function test_the_query_count_is_nine_with_the_marquee(): void
-    {
-        $this->populate(8);
-
-        $queries = [];
-        DB::listen(function ($query) use (&$queries): void {
-            $queries[] = $query->sql;
-        });
-
-        $this->get('/')->assertOk();
-
-        /*
-         * Nine, not eight. The client marquee is a ninth query and there is no
-         * way around it — the clients table is unrelated to projects, so it
-         * cannot ride along on an existing load. The layout planner still
-         * costs nothing: it reads covers that are already in memory.
-         */
-        $this->assertCount(9, $queries, "expected 9 queries:\n".implode("\n", $queries));
-    }
-
     // ----------------------------------------------------------------- 9
 
     public function test_no_public_stylesheet_holds_a_colour_literal_except_tokens(): void
@@ -407,27 +444,39 @@ class HomepageTest extends TestCase
     {
         $css = file_get_contents(resource_path('css/pages/home.css'));
 
-        preg_match_all('/^\s*([^{}]+)\{[^}]*var\(--accent\)[^}]*\}/m', $css, $matches);
-
-        $selectors = array_map('trim', $matches[1]);
+        preg_match_all('/^\s*([^{}]+)\{([^}]*var\(--accent\)[^}]*)\}/m', $css, $matches, PREG_SET_ORDER);
 
         /*
-         * Only primary-action rules may use it — plus the hero's own fallback
-         * chain, where `var(--accent)` is the default the derived colour falls
-         * back to rather than a second decorative use.
+         * THE RULE CHANGED, DELIBERATELY.
+         *
+         * Until now the accent marked one thing: the primary action. The hero
+         * detail layer gives it a second job — it is the colour of the
+         * TECHNICAL voice, the register that names the frame, credits the
+         * photographer and marks which stage of the sequence you are at.
+         *
+         * That is still a rule, and it is still narrow. What it is not is the
+         * old rule, so the list below is the new one written out rather than
+         * the old one quietly widened. Anything not on it is a leak.
          */
-        foreach ($selectors as $selector) {
+        $permitted = '/link-rule|closing__rule|hero__sequence|hero__attribution|hero__stage|marquee__item/';
+
+        foreach ($matches as [, $selector, $body]) {
             $clean = trim(preg_replace('/\/\*.*?\*\//s', '', $selector) ?? '');
 
-            // At-rule wrappers are not selectors; the rules inside them are
-            // matched on their own.
+            /*
+             * At-rule wrappers are not selectors; the rules inside them are
+             * matched on their own. And a rule whose only mention of the
+             * accent is DEFINING --hero-accent is declaring the fallback the
+             * derived colour drops to, not spending the colour on anything.
+             */
             if ($clean === '' || str_starts_with($clean, '@')
-                || str_contains($clean, '.hero') || str_contains($clean, ':root')) {
+                || str_contains($clean, ':root')
+                || str_contains($body, '--hero-accent:')) {
                 continue;
             }
 
             $this->assertMatchesRegularExpression(
-                '/link-rule|closing__rule/',
+                $permitted,
                 $clean,
                 "the accent leaked into: {$clean}"
             );
@@ -453,9 +502,9 @@ class HomepageTest extends TestCase
     // ================= THE HERO =================
 
     /*
-     * There is one hero. The horizontal variant was deleted in full, so these
-     * assertions no longer run twice against two compositions — they describe
-     * the only one that exists.
+     * One hero: the horizontal wordmark interrupted by an opaque plate. The
+     * vertical variant that briefly replaced it is gone, and a test at the end
+     * of this block fails if any trace of it comes back.
      */
 
     public function test_the_wordmark_is_one_intact_text_node(): void
@@ -473,19 +522,18 @@ class HomepageTest extends TestCase
         );
 
         /*
-         * Nothing fragments it. The two lines come from a CSS measure, so the
-         * heading is announced once and copies as one word.
+         * Nothing fragments it. Uppercase is a CSS transform, so the word is
+         * announced once, copies as one word, and keeps its real capitals.
          */
         $this->assertStringNotContainsString('wordmark__letter', $html);
         $this->assertDoesNotMatchRegularExpression('/<h1[^>]*>\s*<span/', $html);
         $this->assertDoesNotMatchRegularExpression('/<h1[^>]*>[^<]*<br/', $html);
 
-        // And the measure that produces the break is expressed in em, which is
-        // why the line count cannot change with the viewport.
         $css = file_get_contents(resource_path('css/pages/home.css'));
         $this->assertMatchesRegularExpression(
-            '/\.hero__wordmark \{[^}]*max-width: calc\(var\(--wordmark-chars\) \* [0-9.]+em\)/s',
-            $css
+            '/\.hero__wordmark \{[^}]*text-transform: uppercase/s',
+            $css,
+            'the capitals are a style, not a second copy of the name'
         );
     }
 
@@ -495,7 +543,7 @@ class HomepageTest extends TestCase
 
         $html = $this->get('/')->assertOk()->getContent();
 
-        $hero = substr($html, (int) strpos($html, 'class="hero'), 4000);
+        $hero = substr($html, (int) strpos($html, 'class="hero'), 5000);
 
         $this->assertStringContainsString('fetchpriority="high"', $hero);
         $this->assertStringContainsString('decoding="sync"', $hero);
@@ -522,6 +570,8 @@ class HomepageTest extends TestCase
 
     public function test_the_hero_renders_with_no_featured_project(): void
     {
+        $this->seedSettings();
+
         $response = $this->get('/');
         $response->assertOk();
 
@@ -530,12 +580,19 @@ class HomepageTest extends TestCase
         $this->assertStringContainsString('hero--empty', $html);
         $this->assertStringContainsString('<h1 class="hero__wordmark"', $html);
         $this->assertStringNotContainsString('hero__plate', $html);
+
+        // The parts that belong to the studio rather than to a project stay.
+        $this->assertStringContainsString('hero__statement', $html);
+        $this->assertStringContainsString('hero__stages', $html);
+
+        // The parts that belong to a project do not.
+        $this->assertStringNotContainsString('hero__rail', $html);
+        $this->assertStringNotContainsString('hero__link', $html);
     }
 
     /**
      * Each shape must produce a genuinely different composition, not the same
-     * layout under a different class name. The bleed is the value that carries
-     * the difference, so it is the value asserted.
+     * layout under a different class name.
      */
     public function test_each_orientation_composes_differently(): void
     {
@@ -556,36 +613,23 @@ class HomepageTest extends TestCase
 
         $css = file_get_contents(resource_path('css/pages/home.css'));
 
-        // The plate enters from a different column in each case ...
-        $this->assertMatchesRegularExpression('/\.hero--landscape \.hero__plate \{[^}]*grid-column: 7 \/ -1/s', $css);
-        $this->assertMatchesRegularExpression('/\.hero--portrait \.hero__plate \{[^}]*grid-column: 8 \/ -1/s', $css);
-        $this->assertMatchesRegularExpression('/\.hero--square \.hero__plate \{[^}]*grid-column: 1 \/ span 5/s', $css);
+        // The plate takes a different column in each case ...
+        preg_match('/\.hero--landscape \.hero__plate \{ grid-column: ([^;]+); \}/', $css, $landscape);
+        preg_match('/\.hero--portrait\s+\.hero__plate \{ grid-column: ([^;]+); \}/', $css, $portrait);
+        preg_match('/\.hero--square\s+\.hero__plate \{ grid-column: ([^;]+); \}/', $css, $square);
 
-        // ... and, critically, runs a different distance off the page.
-        preg_match('/\.hero--landscape \.hero__plate \{[^}]*margin-right: -([0-9.]+)vw/s', $css, $landscape);
-        preg_match('/\.hero--portrait \.hero__plate \{[^}]*margin-right: -([0-9.]+)vw/s', $css, $portrait);
-        preg_match('/\.hero--square \.hero__plate \{[^}]*margin-left: calc\(\(var\(--hero-inset\) \+ ([0-9.]+)vw\)/s', $css, $square);
-
-        $bleeds = [
-            'landscape' => (float) ($landscape[1] ?? 0),
-            'portrait' => (float) ($portrait[1] ?? 0),
-            'square' => (float) ($square[1] ?? 0),
+        $columns = [
+            'landscape' => $landscape[1] ?? '',
+            'portrait' => $portrait[1] ?? '',
+            'square' => $square[1] ?? '',
         ];
 
-        $this->assertNotContains(0.0, $bleeds, 'every orientation declares a bleed: '.json_encode($bleeds));
-        $this->assertSame(
-            3,
-            count(array_unique($bleeds)),
-            'the three bleeds must differ, got '.json_encode($bleeds)
-        );
+        $this->assertNotContains('', $columns, 'every orientation places the plate: '.json_encode($columns));
+        $this->assertSame(3, count(array_unique($columns)), 'the three columns must differ: '.json_encode($columns));
 
-        /*
-         * And they differ in the right direction: the narrower the window the
-         * picture gets on the page, the further it must run off it before it
-         * reads as a mass rather than a strip.
-         */
-        $this->assertGreaterThan($bleeds['landscape'], $bleeds['square'], 'a square bleeds deeper than a landscape');
-        $this->assertGreaterThan($bleeds['square'], $bleeds['portrait'], 'a portrait bleeds deepest of all');
+        // ... and the supporting text moves to the side the picture leaves.
+        $this->assertMatchesRegularExpression('/\.hero--portrait \.hero__aside \{ grid-column: 1 \/ span 5; \}/', $css);
+        $this->assertMatchesRegularExpression('/\.hero--landscape \.hero__aside \{ grid-column: 10 \/ -1; \}/', $css);
     }
 
     /**
@@ -639,8 +683,8 @@ class HomepageTest extends TestCase
     /**
      * The readability guarantee is structural, not statistical: the plate is
      * opaque and sits above the wordmark, so a letter is either fully on the
-     * page ground or fully hidden. Nothing here may be solved with a scrim,
-     * a gradient or a shadow, because those only make the average case look
+     * page ground or fully hidden. Nothing here may be solved with a scrim, a
+     * gradient or a shadow, because those only make the average case look
      * acceptable.
      */
     public function test_the_plate_is_opaque_and_the_guarantee_is_structural(): void
@@ -675,14 +719,128 @@ class HomepageTest extends TestCase
          * first: the section's prose explains why there is no scrim, and
          * explaining it must not read as doing it.
          */
-        $declarations = preg_replace('/\/\*.*?\*\//s', '', $hero) ?? '';
+        $declarations = (string) preg_replace('/\/\*.*?\*\//s', '', $hero);
 
         foreach (['linear-gradient', 'radial-gradient', 'text-shadow', 'backdrop-filter', 'scrim'] as $cheat) {
             $this->assertStringNotContainsString($cheat, $declarations, "the hero must not use {$cheat}");
         }
 
         // And no partial alpha on the plate itself.
-        $this->assertDoesNotMatchRegularExpression('/\.hero__plate \{[^}]*opacity:/s', $hero);
+        $this->assertDoesNotMatchRegularExpression('/\.hero__plate \{[^}]*opacity:/s', $declarations);
+    }
+
+    /**
+     * The statement is drawn beneath the wordmark. Layering is a paint-order
+     * decision and must not become a reading-order one: the sentence has to be
+     * in the markup, in the right place, and not hidden from assistive tech.
+     */
+    public function test_the_statement_is_reachable_and_correctly_ordered(): void
+    {
+        $this->populate();
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $statement = \App\Support\Settings::get('site.statement');
+        $this->assertNotNull($statement);
+
+        $hero = substr($html, (int) strpos($html, 'class="hero'), 6000);
+
+        // It is really there, as text, not as a background or an image.
+        $this->assertStringContainsString(e($statement), $hero);
+
+        // Never hidden from the accessibility tree to tidy up the visuals.
+        $this->assertDoesNotMatchRegularExpression(
+            '/<p class="hero__statement"[^>]*aria-hidden/',
+            $hero
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/<div class="hero__voice"[^>]*(aria-hidden|hidden)/',
+            $hero
+        );
+
+        /*
+         * Reading order: the heading, then the frame's data, then the
+         * statement, then the attribution, then the one link, then the
+         * project's metadata. That is DOM order, which is what a screen reader
+         * and the tab key both follow — the visual layering below it is
+         * z-index only and changes neither.
+         */
+        $positions = [
+            'h1' => strpos($hero, '<h1'),
+            'technical' => strpos($hero, 'hero__technical'),
+            'statement' => strpos($hero, 'hero__statement'),
+            'attribution' => strpos($hero, 'hero__attribution'),
+            'link' => strpos($hero, 'hero__link'),
+            'stages' => strpos($hero, 'hero__stages'),
+        ];
+
+        foreach ($positions as $name => $at) {
+            $this->assertIsInt($at, "{$name} is missing from the hero");
+        }
+
+        $order = array_values($positions);
+        $sorted = $order;
+        sort($sorted);
+
+        $this->assertSame($sorted, $order, 'the hero reads in a different order than it is written: '.json_encode($positions));
+
+        // And the effect really is paint order, not a hidden duplicate.
+        $css = file_get_contents(resource_path('css/pages/home.css'));
+        $this->assertMatchesRegularExpression(
+            '/\.hero__voice \{[^}]*z-index: var\(--z-beneath\)/s',
+            $css
+        );
+        $this->assertSame(1, substr_count($hero, e($statement)), 'the statement appears exactly once');
+    }
+
+    /**
+     * The hero renders the client's words, not the developer's.
+     */
+    public function test_the_hero_holds_no_hardcoded_copy(): void
+    {
+        $views = [
+            resource_path('views/components/home/hero.blade.php'),
+            resource_path('views/components/home/client-marquee.blade.php'),
+            resource_path('views/layouts/public.blade.php'),
+        ];
+
+        /*
+         * Every seeded value, plus the reference's own vocabulary. A literal
+         * hit means a string a client cannot change without a deploy.
+         */
+        $forbidden = \App\Models\Setting::query()->pluck('value')->filter()->all();
+
+        foreach ($views as $view) {
+            $source = (string) file_get_contents($view);
+
+            // Comments explain the design; they are not rendered.
+            $source = (string) preg_replace('/\{\{--.*?--\}\}/s', '', $source);
+
+            foreach ($forbidden as $value) {
+                $this->assertStringNotContainsString(
+                    $value,
+                    $source,
+                    basename($view).' hardcodes a setting: '.$value
+                );
+            }
+        }
+
+        // And the rendered page really does contain them, from the table.
+        $this->populate();
+        $html = $this->get('/')->assertOk()->getContent();
+
+        foreach (['site.name', 'site.statement', 'nav.work', 'stage.1.label'] as $key) {
+            $this->assertStringContainsString(
+                e((string) \App\Support\Settings::get($key)),
+                $html,
+                "{$key} did not reach the page"
+            );
+        }
+
+        // Change the table, change the page. No deploy, no cache clear.
+        \App\Support\Settings::set('stage.1.label', 'Latent', 'string', 'hero');
+
+        $this->assertStringContainsString('Latent', $this->get('/')->getContent());
     }
 
     public function test_the_query_count_is_nine(): void
@@ -696,27 +854,48 @@ class HomepageTest extends TestCase
 
         $this->get('/')->assertOk();
 
-        $this->assertCount(9, $queries, 'the homepage issued '.count($queries).' queries');
+        /*
+         * Ten on a cold cache, nine on a warm one.
+         *
+         * The tenth is the settings map: one flat `select value, key from
+         * settings` that carries every string the hero renders — the studio
+         * name, the statement, the attribution, five navigation labels, four
+         * stage labels and four rail labels. It is cached forever and dropped
+         * only when a setting is written, so a running site pays it once.
+         *
+         * Asserting both numbers is the point. A bare "10" would pass just as
+         * happily if the map were being read once per key, which is the
+         * failure this design exists to avoid.
+         */
+        $settingsQueries = array_filter($queries, static fn (string $sql): bool => str_contains($sql, '`settings`'));
+
+        $this->assertCount(1, $settingsQueries, 'the settings map must be one query, not one per key');
+        $this->assertCount(10, $queries, 'cold: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
+
+        // Warm, which is every request after the first.
+        $queries = [];
+        $this->get('/')->assertOk();
+
+        $this->assertCount(9, $queries, 'warm: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
     }
 
     /**
-     * The deleted variant must be gone, not dormant. A commented-out block or
-     * a stray class name is how a "deleted" design comes back six months later
+     * The vertical variant must be gone, not dormant. A commented-out block or
+     * a stray class name is how a replaced design comes back six months later
      * as a half-working branch of CSS nobody dares touch.
      */
-    public function test_no_trace_of_the_deleted_variant_remains(): void
+    public function test_no_trace_of_the_replaced_variant_remains(): void
     {
         $roots = ['app', 'config', 'resources', 'routes', 'tests', 'database'];
         $extensions = ['php', 'css', 'js', 'json'];
 
         $needles = [
-            'hero-b',           // the old component and class prefix
-            'hero_variant',     // the switch
-            'HERO_VARIANT',     // its environment override
-            'heroVariants',     // the test provider
-            'hero__aside',      // A's supporting column
-            'hero__rail',       // A's bottom metadata rail
-            'hero__title',      // a selector orphaned even before A was deleted
+            'hero-b',              // the old component and class prefix
+            'hero_variant',        // the switch that chose between them
+            'HERO_VARIANT',
+            'heroVariants',        // the parameterised provider
+            'hero__column',        // the vertical variant's single text column
+            'hero__stage-rule-b',
         ];
 
         $hits = [];
@@ -735,7 +914,7 @@ class HomepageTest extends TestCase
                     continue;
                 }
 
-                $source = file_get_contents($file->getPathname());
+                $source = (string) file_get_contents($file->getPathname());
 
                 foreach ($needles as $needle) {
                     if (str_contains($source, $needle)) {
@@ -745,15 +924,15 @@ class HomepageTest extends TestCase
             }
         }
 
-        $this->assertSame([], $hits, "the deleted variant is still referenced:\n".implode("\n", $hits));
+        $this->assertSame([], $hits, "the replaced variant is still referenced:\n".implode("\n", $hits));
 
-        // The component file itself is gone, and the surviving one is B's.
         $this->assertFileDoesNotExist(resource_path('views/components/home/hero-b.blade.php'));
         $this->assertFileDoesNotExist(config_path('site.php'));
 
-        $hero = file_get_contents(resource_path('views/components/home/hero.blade.php'));
-        $this->assertStringContainsString('hero__column', $hero, 'the surviving hero is the vertical one');
-        $this->assertStringNotContainsString('hero__aside', $hero);
+        // The surviving hero is the horizontal one.
+        $hero = (string) file_get_contents(resource_path('views/components/home/hero.blade.php'));
+        $this->assertStringContainsString('hero__rail', $hero, 'the restored hero has the metadata rail');
+        $this->assertStringContainsString('hero__aside', $hero);
     }
 
     public function test_the_hero_preview_route_does_not_exist_outside_local(): void
@@ -770,7 +949,7 @@ class HomepageTest extends TestCase
         $this->get('/_dev/hero')->assertNotFound();
 
         // And it is inside the guard in the source, not merely absent by luck.
-        $source = file_get_contents(base_path('routes/web.php'));
+        $source = (string) file_get_contents(base_path('routes/web.php'));
         $guardAt = strpos($source, "app()->environment('local')");
 
         $this->assertIsInt($guardAt);

@@ -12,6 +12,7 @@ use App\Livewire\Admin\ClientManager;
 use App\Livewire\Admin\MediaIndex;
 use App\Livewire\Admin\ProjectForm;
 use App\Livewire\Admin\ProjectIndex;
+use App\Livewire\Admin\SettingsManager;
 use App\Livewire\Admin\StoryBuilder;
 use App\Livewire\Admin\MediaTrash;
 use App\Models\Media;
@@ -165,6 +166,8 @@ Route::prefix('admin')
                     ));
                 })->name('preview');
             });
+
+            Route::get('/settings', SettingsManager::class)->name('settings.index');
 
             Route::get('/categories', CategoryManager::class)->name('categories.index');
             Route::get('/clients', ClientManager::class)->name('clients.index');

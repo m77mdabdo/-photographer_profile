@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\MediaStatus;
+use App\Support\ExposureLine;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -49,6 +50,19 @@ class Media extends Model
         'lqip',
         'dominant_color',
         'uploaded_by',
+
+        /*
+         * Camera data read from the original. There is no GPS field here and
+         * there never will be — see App\Support\ExifReader.
+         */
+        'exif_aperture',
+        'exif_shutter',
+        'exif_iso',
+        'exif_focal_length',
+        'exif_camera',
+        'exif_lens',
+        'captured_at',
+        'exif_read_at',
     ];
 
     /**
@@ -65,6 +79,11 @@ class Media extends Model
             'size_bytes' => 'integer',
             'width' => 'integer',
             'height' => 'integer',
+            'exif_aperture' => 'float',
+            'exif_iso' => 'integer',
+            'exif_focal_length' => 'integer',
+            'captured_at' => 'datetime',
+            'exif_read_at' => 'datetime',
         ];
     }
 
@@ -75,6 +94,26 @@ class Media extends Model
                 $media->uuid = (string) Str::uuid();
             }
         });
+    }
+
+    /**
+     * The technical line for this frame, or null when it carries no camera
+     * data at all. Never a partial line padded with placeholders.
+     */
+    public function exposureLine(): ?ExposureLine
+    {
+        return ExposureLine::for($this);
+    }
+
+    public function hasExifData(): bool
+    {
+        return $this->exif_aperture !== null
+            || $this->exif_shutter !== null
+            || $this->exif_iso !== null
+            || $this->exif_focal_length !== null
+            || $this->exif_camera !== null
+            || $this->exif_lens !== null
+            || $this->captured_at !== null;
     }
 
     public function getRouteKeyName(): string
