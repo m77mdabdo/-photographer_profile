@@ -267,35 +267,6 @@ class MediaLibraryTest extends TestCase
         $this->assertTrue($this->admin(UserRole::Owner)->can('forceDelete', $media));
     }
 
-    // ----------------------------------------------------------------- 9
-
-    public function test_the_index_paginates_and_search_narrows_the_results(): void
-    {
-        Media::factory()->count(30)->create(['status' => MediaStatus::Ready]);
-        $needle = Media::factory()->create([
-            'status' => MediaStatus::Ready,
-            'original_filename' => 'dune-at-dawn.jpg',
-        ]);
-
-        $user = $this->admin();
-
-        $first = $this->actingAs($user)->get(route('admin.media.index'));
-        $first->assertOk();
-        $this->assertCount(24, $first->viewData('media')->items(), 'page one holds 24');
-        $this->assertSame(31, $first->viewData('media')->total());
-
-        $second = $this->actingAs($user)->get(route('admin.media.index', ['page' => 2]));
-        $this->assertCount(7, $second->viewData('media')->items(), 'page two holds the rest');
-
-        $filtered = $this->actingAs($user)->get(route('admin.media.index', ['q' => 'dune-at-dawn']));
-        $filtered->assertOk();
-        $this->assertSame(1, $filtered->viewData('media')->total());
-        $this->assertSame($needle->id, $filtered->viewData('media')->items()[0]->id);
-
-        $byStatus = $this->actingAs($user)->get(route('admin.media.index', ['status' => 'failed']));
-        $this->assertSame(0, $byStatus->viewData('media')->total());
-    }
-
     // ----------------------------------------------------------------- 10
 
     public function test_reprocess_redispatches_the_job(): void

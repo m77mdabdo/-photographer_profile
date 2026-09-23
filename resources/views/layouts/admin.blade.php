@@ -10,6 +10,9 @@
     <x-seo :page="$seo ?? \App\Support\SeoData::make(title: $title, robots: 'noindex, nofollow, noarchive')" />
 
     @vite(['resources/css/admin.css', 'resources/js/admin.js'])
+
+    {{-- Admin only. Assets are never auto-injected (config/livewire.php). --}}
+    @livewireStyles
 </head>
 <body class="admin">
     <a class="skip-link" href="#main">Skip to content</a>
@@ -101,5 +104,7 @@
             {{ $slot }}
         </main>
     </div>
+
+    @livewireScripts
 </body>
 </html>

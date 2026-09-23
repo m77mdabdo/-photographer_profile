@@ -23,40 +23,6 @@ use InvalidArgumentException;
  */
 class MediaController extends Controller
 {
-    public function index(Request $request): View
-    {
-        $this->authorize('viewAny', Media::class);
-
-        $search = trim((string) $request->query('q', ''));
-        $status = (string) $request->query('status', '');
-
-        $media = Media::query()
-            ->with('variants')
-            ->withCount('usages')
-            ->when($search !== '', function ($query) use ($search): void {
-                $query->where(function ($inner) use ($search): void {
-                    $term = '%'.$search.'%';
-                    $inner->where('original_filename', 'like', $term)
-                        ->orWhere('alt', 'like', $term)
-                        ->orWhere('credit', 'like', $term);
-                });
-            })
-            ->when(
-                $status !== '' && MediaStatus::tryFrom($status) !== null,
-                fn ($query) => $query->where('status', $status)
-            )
-            ->latest('id')
-            ->paginate(24)
-            ->withQueryString();
-
-        return view('admin.media.index', [
-            'media' => $media,
-            'search' => $search,
-            'status' => $status,
-            'statuses' => MediaStatus::cases(),
-        ]);
-    }
-
     public function show(Media $medium): View
     {
         $this->authorize('view', $medium);
@@ -136,25 +102,4 @@ class MediaController extends Controller
         return back()->with('status', 'Queued for reprocessing.');
     }
 
-    /**
-     * Status feed for the grid's poller. Returns only what the page needs to
-     * decide whether to keep polling.
-     */
-    public function statuses(Request $request): JsonResponse
-    {
-        $this->authorize('viewAny', Media::class);
-
-        $ids = array_filter(array_map('intval', (array) $request->query('ids', [])));
-
-        $rows = Media::query()
-            ->whereIn('id', array_slice($ids, 0, 100))
-            ->get(['id', 'status'])
-            ->map(fn (Media $m): array => [
-                'id' => $m->id,
-                'status' => $m->status->value,
-                'label' => $m->status->label(),
-            ]);
-
-        return response()->json(['media' => $rows]);
-    }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Enums\MediaStatus;
 use App\Http\Controllers\Admin\MediaController;
+use App\Livewire\Admin\MediaIndex;
+use App\Livewire\Admin\MediaTrash;
 use App\Models\Media;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
@@ -67,9 +69,10 @@ Route::prefix('admin')
             Route::view('/', 'admin.dashboard')->name('dashboard');
 
             Route::prefix('media')->name('media.')->group(function () {
-                Route::get('/', [MediaController::class, 'index'])->name('index');
-                // Declared before /{medium} so "statuses" is not read as an id.
-                Route::get('/statuses', [MediaController::class, 'statuses'])->name('statuses');
+                // Full-page Livewire component; it owns filters and polling.
+                Route::get('/', MediaIndex::class)->name('index');
+                // Declared before /{medium} so these are not read as ids.
+                Route::get('/trash', MediaTrash::class)->name('trash');
                 Route::post('/', [MediaController::class, 'store'])->name('store');
                 Route::get('/{medium}', [MediaController::class, 'show'])->name('show');
                 Route::patch('/{medium}', [MediaController::class, 'update'])->name('update');

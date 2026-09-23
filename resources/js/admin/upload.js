@@ -118,8 +118,12 @@ async function uploadAll(form, files) {
     }
 
     if (uploaded > 0) {
-        // Reload so the grid shows the new rows and the poller picks them up.
-        window.location.reload();
+        /*
+         * Hand over to Livewire rather than reloading. The grid re-renders in
+         * place, so the search box keeps what was typed and the scroll position
+         * survives — the two things the reload used to throw away.
+         */
+        window.Livewire?.dispatch('media-refreshed');
     }
 }
 

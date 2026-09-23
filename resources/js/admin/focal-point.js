@@ -1,11 +1,14 @@
 /**
  * Focal point picker.
  *
- * Click anywhere on the image to place the point, or focus the handle and use
- * the arrow keys: 1% a step, 10% with Shift. The value is a 0..1 fraction, so
- * it survives every crop and rendition. The number inputs stay in sync and
- * remain editable on their own, which is what makes this work with no JS at
- * all.
+ * Three ways to set the point, all equal citizens:
+ *   - drag the handle (pointer events, so mouse, pen and touch all work)
+ *   - click anywhere on the image
+ *   - focus the handle and use the arrow keys: 1% a step, 10% with Shift
+ *
+ * The value is a 0..1 fraction, so it survives every crop and rendition. The
+ * number inputs stay in sync and remain editable on their own, which is what
+ * keeps this usable with no JavaScript at all.
  */
 
 const clamp = (value) => Math.min(1, Math.max(0, value));
@@ -37,17 +40,61 @@ export function initFocalPoint() {
         }
     }
 
+    function pointFrom(event) {
+        const box = root.getBoundingClientRect();
+        x = clamp((event.clientX - box.left) / box.width);
+        y = clamp((event.clientY - box.top) / box.height);
+        apply();
+    }
+
     root.addEventListener('click', (event) => {
         if (event.target === handle) {
             return;
         }
 
-        const box = root.getBoundingClientRect();
-        x = clamp((event.clientX - box.left) / box.width);
-        y = clamp((event.clientY - box.top) / box.height);
-        apply();
+        pointFrom(event);
         handle.focus();
     });
+
+    /*
+     * Dragging. Pointer events cover mouse, pen and touch in one path, and
+     * setPointerCapture keeps the drag alive when the pointer leaves the image,
+     * so releasing outside the frame does not strand the handle.
+     */
+    let dragging = false;
+
+    handle.addEventListener('pointerdown', (event) => {
+        dragging = true;
+        handle.setPointerCapture(event.pointerId);
+        handle.classList.add('is-dragging');
+        event.preventDefault();
+    });
+
+    handle.addEventListener('pointermove', (event) => {
+        if (dragging) {
+            pointFrom(event);
+        }
+    });
+
+    function endDrag(event) {
+        if (!dragging) {
+            return;
+        }
+
+        dragging = false;
+
+        if (handle.hasPointerCapture(event.pointerId)) {
+            handle.releasePointerCapture(event.pointerId);
+        }
+
+        handle.classList.remove('is-dragging');
+    }
+
+    handle.addEventListener('pointerup', endDrag);
+    handle.addEventListener('pointercancel', endDrag);
+
+    // Stops the browser treating a drag on the image as a native image drag.
+    root.addEventListener('dragstart', (event) => event.preventDefault());
 
     handle.addEventListener('keydown', (event) => {
         const step = event.shiftKey ? 0.1 : 0.01;
