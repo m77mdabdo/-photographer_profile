@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Models\Media;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreMediaRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Denied until a MediaPolicy exists; replace with
-        // $this->user()->can('create', Media::class) once it does.
-        return false;
+        return $this->user()?->can('create', Media::class) ?? false;
     }
 
     /**

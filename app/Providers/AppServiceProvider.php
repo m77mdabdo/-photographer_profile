@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Media;
+use App\Policies\MediaPolicy;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -28,5 +31,9 @@ class AppServiceProvider extends ServiceProvider
          * They are then used as <x-layouts::public> and receive {{ $slot }}.
          */
         Blade::anonymousComponentPath(resource_path('views/layouts'), 'layouts');
+
+        // Registered explicitly rather than relying on discovery, so the
+        // mapping is greppable.
+        Gate::policy(Media::class, MediaPolicy::class);
     }
 }

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\MediaStatus;
+use App\Http\Controllers\Admin\MediaController;
 use App\Models\Media;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
@@ -63,7 +64,17 @@ Route::prefix('admin')
         Route::view('/two-factor', 'admin.two-factor-setup')->name('two-factor.setup');
 
         Route::middleware('twofactor')->group(function () {
-            // Placeholder: real admin screens arrive in a later task.
             Route::view('/', 'admin.dashboard')->name('dashboard');
+
+            Route::prefix('media')->name('media.')->group(function () {
+                Route::get('/', [MediaController::class, 'index'])->name('index');
+                // Declared before /{medium} so "statuses" is not read as an id.
+                Route::get('/statuses', [MediaController::class, 'statuses'])->name('statuses');
+                Route::post('/', [MediaController::class, 'store'])->name('store');
+                Route::get('/{medium}', [MediaController::class, 'show'])->name('show');
+                Route::patch('/{medium}', [MediaController::class, 'update'])->name('update');
+                Route::delete('/{medium}', [MediaController::class, 'destroy'])->name('destroy');
+                Route::post('/{medium}/reprocess', [MediaController::class, 'reprocess'])->name('reprocess');
+            });
         });
     });
