@@ -7,30 +7,52 @@
  * carries meaning.
  */
 
-/* ---------------- 1. Hero — wordmark interlocked with the plate --------- */
+/* ---------------- 1. Hero — vertical wordmark, bleeding plate ----------- */
 
 /*
- * One layer, not a stack of banded sections. The wordmark spans the full
- * viewport; the photograph occupies a column that sits ABOVE it and hides the
- * letters it covers. The interlock is stacking order, never a fragmented word.
+ * One composition, one axis.
  *
- * The column is chosen by the photograph's own shape — a portrait wants a
- * narrow column well right of centre, a landscape a wide one nearer the left —
- * so the point at which the word is interrupted moves with the picture.
+ * The name is set on two lines hard against the left edge. The statement, the
+ * project link and the credits continue straight down beneath it in a single
+ * column. The photograph is one full-height slab that enters from the side and
+ * runs off the screen edge, so it never shows a second edge and reads as
+ * larger than the page. The eye falls down the words and then out into the
+ * picture: the picture is a destination, not an obstacle.
+ *
+ * The plate is OPAQUE and hard-edged. That is what makes the wordmark's
+ * readability structural rather than statistical — a letter is either fully on
+ * the page ground or fully behind the picture. There is no scrim in this
+ * composition and a contrast problem is never solved by adding one.
  */
 
 .hero {
     position: relative;
     display: grid;
     grid-template-columns: repeat(12, 1fr);
-    grid-template-rows: 1fr auto 1fr;
-    align-items: center;
-    min-height: 100svh;
-    padding-inline: var(--gutter);
-    max-width: var(--container-wide);
-    margin-inline: auto;
+    /*
+     * The outer 1fr rows absorb the slack, so the plate can span 1 / -1 and
+     * stand the full height of the viewport rather than being a band as tall
+     * as the words beside it. A slab is a mass; a band is a strip.
+     */
+    grid-template-rows: 1fr auto auto 1fr;
+    /*
+     * The rest of the screen, not a whole screen. The header is in flow above
+     * this, so 100svh here would push the last line of the credits below the
+     * fold at every viewport height — which is exactly what it did.
+     */
+    min-height: calc(100svh - var(--header-height));
+    padding-block: var(--sp-7);
+    padding-left: var(--hero-inset);
+    overflow: hidden;      /* the plate bleeds; nothing else may */
 
-    /* Falls back to the token accent when no colour could be derived. */
+    /*
+     * Deliberately tighter than --gutter. The gutter is the margin for reading
+     * columns, where air around a measure aids reading. The hero is a poster,
+     * and a poster's type sits closer to the trim than body text ever would —
+     * holding the page gutter here is what made the composition polite.
+     */
+    --hero-inset: clamp(0.75rem, 0.25rem + 1.15vw, 1.75rem);
+
     --hero-accent: var(--hero-accent-dark, var(--accent));
 }
 
@@ -41,39 +63,69 @@
 }
 
 /*
- * Sized from the character count rather than a fixed clamp, so the word fills
- * the measure whatever the studio is called. 0.56em is Bodoni's rough average
- * advance; the min() keeps a short name from becoming absurdly tall.
+ * Two lines from one word.
+ *
+ * The measure is a per-character em multiple and the word is allowed to break
+ * inside itself. Because the measure is expressed in em, the number of lines
+ * is independent of the font size and therefore of the viewport: whatever the
+ * width, the same characters fall on the same two lines. That is what makes
+ * the two-line break stable rather than lucky.
+ *
+ * WHERE the break lands is still the browser's decision, not ours — a name of
+ * a different length, or a fallback face with different advances, may break at
+ * a different character. That is an accepted looseness. Forcing an exact break
+ * would mean fragmenting the text node, which would cost the heading its
+ * single announcement and its copy-paste.
  */
 .hero__wordmark {
-    grid-column: 1 / -1;
+    grid-column: 1 / span 7;
     grid-row: 2;
     z-index: var(--z-base);
     margin: 0;
+    max-width: calc(var(--wordmark-chars) * 0.28em);
     font-family: var(--font-display);
     font-variation-settings: 'wght' var(--wght-display);
-    font-size: min(calc(96vw / (var(--wordmark-chars) * 0.56)), 26vh);
-    line-height: 0.82;
+    font-size: min(calc(182vw / var(--wordmark-chars)), 34vh);
+    line-height: 0.84;
     letter-spacing: var(--tracking-tight);
-    text-align: center;
-    white-space: nowrap;
+    word-break: break-all;    /* permits the break inside the single word */
     color: var(--text-primary);
+
+    /*
+     * A line-height below 1 pulls the box in tighter than the glyphs, so the
+     * descenders of the second line hang outside it and collide with the
+     * column below. The clearance is expressed in em so it tracks the display
+     * size instead of having to be retuned every time that changes.
+     */
+    padding-bottom: 0.16em;
 }
 
 /*
- * The plate. Opaque and hard-edged on purpose: a soft or translucent edge
- * would let a letter show through at partial contrast, and then the word's
- * legibility would depend on whatever the photograph happened to contain
- * there. Occlusion is total, so every visible letter sits on --bg.
+ * The bleed.
+ *
+ * The rule is that the PHOTOGRAPH is always about the same size — roughly
+ * seventy per cent of the viewport wide — and what changes with its shape is
+ * how much of that the page is allowed to show. A landscape frame already
+ * fills its window, so it only needs enough overrun to be denied a right edge.
+ * A portrait frame is narrow, so its window is narrower still and it has to
+ * run much further off the screen before it stops reading as a strip standing
+ * politely at the side.
+ *
+ *   landscape  window 49vw + 20vw over  =  69vw   29% off the page
+ *   square     window 43vw + 26vw over  =  69vw   38% off the page
+ *   portrait   window 41vw + 30vw over  =  71vw   42% off the page
+ *
+ * A square flips the axis entirely and enters from the left, so a run of
+ * square-cropped features does not read as the same page repeated.
  */
 .hero__plate {
     grid-row: 1 / -1;
     z-index: var(--z-media);
     align-self: stretch;
     display: grid;
-    align-items: center;
     overflow: hidden;
     background-color: var(--bg);
+    margin-block: calc(var(--sp-7) * -1);   /* cancels the section padding */
 }
 
 .hero__plate picture,
@@ -83,31 +135,48 @@
     object-fit: cover;
 }
 
-/* The column, by orientation. */
-.hero--landscape .hero__plate { grid-column: 2 / span 8; }
-.hero--portrait  .hero__plate { grid-column: 6 / span 5; }
-.hero--square    .hero__plate { grid-column: 4 / span 6; }
-
-/*
- * The aside occupies the gap the plate leaves, on the side with the most room.
- * The photograph's position decides where the words go.
- */
-.hero__aside {
-    grid-row: 2;
-    z-index: var(--z-nav);
-    display: grid;
-    gap: var(--sp-4);
-    align-content: center;
-    max-width: 24ch;
+.hero--landscape .hero__plate {
+    grid-column: 7 / -1;
+    margin-right: -20vw;
 }
 
-.hero--landscape .hero__aside { grid-column: 10 / span 3; }
-.hero--portrait  .hero__aside { grid-column: 1 / span 4; }
-.hero--square    .hero__aside { grid-column: 10 / span 3; }
+.hero--portrait .hero__plate {
+    grid-column: 8 / -1;
+    margin-right: -30vw;
+}
+
+/* A square flips the axis: the plate comes in from the left instead. */
+.hero--square .hero__plate {
+    grid-column: 1 / span 5;
+    margin-left: calc((var(--hero-inset) + 26vw) * -1);
+}
+
+.hero--square .hero__wordmark,
+.hero--square .hero__column {
+    grid-column: 6 / -1;
+    padding-right: var(--hero-inset);
+}
+
+/* The square's type has five columns rather than seven, so it is set smaller
+   rather than being allowed to collide with the picture. */
+.hero--square .hero__wordmark {
+    font-size: min(calc(140vw / var(--wordmark-chars)), 30vh);
+}
+
+/* One continuous column of words, hung directly off the name. */
+.hero__column {
+    grid-column: 1 / span 6;
+    grid-row: 3;
+    z-index: var(--z-nav);
+    display: grid;
+    gap: var(--sp-5);
+    max-width: 30ch;
+    margin-top: var(--sp-5);
+}
 
 .hero__statement {
     font-family: var(--font-sans);
-    font-size: var(--fs-small);
+    font-size: var(--fs-body);
     line-height: var(--lh-body);
     color: var(--text-secondary);
     text-wrap: pretty;
@@ -118,14 +187,14 @@
     gap: var(--sp-2);
     min-height: 44px;
     align-content: center;
+    justify-self: start;
     text-decoration: none;
-    font-size: var(--fs-meta);
+    font-size: var(--fs-small);
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
     color: var(--text-primary);
 }
 
-/* The single primary action, carrying the colour taken from the photograph. */
 .hero__link-rule {
     display: block;
     height: var(--rule-strong);
@@ -137,78 +206,86 @@
 .hero__link:hover .hero__link-rule,
 .hero__link:focus-visible .hero__link-rule { opacity: 0.55; }
 
-/* Metadata as a rail down the page edge, not a row beneath the title. */
-.hero__rail {
-    grid-row: 3;
-    align-self: end;
+.hero__meta {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--sp-5);
-    margin: 0 0 var(--sp-8);
-    z-index: var(--z-nav);
+    gap: var(--sp-4) var(--sp-5);
+    margin: 0;
     font-size: var(--fs-meta);
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
     color: var(--text-secondary);
 }
 
-.hero--landscape .hero__rail { grid-column: 2 / span 8; }
-.hero--portrait  .hero__rail { grid-column: 1 / span 5; }
-.hero--square    .hero__rail { grid-column: 4 / span 6; }
+.hero__meta > div { display: grid; gap: 2px; }
+.hero__meta dt { opacity: 0.55; }
+.hero__meta dd { margin: 0; }
 
-.hero__rail dt { opacity: 0.55; }
-.hero__rail dd { margin: 0; }
-.hero__rail > div { display: grid; gap: 2px; }
-
-/* No featured project: the wordmark carries the screen by itself. */
-.hero--empty { grid-template-rows: 1fr auto 1fr; }
-.hero--empty .hero__wordmark { grid-row: 2; }
+/* With no photograph there is nothing to stand against, so the name takes the
+   whole page on one line instead of pretending a plate is still there. */
+.hero--empty .hero__wordmark {
+    grid-column: 1 / -1;
+    max-width: none;
+    padding-right: var(--hero-inset);
+}
 
 /*
- * Narrow screens recompose rather than compress. The interlock needs a word
- * wide enough to be interrupted and a column narrow enough to leave something
- * showing; below roughly 900px neither holds, so the composition becomes a
- * stack — wordmark, plate, words — deliberately, rather than letting the
- * letters collide with the picture.
+ * Narrow screens keep the composition rather than replacing it.
+ *
+ * The signature is type standing against a mass that leaves the page, and that
+ * survives at 380px: the wordmark holds the left lane, the plate holds the
+ * right and still bleeds off the same edge its orientation chose. What does
+ * move is the text column, which drops beneath both — a paragraph in a 200px
+ * lane is not typography, and the column is the one part of this layout that
+ * is read rather than seen.
  */
 @media (max-width: 900px) {
     .hero {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto auto;
-        gap: var(--sp-5);
-        padding-block: var(--sp-9);
-        min-height: auto;
+        grid-template-rows: 1fr auto;
+        padding-block: var(--sp-6);
     }
 
-    .hero__wordmark {
-        grid-column: 1;
+    /*
+     * Bottom-aligned, not centred. The lane is as tall as the picture beside
+     * it, and centring the name in that lane left a slab of empty ground above
+     * it that read as an accident. Hung from the bottom, the name and the
+     * column beneath it become one block of words standing against the
+     * picture — the same reading order as the wide layout.
+     */
+    .hero__wordmark,
+    .hero--square .hero__wordmark {
         grid-row: 1;
-        font-size: min(calc(92vw / (var(--wordmark-chars) * 0.56)), 18vh);
-        text-align: left;
+        align-self: end;
+        font-size: min(calc(210vw / var(--wordmark-chars)), 26vh);
     }
 
     .hero--landscape .hero__plate,
-    .hero--portrait .hero__plate,
+    .hero--portrait .hero__plate {
+        grid-column: 8 / -1;
+        grid-row: 1;
+        margin-right: -30vw;
+        margin-block: calc(var(--sp-6) * -1) 0;
+    }
+
     .hero--square .hero__plate {
-        grid-column: 1;
+        grid-column: 1 / span 5;
+        grid-row: 1;
+        margin-left: calc((var(--hero-inset) + 30vw) * -1);
+        margin-block: calc(var(--sp-6) * -1) 0;
+    }
+
+    .hero__wordmark,
+    .hero--square .hero__wordmark { grid-column: 1 / span 7; }
+
+    .hero--square .hero__wordmark { grid-column: 6 / -1; }
+
+    .hero__column,
+    .hero--square .hero__column {
+        grid-column: 1 / -1;
         grid-row: 2;
-        aspect-ratio: 4 / 5;
-    }
-
-    .hero--landscape .hero__aside,
-    .hero--portrait .hero__aside,
-    .hero--square .hero__aside {
-        grid-column: 1;
-        grid-row: 3;
         max-width: none;
-    }
-
-    .hero--landscape .hero__rail,
-    .hero--portrait .hero__rail,
-    .hero--square .hero__rail {
-        grid-column: 1;
-        grid-row: 4;
-        margin-bottom: 0;
+        margin-top: var(--sp-6);
+        padding-right: var(--hero-inset);
     }
 }
 
@@ -429,15 +506,11 @@
 }
 
 @media (max-width: 600px) {
-    .hero { min-height: 92svh; }
-
     /* The headline recomposes: fewer characters per line, more lines. */
-    .hero__title { max-width: 11ch; }
     .intro__statement { max-width: 16ch; }
     .story__title { max-width: 12ch; }
     .closing__title { max-width: 13ch; }
 
-    .hero__meta { gap: var(--sp-3); }
     .works__item { padding-left: calc((var(--start) - 1) * 0.2rem); }
     .sheet__grid { grid-template-columns: repeat(3, 1fr); }
 }
@@ -531,214 +604,6 @@
     .marquee__track[aria-hidden='true'] { display: none; }
 }
 
-/* ---------------- Hero, variant B — vertical axis, bleeding plate -------- */
-
-/*
- * A different silhouette, not a restyle of A.
- *
- * A is a horizontal band of word interrupted mid-stride by a plate that floats
- * inside the grid. B stands the composition up: the name is set on two lines
- * hard against the left edge, the supporting text continues straight down
- * beneath it in one column, and the photograph is a single mass running off
- * the opposite screen edge. The eye travels down the words and out into the
- * picture, rather than across the word and through it.
- */
-
-.hero-b {
-    position: relative;
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    align-content: center;
-    min-height: 100svh;
-    padding-block: var(--sp-9);
-    padding-left: var(--gutter);
-    overflow: hidden;      /* the plate bleeds; nothing else may */
-
-    --hero-accent: var(--hero-accent-dark, var(--accent));
-}
-
-:root[data-theme='light'] .hero-b { --hero-accent: var(--hero-accent-light, var(--accent)); }
-
-@media (prefers-color-scheme: light) {
-    :root:not([data-theme]) .hero-b { --hero-accent: var(--hero-accent-light, var(--accent)); }
-}
-
-/*
- * Two lines from one word.
- *
- * The measure is set to roughly half the name's length and the word is allowed
- * to break inside itself. That is a layout instruction — the text node is
- * never split, so the heading still announces and copies as one word.
- *
- * The break point is the browser's, not ours: at this measure it lands near
- * the middle, but a different face or a very short name may break elsewhere.
- * That is an accepted looseness, not a guarantee.
- */
-.hero-b__wordmark {
-    grid-column: 1 / span 7;
-    grid-row: 1;
-    z-index: var(--z-base);
-    margin: 0;
-    max-width: calc(var(--wordmark-chars) * 0.30em);
-    font-family: var(--font-display);
-    font-variation-settings: 'wght' var(--wght-display);
-    font-size: min(calc(150vw / var(--wordmark-chars)), 30vh);
-    line-height: 0.84;
-    letter-spacing: var(--tracking-tight);
-    word-break: break-all;    /* permits the break inside the single word */
-    color: var(--text-primary);
-}
-
-/*
- * The plate runs off the right edge. How far it reaches in, and how far past
- * the edge it goes, follows the photograph's shape: a landscape wants width
- * and can afford to lose more of itself off-screen; a portrait is already
- * narrow and bleeds less; a square is handled from the left instead, so the
- * composition flips and the page does not become monotonous when several
- * square-cropped projects are featured in succession.
- */
-.hero-b__plate {
-    grid-row: 1;
-    z-index: var(--z-media);
-    align-self: stretch;
-    display: grid;
-    overflow: hidden;
-    background-color: var(--bg);
-    margin-block: calc(var(--sp-9) * -1);
-}
-
-.hero-b__plate picture,
-.hero-b__image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.hero-b--landscape .hero-b__plate {
-    grid-column: 5 / -1;
-    margin-right: -12vw;
-}
-
-.hero-b--portrait .hero-b__plate {
-    grid-column: 7 / -1;
-    margin-right: -6vw;
-}
-
-/* A square flips the axis: the plate comes in from the left instead. */
-.hero-b--square .hero-b__plate {
-    grid-column: 1 / span 6;
-    margin-left: calc((var(--gutter) + 10vw) * -1);
-}
-
-.hero-b--square .hero-b__wordmark,
-.hero-b--square .hero-b__column {
-    grid-column: 7 / -1;
-    padding-right: var(--gutter);
-}
-
-/* One continuous column of words, directly beneath the name. */
-.hero-b__column {
-    grid-column: 1 / span 5;
-    grid-row: 2;
-    z-index: var(--z-nav);
-    display: grid;
-    gap: var(--sp-5);
-    max-width: 34ch;
-    margin-top: var(--sp-7);
-}
-
-.hero-b__statement {
-    font-family: var(--font-sans);
-    font-size: var(--fs-body);
-    line-height: var(--lh-body);
-    color: var(--text-secondary);
-    text-wrap: pretty;
-}
-
-.hero-b__link {
-    display: inline-grid;
-    gap: var(--sp-2);
-    min-height: 44px;
-    align-content: center;
-    justify-self: start;
-    text-decoration: none;
-    font-size: var(--fs-small);
-    letter-spacing: var(--tracking-wide);
-    text-transform: uppercase;
-    color: var(--text-primary);
-}
-
-.hero-b__link-rule {
-    display: block;
-    height: var(--rule-strong);
-    width: 100%;
-    background-color: var(--hero-accent);
-    transition: opacity var(--dur-base) var(--ease-editorial);
-}
-
-.hero-b__link:hover .hero-b__link-rule,
-.hero-b__link:focus-visible .hero-b__link-rule { opacity: 0.55; }
-
-.hero-b__meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--sp-4) var(--sp-5);
-    margin: 0;
-    font-size: var(--fs-meta);
-    letter-spacing: var(--tracking-wide);
-    text-transform: uppercase;
-    color: var(--text-secondary);
-}
-
-.hero-b__meta > div { display: grid; gap: 2px; }
-.hero-b__meta dt { opacity: 0.55; }
-.hero-b__meta dd { margin: 0; }
-
-.hero-b--empty .hero-b__wordmark { grid-column: 1 / -1; max-width: none; }
-
-/*
- * Narrow: the bleed becomes the whole width and the stack becomes literal.
- * The interlock is abandoned rather than compressed, because at this measure
- * a two-line wordmark and an inset plate cannot both exist without the
- * letters colliding with the picture.
- */
-@media (max-width: 900px) {
-    .hero-b {
-        grid-template-columns: 1fr;
-        padding-inline: var(--gutter);
-        min-height: auto;
-        gap: var(--sp-5);
-    }
-
-    .hero-b__wordmark {
-        grid-column: 1;
-        grid-row: 1;
-        max-width: none;
-        word-break: normal;
-        font-size: min(calc(96vw / (var(--wordmark-chars) * 0.56)), 18vh);
-    }
-
-    .hero-b--landscape .hero-b__plate,
-    .hero-b--portrait .hero-b__plate,
-    .hero-b--square .hero-b__plate {
-        grid-column: 1;
-        grid-row: 2;
-        margin-inline: calc(var(--gutter) * -1);
-        margin-block: 0;
-        aspect-ratio: 4 / 5;
-    }
-
-    .hero-b--square .hero-b__wordmark,
-    .hero-b--square .hero-b__column,
-    .hero-b__column {
-        grid-column: 1;
-        grid-row: 3;
-        max-width: none;
-        margin-top: 0;
-        padding-right: 0;
-    }
-}
-
 /* ---------------- Hero comparison (local only) -------------------------- */
 
 .hero-lab__bar {
@@ -783,13 +648,4 @@
     width: 12px; height: 12px;
     border: var(--rule-hair) solid var(--border);
     display: inline-block;
-}
-
-.hero-lab__marker {
-    padding: var(--sp-4) var(--gutter);
-    border-block: var(--rule-hair) solid var(--border);
-    font-size: var(--fs-meta);
-    letter-spacing: var(--tracking-wide);
-    text-transform: uppercase;
-    color: var(--text-secondary);
 }

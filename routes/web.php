@@ -34,9 +34,10 @@ Route::post('/theme', ThemeController::class)->name('theme.store');
  */
 if (app()->environment('local')) {
     /*
-     * Hero comparison. Renders both variants against the same photograph so
-     * they can be judged side by side rather than by memory, with server-
-     * rendered controls only — no JavaScript, same as every public page.
+     * Hero preview. Renders the live hero against a landscape, a portrait and
+     * a square photograph in either theme, so the three compositions can be
+     * judged against real pictures rather than from memory. Server-rendered
+     * controls only — no JavaScript, same as every public page.
      */
     Route::get('/_dev/hero', function (\Illuminate\Http\Request $request) {
         $shape = in_array($request->query('shape'), ['landscape', 'portrait', 'square'], true)

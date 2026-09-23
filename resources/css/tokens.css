@@ -182,6 +182,14 @@
     --container-text: 65ch;   /* measure, not width: readability first */
     --gutter: clamp(1rem, 0.5rem + 2.22vw, 3rem);
 
+    /*
+     * The public header sits in normal flow, so a section that wants to own
+     * the rest of the screen has to subtract it. Declaring the height here and
+     * enforcing it on .site-header makes that subtraction true rather than an
+     * estimate that drifts as the wordmark's clamp moves.
+     */
+    --header-height: 6rem;
+
     /* ---------------------------------------------------------------
      * Z-index layers — named, so no one ever writes z-index: 9999.
      * --------------------------------------------------------------- */

@@ -30,28 +30,6 @@ class HomepageTest extends TestCase
     }
 
 
-    /**
-     * Both hero compositions. Every hero assertion runs against each, so a
-     * variant cannot quietly fall behind the other's guarantees.
-     *
-     * @return array<string, array{0: string}>
-     */
-    public static function heroVariants(): array
-    {
-        return ['variant A' => ['a'], 'variant B' => ['b']];
-    }
-
-    private function useVariant(string $variant): void
-    {
-        config(['site.hero_variant' => $variant]);
-    }
-
-    /** The root element class each variant renders. */
-    private function heroClass(string $variant): string
-    {
-        return $variant === 'b' ? 'hero-b' : 'hero';
-    }
-
     private function media(int $width = 4000, int $height = 2667): Media
     {
         $media = Media::factory()->create([
@@ -76,7 +54,11 @@ class HomepageTest extends TestCase
     {
         $categories = Category::factory()->count(3)->create();
 
-        [$fw, $fh] = $featuredShape === 'portrait' ? [2667, 4000] : [4000, 2667];
+        [$fw, $fh] = match ($featuredShape) {
+            'portrait' => [2667, 4000],
+            'square' => [3000, 3000],
+            default => [4000, 2667],
+        };
 
         for ($i = 0; $i < $projects; $i++) {
             $cover = $i === 0 ? $this->media($fw, $fh) : $this->media();
@@ -118,25 +100,6 @@ class HomepageTest extends TestCase
     }
 
     // ----------------------------------------------------------------- 2
-
-    public function test_the_hero_image_is_never_lazy_and_is_high_priority(): void
-    {
-        $this->populate();
-
-        $html = $this->get('/')->assertOk()->getContent();
-
-        $hero = substr($html, (int) strpos($html, 'class="hero"'), 4000);
-
-        // The LCP element: high priority, decoded synchronously, never lazy.
-        $this->assertStringContainsString('fetchpriority="high"', $hero);
-        $this->assertStringContainsString('decoding="sync"', $hero);
-
-        $heroImg = substr($hero, (int) strpos($hero, '<img'), (int) strpos($hero, '>', (int) strpos($hero, '<img')));
-        $this->assertStringNotContainsString('loading="lazy"', $heroImg);
-
-        // Below the fold, lazy loading is still in force.
-        $this->assertStringContainsString('loading="lazy"', $html);
-    }
 
     // ----------------------------------------------------------------- 3
 
@@ -487,155 +450,243 @@ class HomepageTest extends TestCase
         $this->assertStringNotContainsString('padding: var(--sp-13) var(--gutter) var(--sp-12)', $css);
     }
 
-    // ================= TASK 14 =================
+    // ================= THE HERO =================
 
-    /**
-     * @dataProvider heroVariants
+    /*
+     * There is one hero. The horizontal variant was deleted in full, so these
+     * assertions no longer run twice against two compositions — they describe
+     * the only one that exists.
      */
-    public function test_the_wordmark_is_one_intact_text_node(string $variant): void
+
+    public function test_the_wordmark_is_one_intact_text_node(): void
     {
-        $this->useVariant($variant);
         $this->populate();
 
         $html = $this->get('/')->assertOk()->getContent();
         $name = config('seo.site_name');
-        $class = $this->heroClass($variant).'__wordmark';
 
         $this->assertSame(1, substr_count($html, '<h1'), 'exactly one h1');
         $this->assertMatchesRegularExpression(
-            '/<h1 class="'.preg_quote($class, '/').'" id="hero-title">'.preg_quote($name, '/').'<\/h1>/',
+            '/<h1 class="hero__wordmark" id="hero-title">'.preg_quote($name, '/').'<\/h1>/',
             $html,
-            $variant.': the wordmark must be a single text node'
+            'the wordmark must be a single text node'
         );
 
-        // Nothing fragmenting it — in either composition. Variant B's two
-        // lines come from a CSS measure, never from markup.
+        /*
+         * Nothing fragments it. The two lines come from a CSS measure, so the
+         * heading is announced once and copies as one word.
+         */
         $this->assertStringNotContainsString('wordmark__letter', $html);
         $this->assertDoesNotMatchRegularExpression('/<h1[^>]*>\s*<span/', $html);
         $this->assertDoesNotMatchRegularExpression('/<h1[^>]*>[^<]*<br/', $html);
+
+        // And the measure that produces the break is expressed in em, which is
+        // why the line count cannot change with the viewport.
+        $css = file_get_contents(resource_path('css/pages/home.css'));
+        $this->assertMatchesRegularExpression(
+            '/\.hero__wordmark \{[^}]*max-width: calc\(var\(--wordmark-chars\) \* [0-9.]+em\)/s',
+            $css
+        );
     }
 
-    /**
-     * @dataProvider heroVariants
-     */
-    public function test_the_hero_image_is_high_priority_and_never_lazy(string $variant): void
+    public function test_the_hero_image_is_high_priority_and_never_lazy(): void
     {
-        $this->useVariant($variant);
         $this->populate();
 
         $html = $this->get('/')->assertOk()->getContent();
 
-        $hero = substr($html, (int) strpos($html, 'class="'.$this->heroClass($variant)), 4000);
+        $hero = substr($html, (int) strpos($html, 'class="hero'), 4000);
 
-        $this->assertStringContainsString('fetchpriority="high"', $hero, $variant);
-        $this->assertStringContainsString('decoding="sync"', $hero, $variant);
+        $this->assertStringContainsString('fetchpriority="high"', $hero);
+        $this->assertStringContainsString('decoding="sync"', $hero);
 
         $img = substr($hero, (int) strpos($hero, '<img'));
         $img = substr($img, 0, (int) strpos($img, '>'));
 
-        $this->assertStringNotContainsString('loading=', $img, $variant.': the LCP image must never be lazy');
+        $this->assertStringNotContainsString('loading=', $img, 'the LCP image must never be lazy');
+
+        // Below the fold, lazy loading is still in force.
+        $this->assertStringContainsString('loading="lazy"', $html);
     }
 
-    /**
-     * @dataProvider heroVariants
-     */
-    public function test_the_page_has_no_scripts_with_either_variant(string $variant): void
+    public function test_the_page_has_no_script_tags(): void
     {
-        $this->useVariant($variant);
         $this->populate();
 
         $html = $this->get('/')->assertOk()->getContent();
 
-        $this->assertStringNotContainsString('<script', $html, $variant);
+        $this->assertStringNotContainsString('<script', $html);
         $this->assertStringNotContainsString('onclick', $html);
         $this->assertStringNotContainsString('wire:', $html);
     }
 
-    /**
-     * @dataProvider heroVariants
-     */
-    public function test_the_hero_renders_with_no_featured_project(string $variant): void
+    public function test_the_hero_renders_with_no_featured_project(): void
     {
-        $this->useVariant($variant);
-
         $response = $this->get('/');
         $response->assertOk();
 
         $html = $response->getContent();
-        $class = $this->heroClass($variant);
 
-        $this->assertStringContainsString($class.'--empty', $html, $variant);
-        $this->assertStringContainsString('<h1 class="'.$class.'__wordmark"', $html);
-        $this->assertStringNotContainsString($class.'__plate', $html);
+        $this->assertStringContainsString('hero--empty', $html);
+        $this->assertStringContainsString('<h1 class="hero__wordmark"', $html);
+        $this->assertStringNotContainsString('hero__plate', $html);
     }
 
     /**
-     * @dataProvider heroVariants
+     * Each shape must produce a genuinely different composition, not the same
+     * layout under a different class name. The bleed is the value that carries
+     * the difference, so it is the value asserted.
      */
-    public function test_a_portrait_featured_image_composes_differently(string $variant): void
+    public function test_each_orientation_composes_differently(): void
     {
-        $this->useVariant($variant);
-        $class = $this->heroClass($variant);
+        foreach (['landscape', 'portrait', 'square'] as $shape) {
+            Project::withTrashed()->get()->each->forceDelete();
+            Media::withTrashed()->get()->each->forceDelete();
 
-        $this->populate(4, 'landscape');
-        $landscape = $this->get('/')->assertOk()->getContent();
+            $this->populate(4, $shape);
 
-        $this->assertStringContainsString($class.'--landscape', $landscape, $variant);
-        $this->assertStringNotContainsString($class.'--portrait', $landscape);
+            $html = $this->get('/')->assertOk()->getContent();
 
-        Project::withTrashed()->get()->each->forceDelete();
-        Media::withTrashed()->get()->each->forceDelete();
-        $this->populate(4, 'portrait');
+            $this->assertStringContainsString('hero--'.$shape, $html, $shape);
 
-        $portrait = $this->get('/')->assertOk()->getContent();
+            foreach (array_diff(['landscape', 'portrait', 'square'], [$shape]) as $other) {
+                $this->assertStringNotContainsString('hero--'.$other, $html, $shape.' leaked '.$other);
+            }
+        }
 
-        $this->assertStringContainsString($class.'--portrait', $portrait, $variant);
-        $this->assertStringNotContainsString($class.'--landscape', $portrait);
-
-        // And the stylesheet gives the two shapes genuinely different
-        // geometry, not just a different class name.
         $css = file_get_contents(resource_path('css/pages/home.css'));
 
-        if ($variant === 'b') {
-            $this->assertMatchesRegularExpression('/\.hero-b--landscape \.hero-b__plate \{[^}]*grid-column: 5 \/ -1/s', $css);
-            $this->assertMatchesRegularExpression('/\.hero-b--portrait \.hero-b__plate \{[^}]*grid-column: 7 \/ -1/s', $css);
-            $this->assertMatchesRegularExpression('/\.hero-b--square \.hero-b__plate \{[^}]*grid-column: 1 \/ span 6/s', $css);
-        } else {
-            $this->assertMatchesRegularExpression('/\.hero--landscape \.hero__plate \{ grid-column: 2 \/ span 8; \}/', $css);
-            $this->assertMatchesRegularExpression('/\.hero--portrait\s+\.hero__plate \{ grid-column: 6 \/ span 5; \}/', $css);
-        }
+        // The plate enters from a different column in each case ...
+        $this->assertMatchesRegularExpression('/\.hero--landscape \.hero__plate \{[^}]*grid-column: 7 \/ -1/s', $css);
+        $this->assertMatchesRegularExpression('/\.hero--portrait \.hero__plate \{[^}]*grid-column: 8 \/ -1/s', $css);
+        $this->assertMatchesRegularExpression('/\.hero--square \.hero__plate \{[^}]*grid-column: 1 \/ span 5/s', $css);
+
+        // ... and, critically, runs a different distance off the page.
+        preg_match('/\.hero--landscape \.hero__plate \{[^}]*margin-right: -([0-9.]+)vw/s', $css, $landscape);
+        preg_match('/\.hero--portrait \.hero__plate \{[^}]*margin-right: -([0-9.]+)vw/s', $css, $portrait);
+        preg_match('/\.hero--square \.hero__plate \{[^}]*margin-left: calc\(\(var\(--hero-inset\) \+ ([0-9.]+)vw\)/s', $css, $square);
+
+        $bleeds = [
+            'landscape' => (float) ($landscape[1] ?? 0),
+            'portrait' => (float) ($portrait[1] ?? 0),
+            'square' => (float) ($square[1] ?? 0),
+        ];
+
+        $this->assertNotContains(0.0, $bleeds, 'every orientation declares a bleed: '.json_encode($bleeds));
+        $this->assertSame(
+            3,
+            count(array_unique($bleeds)),
+            'the three bleeds must differ, got '.json_encode($bleeds)
+        );
+
+        /*
+         * And they differ in the right direction: the narrower the window the
+         * picture gets on the page, the further it must run off it before it
+         * reads as a mass rather than a strip.
+         */
+        $this->assertGreaterThan($bleeds['landscape'], $bleeds['square'], 'a square bleeds deeper than a landscape');
+        $this->assertGreaterThan($bleeds['square'], $bleeds['portrait'], 'a portrait bleeds deepest of all');
     }
 
     /**
-     * @dataProvider heroVariants
+     * The derived accent must land inside the lightness band for every shape
+     * in both registers — or refuse and fall back. A colour that is merely
+     * high-contrast is not enough: on a dark ground it must not be a second
+     * white, and on paper it must not read as body text.
      */
-    public function test_the_hero_accent_is_derived_and_falls_back(string $variant): void
+    public function test_the_accent_band_holds_for_every_orientation_in_both_modes(): void
     {
-        $this->useVariant($variant);
-        $this->populate();
+        $grounds = ['dark' => '#0b0b0c', 'light' => '#f4f1ea'];
 
-        $html = $this->get('/')->assertOk()->getContent();
+        foreach (['landscape', 'portrait', 'square'] as $shape) {
+            Project::withTrashed()->get()->each->forceDelete();
+            Media::withTrashed()->get()->each->forceDelete();
 
-        $expectedDark = \App\Support\AccentColor::derive('#5a4a38', '#0b0b0c');
-        $expectedLight = \App\Support\AccentColor::derive('#5a4a38', '#f4f1ea');
+            $this->populate(3, $shape);
 
-        $this->assertStringContainsString('--hero-accent-dark: '.$expectedDark, $html, $variant);
-        $this->assertStringContainsString('--hero-accent-light: '.$expectedLight, $html);
+            $html = $this->get('/')->assertOk()->getContent();
 
+            foreach ($grounds as $mode => $background) {
+                preg_match('/--hero-accent-'.$mode.': (#[0-9a-f]{6})/i', $html, $found);
+
+                $this->assertNotEmpty($found, "{$shape}/{$mode}: no accent was emitted");
+
+                $colour = $found[1];
+                [$low, $high] = \App\Support\AccentColor::bandFor($background);
+                $lightness = \App\Support\AccentColor::lightnessOf($colour);
+
+                $this->assertNotNull($lightness, "{$shape}/{$mode}: {$colour} did not parse");
+                $this->assertGreaterThanOrEqual($low, $lightness, "{$shape}/{$mode}: {$colour} is below the band");
+                $this->assertLessThanOrEqual($high, $lightness, "{$shape}/{$mode}: {$colour} is above the band");
+
+                $this->assertGreaterThanOrEqual(
+                    \App\Support\AccentColor::TARGET,
+                    \App\Support\AccentColor::contrastAgainst($colour, $background),
+                    "{$shape}/{$mode}: {$colour} fails the contrast floor"
+                );
+            }
+        }
+
+        // With nothing to derive from, the hero silently keeps the token accent.
         Media::query()->update(['dominant_color' => null]);
 
         $plain = $this->get('/')->assertOk()->getContent();
 
         $this->assertStringNotContainsString('--hero-accent-dark', $plain);
-        $this->assertStringContainsString($this->heroClass($variant).'__wordmark', $plain);
+        $this->assertStringContainsString('hero__wordmark', $plain);
     }
 
     /**
-     * @dataProvider heroVariants
+     * The readability guarantee is structural, not statistical: the plate is
+     * opaque and sits above the wordmark, so a letter is either fully on the
+     * page ground or fully hidden. Nothing here may be solved with a scrim,
+     * a gradient or a shadow, because those only make the average case look
+     * acceptable.
      */
-    public function test_the_query_count_is_nine_with_either_variant(string $variant): void
+    public function test_the_plate_is_opaque_and_the_guarantee_is_structural(): void
     {
-        $this->useVariant($variant);
+        $css = file_get_contents(resource_path('css/pages/home.css'));
+
+        $start = strpos($css, '/* ---------------- 1. Hero');
+        $end = strpos($css, '/* ---------------- 2. Introduction');
+        $this->assertIsInt($start);
+        $this->assertIsInt($end);
+
+        $hero = substr($css, $start, $end - $start);
+
+        // Opaque fill, so nothing behind it can show through.
+        $this->assertMatchesRegularExpression(
+            '/\.hero__plate \{[^}]*background-color: var\(--bg\)/s',
+            $hero,
+            'the plate must carry an opaque background'
+        );
+
+        // Stacked above the wordmark, so occlusion is total where it happens.
+        $this->assertMatchesRegularExpression('/\.hero__wordmark \{[^}]*z-index: var\(--z-base\)/s', $hero);
+        $this->assertMatchesRegularExpression('/\.hero__plate \{[^}]*z-index: var\(--z-media\)/s', $hero);
+
+        $tokens = file_get_contents(resource_path('css/tokens.css'));
+        preg_match('/--z-base: (\d+)/', $tokens, $base);
+        preg_match('/--z-media: (\d+)/', $tokens, $media);
+        $this->assertGreaterThan((int) $base[1], (int) $media[1], 'the plate must stack above the wordmark');
+
+        /*
+         * No softening anywhere in the composition. Comments are stripped
+         * first: the section's prose explains why there is no scrim, and
+         * explaining it must not read as doing it.
+         */
+        $declarations = preg_replace('/\/\*.*?\*\//s', '', $hero) ?? '';
+
+        foreach (['linear-gradient', 'radial-gradient', 'text-shadow', 'backdrop-filter', 'scrim'] as $cheat) {
+            $this->assertStringNotContainsString($cheat, $declarations, "the hero must not use {$cheat}");
+        }
+
+        // And no partial alpha on the plate itself.
+        $this->assertDoesNotMatchRegularExpression('/\.hero__plate \{[^}]*opacity:/s', $hero);
+    }
+
+    public function test_the_query_count_is_nine(): void
+    {
         $this->populate(8);
 
         $queries = [];
@@ -645,10 +696,67 @@ class HomepageTest extends TestCase
 
         $this->get('/')->assertOk();
 
-        $this->assertCount(9, $queries, $variant.' issued '.count($queries).' queries');
+        $this->assertCount(9, $queries, 'the homepage issued '.count($queries).' queries');
     }
 
-    public function test_the_hero_comparison_route_does_not_exist_outside_local(): void
+    /**
+     * The deleted variant must be gone, not dormant. A commented-out block or
+     * a stray class name is how a "deleted" design comes back six months later
+     * as a half-working branch of CSS nobody dares touch.
+     */
+    public function test_no_trace_of_the_deleted_variant_remains(): void
+    {
+        $roots = ['app', 'config', 'resources', 'routes', 'tests', 'database'];
+        $extensions = ['php', 'css', 'js', 'json'];
+
+        $needles = [
+            'hero-b',           // the old component and class prefix
+            'hero_variant',     // the switch
+            'HERO_VARIANT',     // its environment override
+            'heroVariants',     // the test provider
+            'hero__aside',      // A's supporting column
+            'hero__rail',       // A's bottom metadata rail
+            'hero__title',      // a selector orphaned even before A was deleted
+        ];
+
+        $hits = [];
+
+        foreach ($roots as $root) {
+            $directory = new \RecursiveDirectoryIterator(base_path($root), \FilesystemIterator::SKIP_DOTS);
+
+            foreach (new \RecursiveIteratorIterator($directory) as $file) {
+                if (! in_array($file->getExtension(), $extensions, true)) {
+                    continue;
+                }
+
+                // This file names the forbidden strings in order to look for
+                // them, so it cannot also be a subject of the search.
+                if ($file->getPathname() === __FILE__) {
+                    continue;
+                }
+
+                $source = file_get_contents($file->getPathname());
+
+                foreach ($needles as $needle) {
+                    if (str_contains($source, $needle)) {
+                        $hits[] = str_replace(base_path().'/', '', $file->getPathname()).' → '.$needle;
+                    }
+                }
+            }
+        }
+
+        $this->assertSame([], $hits, "the deleted variant is still referenced:\n".implode("\n", $hits));
+
+        // The component file itself is gone, and the surviving one is B's.
+        $this->assertFileDoesNotExist(resource_path('views/components/home/hero-b.blade.php'));
+        $this->assertFileDoesNotExist(config_path('site.php'));
+
+        $hero = file_get_contents(resource_path('views/components/home/hero.blade.php'));
+        $this->assertStringContainsString('hero__column', $hero, 'the surviving hero is the vertical one');
+        $this->assertStringNotContainsString('hero__aside', $hero);
+    }
+
+    public function test_the_hero_preview_route_does_not_exist_outside_local(): void
     {
         /*
          * The suite runs with APP_ENV=testing, which is not local — so the
@@ -664,11 +772,14 @@ class HomepageTest extends TestCase
         // And it is inside the guard in the source, not merely absent by luck.
         $source = file_get_contents(base_path('routes/web.php'));
         $guardAt = strpos($source, "app()->environment('local')");
-        $routeAt = strpos($source, "Route::get('/_dev/hero'");
 
         $this->assertIsInt($guardAt);
-        $this->assertIsInt($routeAt);
-        $this->assertGreaterThan($guardAt, $routeAt, 'the comparison route must sit inside the local-only guard');
+
+        foreach (["Route::get('/_dev/hero'", "Route::get('/_dev/media'"] as $route) {
+            $at = strpos($source, $route);
+            $this->assertIsInt($at, $route.' is missing');
+            $this->assertGreaterThan($guardAt, $at, $route.' must sit inside the local-only guard');
+        }
     }
 
     public function test_the_marquee_is_static_under_reduced_motion(): void

@@ -26,6 +26,9 @@
     gap: var(--sp-5);
     padding: var(--sp-5) var(--gutter);
     border-bottom: 1px solid var(--border);
+    /* Held to the declared token so --header-height can be subtracted from a
+       viewport-height section without the two drifting apart. */
+    min-height: var(--header-height);
 }
 
 .site-header__mark {

@@ -2,10 +2,10 @@
     $themes = ['dark' => 'Dark', 'light' => 'Light'];
     $shapes = ['landscape' => 'Landscape', 'portrait' => 'Portrait', 'square' => 'Square'];
 @endphp
-<x-layouts::public :seo="\App\Support\SeoData::make(title: 'Hero comparison', robots: 'noindex, nofollow')">
+<x-layouts::public :seo="\App\Support\SeoData::make(title: 'Hero preview', robots: 'noindex, nofollow')">
     <div class="hero-lab">
         <header class="hero-lab__bar">
-            <h2 class="hero-lab__title">Hero comparison</h2>
+            <h2 class="hero-lab__title">Hero preview</h2>
 
             {{-- Plain links. No script anywhere on this page either. --}}
             <nav class="hero-lab__controls" aria-label="Featured image shape">
@@ -55,14 +55,9 @@
                     </dd>
                 </div>
                 <div><dt>Frame</dt><dd>{{ $media?->width }}×{{ $media?->height }}</dd></div>
-                <div><dt>Live variant</dt><dd>{{ strtoupper(config('site.hero_variant')) }}</dd></div>
             </dl>
         </header>
 
-        <p class="hero-lab__marker">Variant A — horizontal wordmark, plate inside the grid</p>
         <x-home.hero :project="$project" :accent="$accent" />
-
-        <p class="hero-lab__marker">Variant B — two-line wordmark, plate bleeding off the edge</p>
-        <x-home.hero-b :project="$project" :accent="$accent" />
     </div>
 </x-layouts::public>
