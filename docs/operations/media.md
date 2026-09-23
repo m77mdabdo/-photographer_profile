@@ -38,36 +38,36 @@ Output for that image totals roughly 830 KB across all 14 files.
 Peak resident set size per worker process is **approximately 302 MB** while processing
 a 4000×2667 (10.7 MP) source.
 
-**That figure scales with the source, and scales badly.** Processing a batch of stock
-photographs up to 5464×8196 (44.8 MP) peaked at **1.32 GB**. GD holds the decoded
-bitmap plus the resize target, and both grow with pixel count, so a 45 MP frame needs
-roughly four times what a 10 MP frame does. Budget against the *largest* image you will
-accept, not a typical one:
+**That figure was measured before the working-copy guard existed, and the guard
+changed it substantially.**
 
-| Source | Megapixels | Observed peak RSS |
-| ------ | ---------: | ----------------: |
-| 4000×2667 | 10.7 | ~302 MB |
-| up to 5464×8196 | 44.8 | ~1.32 GB |
+The job used to decode the full source once per rendition — fourteen decodes of the
+same file. It now decodes once, scales to a working budget, and generates every
+rendition from that copy. Same output, thirteen fewer full decodes.
 
-The `max_megapixels` ceiling in `config/media.php` (80) is therefore also a memory
-ceiling. At 80 MP a single worker could be expected to need well over 2 GB.
+| Source | Megapixels | Peak RSS before | Peak RSS after |
+| ------ | ---------: | --------------: | -------------: |
+| 4000×2667 | 10.7 | ~302 MB | ~302 MB (inside the budget, unchanged) |
+| 5464×8196 | 44.8 | **1.32 GB** | **565 MB** |
 
-**PHP's `memory_limit` does not constrain GD.** GD allocates its pixel buffers outside
-PHP's allocator, so `memory_get_peak_usage()` reports about 15 MB for work that really
-consumes around 300 MB of RSS. Raising or lowering `memory_limit` will neither prevent
-nor cause an out-of-memory kill here.
+Two settings govern this, both in `config/media.php`:
 
-The practical consequence: **cap media worker concurrency by available RAM, not by
-`memory_limit`.**
+- **`max_megapixels: 50`** — the upload ceiling. This is a memory ceiling in disguise:
+  GD decodes the whole bitmap before anything can measure it, at roughly 29.5 MB of
+  resident memory per megapixel. 50 MP bounds a single decode near 1.5 GB and refuses
+  anything larger at the door rather than in the worker. It accommodates every current
+  full-frame body and most medium format; a 61 MP A7R file would be refused.
+- **`working_megapixels: 16`** — the in-memory working budget. ~4900×3266 for a 3:2
+  frame, which is 1.9× the longest variant edge (2560px) in linear terms: ample
+  oversampling for a clean downsample. **The file on disk is never altered.**
 
-> Recommended: **at most one media worker per 1.5 GB of available RAM**, if uploads of
-> any size up to the 80 MP ceiling are permitted. One per 512 MB is only safe if
-> `max_megapixels` is also lowered to around 12.
+> Recommended: **at most one media worker per 768 MB of available RAM.**
+>
+> A 2 GB container can now run two media workers where it could previously run one,
+> and the previous advice of one per 512 MB was unsafe at any size above about 12 MP.
 
-A 2 GB container should run **one** media worker, not three — the earlier figure was
-measured on a single 10 MP image and did not survive contact with real stock
-photography. Exceeding this produces OOM kills that PHP cannot report, because the kernel
-terminates the process before any PHP error handler runs.
+Raising `max_megapixels` without also raising the RAM per worker is how this comes
+back: the decode happens before the guard can help.
 
 ## Retuning quality
 

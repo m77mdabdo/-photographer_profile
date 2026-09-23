@@ -49,6 +49,8 @@ final class EditorialLayout
         $previous = null;          // the orientation just placed
         $portraitRun = 0;          // consecutive portraits, to break a fence
         $lastWasWide = false;      // whether the previous item was full-bleed
+        $featureCount = 0;         // how many full-bleed items are already down
+        $narrowCount = 0;          // landscapes denied the full measure
 
         foreach ($projects->values() as $index => $project) {
             $orientation = $this->orientationOf($project);
@@ -65,28 +67,51 @@ final class EditorialLayout
             }
 
             [$span, $start, $drop, $feature] = match (true) {
-                // Two full-bleed landscapes stacked read as a slideshow, so a
-                // landscape following a wide item is given a narrower measure
-                // and pushed off the left edge instead.
+                /*
+                 * Two full-bleed landscapes stacked read as a slideshow, so a
+                 * landscape following a wide item is denied the full measure.
+                 * These cycle as well: otherwise every other item in a run of
+                 * landscapes was identical, which is the same monotony one
+                 * level down.
+                 */
                 $orientation === self::LANDSCAPE && $lastWasWide
-                    => [6, 7, 9, false],
+                    => match ($narrowCount % 3) {
+                        0 => [6, 7, 9, false],
+                        1 => [5, 1, 16, false],
+                        default => [7, 5, 5, false],
+                    },
 
-                $orientation === self::LANDSCAPE
-                    => [8, 1, 0, true],
+                /*
+                 * A landscape that is free to be full-bleed still must not
+                 * repeat the previous full-bleed item's gesture.
+                 *
+                 * The first feature claims the left edge at its widest; the
+                 * second answers it from the right at a narrower measure and
+                 * drops; the third insets from the left and drops further.
+                 * After that the cycle repeats, so a very long run alternates
+                 * rather than stacking identical bands — which is exactly what
+                 * the first and last item of the real six-project plan did.
+                 */
+                $orientation === self::LANDSCAPE => match ($featureCount % 3) {
+                    0 => [8, 1, 0, true],
+                    1 => [7, 6, 7, true],
+                    default => [9, 3, 14, true],
+                },
 
                 /*
                  * Portraits move through three columns in turn — left inset,
                  * right, centre — so no two consecutive ones share a measure
                  * and a long run reads as a stagger rather than a fence.
                  *
-                 * An earlier version branched on "run >= 2", which pinned
-                 * every portrait after the second to the same column: the same
-                 * fence, one column over.
+                 * The drops are spaced so three portraits read as three
+                 * heights. An earlier version used 4 / 12 / 13: on screen the
+                 * last two differ by 0.5rem, which is not a step, so the
+                 * stagger was really two positions pretending to be three.
                  */
                 $orientation === self::PORTRAIT => match ($portraitRun % 3) {
                     0 => [4, 2, 4, false],
-                    1 => [4, 8, 12, false],
-                    default => [4, 5, 13, false],
+                    1 => [4, 8, 11, false],
+                    default => [4, 5, 18, false],
                 },
 
                 // A square sits between the two: mid width, and it alternates
@@ -105,6 +130,8 @@ final class EditorialLayout
             ];
 
             $portraitRun = $orientation === self::PORTRAIT ? $portraitRun + 1 : 0;
+            $featureCount += $feature ? 1 : 0;
+            $narrowCount += ($orientation === self::LANDSCAPE && ! $feature) ? 1 : 0;
             $lastWasWide = $feature;
             $previous = $orientation;
         }

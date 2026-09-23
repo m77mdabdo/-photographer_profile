@@ -1,48 +1,78 @@
-@props(['project' => null])
-@php($image = $project?->hero ?? $project?->cover)
-<section class="hero" aria-labelledby="hero-title">
+@props(['project' => null, 'accent' => ['dark' => null, 'light' => null]])
+@php
+    $image = $project?->hero ?? $project?->cover;
+
+    // The column the photograph occupies is a property of the photograph.
+    $orientation = 'landscape';
+
+    if ($image?->width && $image?->height) {
+        $ratio = $image->width / $image->height;
+        $orientation = match (true) {
+            $ratio > 1.05 => 'landscape',
+            $ratio < 0.95 => 'portrait',
+            default => 'square',
+        };
+    }
+
+    $wordmark = config('seo.site_name');
+@endphp
+<section @class(['hero', 'hero--'.$orientation, 'hero--empty' => $image === null])
+         aria-labelledby="hero-title"
+         style="--wordmark-chars: {{ mb_strlen($wordmark) }};
+                @if ($accent['dark']) --hero-accent-dark: {{ $accent['dark'] }}; @endif
+                @if ($accent['light']) --hero-accent-light: {{ $accent['light'] }}; @endif">
+
+    {{--
+        One heading, one text node, the studio name in plain text. Not an
+        image, not split across per-letter spans: it is announced once, it
+        copies and pastes as one word, and it is the page's only h1.
+
+        The photograph occludes its middle by sitting above it in the stacking
+        order. Nothing about the word itself is fragmented to achieve that.
+    --}}
+    <h1 class="hero__wordmark" id="hero-title">{{ $wordmark }}</h1>
+
     @if ($image)
-        <div class="hero__frame">
-            {{--
-                The LCP element. priority => fetchpriority="high", decoding
-                sync, and no loading attribute at all — never lazy.
-            --}}
+        <div class="hero__plate">
             <x-picture :media="$image"
-                       sizes="100vw"
+                       sizes="(max-width: 900px) 100vw, 60vw"
                        :priority="true"
                        img-class="hero__image" />
         </div>
     @endif
 
-    <div class="hero__inner">
-        @if ($project)
-            <p class="hero__eyebrow">
-                @if ($project->categories->isNotEmpty())
-                    {{ $project->categories->pluck('name')->implode(' · ') }}
-                @else
-                    Selected work
-                @endif
-            </p>
-
-            <h1 class="hero__title" id="hero-title">{{ $project->title }}</h1>
-
-            @if ($project->subtitle)
-                <p class="hero__subtitle">{{ $project->subtitle }}</p>
+    @if ($project)
+        {{--
+            The supporting matter lives in the space the plate leaves, not
+            beneath the composition. Everything here comes from the record.
+        --}}
+        <div class="hero__aside">
+            @if ($project->excerpt)
+                <p class="hero__statement">{{ $project->excerpt }}</p>
+            @elseif ($project->subtitle)
+                <p class="hero__statement">{{ $project->subtitle }}</p>
             @endif
 
-            <p class="hero__meta">
-                @if ($project->year)<span>{{ $project->year }}</span>@endif
-                @if ($project->location)<span>{{ $project->location }}</span>@endif
-                @if ($project->client)<span>{{ $project->client }}</span>@endif
-            </p>
-
             <a class="hero__link" href="{{ route('projects.show', $project) }}">
-                View the series
+                {{ $project->title }}
                 <span class="hero__link-rule" aria-hidden="true"></span>
             </a>
-        @else
-            <h1 class="hero__title" id="hero-title">{{ config('seo.site_name') }}</h1>
-            <p class="hero__subtitle">Photography, in series.</p>
-        @endif
-    </div>
+        </div>
+
+        {{-- Metadata as a vertical rail rather than a row under the title. --}}
+        <dl class="hero__rail">
+            @if ($project->year)
+                <div><dt>Year</dt><dd>{{ $project->year }}</dd></div>
+            @endif
+            @if ($project->location)
+                <div><dt>Place</dt><dd>{{ $project->location }}</dd></div>
+            @endif
+            @if ($project->client)
+                <div><dt>For</dt><dd>{{ $project->client }}</dd></div>
+            @endif
+            @if ($project->categories->isNotEmpty())
+                <div><dt>Work</dt><dd>{{ $project->categories->pluck('name')->implode(', ') }}</dd></div>
+            @endif
+        </dl>
+    @endif
 </section>

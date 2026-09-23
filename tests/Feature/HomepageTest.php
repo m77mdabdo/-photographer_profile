@@ -29,11 +29,12 @@ class HomepageTest extends TestCase
         ]);
     }
 
-    private function media(): Media
+    private function media(int $width = 4000, int $height = 2667): Media
     {
         $media = Media::factory()->create([
-            'status' => MediaStatus::Ready, 'width' => 4000, 'height' => 2667,
+            'status' => MediaStatus::Ready, 'width' => $width, 'height' => $height,
             'alt' => 'A coastline at first light',
+            'dominant_color' => '#5a4a38',
         ]);
 
         foreach ([['webp', 768], ['avif', 480], ['jpeg', 1920]] as [$format, $width]) {
@@ -48,18 +49,22 @@ class HomepageTest extends TestCase
         return $media->refresh();
     }
 
-    private function populate(int $projects = 8): void
+    private function populate(int $projects = 8, string $featuredShape = 'landscape'): void
     {
         $categories = Category::factory()->count(3)->create();
 
+        [$fw, $fh] = $featuredShape === 'portrait' ? [2667, 4000] : [4000, 2667];
+
         for ($i = 0; $i < $projects; $i++) {
+            $cover = $i === 0 ? $this->media($fw, $fh) : $this->media();
+
             $project = Project::factory()->published()->create([
                 'title' => 'Series Number '.($i + 1),
                 'slug' => 'series-'.($i + 1),
                 'is_featured' => $i === 0,
                 'sort_order' => $i,
-                'cover_media_id' => $this->media()->id,
-                'hero_media_id' => $this->media()->id,
+                'cover_media_id' => $cover->id,
+                'hero_media_id' => $cover->id,
             ]);
 
             $project->categories()->attach($categories->random(2)->pluck('id'));
@@ -78,7 +83,7 @@ class HomepageTest extends TestCase
 
         $html = $response->getContent();
 
-        foreach (['class="hero"', 'class="intro"', 'class="works"',
+        foreach (['class="hero', 'class="intro"', 'class="works"',
                   'class="story"', 'class="sheet"', 'class="closing"'] as $section) {
             $this->assertStringContainsString($section, $html, "missing {$section}");
         }
@@ -359,7 +364,7 @@ class HomepageTest extends TestCase
 
     // ----------------------------------------------------------------- 8
 
-    public function test_the_query_count_is_still_eight(): void
+    public function test_the_query_count_is_nine_with_the_marquee(): void
     {
         $this->populate(8);
 
@@ -370,9 +375,13 @@ class HomepageTest extends TestCase
 
         $this->get('/')->assertOk();
 
-        // Unchanged from Task 10: the layout planner reads covers that are
-        // already loaded, so composing the page costs nothing extra.
-        $this->assertCount(8, $queries, "expected 8 queries:\n".implode("\n", $queries));
+        /*
+         * Nine, not eight. The client marquee is a ninth query and there is no
+         * way around it — the clients table is unrelated to projects, so it
+         * cannot ride along on an existing load. The layout planner still
+         * costs nothing: it reads covers that are already in memory.
+         */
+        $this->assertCount(9, $queries, "expected 9 queries:\n".implode("\n", $queries));
     }
 
     // ----------------------------------------------------------------- 9
@@ -416,12 +425,25 @@ class HomepageTest extends TestCase
 
         $selectors = array_map('trim', $matches[1]);
 
-        // Only the three primary-action rules may use it.
+        /*
+         * Only primary-action rules may use it — plus the hero's own fallback
+         * chain, where `var(--accent)` is the default the derived colour falls
+         * back to rather than a second decorative use.
+         */
         foreach ($selectors as $selector) {
+            $clean = trim(preg_replace('/\/\*.*?\*\//s', '', $selector) ?? '');
+
+            // At-rule wrappers are not selectors; the rules inside them are
+            // matched on their own.
+            if ($clean === '' || str_starts_with($clean, '@')
+                || str_contains($clean, '.hero') || str_contains($clean, ':root')) {
+                continue;
+            }
+
             $this->assertMatchesRegularExpression(
                 '/link-rule|closing__rule/',
-                $selector,
-                "the accent leaked into: {$selector}"
+                $clean,
+                "the accent leaked into: {$clean}"
             );
         }
 
@@ -440,5 +462,159 @@ class HomepageTest extends TestCase
 
         // The old uniform interval is gone from the section padding.
         $this->assertStringNotContainsString('padding: var(--sp-13) var(--gutter) var(--sp-12)', $css);
+    }
+
+    // ================= TASK 14 =================
+
+    public function test_the_wordmark_is_one_intact_text_node(): void
+    {
+        $this->populate();
+
+        $html = $this->get('/')->assertOk()->getContent();
+        $name = config('seo.site_name');
+
+        // One h1, containing the studio name whole — not split across spans,
+        // not an image, and not repeated anywhere else as a heading.
+        $this->assertSame(1, substr_count($html, '<h1'), 'exactly one h1');
+        $this->assertMatchesRegularExpression(
+            '/<h1 class="hero__wordmark" id="hero-title">'.preg_quote($name, '/').'<\/h1>/',
+            $html,
+            'the wordmark must be a single text node'
+        );
+
+        // Nothing fragmenting it.
+        $this->assertStringNotContainsString('wordmark__letter', $html);
+        $this->assertDoesNotMatchRegularExpression('/<h1[^>]*>\s*<span/', $html);
+    }
+
+    public function test_the_hero_accent_is_derived_from_the_image_and_falls_back(): void
+    {
+        $this->populate();
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $expectedDark = \App\Support\AccentColor::derive('#5a4a38', '#0b0b0c');
+        $expectedLight = \App\Support\AccentColor::derive('#5a4a38', '#f4f1ea');
+
+        $this->assertStringContainsString('--hero-accent-dark: '.$expectedDark, $html);
+        $this->assertStringContainsString('--hero-accent-light: '.$expectedLight, $html);
+
+        // With no usable colour, neither property is emitted and the CSS
+        // fallback to the token accent applies.
+        Media::query()->update(['dominant_color' => null]);
+
+        $plain = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('--hero-accent-dark', $plain);
+        $this->assertStringNotContainsString('--hero-accent-light', $plain);
+        $this->assertStringContainsString('hero__wordmark', $plain, 'the hero still renders');
+    }
+
+    public function test_a_portrait_featured_image_produces_a_different_column(): void
+    {
+        $this->populate(4, 'landscape');
+        $landscape = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringContainsString('hero--landscape', $landscape);
+        $this->assertStringNotContainsString('hero--portrait', $landscape);
+
+        // A fresh set, featured on a portrait frame.
+        // forceDelete: Project soft-deletes, and the slug unique index still
+        // sees a trashed row.
+        Project::withTrashed()->get()->each->forceDelete();
+        Media::withTrashed()->get()->each->forceDelete();
+        $this->populate(4, 'portrait');
+
+        $portrait = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringContainsString('hero--portrait', $portrait);
+        $this->assertStringNotContainsString('hero--landscape', $portrait);
+
+        // And the stylesheet gives those two classes different columns.
+        $css = file_get_contents(resource_path('css/pages/home.css'));
+        $this->assertMatchesRegularExpression('/\.hero--landscape \.hero__plate \{ grid-column: 2 \/ span 8; \}/', $css);
+        $this->assertMatchesRegularExpression('/\.hero--portrait\s+\.hero__plate \{ grid-column: 6 \/ span 5; \}/', $css);
+    }
+
+    public function test_the_hero_renders_with_no_featured_project_at_all(): void
+    {
+        // No projects, no media: the wordmark must still carry the screen.
+        $response = $this->get('/');
+
+        $response->assertOk();
+        $html = $response->getContent();
+
+        $this->assertStringContainsString('hero--empty', $html);
+        $this->assertStringContainsString('<h1 class="hero__wordmark"', $html);
+        $this->assertStringNotContainsString('hero__plate', $html);
+        $this->assertStringNotContainsString('hero__aside', $html);
+    }
+
+    public function test_the_marquee_is_static_under_reduced_motion(): void
+    {
+        \App\Models\Client::factory()->count(3)->create();
+
+        $html = $this->get('/')->assertOk()->getContent();
+        $this->assertStringContainsString('class="marquee"', $html);
+
+        $css = file_get_contents(resource_path('css/pages/home.css'));
+
+        // Not merely paused: the whole conceit is abandoned and the names wrap.
+        $this->assertMatchesRegularExpression(
+            '/@media \(prefers-reduced-motion: reduce\) \{.*?\.marquee__viewport \{[^}]*animation: none/s',
+            $css
+        );
+        $this->assertMatchesRegularExpression(
+            '/@media \(prefers-reduced-motion: reduce\) \{.*?\.marquee__track \{[^}]*flex-wrap: wrap/s',
+            $css
+        );
+        // The duplicate track is removed once nothing moves.
+        $this->assertMatchesRegularExpression(
+            '/\.marquee__track\[aria-hidden=.true.\] \{ display: none; \}/',
+            $css
+        );
+    }
+
+    public function test_the_marquee_duplicate_is_hidden_from_assistive_tech_and_the_tab_order(): void
+    {
+        \App\Models\Client::factory()->create(['name' => 'Meridian Press', 'url' => 'https://example.com/m']);
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        // The name appears twice visually, but only once to a screen reader.
+        $this->assertSame(2, substr_count($html, 'Meridian Press'));
+        $this->assertStringContainsString('aria-hidden="true"', $html);
+        // <main> carries tabindex="-1" too, so count within the marquee only.
+        $marquee = substr($html, (int) strpos($html, 'class="marquee"'));
+        $marquee = substr($marquee, 0, (int) strpos($marquee, '</section>'));
+
+        $this->assertSame(1, substr_count($marquee, 'tabindex="-1"'), 'the duplicate link is out of the tab order');
+    }
+
+    public function test_an_inactive_client_never_appears(): void
+    {
+        \App\Models\Client::factory()->create(['name' => 'Shown Client']);
+        \App\Models\Client::factory()->inactive()->create(['name' => 'Hidden Client']);
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringContainsString('Shown Client', $html);
+        $this->assertStringNotContainsString('Hidden Client', $html);
+    }
+
+    public function test_no_client_name_is_hardcoded_in_any_view(): void
+    {
+        $views = array_merge(
+            glob(resource_path('views/components/home/*.blade.php')) ?: [],
+            [resource_path('views/home.blade.php')]
+        );
+
+        foreach ($views as $view) {
+            $source = file_get_contents($view);
+
+            foreach (['Aperture Quarterly', 'Meridian Press', 'Nord & Vale', 'Studio Halcyon'] as $name) {
+                $this->assertStringNotContainsString($name, $source, basename($view));
+            }
+        }
     }
 }

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\MediaStatus;
+use App\Models\Client;
 use App\Models\Media;
 use App\Models\Project;
+use App\Support\AccentColor;
 use App\Support\EditorialLayout;
 use App\Support\SeoData;
 use Illuminate\Contracts\View\View;
@@ -45,16 +47,42 @@ class HomeController extends Controller
 
         return view('home', [
             'hero' => $hero,
+            // Both registers are derived here because which one applies is a
+            // CSS decision when the visitor is following their system.
+            'heroAccent' => $this->heroAccent($hero),
             'selected' => $selected,
             // Composition decided server-side from the covers themselves.
             'layout' => app(EditorialLayout::class)->plan($selected),
             'story' => $story,
             'archive' => $this->archive(),
+            'clients' => Client::active()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'url']),
             'seo' => SeoData::make(
                 description: $hero?->excerpt,
                 ogImage: $hero?->cover,
             ),
         ]);
+    }
+
+
+    /**
+     * The hero accent, taken from the featured photograph and made legible.
+     *
+     * Two values, not one: when a visitor follows their system setting the
+     * server does not know which ground the colour will sit on, so both are
+     * derived and the stylesheet picks. A photograph with no sampled colour,
+     * or one that cannot be parsed, yields nulls and the hero silently keeps
+     * the token accent.
+     *
+     * @return array{dark: ?string, light: ?string}
+     */
+    private function heroAccent(?Project $hero): array
+    {
+        $source = $hero?->cover?->dominant_color ?? $hero?->hero?->dominant_color;
+
+        return [
+            'dark' => AccentColor::derive($source, '#0b0b0c'),
+            'light' => AccentColor::derive($source, '#f4f1ea'),
+        ];
     }
 
     /**

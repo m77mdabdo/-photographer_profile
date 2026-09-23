@@ -199,4 +199,88 @@ class EditorialLayoutTest extends TestCase
         $this->assertSame('landscape', $plan[0]['orientation'], 'falls back to the safe measure');
         $this->assertGreaterThan(0, $plan[0]['span']);
     }
+
+    // ================= TASK 14 =================
+
+    public function test_no_two_adjacent_items_share_a_position(): void
+    {
+        $sets = [
+            'six landscapes' => array_fill(0, 6, [4000, 2667]),
+            'five portraits' => array_fill(0, 5, [2667, 4000]),
+            'the real mix' => [[4000, 2667], [4000, 6000], [5464, 8196], [4017, 6000], [3456, 3456], [4000, 2667]],
+        ];
+
+        foreach ($sets as $name => $shapes) {
+            $plan = $this->plan(array_map(fn (array $s): Project => $this->project($s[0], $s[1]), $shapes));
+
+            $triples = array_map(
+                fn (array $p): string => $p['span'].'/'.$p['start'].'/'.$p['drop'],
+                $plan
+            );
+
+            for ($i = 1; $i < count($triples); $i++) {
+                $this->assertNotSame(
+                    $triples[$i - 1],
+                    $triples[$i],
+                    "{$name}: items ".($i - 1)." and {$i} occupy the same position"
+                );
+            }
+
+            /*
+             * Globally unique triples are not required, and deliberately so: a
+             * rule that never repeats would need either an unbounded drop — by
+             * item eight the margin would be absurd — or an arbitrarily long
+             * cycle that nobody could reason about. What matters is that a run
+             * never reads as a repeating band, which adjacency catches, and
+             * that the plan holds real variety, which this does.
+             */
+            $this->assertGreaterThanOrEqual(
+                min(count($plan), 3),
+                count(array_unique($triples)),
+                "{$name}: the plan collapsed to too few positions"
+            );
+        }
+    }
+
+    public function test_a_run_of_landscapes_never_repeats_the_full_bleed_gesture(): void
+    {
+        $plan = $this->plan(array_fill(0, 6, $this->landscape()));
+
+        $features = array_values(array_filter($plan, fn (array $p): bool => $p['feature']));
+
+        $this->assertGreaterThan(1, count($features), 'a long run should still have several features');
+
+        $gestures = array_map(
+            fn (array $p): string => $p['span'].'/'.$p['start'].'/'.$p['drop'],
+            $features
+        );
+
+        $this->assertSame(
+            count($gestures),
+            count(array_unique($gestures)),
+            'every full-bleed item repeated the same measure'
+        );
+    }
+
+    public function test_portrait_drops_are_perceptibly_different_steps(): void
+    {
+        // Five, not three: at three or fewer the planner uses its hand-composed
+        // small-run arrangement, and the portrait cycle never runs at all.
+        $plan = $this->plan(array_fill(0, 5, $this->portrait()));
+
+        $drops = array_slice(array_column($plan, 'drop'), 0, 3);
+
+        // drop is expressed in half-rem units, so a difference of 4 is 2rem —
+        // the least that reads as a deliberate step rather than a rounding
+        // artefact. The old 12 and 13 were 0.5rem apart: the same height.
+        for ($i = 1; $i < count($drops); $i++) {
+            $this->assertGreaterThanOrEqual(
+                4,
+                abs($drops[$i] - $drops[$i - 1]),
+                "drops {$drops[$i - 1]} and {$drops[$i]} are the same position on screen"
+            );
+        }
+
+        $this->assertSame([4, 11, 18], $drops);
+    }
 }

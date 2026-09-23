@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\Category;
+use App\Models\Client;
 use App\Models\Media;
 use App\Models\Project;
 use App\Policies\CategoryPolicy;
+use App\Policies\ClientPolicy;
 use App\Policies\MediaPolicy;
 use App\Policies\ProjectPolicy;
 use Illuminate\Support\Facades\Blade;
@@ -51,5 +53,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Media::class, MediaPolicy::class);
         Gate::policy(Project::class, ProjectPolicy::class);
         Gate::policy(Category::class, CategoryPolicy::class);
+        Gate::policy(Client::class, ClientPolicy::class);
     }
 }

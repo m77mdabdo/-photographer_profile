@@ -80,6 +80,13 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{{ route('admin.clients.index') }}"
+                       @class(['is-current' => request()->routeIs('admin.clients.*')])
+                       @if (request()->routeIs('admin.clients.*')) aria-current="page" @endif>
+                        Clients
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('admin.categories.index') }}"
                        @class(['is-current' => request()->routeIs('admin.categories.*')])
                        @if (request()->routeIs('admin.categories.*')) aria-current="page" @endif>

@@ -8,6 +8,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ThemeController;
 use App\Livewire\Admin\CategoryManager;
+use App\Livewire\Admin\ClientManager;
 use App\Livewire\Admin\MediaIndex;
 use App\Livewire\Admin\ProjectForm;
 use App\Livewire\Admin\ProjectIndex;
@@ -110,6 +111,7 @@ Route::prefix('admin')
             });
 
             Route::get('/categories', CategoryManager::class)->name('categories.index');
+            Route::get('/clients', ClientManager::class)->name('clients.index');
 
             Route::prefix('media')->name('media.')->group(function () {
                 // Full-page Livewire component; it owns filters and polling.

@@ -230,9 +230,14 @@ class ThemeTest extends TestCase
             $request = $cookie === null ? $this : $this->withCookie(Theme::COOKIE, $cookie);
             $request->get('/')->assertOk();
 
-            // The theme is a cookie read and an attribute; it touches nothing.
+            /*
+             * Nine since the client marquee landed: the clients table is
+             * unrelated to projects and cannot ride along on an existing load.
+             * The theme itself still touches nothing — it is a cookie read and
+             * an attribute — which is what this pins.
+             */
             $this->assertCount(
-                8,
+                9,
                 $queries,
                 "theme=".($cookie ?? 'system')." issued ".count($queries).' queries'
             );

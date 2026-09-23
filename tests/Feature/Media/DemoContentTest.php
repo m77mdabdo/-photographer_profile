@@ -281,7 +281,7 @@ class DemoContentTest extends TestCase
 
     // ----------------------------------------------------------------- 8
 
-    public function test_the_homepage_is_still_eight_queries_in_both_themes(): void
+    public function test_the_homepage_query_count_is_stable_across_themes(): void
     {
         $categories = \App\Models\Category::factory()->count(3)->create();
 
@@ -307,7 +307,8 @@ class DemoContentTest extends TestCase
             $request = $theme === null ? $this : $this->withCookie(\App\Support\Theme::COOKIE, $theme);
             $request->get('/')->assertOk();
 
-            $this->assertCount(8, $queries, 'theme='.($theme ?? 'system').' issued '.count($queries));
+            // Nine: eight for the page, one for the client marquee.
+            $this->assertCount(9, $queries, 'theme='.($theme ?? 'system').' issued '.count($queries));
         }
     }
 

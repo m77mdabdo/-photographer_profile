@@ -1,5 +1,7 @@
 <x-layouts::public :seo="$seo">
-    <x-home.hero :project="$hero" />
+    <x-home.hero :project="$hero" :accent="$heroAccent" />
+
+    <x-home.client-marquee :clients="$clients" />
 
     <x-home.introduction :project="$hero" />
 

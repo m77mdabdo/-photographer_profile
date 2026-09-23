@@ -9,6 +9,7 @@ use App\Enums\BlockType;
 use App\Enums\MediaStatus;
 use App\Enums\PublishStatus;
 use App\Models\Category;
+use App\Models\Client;
 use App\Models\Media;
 use App\Models\Project;
 use Illuminate\Database\Seeder;
@@ -211,6 +212,31 @@ class DemoContentSeeder extends Seeder
 
             $this->seedStory($project, $media);
         }
+
+        /*
+         * Demo clients, marked as such so media:purge-demo's sibling cleanup
+         * can find them. Names are invented studios, not real companies.
+         */
+        $clientNames = ['Aperture Quarterly', 'Meridian Press', 'Nord & Vale', 'The Gentlewoman',
+            'Studio Halcyon', 'Ferrous Editions', 'Blue Hour Journal', 'Atelier Rive'];
+
+        foreach ($clientNames as $position => $clientName) {
+            Client::updateOrCreate(
+                ['name' => $clientName],
+                [
+                    'url' => 'https://example.com/'.Str::slug($clientName),
+                    'sort_order' => $position,
+                    'is_active' => true,
+                    'is_demo' => true,
+                ]
+            );
+        }
+
+        // One hidden, so the active filter is visibly doing something.
+        Client::updateOrCreate(
+            ['name' => 'Withdrawn Commission'],
+            ['sort_order' => 99, 'is_active' => false, 'is_demo' => true]
+        );
 
         // Two that must never reach the homepage, so the filtering is visible.
         Project::updateOrCreate(

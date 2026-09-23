@@ -7,104 +7,210 @@
  * carries meaning.
  */
 
-/* ---------------- 1. Hero — full viewport, type settled low-left --------- */
+/* ---------------- 1. Hero — wordmark interlocked with the plate --------- */
+
+/*
+ * One layer, not a stack of banded sections. The wordmark spans the full
+ * viewport; the photograph occupies a column that sits ABOVE it and hides the
+ * letters it covers. The interlock is stacking order, never a fragmented word.
+ *
+ * The column is chosen by the photograph's own shape — a portrait wants a
+ * narrow column well right of centre, a landscape a wide one nearer the left —
+ * so the point at which the word is interrupted moves with the picture.
+ */
 
 .hero {
     position: relative;
     display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: 1fr auto 1fr;
+    align-items: center;
     min-height: 100svh;
-    align-content: end;
-    overflow: hidden;
-    isolation: isolate;
-}
-
-.hero__frame { position: absolute; inset: 0; z-index: var(--z-base); }
-.hero__frame picture, .hero__image { width: 100%; height: 100%; object-fit: cover; }
-
-/* A gradient, not a flat scrim: the image stays legible at the top and the
-   type stays legible at the bottom. */
-.hero::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: var(--z-media);
-    background: linear-gradient(to bottom,
-        rgb(var(--scrim-rgb) / var(--scrim-top)) 0%,
-        rgb(var(--scrim-rgb) / var(--scrim-mid)) 35%,
-        rgb(var(--scrim-rgb) / var(--scrim-bottom)) 100%);
-}
-
-.hero__inner {
-    position: relative;
-    z-index: var(--z-nav);
+    padding-inline: var(--gutter);
     max-width: var(--container-wide);
-    width: 100%;
     margin-inline: auto;
-    padding: var(--sp-9) var(--gutter) var(--sp-10);
+
+    /* Falls back to the token accent when no colour could be derived. */
+    --hero-accent: var(--hero-accent-dark, var(--accent));
+}
+
+:root[data-theme='light'] .hero { --hero-accent: var(--hero-accent-light, var(--accent)); }
+
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme]) .hero { --hero-accent: var(--hero-accent-light, var(--accent)); }
+}
+
+/*
+ * Sized from the character count rather than a fixed clamp, so the word fills
+ * the measure whatever the studio is called. 0.56em is Bodoni's rough average
+ * advance; the min() keeps a short name from becoming absurdly tall.
+ */
+.hero__wordmark {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    z-index: var(--z-base);
+    margin: 0;
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-display);
+    font-size: min(calc(96vw / (var(--wordmark-chars) * 0.56)), 26vh);
+    line-height: 0.82;
+    letter-spacing: var(--tracking-tight);
+    text-align: center;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+/*
+ * The plate. Opaque and hard-edged on purpose: a soft or translucent edge
+ * would let a letter show through at partial contrast, and then the word's
+ * legibility would depend on whatever the photograph happened to contain
+ * there. Occlusion is total, so every visible letter sits on --bg.
+ */
+.hero__plate {
+    grid-row: 1 / -1;
+    z-index: var(--z-media);
+    align-self: stretch;
+    display: grid;
+    align-items: center;
+    overflow: hidden;
+    background-color: var(--bg);
+}
+
+.hero__plate picture,
+.hero__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* The column, by orientation. */
+.hero--landscape .hero__plate { grid-column: 2 / span 8; }
+.hero--portrait  .hero__plate { grid-column: 6 / span 5; }
+.hero--square    .hero__plate { grid-column: 4 / span 6; }
+
+/*
+ * The aside occupies the gap the plate leaves, on the side with the most room.
+ * The photograph's position decides where the words go.
+ */
+.hero__aside {
+    grid-row: 2;
+    z-index: var(--z-nav);
     display: grid;
     gap: var(--sp-4);
-    justify-items: start;
+    align-content: center;
+    max-width: 24ch;
 }
 
-.hero__eyebrow, .hero__meta, .story__eyebrow, .works__count, .sheet__note, .work__meta {
+.hero--landscape .hero__aside { grid-column: 10 / span 3; }
+.hero--portrait  .hero__aside { grid-column: 1 / span 4; }
+.hero--square    .hero__aside { grid-column: 10 / span 3; }
+
+.hero__statement {
+    font-family: var(--font-sans);
+    font-size: var(--fs-small);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+.hero__link {
+    display: inline-grid;
+    gap: var(--sp-2);
+    min-height: 44px;
+    align-content: center;
+    text-decoration: none;
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+/* The single primary action, carrying the colour taken from the photograph. */
+.hero__link-rule {
+    display: block;
+    height: var(--rule-strong);
+    width: 100%;
+    background-color: var(--hero-accent);
+    transition: opacity var(--dur-base) var(--ease-editorial);
+}
+
+.hero__link:hover .hero__link-rule,
+.hero__link:focus-visible .hero__link-rule { opacity: 0.55; }
+
+/* Metadata as a rail down the page edge, not a row beneath the title. */
+.hero__rail {
+    grid-row: 3;
+    align-self: end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-5);
+    margin: 0 0 var(--sp-8);
+    z-index: var(--z-nav);
     font-size: var(--fs-meta);
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
     color: var(--text-secondary);
 }
 
-/*
- * Bodoni is a Didone: very high stroke contrast, and its hairlines are the
- * first thing to disappear. On a dark ground the thick stems halate slightly
- * and visually eat the thin ones, so the display sizes carry a little more
- * weight than the text sizes do — 480 against 400. Enough to hold the
- * hairlines together, not enough to read as bold.
- */
-.hero__title {
-    font-variation-settings: 'wght' var(--wght-display);
-    font-family: var(--font-display);
-    font-size: var(--fs-display-xl);
-    line-height: var(--lh-tight);
-    letter-spacing: var(--tracking-tight);
-    max-width: 16ch;
-    text-wrap: balance;
-}
+.hero--landscape .hero__rail { grid-column: 2 / span 8; }
+.hero--portrait  .hero__rail { grid-column: 1 / span 5; }
+.hero--square    .hero__rail { grid-column: 4 / span 6; }
 
-.hero__subtitle { font-size: var(--fs-h3); color: var(--text-secondary); max-width: 38ch; }
-.hero__meta { display: flex; flex-wrap: wrap; gap: var(--sp-5); }
+.hero__rail dt { opacity: 0.55; }
+.hero__rail dd { margin: 0; }
+.hero__rail > div { display: grid; gap: 2px; }
 
-/* Links carry an always-visible rule — never a hover-only affordance, and at
-   least 44px tall for touch. */
-.hero__link, .story__link, .closing__link {
-    display: inline-grid;
-    gap: var(--sp-2);
-    min-height: 44px;
-    align-content: center;
-    text-decoration: none;
-    font-size: var(--fs-small);
-    letter-spacing: var(--tracking-wide);
-    text-transform: uppercase;
-}
+/* No featured project: the wordmark carries the screen by itself. */
+.hero--empty { grid-template-rows: 1fr auto 1fr; }
+.hero--empty .hero__wordmark { grid-row: 2; }
 
 /*
- * The accent has exactly one job: it marks the single primary action in a
- * section — the one link the visitor is meant to take. It appears nowhere
- * else, so when it does appear it means something.
+ * Narrow screens recompose rather than compress. The interlock needs a word
+ * wide enough to be interrupted and a column narrow enough to leave something
+ * showing; below roughly 900px neither holds, so the composition becomes a
+ * stack — wordmark, plate, words — deliberately, rather than letting the
+ * letters collide with the picture.
  */
-.hero__link-rule, .story__link-rule, .closing__rule {
-    display: block;
-    height: var(--rule-strong);
-    width: 100%;
-    background-color: var(--accent);
-    transition: opacity var(--dur-base) var(--ease-editorial);
-}
+@media (max-width: 900px) {
+    .hero {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto auto;
+        gap: var(--sp-5);
+        padding-block: var(--sp-9);
+        min-height: auto;
+    }
 
-.hero__link:hover .hero__link-rule,
-.hero__link:focus-visible .hero__link-rule,
-.story__link:hover .story__link-rule,
-.story__link:focus-visible .story__link-rule,
-.closing__link:hover .closing__rule,
-.closing__link:focus-visible .closing__rule { opacity: 0.55; }
+    .hero__wordmark {
+        grid-column: 1;
+        grid-row: 1;
+        font-size: min(calc(92vw / (var(--wordmark-chars) * 0.56)), 18vh);
+        text-align: left;
+    }
+
+    .hero--landscape .hero__plate,
+    .hero--portrait .hero__plate,
+    .hero--square .hero__plate {
+        grid-column: 1;
+        grid-row: 2;
+        aspect-ratio: 4 / 5;
+    }
+
+    .hero--landscape .hero__aside,
+    .hero--portrait .hero__aside,
+    .hero--square .hero__aside {
+        grid-column: 1;
+        grid-row: 3;
+        max-width: none;
+    }
+
+    .hero--landscape .hero__rail,
+    .hero--portrait .hero__rail,
+    .hero--square .hero__rail {
+        grid-column: 1;
+        grid-row: 4;
+        margin-bottom: 0;
+    }
+}
 
 /* ---------------- 2. Introduction — one statement, much air ------------- */
 
@@ -334,4 +440,93 @@
     .hero__meta { gap: var(--sp-3); }
     .works__item { padding-left: calc((var(--start) - 1) * 0.2rem); }
     .sheet__grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ---------------- Client marquee ---------------------------------------- */
+
+/*
+ * Transform only. The track is translated, never re-laid-out, so the browser
+ * can keep it on its own compositor layer: no reflow, no paint of the page
+ * behind it, and nothing that touches interaction latency.
+ */
+
+.marquee {
+    border-block: var(--rule-hair) solid var(--border);
+    padding-block: var(--sp-4);
+    overflow: hidden;
+}
+
+.marquee__viewport {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+    animation: marquee-drift 48s linear infinite;
+}
+
+/* Stopping on focus matters more than the motion does: without it, tabbing
+   into the strip moves the link out from under the focus ring. */
+.marquee:hover .marquee__viewport,
+.marquee:focus-within .marquee__viewport {
+    animation-play-state: paused;
+}
+
+.marquee__track {
+    display: flex;
+    gap: var(--sp-9);
+    margin: 0;
+    padding: 0 0 0 var(--sp-9);
+    list-style: none;
+    flex: none;
+}
+
+.marquee__item {
+    font-size: var(--fs-small);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.marquee__item a {
+    color: inherit;
+    text-decoration: none;
+    /* A real target, not a 12px line of text. */
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+}
+
+.marquee__item a:hover,
+.marquee__item a:focus-visible { color: var(--text-primary); }
+
+@keyframes marquee-drift {
+    from { transform: translate3d(0, 0, 0); }
+    /* Exactly one track width, so the duplicate lands where the original was. */
+    to   { transform: translate3d(-50%, 0, 0); }
+}
+
+/*
+ * Reduced motion gets a wrapped list, not a frozen strip. A paused marquee
+ * leaves half a name cut off at the edge, which is worse than no marquee —
+ * so the whole conceit is abandoned and the names simply wrap.
+ */
+@media (prefers-reduced-motion: reduce) {
+    .marquee { overflow: visible; }
+
+    .marquee__viewport {
+        animation: none;
+        width: auto;
+        max-width: var(--container-wide);
+        margin-inline: auto;
+        padding-inline: var(--gutter);
+    }
+
+    .marquee__track {
+        flex-wrap: wrap;
+        gap: var(--sp-3) var(--sp-6);
+        padding-left: 0;
+    }
+
+    /* The duplicate has no purpose once nothing is moving. */
+    .marquee__track[aria-hidden='true'] { display: none; }
 }

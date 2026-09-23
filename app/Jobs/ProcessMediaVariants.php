@@ -79,8 +79,28 @@ class ProcessMediaVariants implements ShouldBeUnique, ShouldQueue
                 ]);
             }
 
-            $this->capturePlaceholders($manager, $temporaryPath);
-            $this->generateVariants($manager, $temporaryPath, $sourceWidth);
+            /*
+             * Everything below reads the working copy, not the original.
+             *
+             * This job used to decode the full source once per rendition —
+             * fourteen decodes of the same file. On a 44.8 MP frame that
+             * measured 1.32 GB peak. Decoding once, scaling to the working
+             * budget, and generating every rendition from that copy removes
+             * thirteen of those decodes and bounds the rest.
+             *
+             * It is still a fresh decode per variant, just of a smaller file,
+             * so no rendition is ever resized from an already-resized one.
+             */
+            $workingPath = $this->workingCopy($manager, $temporaryPath, $sourceWidth, $sourceHeight);
+
+            try {
+                $this->capturePlaceholders($manager, $workingPath);
+                $this->generateVariants($manager, $workingPath, $sourceWidth);
+            } finally {
+                if ($workingPath !== $temporaryPath && is_file($workingPath)) {
+                    unlink($workingPath);
+                }
+            }
 
             $this->media->update([
                 'status' => MediaStatus::Ready,
@@ -143,6 +163,50 @@ class ProcessMediaVariants implements ShouldBeUnique, ShouldQueue
         }
 
         return $temporaryPath;
+    }
+
+
+    /**
+     * A decoded-and-scaled copy of the source, written once.
+     *
+     * Returns the original path untouched when the source already sits inside
+     * the budget, so a normal photograph costs nothing extra.
+     */
+    private function workingCopy(ImageManager $manager, string $sourcePath, int $width, int $height): string
+    {
+        $budget = (int) config('media.working_megapixels', 16) * 1_000_000;
+        $pixels = $width * $height;
+
+        if ($pixels <= $budget) {
+            return $sourcePath;
+        }
+
+        // Preserve the aspect ratio: scale the longest edge by the square root
+        // of the area ratio.
+        $factor = sqrt($budget / $pixels);
+        $targetWidth = max(1, (int) floor($width * $factor));
+
+        $workingPath = tempnam(sys_get_temp_dir(), 'media-work-');
+
+        if ($workingPath === false) {
+            return $sourcePath;   // degrade to the slow path rather than fail
+        }
+
+        $this->decode($manager, $sourcePath)
+            ->scale(width: $targetWidth)
+            // Quality 92: this is an intermediate, and every rendition is
+            // encoded from it, so it must not introduce visible artefacts.
+            ->encode(new JpegEncoder(quality: 92))
+            ->save($workingPath);
+
+        Log::info('Media working copy scaled for processing.', [
+            'media_id' => $this->media->id,
+            'from' => $width.'x'.$height,
+            'to' => $targetWidth.'px wide',
+            'megapixels' => round($pixels / 1_000_000, 1),
+        ]);
+
+        return $workingPath;
     }
 
     /**
