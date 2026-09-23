@@ -1,4 +1,4 @@
-@props(['block', 'media'])
+@props(['block', 'media', 'credits' => null, 'descriptions' => []])
 @php($url = $block->data['url'] ?? null)
 @if (filled($url))
     {{--
@@ -11,7 +11,7 @@
             @php($poster = $media->first())
             @if ($poster)
                 <x-picture :media="$poster" sizes="(max-width: 900px) 100vw, 900px" img-class="block__image"
-                           :alt="$block->data['poster_alt'] ?? null" />
+                           :alt="$descriptions[0] ?? ($block->data['poster_alt'] ?? null)" />
             @endif
             <span class="block__facade-label">
                 <span class="block__facade-icon" aria-hidden="true">▶</span>

@@ -1,4 +1,4 @@
-@props(['block', 'media'])
+@props(['block', 'media', 'credits' => null, 'descriptions' => []])
 {{--
     A horizontally scrolling run of images. Scrolling is CSS overflow, so it
     works with a trackpad, a scrollbar, touch, and keyboard focus — no
@@ -6,9 +6,10 @@
 --}}
 <figure class="block block--gallery-strip">
     <ul class="block__strip" role="list" tabindex="0" aria-label="Image gallery, scrollable">
-        @foreach ($media as $image)
+        @foreach ($media as $i => $image)
             <li class="block__strip-item">
-                <x-picture :media="$image" sizes="(max-width: 700px) 80vw, 480px" img-class="block__image" />
+                <x-picture :media="$image" sizes="(max-width: 700px) 80vw, 480px" img-class="block__image"
+                           :alt="$descriptions[$i] ?? null" />
             </li>
         @endforeach
     </ul>

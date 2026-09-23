@@ -1,21 +1,21 @@
-<div data-unsaved-guard data-dirty="{{ $dirty ? '1' : '0' }}">
+<div data-story-builder data-unsaved-guard data-dirty="0">
     <p class="breadcrumb">
         <a href="{{ route('admin.projects.edit', $project) }}">← {{ $project->title }}</a>
     </p>
 
     <header class="module-header">
         <h1 class="admin-heading">Story</h1>
-        <p class="admin-note">{{ count($blocks) }} {{ Str::plural('block', count($blocks)) }}</p>
+        <p class="admin-note"><span data-block-count>{{ count($blocks) }}</span> blocks</p>
 
-        @if ($dirty)
-            <span class="badge" role="status" aria-live="polite">Unsaved changes</span>
-        @endif
+        <span class="badge" data-dirty-badge role="status" aria-live="polite" hidden>Unsaved changes</span>
 
-        <a href="{{ route('admin.projects.preview', $project) }}" class="admin-link" target="_blank" rel="noopener">
-            Preview
-        </a>
+        <a href="{{ route('admin.projects.preview', $project) }}" class="admin-link" target="_blank" rel="noopener">Preview</a>
 
-        <button type="button" class="admin-button" wire:click="save">Save story</button>
+        <button type="button" class="admin-button" data-save
+                wire:loading.attr="disabled" wire:target="saveStory">
+            <span wire:loading.remove wire:target="saveStory">Save story</span>
+            <span wire:loading wire:target="saveStory">Saving…</span>
+        </button>
     </header>
 
     @if ($message !== '')
@@ -26,101 +26,78 @@
         <p class="admin-flash__message admin-flash__message--error" role="alert">{{ $message }}</p>
     @enderror
 
-    {{-- Type picker, grouped so the list is readable at fourteen types. --}}
-    <section class="type-picker" aria-labelledby="add-block-heading">
-        <h2 id="add-block-heading" class="form-section__heading">Add a block</h2>
+    <div class="builder">
+        {{-- D2: a compact outline, rebuilt locally on every structural change. --}}
+        <nav class="outline" aria-labelledby="outline-heading">
+            <h2 id="outline-heading" class="outline__heading">Outline</h2>
+            <ol class="outline__list" data-outline></ol>
 
-        @foreach ($types as $group => $cases)
-            <div class="type-picker__group">
-                <p class="type-picker__label">{{ $group }}</p>
-                <ul class="type-picker__list" role="list">
-                    @foreach ($cases as $case)
-                        <li>
-                            <button type="button" class="admin-button admin-button--quiet"
-                                    wire:click="addBlock('{{ $case->value }}')">
-                                {{ $case->label() }}
-                            </button>
-                        </li>
-                    @endforeach
-                </ul>
+            <div class="outline__actions">
+                <button type="button" class="admin-link" data-collapse-all>Collapse all</button>
+                <button type="button" class="admin-link" data-expand-all>Expand all</button>
             </div>
-        @endforeach
-    </section>
+        </nav>
 
-    @if ($blocks === [])
-        <div class="empty-state">
-            <h2>This story is empty</h2>
-            <p>Add a block above. Blocks stack down the page in the order you arrange them here.</p>
-        </div>
-    @else
-        <ul class="block-list" role="list" data-reorderable data-reorder-handler="reorderBlocks">
-            @foreach ($blocks as $index => $block)
-                @php($type = \App\Enums\BlockType::from($block['type']))
-                <li class="block-card @if (isset($blockErrors[$index])) block-card--invalid @endif"
-                    wire:key="{{ $block['key'] }}"
-                    data-id="{{ $block['key'] }}">
+        <div class="builder__main">
+            <section class="type-picker" aria-labelledby="add-block-heading">
+                <h2 id="add-block-heading" class="form-section__heading">Add a block</h2>
 
-                    <header class="block-card__header">
-                        <button type="button" class="project-row__handle" data-drag-handle
-                                aria-label="Reorder {{ $type->label() }} block. Use the up and down arrow keys to move it.">⠿</button>
-
-                        <span class="block-card__type">{{ $type->label() }}</span>
-                        <span class="block-card__position">{{ $index + 1 }} of {{ count($blocks) }}</span>
-
-                        <span class="block-card__actions">
-                            <button type="button" class="admin-link" wire:click="moveBlock({{ $index }}, -1)"
-                                    @disabled($index === 0) aria-label="Move block up">↑</button>
-                            <button type="button" class="admin-link" wire:click="moveBlock({{ $index }}, 1)"
-                                    @disabled($index === count($blocks) - 1) aria-label="Move block down">↓</button>
-                            <button type="button" class="admin-link" wire:click="duplicateBlock({{ $index }})">Duplicate</button>
-                            <button type="button" class="admin-link" wire:click="confirmRemove({{ $index }})">Remove</button>
-                        </span>
-                    </header>
-
-                    @if ($confirmingRemoval === $index)
-                        <div class="danger__body" role="alert">
-                            <p class="admin-note">Remove this {{ $type->label() }} block? Its images stay in the library.</p>
-                            <button type="button" class="admin-button admin-button--danger"
-                                    wire:click="removeBlock({{ $index }})">Yes, remove it</button>
-                            <button type="button" class="admin-link" wire:click="cancelRemove">Cancel</button>
-                        </div>
-                    @endif
-
-                    {{-- Problems sit with the block they belong to. --}}
-                    @if (isset($blockErrors[$index]))
-                        <ul class="block-card__errors" role="alert">
-                            @foreach ($blockErrors[$index] as $error)
-                                <li>{{ $error }}</li>
+                @foreach ($types as $group => $cases)
+                    <div class="type-picker__group">
+                        <p class="type-picker__label">{{ $group }}</p>
+                        <ul class="type-picker__list" role="list">
+                            @foreach ($cases as $case)
+                                <li>
+                                    <button type="button" class="admin-button admin-button--quiet"
+                                            data-add-block="{{ $case->value }}">
+                                        {{ $case->label() }}
+                                    </button>
+                                </li>
                             @endforeach
                         </ul>
+                    </div>
+                @endforeach
+            </section>
+
+            <p class="empty-state" data-empty @if ($blocks !== []) hidden @endif>
+                This story is empty. Add a block above — blocks stack down the page in the order you arrange them here.
+            </p>
+
+            <ul class="block-list" role="list" data-block-list>
+                @foreach ($blocks as $index => $block)
+                    @php($type = \App\Enums\BlockType::from($block['type']))
+
+                    @if (isset($blockErrors[$index]))
+                        {{-- Errors are attached to their block below, by key. --}}
                     @endif
 
-                    <div class="block-card__body">
-                        @if ($type->acceptsMedia())
-                            @include('livewire.admin.blocks.media', [
-                                'index' => $index,
-                                'block' => $block,
-                                'type' => $type,
-                                'mediaById' => $mediaById,
-                            ])
-                        @endif
+                    @include('livewire.admin.blocks.card', ['block' => $block, 'type' => $type, 'mediaById' => $mediaById])
+                @endforeach
+            </ul>
 
-                        @if ($type->hasText())
-                            @include('livewire.admin.blocks.fields', [
-                                'index' => $index,
-                                'block' => $block,
-                                'type' => $type,
-                            ])
-                        @endif
-                    </div>
-                </li>
-            @endforeach
-        </ul>
-
-        <div class="form-actions">
-            <button type="button" class="admin-button" wire:click="save">Save story</button>
+            <div class="form-actions">
+                <button type="button" class="admin-button" data-save>Save story</button>
+            </div>
         </div>
-    @endif
+    </div>
+
+    {{--
+        One hidden template per block type. Adding a block clones the matching
+        template — no markup is duplicated in JavaScript, and a new type needs
+        no JS change at all.
+    --}}
+    @foreach ($allTypes as $case)
+        <template data-block-template="{{ $case->value }}">
+            @include('livewire.admin.blocks.card', [
+                'block' => ['key' => '__KEY__', 'id' => '', 'type' => $case->value, 'data' => [], 'media' => []],
+                'type' => $case,
+                'mediaById' => collect(),
+            ])
+        </template>
+    @endforeach
+
+    {{-- Server-side validation problems, handed to the browser to place. --}}
+    <script type="application/json" data-block-errors>@json($blockErrors)</script>
 
     <livewire:admin.media-picker />
 </div>

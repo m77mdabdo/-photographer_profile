@@ -1,4 +1,4 @@
-@props(['block', 'media'])
+@props(['block', 'media', 'credits' => null, 'descriptions' => []])
 <section class="block block--text">
     @if (filled($block->data['heading'] ?? null))
         <h2 class="block__heading">{{ $block->data['heading'] }}</h2>

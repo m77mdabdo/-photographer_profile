@@ -40,7 +40,7 @@
         --}}
         <div class="project__story">
             @foreach ($project->blocks as $block)
-                <x-block :block="$block" />
+                <x-block :block="$block" :credits="$project->credits" />
             @endforeach
         </div>
 

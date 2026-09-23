@@ -1,4 +1,4 @@
-@props(['block', 'media'])
+@props(['block', 'media', 'credits' => null, 'descriptions' => []])
 @php($url = $block->data['url'] ?? null)
 @if (filled($url))
     <figure class="block block--embed">

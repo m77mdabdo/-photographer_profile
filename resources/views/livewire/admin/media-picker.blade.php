@@ -1,22 +1,48 @@
 <div>
     @if ($open)
-        {{--
-            A dialog in markup rather than a JS modal: it is reachable by
-            keyboard, announced as a dialog, and works if scripts fail to load.
-        --}}
         <div class="picker" role="dialog" aria-modal="true" aria-labelledby="picker-heading">
             <div class="picker__panel">
                 <header class="picker__header">
-                    <h2 id="picker-heading" class="picker__heading">Choose an image</h2>
+                    <h2 id="picker-heading" class="picker__heading">
+                        {{ $multiple ? 'Choose images' : 'Choose an image' }}
+                    </h2>
                     <button type="button" class="admin-link" wire:click="closePicker">Close</button>
                 </header>
 
-                <div class="field">
-                    <label for="picker-search">Search</label>
-                    <input type="search" id="picker-search"
-                           wire:model.live.debounce.400ms="search"
-                           placeholder="Filename, alt text or credit" autofocus>
+                <div class="picker__controls">
+                    <div class="field">
+                        <label for="picker-search">Search</label>
+                        <input type="search" id="picker-search"
+                               wire:model.live.debounce.400ms="search"
+                               placeholder="Filename, alt text or credit" autofocus>
+                    </div>
+
+                    @if ($multiple)
+                        <button type="button" class="admin-link" wire:click="selectAllMatching">
+                            Select all {{ $matchingCount }} matching
+                        </button>
+                    @endif
                 </div>
+
+                @if ($multiple)
+                    <p class="picker__status" role="status" aria-live="polite">
+                        <strong>{{ count($selected) }}</strong> selected
+                        @if ($max !== null) of {{ $max }} available @endif
+
+                        @if ($selected !== [])
+                            <button type="button" class="admin-link" wire:click="clearSelection">Clear</button>
+                        @endif
+                    </p>
+
+                    @if ($limitMessage !== '')
+                        <p class="picker__limit" role="alert">{{ $limitMessage }}</p>
+                    @endif
+
+                    <p class="admin-note">
+                        Space toggles an image. Shift+click, or Shift+Enter, extends the selection
+                        from the last one you touched.
+                    </p>
+                @endif
 
                 @if ($media->isEmpty())
                     <p class="admin-note">
@@ -25,9 +51,25 @@
                 @else
                     <ul class="picker__grid" role="list">
                         @foreach ($media as $item)
+                            @php($position = array_search($item->id, $selected, true))
                             <li wire:key="pick-{{ $item->id }}">
-                                <button type="button" class="picker__item"
-                                        wire:click="choose({{ $item->id }})">
+                                {{--
+                                    A real button, so Space and Enter work with no
+                                    extra key handling. Shift is read from the event
+                                    so the keyboard path matches the mouse path.
+                                --}}
+                                <button type="button"
+                                        class="picker__item @if ($position !== false) is-selected @endif"
+                                        @if ($multiple)
+                                            wire:click="$event.shiftKey ? $wire.extendTo({{ $item->id }}) : $wire.toggle({{ $item->id }})"
+                                            aria-pressed="{{ $position !== false ? 'true' : 'false' }}"
+                                        @else
+                                            wire:click="choose({{ $item->id }})"
+                                        @endif>
+                                    @if ($multiple && $position !== false)
+                                        <span class="picker__order" aria-hidden="true">{{ $position + 1 }}</span>
+                                    @endif
+
                                     <x-picture :media="$item" sizes="160px" img-class="picker__image" />
                                     <span class="picker__name">{{ $item->original_filename }}</span>
                                 </button>
@@ -39,10 +81,17 @@
                 @endif
 
                 <footer class="picker__footer">
-                    <button type="button" class="admin-button admin-button--quiet"
-                            wire:click="clearSelection">
-                        Remove current image
-                    </button>
+                    @if ($multiple)
+                        <button type="button" class="admin-button"
+                                wire:click="confirmSelection"
+                                @disabled($selected === [])>
+                            Add {{ count($selected) }} {{ Str::plural('image', count($selected)) }}
+                        </button>
+                    @else
+                        <button type="button" class="admin-button admin-button--quiet" wire:click="clearSelection">
+                            Remove current image
+                        </button>
+                    @endif
                 </footer>
             </div>
         </div>

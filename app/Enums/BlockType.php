@@ -94,7 +94,11 @@ enum BlockType: string
 
             self::GalleryStrip => null,
 
-            self::FullWidthText, self::Quote, self::Video,
+            // A poster frame, optional (minMedia is 0). The facade renders it
+            // when present and falls back to a plain label when it is not.
+            self::Video => 1,
+
+            self::FullWidthText, self::Quote,
             self::Embed, self::Spacer, self::Credits => 0,
         };
     }
@@ -133,17 +137,23 @@ enum BlockType: string
      */
     public function allowedDataKeys(): array
     {
+        /*
+         * 'descriptions' holds per-position alt text, keyed by the image's
+         * index within the block. The key is deliberately not "alt_images" or
+         * similar: the saving guard rejects anything matching /media|image|
+         * photo/i, and rightly so. It stores text, never ids.
+         */
         return match ($this) {
-            self::FullWidthImage, self::ContainedImage => ['caption'],
-            self::PortraitPair, self::LandscapePair, self::ThreeImageGrid => ['caption'],
-            self::GalleryStrip => ['caption'],
+            self::FullWidthImage, self::ContainedImage => ['caption', 'descriptions'],
+            self::PortraitPair, self::LandscapePair, self::ThreeImageGrid => ['caption', 'descriptions'],
+            self::GalleryStrip => ['caption', 'descriptions'],
 
-            self::ImageText, self::TextImage => ['heading', 'body'],
+            self::ImageText, self::TextImage => ['heading', 'body', 'descriptions'],
             self::FullWidthText => ['heading', 'body'],
             self::Quote => ['quote', 'attribution'],
             self::Credits => ['heading'],
 
-            self::Video => ['url', 'caption', 'poster_alt'],
+            self::Video => ['url', 'caption', 'poster_alt', 'descriptions'],
             self::Embed => ['url', 'caption'],
             self::Spacer => ['height'],
         };

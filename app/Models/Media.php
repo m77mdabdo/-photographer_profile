@@ -173,6 +173,24 @@ class Media extends Model
         return Storage::disk($variant->disk)->url($variant->path);
     }
 
+    /**
+     * A small rendition for admin thumbnails, in whichever modern format was
+     * built. Falls back through the formats rather than assuming any one of
+     * them exists, because which were generated depends on config.
+     */
+    public function thumbnailUrl(int $width = 480): ?string
+    {
+        foreach (['webp', 'jpeg', 'avif'] as $format) {
+            $url = $this->url($format, $width);
+
+            if ($url !== null) {
+                return $url;
+            }
+        }
+
+        return null;
+    }
+
     public function hasFormat(string $format): bool
     {
         return $this->variantsFor($format)->isNotEmpty();

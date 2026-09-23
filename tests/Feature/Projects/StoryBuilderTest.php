@@ -8,12 +8,15 @@ use App\Enums\BlockType;
 use App\Enums\MediaStatus;
 use App\Enums\PublishStatus;
 use App\Enums\UserRole;
+use App\Actions\Projects\SyncBlockMedia;
+use App\Livewire\Admin\MediaPicker;
 use App\Livewire\Admin\StoryBuilder;
 use App\Models\Media;
 use App\Models\MediaUsage;
 use App\Models\Project;
 use App\Models\ProjectBlock;
 use App\Models\User;
+use Illuminate\Support\Str;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -61,6 +64,42 @@ class StoryBuilderTest extends TestCase
         return $media->refresh();
     }
 
+
+    /**
+     * One block descriptor, as the browser assembles it from the DOM.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  list<int>  $media
+     * @return array<string, mixed>
+     */
+    private function descriptor(BlockType $type, array $data = [], array $media = [], ?int $id = null): array
+    {
+        return [
+            'id' => $id,
+            'key' => $id !== null ? 'b'.$id : 'n'.Str::uuid(),
+            'type' => $type->value,
+            'data' => $data,
+            'media' => $media,
+        ];
+    }
+
+    /**
+     * The story as the builder currently holds it, for round-tripping.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function currentStory(Project $project): array
+    {
+        return $project->blocks()->with('blockMedia')->orderBy('sort_order')->get()
+            ->map(fn ($b): array => [
+                'id' => $b->id,
+                'key' => 'b'.$b->id,
+                'type' => $b->type->value,
+                'data' => (array) ($b->data ?? []),
+                'media' => $b->blockMedia->pluck('media_id')->map('intval')->all(),
+            ])->all();
+    }
+
     private function publishedProject(): Project
     {
         return Project::factory()->published()->create(['title' => 'Coastline', 'slug' => 'coastline']);
@@ -73,18 +112,14 @@ class StoryBuilderTest extends TestCase
         $project = Project::factory()->create();
         $image = $this->media();
 
-        $component = Livewire::actingAs($this->admin())
+        Livewire::actingAs($this->admin())
             ->test(StoryBuilder::class, ['project' => $project])
-            ->call('addBlock', BlockType::Quote->value)
-            ->call('addBlock', BlockType::FullWidthImage->value)
-            ->call('addBlock', BlockType::Spacer->value);
-
-        $component->set('blocks.0.data.quote', 'Light is everything.')
-            ->set('blocks.1.media', [$image->id])
-            ->set('blocks.2.data.height', 120)
-            ->call('save')
-            ->assertHasNoErrors()
-            ->assertSet('dirty', false);
+            ->call('saveStory', [
+                $this->descriptor(BlockType::Quote, ['quote' => 'Light is everything.']),
+                $this->descriptor(BlockType::FullWidthImage, [], [$image->id]),
+                $this->descriptor(BlockType::Spacer, ['height' => 120]),
+            ])
+            ->assertHasNoErrors();
 
         $blocks = $project->blocks()->orderBy('sort_order')->get();
 
@@ -107,9 +142,7 @@ class StoryBuilderTest extends TestCase
 
         Livewire::actingAs($this->admin())
             ->test(StoryBuilder::class, ['project' => $project])
-            ->call('addBlock', BlockType::FullWidthImage->value)
-            ->set('blocks.0.media', [$image->id])
-            ->call('save')
+            ->call('saveStory', [$this->descriptor(BlockType::FullWidthImage, [], [$image->id])])
             ->assertHasNoErrors();
 
         $before = $project->blocks()->orderBy('id')->pluck('id')->all();
@@ -119,10 +152,10 @@ class StoryBuilderTest extends TestCase
         $this->assertCount(1, $before);
         $this->assertCount(1, $usagesBefore);
 
-        // Open it fresh and save with nothing touched.
+        // Open it fresh and save back exactly what was loaded.
         Livewire::actingAs($this->admin())
             ->test(StoryBuilder::class, ['project' => $project])
-            ->call('save')
+            ->call('saveStory', $this->currentStory($project))
             ->assertHasNoErrors();
 
         $this->assertSame($before, $project->blocks()->orderBy('id')->pluck('id')->all(), 'block ids must survive');
@@ -136,44 +169,34 @@ class StoryBuilderTest extends TestCase
     {
         $project = Project::factory()->create();
 
-        $component = Livewire::actingAs($this->admin())
-            ->test(StoryBuilder::class, ['project' => $project]);
+        $story = [
+            $this->descriptor(BlockType::Quote, ['quote' => 'One']),
+            $this->descriptor(BlockType::FullWidthText, ['body' => 'Two']),
+            $this->descriptor(BlockType::Spacer, ['height' => 40]),
+            $this->descriptor(BlockType::Quote, ['quote' => 'Four']),
+            $this->descriptor(BlockType::FullWidthText, ['body' => 'Five']),
+        ];
 
-        foreach (['quote', 'full_width_text', 'spacer', 'quote', 'full_width_text'] as $i => $type) {
-            $component->call('addBlock', $type);
-        }
-
-        $component->set('blocks.0.data.quote', 'One')
-            ->set('blocks.1.data.body', 'Two')
-            ->set('blocks.2.data.height', 40)
-            ->set('blocks.3.data.quote', 'Four')
-            ->set('blocks.4.data.body', 'Five')
-            ->call('save')
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $story)
             ->assertHasNoErrors();
 
-        $keys = collect($component->get('blocks'))->pluck('key')->all();
-        $reversed = array_reverse($keys);
+        // The browser reverses the order locally; the server sees one call.
+        $reversed = array_reverse($this->currentStory($project));
 
-        // Reordering is local: no write happens here.
-        $writes = 0;
-        DB::listen(function ($query) use (&$writes): void {
-            $sql = strtolower(trim($query->sql));
-            if (str_starts_with($sql, 'update') || str_starts_with($sql, 'insert') || str_starts_with($sql, 'delete')) {
-                $writes++;
-            }
-        });
-
-        $component->call('reorderBlocks', $reversed)->assertSet('dirty', true);
-
-        $this->assertSame(0, $writes, 'dragging must not touch the database');
-
-        $component->call('save')->assertHasNoErrors();
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $reversed)
+            ->assertHasNoErrors();
 
         $persisted = $project->blocks()->orderBy('sort_order')->get();
+
         $this->assertSame(
             ['Five', 'Four', null, 'Two', 'One'],
             $persisted->map(fn ($b) => $b->data['body'] ?? $b->data['quote'] ?? null)->all()
         );
+        $this->assertSame([0, 1, 2, 3, 4], $persisted->pluck('sort_order')->all());
     }
 
     // ----------------------------------------------------------------- 4
@@ -184,11 +207,11 @@ class StoryBuilderTest extends TestCase
 
         $component = Livewire::actingAs($this->admin())
             ->test(StoryBuilder::class, ['project' => $project])
-            ->call('addBlock', BlockType::FullWidthText->value)
-            ->set('blocks.0.data.body', 'Perfectly fine.')
-            // Needs three images and has none.
-            ->call('addBlock', BlockType::ThreeImageGrid->value)
-            ->call('save');
+            ->call('saveStory', [
+                $this->descriptor(BlockType::FullWidthText, ['body' => 'Perfectly fine.']),
+                // Needs three images and has none.
+                $this->descriptor(BlockType::ThreeImageGrid),
+            ]);
 
         $component->assertHasErrors('story');
 
@@ -210,9 +233,7 @@ class StoryBuilderTest extends TestCase
 
         Livewire::actingAs($this->admin())
             ->test(StoryBuilder::class, ['project' => $project])
-            ->call('addBlock', BlockType::GalleryStrip->value)
-            ->set('blocks.0.media', $ids)
-            ->call('save')
+            ->call('saveStory', [$this->descriptor(BlockType::GalleryStrip, [], $ids)])
             ->assertHasNoErrors();
 
         $block = $project->blocks()->sole();
@@ -230,15 +251,21 @@ class StoryBuilderTest extends TestCase
         $a = $this->media();
         $b = $this->media();
 
-        $component = Livewire::actingAs($this->admin())
+        Livewire::actingAs($this->admin())
             ->test(StoryBuilder::class, ['project' => $project])
-            ->call('addBlock', BlockType::LandscapePair->value)
-            ->set('blocks.0.data.caption', 'Twice over')
-            ->set('blocks.0.media', [$a->id, $b->id])
-            ->call('save')
+            ->call('saveStory', [$this->descriptor(BlockType::LandscapePair, ['caption' => 'Twice over'], [$a->id, $b->id])])
             ->assertHasNoErrors();
 
-        $component->call('duplicateBlock', 0)->call('save')->assertHasNoErrors();
+        // The browser duplicates locally: same data and media, no id.
+        $story = $this->currentStory($project);
+        $copy = $story[0];
+        $copy['id'] = null;
+        $copy['key'] = 'n'.Str::uuid();
+
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', [$story[0], $copy])
+            ->assertHasNoErrors();
 
         $blocks = $project->blocks()->orderBy('sort_order')->get();
 
@@ -259,17 +286,19 @@ class StoryBuilderTest extends TestCase
         $image = $this->media();
         $user = $this->admin();
 
-        $component = Livewire::actingAs($user)
+        Livewire::actingAs($user)
             ->test(StoryBuilder::class, ['project' => $project])
-            ->call('addBlock', BlockType::ContainedImage->value)
-            ->set('blocks.0.media', [$image->id])
-            ->call('save')
+            ->call('saveStory', [$this->descriptor(BlockType::ContainedImage, [], [$image->id])])
             ->assertHasNoErrors();
 
         $this->assertSame(1, $image->fresh()->usages()->count());
         $this->assertFalse($user->can('delete', $image->fresh()));
 
-        $component->call('removeBlock', 0)->call('save')->assertHasNoErrors();
+        // Removing is a local deletion; the save carries an empty story.
+        Livewire::actingAs($user)
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', [])
+            ->assertHasNoErrors();
 
         $this->assertSame(0, $project->blocks()->count());
         $this->assertSame(0, $image->fresh()->usages()->count());
@@ -462,5 +491,298 @@ class StoryBuilderTest extends TestCase
         $this->assertStringNotContainsString('<iframe', $html);
         $this->assertStringNotContainsString('data-requires-js', $html);
         $this->assertStringContainsString('href="https://example.com/watch"', $html);
+    }
+
+    // ================= TASK 8 =================
+
+    // ----------------------------------------------------------------- E1
+
+    public function test_a_video_block_accepts_one_poster_and_rejects_two(): void
+    {
+        $project = Project::factory()->create();
+        $a = $this->media();
+        $b = $this->media();
+
+        $this->assertSame(0, BlockType::Video->minMedia(), 'a poster is optional');
+        $this->assertSame(1, BlockType::Video->maxMedia(), 'but one is permitted');
+
+        // None: fine.
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', [$this->descriptor(BlockType::Video, ['url' => 'https://example.com/v'])])
+            ->assertHasNoErrors();
+
+        // One poster: fine, and it reaches media_usages.
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', [$this->descriptor(BlockType::Video, ['url' => 'https://example.com/v'], [$a->id])])
+            ->assertHasNoErrors();
+
+        $this->assertSame([$a->id], $project->blocks()->sole()->blockMedia->pluck('media_id')->map('intval')->all());
+
+        // Two: refused.
+        $component = Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', [$this->descriptor(BlockType::Video, ['url' => 'https://example.com/v'], [$a->id, $b->id])]);
+
+        $component->assertHasErrors('story');
+        $this->assertStringContainsString('at most 1 image', $component->get('blockErrors')[0][0]);
+    }
+
+    // ----------------------------------------------------------------- E2 + E3
+
+    public function test_forty_keyboard_reorders_and_a_mixed_edit_are_one_server_call(): void
+    {
+        $project = Project::factory()->create();
+
+        $story = [];
+        for ($i = 1; $i <= 40; $i++) {
+            $story[] = $this->descriptor(BlockType::Quote, ['quote' => 'Block '.$i]);
+        }
+
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $story)
+            ->assertHasNoErrors();
+
+        $loaded = $this->currentStory($project);
+        $this->assertCount(40, $loaded);
+
+        /*
+         * Everything the browser does between saves — forty keyboard moves,
+         * three additions, a duplication, two more moves and a removal — is
+         * array manipulation. The component is asked to do exactly one thing.
+         */
+        $calls = 0;
+        DB::listen(function () use (&$calls): void { $calls++; });
+
+        $component = Livewire::actingAs($this->admin())->test(StoryBuilder::class, ['project' => $project]);
+
+        $queriesAfterMount = $calls;
+
+        // 40 local moves: reverse the array.
+        $reordered = array_reverse($loaded);
+
+        // Then the B4 sequence, also local.
+        $reordered[] = $this->descriptor(BlockType::Quote, ['quote' => 'Added A']);
+        $reordered[] = $this->descriptor(BlockType::Quote, ['quote' => 'Added B']);
+        $reordered[] = $this->descriptor(BlockType::Quote, ['quote' => 'Added C']);
+
+        $copy = $reordered[0];
+        $copy['id'] = null;
+        $copy['key'] = 'n'.Str::uuid();
+        array_splice($reordered, 1, 0, [$copy]);
+
+        [$reordered[3], $reordered[2]] = [$reordered[2], $reordered[3]];
+        [$reordered[2], $reordered[1]] = [$reordered[1], $reordered[2]];
+
+        array_splice($reordered, 5, 1);
+
+        // Nothing has touched the database yet.
+        $this->assertSame($queriesAfterMount, $calls, 'local edits must not query');
+
+        $component->call('saveStory', $reordered)->assertHasNoErrors();
+
+        $persisted = $project->blocks()->orderBy('sort_order')->get();
+
+        $this->assertCount(count($reordered), $persisted);
+        $this->assertSame(
+            collect($reordered)->map(fn ($b) => $b['data']['quote'])->all(),
+            $persisted->map(fn ($b) => $b->data['quote'])->all(),
+            'the saved order matches what the browser assembled'
+        );
+        $this->assertSame(range(0, count($reordered) - 1), $persisted->pluck('sort_order')->all());
+    }
+
+    // ----------------------------------------------------------------- E4
+
+    public function test_multi_select_returns_forty_images_in_the_chosen_order(): void
+    {
+        $project = Project::factory()->create();
+        $ids = collect(range(1, 40))->map(fn (): int => $this->media()->id)->all();
+        $chosen = array_reverse($ids);   // the editor's order, not id order
+
+        $picker = Livewire::actingAs($this->admin())->test(MediaPicker::class)
+            ->call('openPicker', 'nblock-key', true, null);
+
+        foreach ($chosen as $id) {
+            $picker->call('toggle', $id);
+        }
+
+        $picker->assertSet('selected', $chosen)
+            ->call('confirmSelection')
+            // One confirm, carrying all forty.
+            ->assertDispatched('media-selected', fn (string $event, array $params): bool =>
+                count($params['media']) === 40
+                && collect($params['media'])->pluck('id')->all() === $chosen);
+
+        // And one save persists them with the order intact.
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', [$this->descriptor(BlockType::GalleryStrip, [], $chosen)])
+            ->assertHasNoErrors();
+
+        $block = $project->blocks()->sole();
+
+        $this->assertSame($chosen, $block->blockMedia->pluck('media_id')->map('intval')->all());
+        $this->assertSame(range(0, 39), $block->mediaUsages()->orderBy('sort_order')->pluck('sort_order')->all());
+    }
+
+    // ----------------------------------------------------------------- E5
+
+    public function test_selecting_more_than_max_is_refused_with_a_message(): void
+    {
+        $ids = collect(range(1, 5))->map(fn (): int => $this->media()->id)->all();
+
+        $picker = Livewire::actingAs($this->admin())->test(MediaPicker::class)
+            ->call('openPicker', 'slot', true, 3);
+
+        foreach ($ids as $id) {
+            $picker->call('toggle', $id);
+        }
+
+        $this->assertCount(3, $picker->get('selected'), 'the cap holds');
+        $this->assertSame(
+            'This block takes 3 more images. Deselect something to choose a different one.',
+            $picker->get('limitMessage')
+        );
+
+        // Select-all respects it too.
+        $picker->call('clearSelection')->call('selectAllMatching');
+        $this->assertCount(3, $picker->get('selected'));
+
+        // Deselecting frees a place again.
+        $picker->call('toggle', $picker->get('selected')[0]);
+        $this->assertCount(2, $picker->get('selected'));
+        $this->assertSame('', $picker->get('limitMessage'));
+    }
+
+    // ----------------------------------------------------------------- E6
+
+    public function test_collapse_state_is_never_persisted_and_never_dirties_the_story(): void
+    {
+        $project = Project::factory()->create();
+
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', [$this->descriptor(BlockType::Quote, ['quote' => 'Kept'])])
+            ->assertHasNoErrors();
+
+        $block = $project->blocks()->sole();
+
+        // Collapsing is a DOM class and a hidden attribute; the component has
+        // no property for it, so there is nothing that could be persisted.
+        $component = Livewire::actingAs($this->admin())->test(StoryBuilder::class, ['project' => $project]);
+
+        $this->assertArrayNotHasKey('collapsed', $component->get('blocks')[0]);
+        $this->assertFalse(property_exists(StoryBuilder::class, 'collapsed'));
+
+        $this->assertSame(['quote' => 'Kept'], $block->fresh()->data);
+        $this->assertSame($block->id, $project->blocks()->sole()->id);
+    }
+
+    // ----------------------------------------------------------------- E7 + E8
+
+    public function test_a_block_level_alt_overrides_the_media_alt_and_falls_back(): void
+    {
+        $project = $this->publishedProject();
+
+        $overridden = $this->media();
+        $overridden->update(['alt' => 'The media record description']);
+
+        $fallback = $this->media();
+        $fallback->update(['alt' => 'Only the media description']);
+
+        $withOverride = $project->blocks()->create([
+            'type' => BlockType::FullWidthImage, 'sort_order' => 0,
+            'data' => ['descriptions' => [0 => 'This block says something else']],
+        ]);
+        app(SyncBlockMedia::class)($withOverride, [$overridden->id]);
+
+        $withoutOverride = $project->blocks()->create([
+            'type' => BlockType::FullWidthImage, 'sort_order' => 1,
+            'data' => [],
+        ]);
+        app(SyncBlockMedia::class)($withoutOverride, [$fallback->id]);
+
+        $html = $this->get(route('projects.show', $project))->assertOk()->getContent();
+
+        $this->assertStringContainsString('alt="This block says something else"', $html);
+        $this->assertStringNotContainsString('alt="The media record description"', $html);
+        $this->assertStringContainsString('alt="Only the media description"', $html);
+    }
+
+    // ----------------------------------------------------------------- E9
+
+    public function test_the_saving_guard_still_rejects_a_media_id_inside_data(): void
+    {
+        $project = Project::factory()->create();
+        $image = $this->media();
+
+        foreach (['media_id' => $image->id, 'image_ids' => [$image->id], 'photo' => $image->id] as $key => $value) {
+            try {
+                $project->blocks()->create([
+                    'type' => BlockType::FullWidthImage,
+                    'sort_order' => 0,
+                    'data' => [$key => $value],
+                ]);
+
+                $this->fail("Storing '{$key}' in data should have been refused");
+            } catch (\InvalidArgumentException $e) {
+                $this->assertStringContainsString('media_usages', $e->getMessage());
+            }
+        }
+
+        // 'descriptions' is text, not ids, and is permitted.
+        $ok = $project->blocks()->create([
+            'type' => BlockType::FullWidthImage,
+            'sort_order' => 0,
+            'data' => ['descriptions' => [0 => 'A description']],
+        ]);
+
+        $this->assertSame('A description', $ok->fresh()->data['descriptions'][0]);
+        $this->assertSame(1, ProjectBlock::count());
+    }
+
+    // ----------------------------------------------------------------- E10
+
+    public function test_the_public_query_count_is_unchanged_with_a_credits_block(): void
+    {
+        $build = function (bool $withCredits): int {
+            $project = Project::factory()->published()->create(['slug' => 'q-'.Str::random(8)]);
+            $project->categories()->attach(\App\Models\Category::factory()->count(2)->create()->pluck('id'));
+            $project->update(['cover_media_id' => $this->media()->id]);
+            $project->credits()->create(['role' => 'Photographer', 'name' => 'A. Photographer', 'sort_order' => 0]);
+
+            for ($i = 0; $i < 12; $i++) {
+                $block = $project->blocks()->create([
+                    'type' => BlockType::GalleryStrip, 'sort_order' => $i, 'data' => ['caption' => 'Strip '.$i],
+                ]);
+                $count = $i < 6 ? 3 : 2;
+                app(SyncBlockMedia::class)($block, collect(range(1, $count))->map(fn (): int => $this->media()->id)->all());
+            }
+
+            if ($withCredits) {
+                $project->blocks()->create([
+                    'type' => BlockType::Credits, 'sort_order' => 99, 'data' => ['heading' => 'Credits'],
+                ]);
+            }
+
+            $queries = [];
+            DB::listen(function ($q) use (&$queries): void { $queries[] = $q->sql; });
+
+            $this->get(route('projects.show', $project))->assertOk();
+
+            return count($queries);
+        };
+
+        $without = $build(false);
+        $with = $build(true);
+
+        $this->assertSame(
+            $without,
+            $with,
+            "a Credits block must not add a query (without: {$without}, with: {$with})"
+        );
     }
 }

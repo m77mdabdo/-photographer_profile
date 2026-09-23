@@ -11,6 +11,7 @@
 import { initFocalPoint } from './admin/focal-point';
 import { initReorder } from './admin/reorder';
 import { initSidebar } from './admin/sidebar';
+import { initStoryBuilder } from './admin/story-builder';
 import { initUnsavedGuard } from './admin/unsaved-guard';
 import { initUploader } from './admin/upload';
 
@@ -19,6 +20,7 @@ function boot() {
     initUploader();
     initFocalPoint();
     initReorder();
+    initStoryBuilder();
     initUnsavedGuard();
 }
 

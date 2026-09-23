@@ -1,9 +1,10 @@
-@props(['block', 'media'])
+@props(['block', 'media', 'credits' => null, 'descriptions' => []])
 <section class="block block--split block--image-text">
     @php($image = $media->first())
     @if ($image)
         <div class="block__split-media">
-            <x-picture :media="$image" sizes="(max-width: 900px) 100vw, 50vw" img-class="block__image" />
+            <x-picture :media="$image" sizes="(max-width: 900px) 100vw, 50vw" img-class="block__image"
+                       :alt="$descriptions[0] ?? null" />
         </div>
     @endif
     <div class="block__split-text">
