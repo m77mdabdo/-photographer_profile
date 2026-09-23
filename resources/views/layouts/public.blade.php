@@ -1,6 +1,13 @@
 @props(['seo' => null])
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', config('seo.locale')) }}" dir="ltr">
+{{--
+    The resolved theme is written here, on the server, before the document is
+    sent. That is what prevents a flash of the wrong palette: by the time the
+    first paint happens the attribute is already in the DOM. With no stored
+    preference the attribute is absent entirely and the stylesheet's
+    prefers-color-scheme query governs.
+--}}
+<html lang="{{ str_replace('_', '-', config('seo.locale')) }}" dir="ltr"@if ($theme->attribute()) data-theme="{{ $theme->attribute() }}"@endif>
 {{-- dir is hard-coded to ltr for now; it becomes config-driven when a RTL locale is added. --}}
 <head>
     <meta charset="utf-8">
@@ -66,6 +73,10 @@
                 <li><a href="#">Instagram</a></li>
                 <li><a href="#">Bluesky</a></li>
             </ul>
+        </div>
+
+        <div class="site-footer__group">
+            <x-theme-switch :current="$theme" />
         </div>
 
         <p class="site-footer__copyright">

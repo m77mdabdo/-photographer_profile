@@ -29,9 +29,9 @@
     inset: 0;
     z-index: var(--z-media);
     background: linear-gradient(to bottom,
-        rgb(var(--c-ink-rgb) / 0.15) 0%,
-        rgb(var(--c-ink-rgb) / 0.05) 35%,
-        rgb(var(--c-ink-rgb) / 0.75) 100%);
+        rgb(var(--scrim-rgb) / var(--scrim-top)) 0%,
+        rgb(var(--scrim-rgb) / var(--scrim-mid)) 35%,
+        rgb(var(--scrim-rgb) / var(--scrim-bottom)) 100%);
 }
 
 .hero__inner {
@@ -61,7 +61,7 @@
  * hairlines together, not enough to read as bold.
  */
 .hero__title {
-    font-variation-settings: 'wght' 480;
+    font-variation-settings: 'wght' var(--wght-display);
     font-family: var(--font-display);
     font-size: var(--fs-display-xl);
     line-height: var(--lh-tight);
@@ -117,7 +117,7 @@
 }
 
 .intro__statement {
-    font-variation-settings: 'wght' 480;
+    font-variation-settings: 'wght' var(--wght-display);
     font-family: var(--font-display);
     font-size: var(--fs-display-l);
     line-height: var(--lh-heading);
@@ -199,7 +199,7 @@
 
 /* Sub-display: between the two, because it sits at h2/h1 size. */
 .work__name {
-    font-variation-settings: 'wght' 440;
+    font-variation-settings: 'wght' var(--wght-mid);
     font-family: var(--font-display);
     font-size: var(--fs-h2);
     line-height: var(--lh-heading);
@@ -229,7 +229,9 @@
     position: absolute;
     inset: 0;
     z-index: var(--z-media);
-    background: linear-gradient(to bottom, rgb(var(--c-ink-rgb) / 0.1), rgb(var(--c-ink-rgb) / 0.8));
+    background: linear-gradient(to bottom,
+        rgb(var(--scrim-rgb) / var(--scrim-mid)),
+        rgb(var(--scrim-rgb) / var(--scrim-bottom)));
 }
 
 .story__inner {
@@ -248,7 +250,7 @@
 .story__eyebrow { color: var(--text-secondary); }
 
 .story__title {
-    font-variation-settings: 'wght' 480;
+    font-variation-settings: 'wght' var(--wght-display);
     font-family: var(--font-display);
     font-size: var(--fs-display-l);
     line-height: var(--lh-tight);
@@ -285,7 +287,7 @@
 }
 
 .closing__title {
-    font-variation-settings: 'wght' 480;
+    font-variation-settings: 'wght' var(--wght-display);
     font-family: var(--font-display);
     font-size: var(--fs-display-l);
     line-height: var(--lh-heading);

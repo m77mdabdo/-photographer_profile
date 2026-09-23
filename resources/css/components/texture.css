@@ -30,8 +30,8 @@
     background-size: 160px 160px;
 
     /* Low enough to be felt rather than seen. Above ~0.05 it reads as noise. */
-    opacity: 0.028;
-    mix-blend-mode: overlay;
+    opacity: var(--grain-opacity);
+    mix-blend-mode: var(--grain-blend);
     will-change: transform;
 }
 
@@ -43,17 +43,17 @@
 .vignette {
     background: radial-gradient(
         ellipse at center,
-        rgb(var(--c-ink-rgb) / 0) 42%,
-        rgb(var(--c-ink-rgb) / 0.28) 100%
+        rgb(var(--vignette-rgb) / 0) 42%,
+        rgb(var(--vignette-rgb) / 0.28) 100%
     );
-    opacity: 0.85;
+    opacity: var(--vignette-opacity-max);
     animation: vignette-breath 46s var(--ease-editorial) infinite alternate;
     will-change: opacity;
 }
 
 @keyframes vignette-breath {
-    from { opacity: 0.82; }
-    to   { opacity: 0.94; }
+    from { opacity: var(--vignette-opacity-min); }
+    to   { opacity: var(--vignette-opacity-max); }
 }
 
 /*
@@ -64,6 +64,6 @@
 @media (prefers-reduced-motion: reduce) {
     .vignette {
         animation: none;
-        opacity: 0.85;
+        opacity: var(--vignette-opacity-max);
     }
 }

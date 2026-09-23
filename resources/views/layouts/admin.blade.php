@@ -1,6 +1,7 @@
 @props(['seo' => null, 'title' => 'Admin'])
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', config('seo.locale')) }}" dir="ltr">
+{{-- The admin is always dark: it is a working surface, not a page of work. --}}
+<html lang="{{ str_replace('_', '-', config('seo.locale')) }}" dir="ltr" data-theme="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

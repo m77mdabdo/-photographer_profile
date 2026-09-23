@@ -74,8 +74,22 @@ class SeoTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('<link rel="canonical" href="'.config('app.url').'">', false);
-        $response->assertDontSee('utm_source', false);
-        $response->assertDontSee('page=2', false);
+
+        /*
+         * Scoped to the canonical and og:url tags rather than the whole page.
+         * The theme switch carries the current request URI in a hidden field
+         * so it can return the visitor to where they were, so the query string
+         * does legitimately appear in the body — escaped, and nowhere that
+         * affects indexing.
+         */
+        preg_match_all('/<link rel="canonical"[^>]*>|<meta property="og:url"[^>]*>/', $response->getContent(), $matches);
+
+        $this->assertNotEmpty($matches[0]);
+
+        foreach ($matches[0] as $tag) {
+            $this->assertStringNotContainsString('utm_source', $tag);
+            $this->assertStringNotContainsString('page=2', $tag);
+        }
     }
 
     public function test_robots_defaults_to_index_follow(): void

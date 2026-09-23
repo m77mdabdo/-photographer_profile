@@ -12,6 +12,7 @@
      * Palette — warm and photographic. Never pure #000 or #fff: both
      * clip against printed photography and read as harsh on screen.
      * --------------------------------------------------------------- */
+    /* Dark register. */
     --c-ink: #0b0b0c;
     --c-ink-soft: #141416;
     --c-paper: #f7f5f2;
@@ -21,14 +22,39 @@
     --c-line: rgba(247, 245, 242, 0.12);
     --c-accent: #b8a07e;
 
-    /* Ink as bare channels, so scrims and gradients can vary the alpha
-       without restating the colour. Keep in step with --c-ink. */
+    /*
+     * Light register — printed stock, not a screen.
+     *
+     * The ground is a warm off-white rather than #fff: pure white makes a
+     * photograph's own whites look grey by comparison, and it glares. The ink
+     * is a warm near-black for the same reason in reverse — #000 against warm
+     * paper reads as a hole. The accent is a deeper bronze than the dark
+     * mode's, because #b8a07e on paper has only 1.8:1 contrast and would
+     * vanish; the deeper cut measures 5.12:1.
+     */
+    --c-paper-warm: #f4f1ea;
+    --c-paper-warm-soft: #e8e2d6;
+    --c-ink-warm: #17150f;
+    --c-gray-stone: #5f574b;
+    --c-line-ink: rgba(23, 21, 15, 0.16);
+    --c-accent-deep: #7d6136;
+
+    /* Bare channels, so scrims can vary alpha without restating a colour. */
     --c-ink-rgb: 11 11 12;
+    --c-paper-warm-rgb: 244 241 234;
+
+    /* Mode-agnostic. A status colour means the same thing on any ground, and
+       a scanned code needs a light field whatever the page is doing. */
+    --c-danger: #b4544a;
+    --c-danger-text: #d98078;
+    --surface-scan: #f7f5f2;
 
     /* ---------------------------------------------------------------
-     * Semantic aliases — everything downstream uses these, never the
-     * raw palette. Defaulted to the dark editorial palette; a future
-     * light mode reassigns these six and nothing else.
+     * Semantic aliases — DARK.
+     *
+     * Everything downstream uses these, never the raw palette. The light
+     * block below reassigns exactly this set and nothing else, which is
+     * what makes a second mode a palette change rather than a rewrite.
      * --------------------------------------------------------------- */
     --bg: var(--c-ink);
     --bg-elevated: var(--c-ink-soft);
@@ -36,6 +62,48 @@
     --text-secondary: var(--c-gray-warm);
     --border: var(--c-line);
     --accent: var(--c-accent);
+
+    /* Text that sits ON the accent, which is a different question. */
+    --on-accent: var(--c-ink);
+    --danger: var(--c-danger);
+    --danger-text: var(--c-danger-text);
+    --on-danger: var(--c-paper);
+
+    /* ---------------------------------------------------------------
+     * Mode-dependent details. Each of these was tuned for a dark ground
+     * and is wrong on a light one, so each becomes a token rather than a
+     * hard-coded decision in a component.
+     * --------------------------------------------------------------- */
+
+    /*
+     * Scrim over cinematic images. The bottom stop is not a taste decision:
+     * it is the alpha at which type is guaranteed readable over the worst
+     * possible photograph. For paper type over an ink scrim the worst case is
+     * a pure-white frame, which needs alpha >= 0.839 for 4.5:1. 0.88 gives
+     * 5.58:1 with margin.
+     */
+    --scrim-rgb: var(--c-ink-rgb);
+    --scrim-top: 0.15;
+    --scrim-mid: 0.05;
+    --scrim-bottom: 0.88;
+
+    /*
+     * Optical weight. Bodoni is a Didone: on a dark ground the thick stems
+     * halate and visually eat the hairlines, so display sizes carry extra
+     * weight to hold them together.
+     */
+    --wght-display: 480;
+    --wght-mid: 440;
+
+    /* Film grain. Overlay works on a dark ground because it lifts and drops
+       equally around a low midpoint. */
+    --grain-opacity: 0.028;
+    --grain-blend: overlay;
+
+    /* The vignette breathes; the amplitude is deliberately below perception. */
+    --vignette-rgb: var(--c-ink-rgb);
+    --vignette-opacity-min: 0.82;
+    --vignette-opacity-max: 0.94;
 
     /* ---------------------------------------------------------------
      * Type scale — fluid between a 360px and a 1600px viewport.
@@ -149,4 +217,112 @@
     --font-display: 'Bodoni Moda', 'Bodoni Fallback', 'Times New Roman', Georgia, serif;
     --font-sans: 'Inter Tight', 'Inter Fallback', -apple-system, 'Segoe UI', system-ui, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ===================================================================
+ * LIGHT REGISTER
+ *
+ * Exactly the same set the :root block declares — the six semantic
+ * aliases plus every mode-dependent token. Nothing else. If a value is
+ * not here, it is because it genuinely does not change with the ground.
+ *
+ * Two entry points, and they must not fight:
+ *
+ *   1. No stated preference -> follow the system, via the media query
+ *      below. Pure CSS, costs nothing, and correct before any request.
+ *   2. A stated preference -> the server writes data-theme on <html>,
+ *      so the right palette is in force on the very first paint.
+ *
+ * The media query is scoped with :root:not([data-theme]) so that an
+ * explicit choice always beats the system setting. Without that, a
+ * visitor on a light OS who chose dark would get light.
+ * =================================================================== */
+
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme]) {
+        --bg: var(--c-paper-warm);
+        --bg-elevated: var(--c-paper-warm-soft);
+        --text-primary: var(--c-ink-warm);
+        --text-secondary: var(--c-gray-stone);
+        --border: var(--c-line-ink);
+        --accent: var(--c-accent-deep);
+
+        --on-accent: var(--c-paper);
+        --danger: var(--c-danger);
+        --danger-text: var(--c-danger-text);
+        --on-danger: var(--c-paper);
+
+        --scrim-rgb: var(--c-paper-warm-rgb);
+        --scrim-top: 0.10;
+        --scrim-mid: 0.04;
+        --scrim-bottom: 0.55;
+
+        --wght-display: 410;
+        --wght-mid: 400;
+
+        --grain-opacity: 0.022;
+        --grain-blend: multiply;
+
+        --vignette-rgb: var(--c-ink-rgb);
+        --vignette-opacity-min: 0;
+        --vignette-opacity-max: 0;
+    }
+}
+
+:root[data-theme='light'] {
+    --bg: var(--c-paper-warm);
+    --bg-elevated: var(--c-paper-warm-soft);
+    --text-primary: var(--c-ink-warm);
+    --text-secondary: var(--c-gray-stone);
+    --border: var(--c-line-ink);
+    --accent: var(--c-accent-deep);
+
+    --on-accent: var(--c-paper);
+    --danger: var(--c-danger);
+    --danger-text: var(--c-danger-text);
+    --on-danger: var(--c-paper);
+
+    /*
+     * A paper scrim, not a dimmed one. An ink gradient over a photograph on a
+     * light page reads as a mistake — the band of darkness has no relationship
+     * to anything else on the sheet. Lifting toward paper instead keeps the
+     * image sitting *on* the page rather than punched through it.
+     *
+     * It can also be far weaker: ink type over a paper scrim needs only
+     * alpha >= 0.238 to clear 4.5:1 against a pure-black frame, against 0.839
+     * the other way round. 0.55 measures 7.76:1 and still lets the photograph
+     * through more than the dark mode does.
+     */
+    --scrim-rgb: var(--c-paper-warm-rgb);
+    --scrim-top: 0.10;
+    --scrim-mid: 0.04;
+    --scrim-bottom: 0.55;
+
+    /*
+     * Lighter. On paper the hairlines do not halate, so the compensation that
+     * holds them together on black makes the same face look heavy and modern
+     * here — the opposite of what a Didone is for. 410 is as low as this
+     * variable font goes plus a hair; the axis floor is 400, which is why the
+     * two display steps are close together rather than proportionally spaced.
+     */
+    --wght-display: 410;
+    --wght-mid: 400;
+
+    /*
+     * Multiply rather than overlay: on a light ground overlay barely registers
+     * because it pivots around the midpoint and the page sits well above it.
+     * Multiply lays the grain down as shadow, which is what film on paper is.
+     */
+    --grain-opacity: 0.022;
+    --grain-blend: multiply;
+
+    /*
+     * The vignette is switched off, not weakened. A darkened edge on paper
+     * does not read as film — it reads as a bad scan, or as a photocopy of a
+     * photocopy. There is no strength at which it is right here, so it is set
+     * to zero and the layer paints nothing.
+     */
+    --vignette-rgb: var(--c-ink-rgb);
+    --vignette-opacity-min: 0;
+    --vignette-opacity-max: 0;
 }

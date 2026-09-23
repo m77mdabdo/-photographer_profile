@@ -6,6 +6,7 @@ use App\Enums\MediaStatus;
 use App\Http\Controllers\Admin\MediaController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ThemeController;
 use App\Livewire\Admin\CategoryManager;
 use App\Livewire\Admin\MediaIndex;
 use App\Livewire\Admin\ProjectForm;
@@ -17,6 +18,13 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+
+/*
+ * Theme preference. A POST because it changes state, from a real form with a
+ * real button — the control works with scripting disabled, which is the whole
+ * point of deciding this on the server.
+ */
+Route::post('/theme', ThemeController::class)->name('theme.store');
 
 /*
  * Development-only preview of the media pipeline's visual output. This block

@@ -127,3 +127,41 @@ main:focus {
     padding: var(--sp-12) var(--gutter);
     font-size: var(--fs-display-l);
 }
+
+/* ------------------------------------------------------------------ *
+ * Colour scheme control. Three buttons, no script.
+ * ------------------------------------------------------------------ */
+
+.theme-switch__set {
+    display: flex;
+    gap: var(--sp-1);
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.theme-switch__option {
+    min-height: 44px;                 /* a real touch target */
+    padding: var(--sp-2) var(--sp-3);
+    color: var(--text-secondary);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    border: var(--rule-hair) solid transparent;
+    transition: color var(--dur-fast) var(--ease-out);
+}
+
+.theme-switch__option:hover,
+.theme-switch__option:focus-visible {
+    color: var(--text-primary);
+}
+
+/*
+ * The current choice is shown by a border and full-strength text, not by
+ * colour alone — colour alone fails for anyone who cannot distinguish it, and
+ * aria-pressed already carries the state for a screen reader.
+ */
+.theme-switch__option[aria-pressed='true'] {
+    color: var(--text-primary);
+    border-color: var(--border);
+}

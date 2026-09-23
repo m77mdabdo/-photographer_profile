@@ -348,9 +348,11 @@ class HomepageTest extends TestCase
 
         // The global rule in base.css only shortens durations; an animation
         // that still runs holds its final keyframe, so this one is stopped
-        // outright and settled on a fixed value.
+        // outright and settled on a fixed value. That value is now a token, so
+        // it settles on whatever the active register says — which on a light
+        // ground is zero, because the vignette is switched off there.
         $this->assertMatchesRegularExpression(
-            '/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.vignette\s*\{[^}]*opacity:\s*0\.85/s',
+            '/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.vignette\s*\{[^}]*opacity:\s*var\(--vignette-opacity-max\)/s',
             $css
         );
     }

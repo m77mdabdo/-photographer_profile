@@ -46,4 +46,4 @@
 .block__facade-icon { font-size: var(--fs-h3); color: var(--accent); }
 .block__facade-host { color: var(--text-secondary); font-size: var(--fs-caption); }
 .block--spacer { width: 100%; }
-.preview-banner { padding: var(--sp-3) var(--gutter); background-color: var(--c-accent); color: var(--c-ink); font-size: var(--fs-small); text-align: center; }
+.preview-banner { padding: var(--sp-3) var(--gutter); background-color: var(--accent); color: var(--on-accent); font-size: var(--fs-small); text-align: center; }

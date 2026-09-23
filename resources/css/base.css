@@ -114,7 +114,7 @@ hr {
 
 ::selection {
     background-color: var(--accent);
-    color: var(--c-ink);
+    color: var(--on-accent);
 }
 
 /*
