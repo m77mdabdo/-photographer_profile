@@ -37,10 +37,19 @@
         {{--
             Blocks render in stored order. Every image was eager-loaded by the
             controller, so nothing in this loop touches the database.
+
+            THE LCP. A story may well open with a paragraph or a pull quote, so
+            the largest contentful paint is the first block that actually holds
+            a picture — not the first block. Marking block zero regardless
+            would prioritise nothing on any story that opens with words, and
+            leave the real opening image lazy.
         --}}
+        @php($leadBlockId = $project->blocks->first(fn ($b) => $b->blockMedia->isNotEmpty())?->id)
+
         <div class="project__story">
             @foreach ($project->blocks as $block)
-                <x-block :block="$block" :credits="$project->credits" />
+                <x-block :block="$block" :credits="$project->credits"
+                         :lead="$block->id === $leadBlockId" />
             @endforeach
         </div>
 

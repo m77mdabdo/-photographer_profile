@@ -1,4 +1,4 @@
-@props(['block', 'media', 'credits' => null, 'descriptions' => []])
+@props(['block', 'media', 'credits' => null, 'descriptions' => [], 'lead' => false])
 <section class="block block--split block--text-image">
     <div class="block__split-text">
         @if (filled($block->data['heading'] ?? null))
@@ -16,7 +16,8 @@
     @if ($image)
         <div class="block__split-media">
             <x-picture :media="$image" sizes="(max-width: 900px) 100vw, 50vw" img-class="block__image"
-                       :alt="$descriptions[0] ?? null" />
+                       :alt="$descriptions[0] ?? null"
+                   :priority="$lead" />
         </div>
     @endif
 </section>

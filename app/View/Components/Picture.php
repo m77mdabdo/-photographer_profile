@@ -24,6 +24,16 @@ class Picture extends Component
         public ?Media $media = null,
         public string $sizes = '100vw',
         public bool $priority = false,
+        /*
+         * Above the fold, but not the LCP element.
+         *
+         * A page can only have one largest contentful paint, and telling the
+         * browser that six images are all high priority tells it nothing —
+         * they compete with each other and with the one that matters. This is
+         * the weaker statement the rest of a first row needs: load me now, but
+         * take the one marked priority first.
+         */
+        public bool $eager = false,
         public ?string $alt = null,
         public ?string $class = null,
         public bool $decorative = false,
@@ -50,7 +60,7 @@ class Picture extends Component
 
     public function loading(): string
     {
-        return $this->priority ? 'eager' : 'lazy';
+        return ($this->priority || $this->eager) ? 'eager' : 'lazy';
     }
 
     public function fetchPriority(): string

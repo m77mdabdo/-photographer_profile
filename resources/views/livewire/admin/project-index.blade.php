@@ -89,6 +89,18 @@
                     <span class="project-row__main">
                         <a href="{{ route('admin.projects.edit', $project) }}" class="project-row__title">
                             {{ $project->title }}
+                            @if ($project->is_demo)
+                                {{--
+                                    Seeded demonstration content. Marked at the
+                                    title rather than in a corner, because the
+                                    thing a client needs to tell apart is the
+                                    series itself, not a row of a table — and a
+                                    plausible client name attached to a series
+                                    nobody was paid for is exactly the kind of
+                                    thing that survives into a launch.
+                                --}}
+                                <span class="badge badge--demo" title="Seeded demonstration content">Demo</span>
+                            @endif
                         </a>
                         <span class="project-row__meta">
                             {{ $project->slug }}

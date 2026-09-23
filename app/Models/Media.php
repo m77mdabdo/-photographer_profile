@@ -49,6 +49,7 @@ class Media extends Model
         'focal_x',
         'focal_y',
         'lqip',
+        'demo_set',
         'dominant_color',
         'palette',
         'palette_read_at',

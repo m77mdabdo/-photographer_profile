@@ -1,0 +1,381 @@
+/* ---------------- The work index and the archive ------------------------ */
+
+/*
+ * Two index pages, one vocabulary. Both open with a mono eyebrow, a condensed
+ * display heading and a count, because both are answering "what is here".
+ */
+
+.work-index,
+.sheet-page {
+    max-width: var(--container-wide);
+    margin-inline: auto;
+    padding: var(--sp-9) var(--gutter) var(--sp-11);
+}
+
+.work-index__eyebrow,
+.sheet-page__eyebrow {
+    font-family: var(--font-mono);
+    font-variation-settings: 'wght' var(--wght-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--hero-accent, var(--accent));
+    margin-bottom: var(--sp-3);
+}
+
+.work-index__title,
+.sheet-page__title {
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-display);
+    font-size: var(--fs-h1);
+    line-height: 0.92;
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
+    max-width: 16ch;
+    color: var(--text-primary);
+
+    /* The display face runs a line-height under 1; its descenders need the
+       clearance stated in em so it tracks the size. */
+    padding-bottom: 0.06em;
+}
+
+.work-index__standfirst {
+    max-width: 48ch;
+    margin-top: var(--sp-4);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+.work-index__count,
+.sheet-page__count {
+    margin-top: var(--sp-4);
+    font-family: var(--font-mono);
+    font-variation-settings: 'wght' var(--wght-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.sheet-page__roll { opacity: 0.6; margin-left: var(--sp-3); }
+
+/* ---------------- Filters ------------------------------------------------ */
+
+/*
+ * Anchors to real addresses, styled as a row of labels rather than as
+ * buttons: nothing here submits, nothing has state, and every one of them is
+ * a page a visitor can arrive at from a search result.
+ */
+.work-filter,
+.sheet-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-3) var(--sp-5);
+    align-items: baseline;
+    margin-top: var(--sp-7);
+    padding-block: var(--sp-4);
+    border-block: var(--rule-hair) solid var(--border);
+}
+
+.sheet-filter { gap: var(--sp-5) var(--sp-9); }
+
+.sheet-filter__group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-3) var(--sp-4);
+    align-items: baseline;
+}
+
+.sheet-filter__legend {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    opacity: 0.5;
+}
+
+.sheet-filter__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-3) var(--sp-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.work-filter__option,
+.sheet-filter__option {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    min-height: 44px;     /* a real target, not a 12px line of text */
+    font-family: var(--font-mono);
+    font-variation-settings: 'wght' var(--wght-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--text-secondary);
+    border-bottom: var(--rule-strong) solid transparent;
+    transition: color var(--dur-fast) var(--ease-out);
+}
+
+.work-filter__option:hover,
+.sheet-filter__option:hover,
+.work-filter__option:focus-visible,
+.sheet-filter__option:focus-visible { color: var(--text-primary); }
+
+.work-filter__option.is-current,
+.sheet-filter__option.is-current {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent);
+}
+
+.work-filter__count {
+    font-size: var(--fs-meta);
+    opacity: 0.45;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------------- The index list ---------------------------------------- */
+
+/* The planner's composition, with room above it for the page's own header. */
+.works__list--index { margin-top: var(--sp-9); }
+
+/* ---------------- Empty states ------------------------------------------ */
+
+/*
+ * Intentional, not apologetic. A heading-sized line, a quiet second line, and
+ * a way back — no illustration of an empty box, no spinner, no "oops".
+ */
+.work-empty {
+    padding-block: var(--sp-11);
+    max-width: 44ch;
+}
+
+.work-empty__line {
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-mid);
+    font-size: var(--fs-h2);
+    line-height: 1.05;
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.work-empty__note {
+    margin-top: var(--sp-4);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+}
+
+.work-empty__back {
+    display: inline-block;
+    margin-top: var(--sp-5);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-primary);
+    border-bottom: var(--rule-strong) solid var(--accent);
+    text-decoration: none;
+    padding-bottom: 2px;
+}
+
+/* ---------------- The contact sheet -------------------------------------- */
+
+/*
+ * A PROOF SHEET, NOT A CARD GRID.
+ *
+ * On a real contact sheet the negatives are laid down in strips and every
+ * frame keeps the proportion it was shot at. A 3:2 frame is wider than a
+ * square one and they still line up, because what they share is HEIGHT, not
+ * width.
+ *
+ * That is what this does, in flex and nothing else. Each frame's flex-basis
+ * and flex-grow are both proportional to its own aspect ratio, so a row
+ * distributes its width in proportion to the frames in it and they settle at a
+ * common height. Wide frames take more of the row, tall ones take less, the
+ * row is fully justified, and the number of frames per row falls out of the
+ * pictures rather than being decided in advance.
+ *
+ * A grid of equal cards would have to crop every frame to one shape, which
+ * throws away the one piece of information a contact sheet exists to show:
+ * what was actually on the roll.
+ */
+
+.sheet-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-5) var(--sp-4);
+    margin: var(--sp-9) 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sheet-frame {
+    /*
+     * --ar is the frame's own width/height, set inline from the stored
+     * dimensions. 13rem is the target height: basis = ratio x height means a
+     * row's items ask for width in exact proportion to their shape.
+     */
+    flex: var(--ar) 1 calc(var(--ar) * 13rem);
+    min-width: 0;
+}
+
+.sheet-frame__link {
+    display: grid;
+    gap: var(--sp-2);
+    text-decoration: none;
+    color: inherit;
+}
+
+.sheet-frame__window {
+    display: block;
+    position: relative;
+    aspect-ratio: var(--ar);
+    overflow: hidden;
+    background-color: var(--bg-elevated);
+}
+
+.sheet-frame__window picture,
+.sheet-frame__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/*
+ * THE CAPTION IS ALWAYS THERE.
+ *
+ * Contact sheets on the web nearly all hide their metadata behind :hover,
+ * which means it does not exist on a phone, does not exist for a keyboard,
+ * does not exist for a screen reader arriving at the link, and does not exist
+ * on a printout. On a real proof sheet the frame numbers are exposed onto the
+ * film edge — printed, permanent, part of the object.
+ *
+ * So this is markup below the frame at all times. Hover changes the colour of
+ * the series name and nothing else; no information appears or disappears.
+ */
+.sheet-frame__caption {
+    display: grid;
+    gap: 1px;
+    font-family: var(--font-mono);
+    font-variation-settings: 'wght' var(--wght-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    line-height: 1.25;
+    text-transform: uppercase;
+}
+
+.sheet-frame__number {
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+}
+
+.sheet-frame__series {
+    color: var(--text-primary);
+    /* One line, ellipsised: a long series title must not push the frames in
+       its row out of alignment with the frames in the next. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color var(--dur-fast) var(--ease-out);
+}
+
+.sheet-frame__link:hover .sheet-frame__series,
+.sheet-frame__link:focus-visible .sheet-frame__series { color: var(--accent); }
+
+.sheet-frame__detail {
+    display: flex;
+    gap: var(--sp-3);
+    color: var(--text-secondary);
+    opacity: 0.6;
+    font-variant-numeric: tabular-nums;
+}
+
+.sheet-frame__size { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------------- The pager ---------------------------------------------- */
+
+.pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    margin-top: var(--sp-11);
+    padding-top: var(--sp-5);
+    border-top: var(--rule-hair) solid var(--border);
+    font-family: var(--font-mono);
+    font-variation-settings: 'wght' var(--wght-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+}
+
+.pager__step {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--text-primary);
+    text-decoration: none;
+    border-bottom: var(--rule-strong) solid var(--accent);
+    padding-bottom: 2px;
+}
+
+.pager__step--spent {
+    color: var(--text-secondary);
+    opacity: 0.35;
+    border-bottom-color: transparent;
+}
+
+.pager__position {
+    color: var(--text-secondary);
+    display: flex;
+    gap: var(--sp-4);
+    font-variant-numeric: tabular-nums;
+}
+
+.pager__total { opacity: 0.55; }
+
+/* ---------------- Narrow ------------------------------------------------- */
+
+/*
+ * The sheet is DESIGNED at this width rather than shrunk to it.
+ *
+ * Below 700px the proportional basis would leave a 3:2 frame asking for well
+ * over the screen width, and flex-wrap would give it a row of its own — the
+ * sheet would become a single column of large pictures, which is a gallery,
+ * not a proof sheet. So the basis is dropped to a share of the row and the
+ * frames pair up two to a line, keeping the density the form depends on while
+ * every frame still shows its own proportion.
+ *
+ * min-width: 0 on the item and overflow guards on the caption are what stop
+ * the page scrolling sideways: nothing inside a frame can be wider than the
+ * frame.
+ */
+@media (max-width: 700px) {
+    .work-index,
+    .sheet-page { padding-block: var(--sp-7) var(--sp-9); }
+
+    .sheet-strip { gap: var(--sp-4) var(--sp-3); }
+
+    .sheet-frame {
+        flex: 1 1 calc(50% - var(--sp-3));
+        max-width: calc(50% - var(--sp-3) / 2);
+    }
+
+    .pager { justify-content: flex-start; gap: var(--sp-5); }
+    .pager__position { width: 100%; order: 3; }
+}
+
+@media (max-width: 420px) {
+    /* One across, but the caption stays: the information is the point. */
+    .sheet-frame { flex-basis: 100%; max-width: 100%; }
+}

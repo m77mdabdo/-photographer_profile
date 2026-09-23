@@ -86,6 +86,76 @@ class FetchDemoMedia extends Command
         ['term' => 'dark still life',           'orientation' => 'square',    'key' => 'low'],
     ];
 
+    /**
+     * Directed sets, one per archive category.
+     *
+     * The terms are chosen to read as a studio's own body of work rather than
+     * as stock. That mostly means avoiding the words that return catalogue
+     * pictures — no "business", no "lifestyle", no "happy" — and reaching for
+     * the vocabulary a photographer would use about their own frames: the
+     * light, the format, the treatment.
+     *
+     * The orientation mix inside each set is deliberate and uneven, because a
+     * real body of work is. Architecture is shot wide because buildings are
+     * wide; portraiture is shot tall; still life is square more often than
+     * anything else is, because a table is.
+     *
+     * @var array<string, list<array{term: string, orientation: string, key: string}>>
+     */
+    private const CATEGORY_PLANS = [
+        'editorial' => [
+            ['term' => 'editorial portrait natural light', 'orientation' => 'portrait',  'key' => 'mid'],
+            ['term' => 'magazine editorial film photography', 'orientation' => 'landscape', 'key' => 'mid'],
+            ['term' => 'editorial studio session',         'orientation' => 'portrait',  'key' => 'low'],
+            ['term' => 'editorial still life set design',  'orientation' => 'landscape', 'key' => 'mid'],
+        ],
+        'portrait' => [
+            ['term' => 'environmental portrait window light', 'orientation' => 'portrait', 'key' => 'mid'],
+            ['term' => 'studio portrait medium format',    'orientation' => 'portrait',  'key' => 'low'],
+            ['term' => 'candid portrait film grain',       'orientation' => 'portrait',  'key' => 'mid'],
+            ['term' => 'portrait hands detail',            'orientation' => 'landscape', 'key' => 'low'],
+        ],
+        'fashion' => [
+            ['term' => 'fashion editorial studio',         'orientation' => 'portrait',  'key' => 'mid'],
+            ['term' => 'avant garde fashion shoot',        'orientation' => 'portrait',  'key' => 'low'],
+            ['term' => 'fashion backstage film',           'orientation' => 'portrait',  'key' => 'mid'],
+            ['term' => 'fabric texture fashion detail',    'orientation' => 'square',    'key' => 'mid'],
+        ],
+        'architecture' => [
+            ['term' => 'brutalist concrete architecture',  'orientation' => 'landscape', 'key' => 'mid'],
+            ['term' => 'modernist building facade',        'orientation' => 'landscape', 'key' => 'high'],
+            ['term' => 'interior architecture natural light', 'orientation' => 'landscape', 'key' => 'high'],
+            ['term' => 'stairwell architecture geometry',  'orientation' => 'portrait',  'key' => 'low'],
+        ],
+        'landscape' => [
+            ['term' => 'coastal landscape fog',            'orientation' => 'landscape', 'key' => 'high'],
+            ['term' => 'mountain landscape moody',         'orientation' => 'landscape', 'key' => 'low'],
+            ['term' => 'field landscape overcast',         'orientation' => 'landscape', 'key' => 'mid'],
+            ['term' => 'lone tree winter landscape',       'orientation' => 'square',    'key' => 'mid'],
+        ],
+        'travel' => [
+            ['term' => 'quiet street travel documentary',  'orientation' => 'landscape', 'key' => 'mid'],
+            ['term' => 'market travel photography',        'orientation' => 'landscape', 'key' => 'mid'],
+            ['term' => 'travel portrait local',            'orientation' => 'portrait',  'key' => 'mid'],
+            ['term' => 'coastal village travel',           'orientation' => 'landscape', 'key' => 'high'],
+        ],
+        'still-life' => [
+            ['term' => 'still life objects natural light', 'orientation' => 'square',    'key' => 'mid'],
+            ['term' => 'ceramics still life studio',       'orientation' => 'square',    'key' => 'mid'],
+            ['term' => 'flowers still life dark',          'orientation' => 'landscape', 'key' => 'low'],
+            ['term' => 'kitchen still life linen',         'orientation' => 'landscape', 'key' => 'high'],
+        ],
+        'street' => [
+            ['term' => 'street photography black and white', 'orientation' => 'landscape', 'key' => 'low'],
+            ['term' => 'urban street shadow',              'orientation' => 'portrait',  'key' => 'low'],
+            ['term' => 'city street rain night',           'orientation' => 'landscape', 'key' => 'low'],
+            ['term' => 'pedestrians crossing city',        'orientation' => 'square',    'key' => 'mid'],
+        ],
+    ];
+
+    /** Which directed set this run is filling, stamped on every row it stores. */
+    private ?string $demoSet = null;
+
     public function handle(StoreUploadedMedia $store): int
     {
         $key = config('services.pexels.key');
@@ -116,18 +186,29 @@ class FetchDemoMedia extends Command
          * thinly covered — Pexels returns few genuine squares by default.
          */
         $direction = $this->option('art-direction');
+        $directed = $direction !== null && $direction !== '';
 
-        if ($direction !== null && $direction !== '' && $direction !== 'hero') {
-            $this->error('Unknown art direction: '.$direction.'. The only directed plan is "hero".');
+        if ($directed && $direction !== 'hero' && ! isset(self::CATEGORY_PLANS[$direction])) {
+            $this->error('Unknown art direction: '.$direction);
+            $this->line('Available: hero, '.implode(', ', array_keys(self::CATEGORY_PLANS)));
 
             return self::FAILURE;
         }
 
-        $basePlan = $direction === 'hero' ? self::HERO_PLAN : self::PLAN;
+        $basePlan = match (true) {
+            $direction === 'hero' => self::HERO_PLAN,
+            $directed => self::CATEGORY_PLANS[$direction],
+            default => self::PLAN,
+        };
 
         if ($direction === 'hero') {
             $this->line('Art direction: hero — central subject, low key, one dominant hue.');
+        } elseif ($directed) {
+            $this->line('Art direction: '.$direction.' — '.count($basePlan).' terms.');
         }
+
+        // Stamped on every row so the seeder can build a coherent body of work.
+        $this->demoSet = $directed ? $direction : null;
 
         $only = $this->option('only');
         $plan = $only === null || $only === ''
@@ -296,6 +377,7 @@ class FetchDemoMedia extends Command
 
             $media->forceFill([
                 'is_demo' => true,
+                'demo_set' => $this->demoSet,
                 'credit' => (string) ($photo['photographer'] ?? 'Pexels'),
                 'copyright' => (string) ($photo['url'] ?? 'https://pexels.com'),
                 // Never empty: an undescribed image is an inaccessible one.

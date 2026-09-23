@@ -61,13 +61,55 @@ Two settings govern this, both in `config/media.php`:
   frame, which is 1.9× the longest variant edge (2560px) in linear terms: ample
   oversampling for a clean downsample. **The file on disk is never altered.**
 
-> Recommended: **at most one media worker per 768 MB of available RAM.**
+> Recommended: **at most one media worker per 768 MB of available RAM, and the worker
+> MUST be restarted on a job count — see below.**
 >
 > A 2 GB container can now run two media workers where it could previously run one,
 > and the previous advice of one per 512 MB was unsafe at any size above about 12 MP.
 
 Raising `max_megapixels` without also raising the RAM per worker is how this comes
 back: the decode happens before the guard can help.
+
+## The worker leaks, and `--memory` cannot see it
+
+Measured while processing 145 images in one serial run, and then isolated with a
+ten-job run sampling RSS every second:
+
+| | |
+| --- | --- |
+| Worker RSS at start | 117 MB |
+| After 10 jobs | **1386 MB**, climbing monotonically, never released |
+| Peak across the real 145-job run | **1022 MB** |
+
+The per-job figure of ~565 MB is still correct. What is new is that **the memory is not
+returned between jobs**, so a long-lived worker grows until the OS kills it.
+
+`queue:work --memory` does not help, and this is the important part:
+
+```
+48.8 MP image, one job, measured in the same process:
+  PHP heap after job  :  32 MB   ← what queue:work --memory checks
+  PHP peak heap       :  39 MB
+  actual process RSS  : 756 MB
+```
+
+GD allocates its image buffers through the C library, outside PHP's allocator.
+`memory_get_usage()` therefore reports 32 MB while the process is holding 756 MB, and
+the worker's built-in memory guard — whatever you set it to — will never fire.
+
+**Run media workers with an explicit job ceiling:**
+
+```
+php artisan queue:work --queue=media --max-jobs=25
+```
+
+`--max-jobs` restarts the worker after a fixed number of jobs regardless of what
+`memory_get_usage()` claims, which is the only limit that sees this. Under Supervisor
+or Horizon, pair it with `autorestart=true` so the exit is immediately replaced.
+
+For a one-off backfill, `--stop-when-empty` is fine if the queue is short. The 145-image
+run in this project peaked at 1022 MB on a machine with room for it; the same run on a
+1 GB container would have been OOM-killed part way through with no error in the log.
 
 ## Retuning quality
 

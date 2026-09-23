@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use App\Enums\MediaStatus;
 use App\Http\Controllers\Admin\MediaController;
+use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ThemeController;
+use App\Http\Controllers\WorkController;
 use App\Livewire\Admin\CategoryManager;
 use App\Livewire\Admin\ClientManager;
 use App\Livewire\Admin\MediaIndex;
@@ -114,6 +116,26 @@ if (app()->environment('local')) {
     })->name('dev.media');
 }
 
+
+/*
+ * The work index and its category landing pages.
+ *
+ * ORDER MATTERS. `/work/{project:slug}` below is a wildcard, so it would
+ * happily match the literal segment "category" and 404 looking for a project
+ * of that name. Every literal path under /work is declared first.
+ */
+Route::get('/work', [WorkController::class, 'index'])->name('work.index');
+
+Route::get('/work/category/{category:slug}', [WorkController::class, 'category'])
+    ->name('work.category');
+
+/*
+ * The archive: a contact sheet of frames that reached a published page.
+ * Filters are query parameters rather than path segments — unlike a category
+ * of work, a filtered view of the archive is a way of looking rather than a
+ * body of work with its own address.
+ */
+Route::get('/archive', ArchiveController::class)->name('archive.index');
 
 /*
  * Public project pages. `/work/{slug}` is the permanent address; the preview

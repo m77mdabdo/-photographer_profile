@@ -331,6 +331,49 @@ class DemoContentTest extends TestCase
         return $bytes;
     }
 
+    /**
+     * The protection at the scale the site actually reached.
+     *
+     * The small case was already covered. What was not was whether the guard
+     * still holds when there are hundreds of usage rows spread over a dozen
+     * series — which is exactly the state in which somebody runs a purge to
+     * "clean up the demo content" and finds out.
+     */
+    public function test_purge_still_refuses_when_hundreds_of_usages_exist(): void
+    {
+        $world = new \Tests\Support\DemoWorld();
+
+        // Twelve published series of fifteen frames: 180 usages.
+        for ($i = 0; $i < 12; $i++) {
+            $world->story('series-'.$i, \Tests\Support\DemoWorld::simpleScore(15), ['landscape']);
+        }
+
+        // Plus one draft, whose frames are NOT protected by publication.
+        $world->story('a-draft', \Tests\Support\DemoWorld::simpleScore(4), status: \App\Enums\PublishStatus::Draft);
+
+        $usages = \App\Models\MediaUsage::query()->count();
+        $demo = \App\Models\Media::query()->where('is_demo', true)->count();
+
+        $this->assertGreaterThan(180, $usages, 'the fixture must actually be at scale');
+
+        $this->artisan('media:purge-demo')
+            ->expectsOutputToContain('Refusing to purge')
+            ->assertFailed();
+
+        // Nothing was touched, not one row.
+        $this->assertSame($demo, \App\Models\Media::query()->where('is_demo', true)->count());
+        $this->assertSame($usages, \App\Models\MediaUsage::query()->count());
+
+        /*
+         * And the refusal is specific rather than a blanket no: it names the
+         * work that is blocking, because "something is using these" is not an
+         * instruction anybody can act on.
+         */
+        $this->artisan('media:purge-demo')
+            ->expectsOutputToContain('/work/series-0')
+            ->assertFailed();
+    }
+
     private function upload(string $bytes): \Illuminate\Http\UploadedFile
     {
         $path = (string) tempnam(sys_get_temp_dir(), 'demo-');

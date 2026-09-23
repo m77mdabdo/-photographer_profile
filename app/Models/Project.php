@@ -39,6 +39,7 @@ class Project extends Model
         'location',
         'client',
         'is_featured',
+        'is_demo',
         'sort_order',
         'cover_media_id',
         'hero_media_id',
@@ -53,6 +54,7 @@ class Project extends Model
             'status' => PublishStatus::class,
             'published_at' => 'datetime',
             'is_featured' => 'boolean',
+            'is_demo' => 'boolean',
             'year' => 'integer',
             'sort_order' => 'integer',
         ];

@@ -1,4 +1,4 @@
-@props(['block', 'media', 'credits' => null, 'descriptions' => []])
+@props(['block', 'media', 'credits' => null, 'descriptions' => [], 'lead' => false])
 {{--
     A horizontally scrolling run of images. Scrolling is CSS overflow, so it
     works with a trackpad, a scrollbar, touch, and keyboard focus — no
@@ -9,7 +9,8 @@
         @foreach ($media as $i => $image)
             <li class="block__strip-item">
                 <x-picture :media="$image" sizes="(max-width: 700px) 80vw, 480px" img-class="block__image"
-                           :alt="$descriptions[$i] ?? null" />
+                           :alt="$descriptions[$i] ?? null"
+                       :priority="$lead && $i === 0" />
             </li>
         @endforeach
     </ul>
