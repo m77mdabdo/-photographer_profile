@@ -77,7 +77,13 @@ class HomeController extends Controller
      */
     private function heroAccent(?Project $hero): array
     {
-        $source = $hero?->cover?->dominant_color ?? $hero?->hero?->dominant_color;
+        /*
+         * The photograph picks its own colour now. accentSource() chooses the
+         * most salient entry in the frame's palette rather than its average,
+         * which is why a low-key portrait with one strong colour in it no
+         * longer yields near-black.
+         */
+        $source = $hero?->cover?->accentSource() ?? $hero?->hero?->accentSource();
 
         return [
             'dark' => AccentColor::derive($source, '#0b0b0c'),

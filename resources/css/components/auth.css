@@ -551,3 +551,63 @@
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
 }
+
+/* ---------------- Hero suitability advice ------------------------------- */
+
+/*
+ * Advice, styled as advice. No red, no error iconography, no blocked state:
+ * a warning here means "this is what it will look like", not "you may not do
+ * this". Using the danger colour would make it read as a validation failure
+ * and teach people to ignore it.
+ */
+.hero-check {
+    margin-top: var(--sp-5);
+    padding: var(--sp-5);
+    border: var(--rule-hair) solid var(--border);
+    background-color: var(--bg-elevated);
+}
+
+.hero-check__title {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    font-weight: 500;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: var(--sp-2);
+}
+
+.hero-check__list {
+    display: grid;
+    gap: var(--sp-4);
+    margin: var(--sp-4) 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.hero-check__note {
+    display: grid;
+    grid-template-columns: 1.25rem 1fr;
+    gap: var(--sp-3);
+    align-items: start;
+    font-size: var(--fs-small);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+}
+
+.hero-check__note-title {
+    display: block;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.hero-check__mark {
+    font-family: var(--font-mono);
+    line-height: var(--lh-body);
+    text-align: center;
+}
+
+.hero-check__note--good .hero-check__mark { color: var(--accent); }
+
+/* Deliberately the secondary text colour and not --danger-text. */
+.hero-check__note--warn .hero-check__mark { color: var(--text-primary); opacity: 0.7; }

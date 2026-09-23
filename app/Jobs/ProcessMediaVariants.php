@@ -7,6 +7,7 @@ namespace App\Jobs;
 use App\Enums\MediaStatus;
 use App\Models\Media;
 use App\Support\ExifReader;
+use App\Support\PaletteExtractor;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -258,9 +259,20 @@ class ProcessMediaVariants implements ShouldBeUnique, ShouldQueue
 
         $dominant = $this->decode($manager, $path)->resize(1, 1)->colorAt(0, 0);
 
+        /*
+         * The palette is taken from the working copy, not from a one-pixel
+         * average. Averaging is what destroys the small saturated regions the
+         * accent is supposed to come from: a blindfold across three per cent
+         * of a frame survives as its own palette entry, and does not survive
+         * being averaged with the other ninety-seven.
+         */
+        $palette = PaletteExtractor::fromPath($path);
+
         $this->media->update([
             'lqip' => $lqip->toDataUri(),
             'dominant_color' => '#'.ltrim($dominant->toHex(), '#'),
+            'palette' => $palette === [] ? null : $palette,
+            'palette_read_at' => now(),
         ]);
     }
 

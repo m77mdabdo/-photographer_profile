@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\MediaStatus;
+use App\Support\AccentPalette;
 use App\Support\ExposureLine;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -49,6 +50,8 @@ class Media extends Model
         'focal_y',
         'lqip',
         'dominant_color',
+        'palette',
+        'palette_read_at',
         'uploaded_by',
 
         /*
@@ -84,6 +87,8 @@ class Media extends Model
             'exif_focal_length' => 'integer',
             'captured_at' => 'datetime',
             'exif_read_at' => 'datetime',
+            'palette' => 'array',
+            'palette_read_at' => 'datetime',
         ];
     }
 
@@ -103,6 +108,35 @@ class Media extends Model
     public function exposureLine(): ?ExposureLine
     {
         return ExposureLine::for($this);
+    }
+
+    /**
+     * The colour this photograph should lend the page.
+     *
+     * Chosen from the palette by salience — the colour that draws the eye,
+     * not the one that covers the most area. Falls back to dominant_color for
+     * rows whose palette has not been extracted yet, and to null when the
+     * frame has no colour worth taking, in which case the caller keeps the
+     * token accent.
+     */
+    public function accentSource(): ?string
+    {
+        /*
+         * Once the palette has been read, its answer is final — INCLUDING
+         * when that answer is "there is no colour here". Falling through to
+         * dominant_color in that case would walk straight back into the bug
+         * this replaced: a black-and-white photograph would hand its neutral
+         * average to AccentColor, whose saturation floor would invent a hue
+         * out of a two-unit channel difference and tint the page with it.
+         *
+         * dominant_color is still the answer for rows extracted before this
+         * existed, which is the only case where there is nothing better.
+         */
+        if ($this->palette_read_at !== null) {
+            return AccentPalette::select($this->palette);
+        }
+
+        return $this->dominant_color;
     }
 
     public function hasExifData(): bool

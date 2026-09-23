@@ -10,6 +10,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Support\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -112,6 +113,61 @@ class SettingsTest extends TestCase
 
         $this->assertSame('Photographer', config('seo.site_name'));
         $this->get('/')->assertOk();
+    }
+
+    /**
+     * The memo must not outlive the application instance that filled it.
+     *
+     * Settings::$memo is static, so it survives between requests in one PHP
+     * process — a queue worker, an Octane instance, the next test in a suite.
+     * Cache::forget() clears the SHARED copy and cannot reach into another
+     * process's memory, so the only thing that makes a write elsewhere visible
+     * here is the provider dropping the memo as each application boots.
+     *
+     * This failed before that split existed, and it failed in a way that took
+     * a while to recognise: the second test in this class was reading the
+     * first one's values out of a map whose rows had already been rolled back.
+     */
+    public function test_the_memo_does_not_leak_between_boots(): void
+    {
+        $this->assertSame('Photographer', Settings::get('site.name'));
+
+        /*
+         * Another process changes the row. Raw query and raw cache forget, so
+         * no model event fires in THIS process — the memo is then the only
+         * thing that could still be serving the old value.
+         */
+        DB::table('settings')->where('key', 'site.name')->update(['value' => 'Changed Elsewhere']);
+        Cache::forget(Settings::CACHE_KEY);
+
+        // Within one request the memo is still authoritative, and should be.
+        $this->assertSame('Photographer', Settings::get('site.name'), 'the memo serves the request it was filled in');
+
+        // A fresh boot must drop it.
+        (new \App\Providers\AppServiceProvider($this->app))->boot();
+
+        $this->assertSame(
+            'Changed Elsewhere',
+            Settings::get('site.name'),
+            'the memo survived a boot: a write in another process would never be seen'
+        );
+
+        // And the config overlay booted from the new value, not the stale one.
+        $this->assertSame('Changed Elsewhere', config('seo.site_name'));
+    }
+
+    public function test_the_boot_path_clears_the_memo_without_clearing_the_cache(): void
+    {
+        Settings::get('site.name');
+
+        (new \App\Providers\AppServiceProvider($this->app))->boot();
+
+        /*
+         * forgetMemo() is not flush(). Clearing the shared cache on every boot
+         * would mean every request paid for the query, which is the entire
+         * thing the cache exists to avoid.
+         */
+        $this->assertTrue(Cache::has(Settings::CACHE_KEY), 'the shared cache must survive a boot');
     }
 
     public function test_the_admin_panel_groups_every_key_and_saves_them(): void

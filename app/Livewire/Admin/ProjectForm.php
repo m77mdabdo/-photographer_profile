@@ -10,6 +10,7 @@ use App\Enums\PublishStatus;
 use App\Http\Requests\Admin\ProjectRules;
 use App\Models\Category;
 use App\Models\Media;
+use App\Support\HeroSuitability;
 use App\Models\Project;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -279,10 +280,27 @@ class ProjectForm extends Component
 
     public function render(): View
     {
+        $cover = $this->cover_media_id ? Media::with('variants')->find($this->cover_media_id) : null;
+        $hero = $this->hero_media_id ? Media::with('variants')->find($this->hero_media_id) : null;
+
+        /*
+         * The frame the home page would actually use, which is the hero image
+         * if one is set and the cover otherwise — the same fallback the hero
+         * component applies. Judging the cover while the hero slot holds a
+         * different picture would advise on an image nobody will see.
+         *
+         * This is ADVICE. It is computed, shown, and never consulted again:
+         * nothing in this class validates against it and no control is
+         * disabled by it. The owner picks the photograph.
+         */
+        $decisive = $hero ?? $cover;
+
         return view('livewire.admin.project-form', [
             'allCategories' => Category::orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
-            'coverMedia' => $this->cover_media_id ? Media::with('variants')->find($this->cover_media_id) : null,
-            'heroMedia' => $this->hero_media_id ? Media::with('variants')->find($this->hero_media_id) : null,
+            'coverMedia' => $cover,
+            'heroMedia' => $hero,
+            'heroSuitability' => $decisive ? HeroSuitability::for($decisive) : null,
+            'heroSuitabilityFor' => $decisive,
             'statuses' => PublishStatus::cases(),
         ]);
     }

@@ -712,7 +712,7 @@
 
 .marquee {
     border-block: var(--rule-hair) solid var(--border);
-    padding-block: var(--sp-4);
+    padding-block: var(--sp-3);
     overflow: hidden;
 }
 
@@ -750,41 +750,62 @@
     display: flex;
     align-items: center;
     margin: 0;
-    padding: 0 0 0 var(--sp-9);
+    padding: 0 0 0 var(--sp-7);
     list-style: none;
     flex: none;
 }
 
 /*
- * The names themselves are the display face, heavy and condensed — the same
- * voice as the wordmark, at a fraction of the size. A client list set in the
- * body sans would read as a caption; set in this face it reads as a roll.
+ * QUIETENED, deliberately.
+ *
+ * This row was set in the display face at --fs-h3 and --wght-display: heavy
+ * condensed capitals, the same voice as the wordmark. Two hundred pixels below
+ * a word set at two hundred and six, a second line of the same face at a
+ * quarter of the size does not read as subordinate — it reads as a second
+ * headline, and the eye cannot tell which of the two it is supposed to land
+ * on first. A client list has not earned that.
+ *
+ * Four changes, each doing one thing:
+ *
+ *   face    display → mono. The clients are a credit, and every other credit
+ *           on this page — the metadata rail, the stage labels, the place
+ *           line — is set in the mono. It now belongs to that group rather
+ *           than competing with the wordmark's.
+ *   size    --fs-h3 → --fs-meta, which is what the rest of that group uses.
+ *   weight  --wght-display (800) → --wght-mono (440).
+ *   colour  --text-secondary at full strength → 0.72, so it settles behind
+ *           the metadata above it rather than beside it.
+ *
+ * The letter-spacing goes the other way, from tight to wide: at this size a
+ * monospace needs the air, and spaced capitals read as a list of names rather
+ * than as a phrase.
  */
 .marquee__item {
     display: flex;
     align-items: center;
-    gap: var(--sp-9);
-    font-family: var(--font-display);
-    font-variation-settings: 'wght' var(--wght-display);
-    font-size: var(--fs-h3);
+    gap: var(--sp-7);
+    font-family: var(--font-mono);
+    font-variation-settings: 'wght' var(--wght-mono);
+    font-size: var(--fs-meta);
     line-height: 1;
-    letter-spacing: var(--tracking-tight);
+    letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
     color: var(--text-secondary);
+    opacity: 0.72;
     white-space: nowrap;
 }
 
 /*
- * A dot between names, in the accent. It is decoration with a job — the gap
- * alone leaves a long row ambiguous about where one name ends — and it is
- * marked aria-hidden's equivalent by being generated content, so it is never
- * announced between two client names.
+ * A dot between names. It keeps the accent — this is one of the five places
+ * the colour is spent, and it is doing a job rather than decorating: the gap
+ * alone leaves a long row ambiguous about where one name ends and the next
+ * begins. Generated content, so it is never announced between two names.
  */
 .marquee__item + .marquee__item::before {
     content: '·';
     color: var(--accent);
     font-family: var(--font-mono);
-    margin-right: var(--sp-9);
+    margin-right: var(--sp-7);
 }
 
 .marquee__item a {

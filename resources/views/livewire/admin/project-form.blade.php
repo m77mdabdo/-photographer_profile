@@ -198,6 +198,42 @@
                 <input type="checkbox" id="is_featured" wire:model.live="is_featured">
                 <label for="is_featured">Featured on the home page</label>
             </div>
+
+            {{--
+                Hero suitability.
+
+                Advice only. Nothing here disables the checkbox, blocks the
+                save or changes what can be published — the home page's hero
+                asks a lot of a photograph, and the person choosing it is
+                entitled to know what it asks and then choose anyway.
+
+                Shown whenever the project is featured, because that is when
+                this frame reaches the hero. aria-live so a screen reader is
+                told when ticking the box brings the advice into being.
+            --}}
+            @if ($is_featured && $heroSuitability)
+                <div class="hero-check" role="status" aria-live="polite">
+                    <h3 class="hero-check__title">On the home page</h3>
+                    <p class="admin-note">
+                        The hero interlocks the studio name with
+                        {{ $heroSuitabilityFor?->original_filename ?? 'this picture' }}. Here is how it
+                        will behave. None of this stops you publishing.
+                    </p>
+
+                    <ul class="hero-check__list" role="list">
+                        @foreach ($heroSuitability->advice() as $note)
+                            <li @class(['hero-check__note', 'hero-check__note--'.$note['level']])>
+                                <span class="hero-check__mark" aria-hidden="true">{{ $note['level'] === 'good' ? '✓' : '!' }}</span>
+                                <span class="sr-only">{{ $note['level'] === 'good' ? 'Good:' : 'Worth knowing:' }}</span>
+                                <span>
+                                    <strong class="hero-check__note-title">{{ $note['title'] }}</strong>
+                                    {{ $note['detail'] }}
+                                </span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
         </section>
 
         <div class="form-actions">

@@ -108,6 +108,16 @@ final class AccentColor
     /**
      * The HSL lightness of a colour, for asserting the band in tests.
      */
+    /**
+     * The furthest this class will move a colour's lightness before deciding
+     * the result has stopped being the photograph's colour. Exposed so the
+     * palette selector can prefer sources that need less of that journey.
+     */
+    public static function maxLightnessShift(): float
+    {
+        return self::MAX_LIGHTNESS_SHIFT;
+    }
+
     public static function lightnessOf(string $colour): ?float
     {
         $rgb = self::parse($colour);
