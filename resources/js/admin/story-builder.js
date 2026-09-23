@@ -12,6 +12,14 @@ const SCROLL_SPEED = 18;
 const HISTORY_LIMIT = 30;
 const DRAFT_DEBOUNCE = 2000;
 
+/*
+ * A draft must outlive the tab that wrote it — closing the browser is exactly
+ * when you most want it back — so this is localStorage, not sessionStorage.
+ * That makes it shared across tabs, which is why every draft carries the id of
+ * the tab that wrote it.
+ */
+const TAB_ID = crypto.randomUUID();
+
 let history = [];
 let future = [];
 let savedSnapshot = null;   // the story as the database last saw it
@@ -219,11 +227,15 @@ function scheduleDraft() {
 function writeDraft() {
     try {
         if (!isDirty()) {
-            window.sessionStorage.removeItem(projectKey());
+            window.localStorage.removeItem(projectKey());
             return;
         }
 
-        window.sessionStorage.setItem(projectKey(), JSON.stringify(snapshot()));
+        window.localStorage.setItem(projectKey(), JSON.stringify({
+            tab: TAB_ID,
+            at: Date.now(),
+            ...snapshot(),
+        }));
     } catch {
         // Private mode, quota, blocked storage: a draft is a convenience.
     }
@@ -231,13 +243,13 @@ function writeDraft() {
 
 function clearDraft() {
     try {
-        window.sessionStorage.removeItem(projectKey());
+        window.localStorage.removeItem(projectKey());
     } catch { /* nothing to do */ }
 }
 
 function readDraft() {
     try {
-        const raw = window.sessionStorage.getItem(projectKey());
+        const raw = window.localStorage.getItem(projectKey());
         return raw ? JSON.parse(raw) : null;
     } catch {
         return null;
@@ -252,9 +264,10 @@ function offerDraft() {
     }
 
     // Only offer it when it actually differs from what the server just sent.
-    const current = JSON.stringify(snapshot());
+    // Compare the story alone: the tab id and timestamp are bookkeeping.
+    const stored = JSON.stringify({ blocks: draft.blocks });
 
-    if (JSON.stringify(draft) === current) {
+    if (stored === JSON.stringify(snapshot())) {
         clearDraft();
         return;
     }
@@ -270,7 +283,7 @@ function offerDraft() {
 
     prompt.querySelector('[data-draft-restore]').addEventListener('click', () => {
         remember();
-        restore(draft);
+        restore({ blocks: draft.blocks });
         prompt.hidden = true;
         announce('Draft restored');
     }, { once: true });
@@ -894,7 +907,25 @@ export function initStoryBuilder() {
     });
 
     container.querySelectorAll('[data-save]').forEach((button) => {
-        button.addEventListener('click', () => livewire()?.call('saveStory', collect()));
+        button.addEventListener('click', async () => {
+            const network = container.querySelector('[data-network-error]');
+            network?.setAttribute('hidden', '');
+
+            try {
+                await livewire()?.call('saveStory', collect());
+            } catch {
+                /*
+                 * A dropped connection, not a rejected story. The DOM still
+                 * holds everything, so the only thing missing is saying so —
+                 * and saying it differently from a validation failure, which
+                 * means the work needs changing rather than retrying.
+                 */
+                network?.removeAttribute('hidden');
+                announce('Your work is safe. Nothing was lost.');
+                container.querySelectorAll('[data-save]').forEach((b) => { b.disabled = false; });
+                writeDraft();
+            }
+        });
     });
 
     document.addEventListener('keydown', (event) => {
@@ -921,6 +952,34 @@ export function initStoryBuilder() {
         remember();
         media.forEach((entry) => appendMediaItem(card, entry));
         refresh();
+    });
+
+    /*
+     * Another tab writing a draft for this project. Non-blocking: the warning
+     * appears, the editor keeps working, and the stale-save guard on the
+     * server is what actually prevents an overwrite.
+     */
+    window.addEventListener('storage', (event) => {
+        if (event.key !== projectKey() || event.newValue === null) {
+            return;
+        }
+
+        try {
+            const other = JSON.parse(event.newValue);
+
+            if (other.tab && other.tab !== TAB_ID) {
+                container.querySelector('[data-other-tab]')?.removeAttribute('hidden');
+            }
+        } catch { /* a malformed draft is not worth reporting */ }
+    });
+
+    window.addEventListener('story-reloaded', () => {
+        savedSnapshot = JSON.stringify(collect());
+        history = [];
+        future = [];
+        clearDraft();
+        container.querySelector('[data-other-tab]')?.setAttribute('hidden', '');
+        sync();
     });
 
     window.addEventListener('story-saved', () => {

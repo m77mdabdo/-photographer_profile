@@ -1,0 +1,284 @@
+/*
+ * Homepage composition.
+ *
+ * Every value resolves to a token. The layout is grid with deliberately
+ * uneven spans: a photography site that lays work out in equal cards reads as
+ * a catalogue, and the point of an editorial page is that the sequence itself
+ * carries meaning.
+ */
+
+/* ---------------- 1. Hero — full viewport, type settled low-left --------- */
+
+.hero {
+    position: relative;
+    display: grid;
+    min-height: 100svh;
+    align-content: end;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.hero__frame { position: absolute; inset: 0; z-index: var(--z-base); }
+.hero__frame picture, .hero__image { width: 100%; height: 100%; object-fit: cover; }
+
+/* A gradient, not a flat scrim: the image stays legible at the top and the
+   type stays legible at the bottom. */
+.hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: var(--z-media);
+    background: linear-gradient(to bottom,
+        rgb(var(--c-ink-rgb) / 0.15) 0%,
+        rgb(var(--c-ink-rgb) / 0.05) 35%,
+        rgb(var(--c-ink-rgb) / 0.75) 100%);
+}
+
+.hero__inner {
+    position: relative;
+    z-index: var(--z-nav);
+    max-width: var(--container-wide);
+    width: 100%;
+    margin-inline: auto;
+    padding: var(--sp-9) var(--gutter) var(--sp-10);
+    display: grid;
+    gap: var(--sp-4);
+    justify-items: start;
+}
+
+.hero__eyebrow, .hero__meta, .story__eyebrow, .works__count, .sheet__note, .work__meta {
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.hero__title {
+    font-family: var(--font-display);
+    font-size: var(--fs-display-xl);
+    line-height: var(--lh-tight);
+    letter-spacing: var(--tracking-tight);
+    max-width: 16ch;
+    text-wrap: balance;
+}
+
+.hero__subtitle { font-size: var(--fs-h3); color: var(--text-secondary); max-width: 38ch; }
+.hero__meta { display: flex; flex-wrap: wrap; gap: var(--sp-5); }
+
+/* Links carry an always-visible rule — never a hover-only affordance, and at
+   least 44px tall for touch. */
+.hero__link, .story__link, .closing__link {
+    display: inline-grid;
+    gap: var(--sp-2);
+    min-height: 44px;
+    align-content: center;
+    text-decoration: none;
+    font-size: var(--fs-small);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+}
+
+.hero__link-rule, .story__link-rule, .closing__rule {
+    display: block;
+    height: 1px;
+    width: 100%;
+    background-color: var(--accent);
+    transition: opacity var(--dur-base) var(--ease-editorial);
+}
+
+.hero__link:hover .hero__link-rule,
+.hero__link:focus-visible .hero__link-rule,
+.story__link:hover .story__link-rule,
+.story__link:focus-visible .story__link-rule,
+.closing__link:hover .closing__rule,
+.closing__link:focus-visible .closing__rule { opacity: 0.55; }
+
+/* ---------------- 2. Introduction — one statement, much air ------------- */
+
+.intro {
+    max-width: var(--container-wide);
+    margin-inline: auto;
+    padding: var(--sp-13) var(--gutter) var(--sp-12);
+}
+
+.intro__statement {
+    font-family: var(--font-display);
+    font-size: var(--fs-display-l);
+    line-height: var(--lh-heading);
+    letter-spacing: var(--tracking-tight);
+    max-width: 22ch;
+    text-wrap: balance;
+}
+
+/* ---------------- 3. Selected works — asymmetric by design -------------- */
+
+.works { max-width: var(--container-wide); margin-inline: auto; padding-inline: var(--gutter); }
+
+.works__header, .sheet__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--sp-5);
+    padding-bottom: var(--sp-5);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: var(--sp-9);
+}
+
+.works__title, .sheet__title {
+    font-size: var(--fs-h3);
+    font-family: var(--font-sans);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+}
+
+.works__list {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: var(--sp-11) var(--sp-6);
+    margin: 0;
+    padding: 0;
+}
+
+/*
+ * Four positions that repeat: wide-left, narrow-right-dropped, narrow-inset,
+ * wide-right-dropped. The drops are what stop the page settling into rows.
+ */
+.works__item--1 { grid-column: 1 / span 7; }
+.works__item--2 { grid-column: 9 / span 4; margin-top: var(--sp-12); }
+.works__item--3 { grid-column: 2 / span 4; }
+.works__item--4 { grid-column: 7 / span 6; margin-top: var(--sp-9); }
+
+.work__link { display: grid; gap: var(--sp-4); text-decoration: none; }
+.work__frame { display: block; overflow: hidden; background-color: var(--bg-elevated); }
+
+.work__image {
+    width: 100%;
+    height: auto;
+    /* A settle, not a zoom. Neutralised under prefers-reduced-motion by the
+       global rule in base.css. */
+    transition: transform var(--dur-slow) var(--ease-editorial);
+}
+
+.work__link:hover .work__image,
+.work__link:focus-visible .work__image { transform: scale(1.015); }
+
+.work__caption { display: grid; gap: var(--sp-2); }
+.work__index { font-size: var(--fs-meta); letter-spacing: var(--tracking-wide); color: var(--accent); }
+
+.work__name {
+    font-family: var(--font-display);
+    font-size: var(--fs-h2);
+    line-height: var(--lh-heading);
+    letter-spacing: var(--tracking-tight);
+    text-wrap: balance;
+}
+
+/* ---------------- 4. Featured story — the cinematic moment -------------- */
+
+.story {
+    position: relative;
+    display: grid;
+    align-content: end;
+    min-height: 82svh;
+    margin-block: var(--sp-13);
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.story__frame { position: absolute; inset: 0; z-index: var(--z-base); }
+.story__frame picture, .story__image { width: 100%; height: 100%; object-fit: cover; }
+
+.story::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: var(--z-media);
+    background: linear-gradient(to bottom, rgb(var(--c-ink-rgb) / 0.1), rgb(var(--c-ink-rgb) / 0.8));
+}
+
+.story__inner {
+    position: relative;
+    z-index: var(--z-nav);
+    max-width: var(--container-wide);
+    width: 100%;
+    margin-inline: auto;
+    padding: var(--sp-9) var(--gutter);
+    display: grid;
+    gap: var(--sp-4);
+    justify-items: start;
+}
+
+.story__eyebrow { color: var(--accent); }
+
+.story__title {
+    font-family: var(--font-display);
+    font-size: var(--fs-display-l);
+    line-height: var(--lh-tight);
+    letter-spacing: var(--tracking-tight);
+    max-width: 18ch;
+}
+
+.story__excerpt { font-size: var(--fs-body); color: var(--text-secondary); max-width: var(--container-text); }
+
+/* ---------------- 5. Contact sheet -------------------------------------- */
+
+.sheet { max-width: var(--container-wide); margin-inline: auto; padding-inline: var(--gutter); }
+.sheet__header { margin-bottom: var(--sp-6); }
+
+/* Wraps rather than scrolling: nothing important sits off the right edge. */
+.sheet__grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--sp-3); margin: 0; padding: 0; }
+.sheet__cell { aspect-ratio: 1; overflow: hidden; background-color: var(--bg-elevated); }
+.sheet__image { width: 100%; height: 100%; object-fit: cover; }
+
+/* ---------------- 6. Closing -------------------------------------------- */
+
+.closing {
+    max-width: var(--container-wide);
+    margin-inline: auto;
+    padding: var(--sp-13) var(--gutter) var(--sp-12);
+    display: grid;
+    gap: var(--sp-7);
+    justify-items: start;
+}
+
+.closing__title {
+    font-family: var(--font-display);
+    font-size: var(--fs-display-l);
+    line-height: var(--lh-heading);
+    letter-spacing: var(--tracking-tight);
+    max-width: 18ch;
+    text-wrap: balance;
+}
+
+.nothing-yet { max-width: var(--container-text); margin-inline: auto; padding: var(--sp-13) var(--gutter); }
+.nothing-yet h2 { font-size: var(--fs-h2); margin-bottom: var(--sp-4); }
+.nothing-yet p { color: var(--text-secondary); }
+
+/* ---------------- Recomposed for narrow screens, not shrunk ------------- */
+
+@media (max-width: 900px) {
+    .works__list { gap: var(--sp-9); }
+
+    /* One column, but the alternating indent survives so the rhythm does. */
+    .works__item--1, .works__item--2, .works__item--3, .works__item--4 {
+        grid-column: 1 / -1;
+        margin-top: 0;
+    }
+
+    .works__item--2, .works__item--4 { padding-left: var(--sp-6); }
+    .sheet__grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (max-width: 600px) {
+    .hero { min-height: 92svh; }
+
+    /* The headline recomposes: fewer characters per line, more lines. */
+    .hero__title { max-width: 11ch; }
+    .intro__statement { max-width: 16ch; }
+    .story__title { max-width: 12ch; }
+    .closing__title { max-width: 13ch; }
+
+    .hero__meta { gap: var(--sp-3); }
+    .works__item--2, .works__item--4 { padding-left: var(--sp-4); }
+    .sheet__grid { grid-template-columns: repeat(3, 1fr); }
+}

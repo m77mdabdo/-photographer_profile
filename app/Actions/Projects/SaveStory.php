@@ -62,6 +62,13 @@ class SaveStory
             // clears its own media_usages.
             $existing->reject(fn (ProjectBlock $block): bool => in_array($block->id, $keptIds, true))
                 ->each->delete();
+
+            /*
+             * Stamp the project itself. Block rows carry their own timestamps,
+             * but there is no single value a second editor could compare
+             * against to notice the story moved under them. This is that value.
+             */
+            $project->forceFill(['updated_at' => now()])->saveQuietly();
         });
     }
 

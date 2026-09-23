@@ -50,11 +50,31 @@ class StoryBuilder extends Component
     /** Which block the picker is filling, so its result lands in the right place. */
     public ?string $pickerKey = null;
 
+    /**
+     * The story's version as it stood when this editor opened it.
+     *
+     * A second tab — or a colleague — saving in the meantime moves it on. We
+     * compare before writing, because last-write-wins silently destroys the
+     * other person's work and nobody finds out until the page is wrong.
+     */
+    public ?string $loadedVersion = null;
+
+    public bool $stale = false;
+
     public function mount(Project $project): void
     {
         $this->authorize('update', $project);
 
+        /*
+         * Read the version from the database, not from the instance handed in.
+         * A model that was loaded before something else saved it carries a
+         * stale updated_at, and comparing against that reports a conflict that
+         * never happened.
+         */
+        $project->refresh();
+
         $this->project = $project;
+        $this->loadedVersion = $project->updated_at?->toIso8601String();
         $this->loadFromDatabase();
     }
 
@@ -66,6 +86,21 @@ class StoryBuilder extends Component
     public function saveStory(array $blocks): void
     {
         $this->authorize('update', $this->project);
+
+        // Refuse rather than overwrite. The editor keeps everything on screen
+        // and decides whether to reload.
+        $current = $this->project->fresh()?->updated_at?->toIso8601String();
+
+        if ($this->loadedVersion !== null && $current !== null && $current !== $this->loadedVersion) {
+            $this->stale = true;
+            $this->message = '';
+            $this->addError('story',
+                'This story was saved somewhere else after you opened it. Nothing here has been '
+                .'overwritten. Reload to see the newer version — your unsaved work stays in this tab '
+                .'until you do.');
+
+            return;
+        }
 
         $normalised = array_values(array_map(
             fn (array $block): array => [
@@ -100,6 +135,8 @@ class StoryBuilder extends Component
         app(SaveStory::class)($this->project, $normalised);
 
         $this->project->refresh();
+        $this->loadedVersion = $this->project->updated_at?->toIso8601String();
+        $this->stale = false;
         $this->loadFromDatabase();
 
         $this->message = 'Story saved.';
@@ -122,6 +159,22 @@ class StoryBuilder extends Component
                 'media' => $block->blockMedia->pluck('media_id')->map('intval')->all(),
             ])
             ->all();
+    }
+
+    /**
+     * Discard local work and take the newer version. Only reachable from the
+     * stale warning, and only by explicit choice.
+     */
+    public function reloadStory(): void
+    {
+        $this->project->refresh();
+        $this->loadedVersion = $this->project->updated_at?->toIso8601String();
+        $this->stale = false;
+        $this->resetErrorBag();
+        $this->loadFromDatabase();
+
+        $this->message = 'Reloaded the newer version.';
+        $this->dispatch('story-reloaded');
     }
 
     public function render(): View

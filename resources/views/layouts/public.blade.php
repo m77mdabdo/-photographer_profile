@@ -8,7 +8,13 @@
 
     <x-seo :page="$seo" />
 
-    @vite(['resources/css/public.css', 'resources/js/public.js'])
+    {{--
+        CSS only. The public site runs no JavaScript: nothing here needs it,
+        and loading the bundle shipped ~51 kB of axios that no public page ever
+        called. The JS entry still builds; it is added back when there is
+        something to run.
+    --}}
+    @vite(['resources/css/public.css'])
 </head>
 <body>
     {{-- First focusable element on the page, visible only once focused. --}}

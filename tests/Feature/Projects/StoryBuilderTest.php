@@ -1144,4 +1144,102 @@ class StoryBuilderTest extends TestCase
         $this->assertSame(1, $blocks[1]->mediaUsages()->where('media_id', $c->id)->count());
         $this->assertSame(1, $c->fresh()->usages()->count());
     }
+
+    // ================= TASK 10 (A4) =================
+
+    public function test_a_draft_survives_a_tab_close_because_it_is_not_session_scoped(): void
+    {
+        // The storage choice is the whole feature: sessionStorage dies with
+        // the tab, which is precisely when a draft is most wanted.
+        $js = file_get_contents(resource_path('js/admin/story-builder.js'));
+
+        $this->assertStringContainsString('window.localStorage.setItem(projectKey()', $js);
+        $this->assertStringContainsString('window.localStorage.getItem(projectKey())', $js);
+        $this->assertStringNotContainsString('window.sessionStorage', $js);
+
+        // Drafts are stamped, so a second tab is identifiable.
+        $this->assertStringContainsString('const TAB_ID = crypto.randomUUID();', $js);
+        $this->assertStringContainsString("tab: TAB_ID", $js);
+        $this->assertStringContainsString("at: Date.now()", $js);
+        $this->assertStringContainsString("addEventListener('storage'", $js);
+
+        // And a restored draft still round-trips to an identical save.
+        $project = Project::factory()->create();
+        $ids = collect(range(1, 3))->map(fn (): int => $this->media()->id)->all();
+
+        $draft = [$this->descriptor(BlockType::GalleryStrip, ['caption' => 'Survived the close'], $ids)];
+
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $this->roundTrip($draft))
+            ->assertHasNoErrors();
+
+        $block = $project->blocks()->sole();
+        $this->assertSame('Survived the close', $block->data['caption']);
+        $this->assertSame($ids, $block->blockMedia->pluck('media_id')->map('intval')->all());
+    }
+
+    public function test_a_stale_save_is_refused_rather_than_overwriting(): void
+    {
+        $project = Project::factory()->create();
+
+        // Editor A opens the story.
+        $tabA = Livewire::actingAs($this->admin())->test(StoryBuilder::class, ['project' => $project]);
+        $openedAt = $tabA->get('loadedVersion');
+        $this->assertNotNull($openedAt);
+
+        // Editor B saves first, from another tab.
+        $this->travel(2)->seconds();
+
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', [$this->descriptor(BlockType::Quote, ['quote' => 'B got here first'])])
+            ->assertHasNoErrors();
+
+        $this->assertSame('B got here first', $project->blocks()->sole()->data['quote']);
+
+        // Editor A now saves against a story that moved.
+        $tabA->call('saveStory', [$this->descriptor(BlockType::Quote, ['quote' => 'A would clobber B'])])
+            ->assertHasErrors('story')
+            ->assertSet('stale', true);
+
+        // B's work is untouched — no last-write-wins.
+        $this->assertSame(1, $project->blocks()->count());
+        $this->assertSame('B got here first', $project->blocks()->sole()->data['quote']);
+
+        $this->assertStringContainsString(
+            'saved somewhere else',
+            $tabA->errors()->first('story')
+        );
+
+        // A can take the newer version deliberately.
+        $tabA->call('reloadStory')->assertSet('stale', false);
+        $this->assertSame('B got here first', $tabA->get('blocks')[0]['data']['quote']);
+    }
+
+    public function test_a_network_failure_keeps_state_and_says_so_distinctly(): void
+    {
+        $js = file_get_contents(resource_path('js/admin/story-builder.js'));
+
+        // The save is awaited inside a try, so a dropped connection is caught
+        // rather than leaving a disabled button and a silent page.
+        $this->assertStringContainsString("await livewire()?.call('saveStory', collect());", $js);
+        $this->assertStringContainsString('} catch {', $js);
+        $this->assertStringContainsString("announce('Your work is safe. Nothing was lost.');", $js);
+        $this->assertStringContainsString('b.disabled = false;', $js);
+
+        // The draft is rewritten on failure, so the work outlives the tab too.
+        $this->assertMatchesRegularExpression('/catch \{.*writeDraft\(\);/s', $js);
+
+        // A network failure and a validation failure must not look alike.
+        $project = Project::factory()->create();
+        $html = Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->html();
+
+        $this->assertStringContainsString('data-network-error', $html);
+        $this->assertStringContainsString('Your work is safe', $html);
+        $this->assertStringContainsString('data-save-notice', $html);
+        $this->assertStringContainsString('data-other-tab', $html);
+    }
 }

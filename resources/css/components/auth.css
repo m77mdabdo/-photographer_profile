@@ -482,3 +482,8 @@
 .picker__item.is-selected { border-color: var(--accent); }
 .picker__order { position: absolute; margin: var(--sp-2); padding: 0 var(--sp-2); background: var(--accent); color: var(--c-ink); font-size: var(--fs-meta); }
 .picker__item { position: relative; }
+
+/* Builder warnings: distinct causes must look distinct. */
+.warning-strip { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-4); border-left: 2px solid var(--accent); background: var(--bg-elevated); font-size: var(--fs-small); }
+.warning-strip--stale { border-left-color: #d98078; }
+.warning-strip--network { border-left-color: #d98078; }

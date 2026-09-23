@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\MediaStatus;
 use App\Http\Controllers\Admin\MediaController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProjectController;
 use App\Livewire\Admin\CategoryManager;
 use App\Livewire\Admin\MediaIndex;
@@ -15,13 +16,7 @@ use App\Models\Media;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 
-/*
- * Temporary home route: it exists so the public layout is visible. Real
- * homepage content arrives in a later task.
- */
-Route::get('/', function () {
-    return view('home');
-})->name('home');
+Route::get('/', HomeController::class)->name('home');
 
 /*
  * Development-only preview of the media pipeline's visual output. This block

@@ -21,6 +21,10 @@
     --c-line: rgba(247, 245, 242, 0.12);
     --c-accent: #b8a07e;
 
+    /* Ink as bare channels, so scrims and gradients can vary the alpha
+       without restating the colour. Keep in step with --c-ink. */
+    --c-ink-rgb: 11 11 12;
+
     /* ---------------------------------------------------------------
      * Semantic aliases — everything downstream uses these, never the
      * raw palette. Defaulted to the dark editorial palette; a future

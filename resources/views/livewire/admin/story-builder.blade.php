@@ -42,6 +42,27 @@
         <button type="button" class="admin-link" data-draft-discard>Discard it</button>
     </div>
 
+    {{-- Another tab holds an unsaved draft of this same story. --}}
+    <p class="warning-strip" data-other-tab hidden role="status">
+        This story is open in another tab. Whichever saves last will be refused rather than
+        overwrite the other — reload there, or finish here first.
+    </p>
+
+    {{-- The save was refused because the story moved underneath us. --}}
+    @if ($stale)
+        <div class="warning-strip warning-strip--stale" role="alert">
+            <span>This story changed elsewhere after you opened it. Nothing has been overwritten.</span>
+            <button type="button" class="admin-button" wire:click="reloadStory">
+                Discard my changes and reload
+            </button>
+        </div>
+    @endif
+
+    {{-- A dropped connection, distinct from a story that needs fixing. --}}
+    <p class="warning-strip warning-strip--network" data-network-error hidden role="alert">
+        Could not reach the server. <strong>Your work is safe — nothing was lost.</strong> Try again.
+    </p>
+
     {{-- What is wrong, before Save is pressed. Clicking jumps to the first. --}}
     <button type="button" class="save-notice" data-save-notice hidden>
         <span data-invalid-count></span> — go to the first one
