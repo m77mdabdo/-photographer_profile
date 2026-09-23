@@ -22,50 +22,108 @@ final class AccentColor
     public const TARGET = 4.5;
 
     /**
-     * @return string|null  A hex colour, or null when nothing usable was given.
+     * The usable lightness band per ground, in HSL terms.
+     *
+     * Contrast alone is not enough. #181010 clears 4.5:1 on paper at 17:1 and
+     * is completely useless as an accent — it is indistinguishable from body
+     * text, so it signals nothing. An accent has to be legible AND visibly a
+     * colour, which means it must sit away from both the ground and the text.
+     *
+     * On a dark ground the text is near-white, so the band sits below it:
+     * bright enough to read, never so bright it becomes another white.
+     * On paper the text is near-black, so the band sits above it.
+     *
+     * @var array<string, array{0: float, 1: float}>
+     */
+    private const BANDS = [
+        'dark' => [0.45, 0.76],
+        'light' => [0.28, 0.56],
+    ];
+
+    /**
+     * How far the lightness may travel from the source before the result stops
+     * being a colour taken from that photograph and becomes an invention.
+     * Beyond this the caller gets null and uses the token accent, which is
+     * honest, rather than a technically-valid colour with no relationship to
+     * the image.
+     */
+    private const MAX_LIGHTNESS_SHIFT = 0.45;
+
+    /**
+     * @return string|null  A hex colour, or null when nothing usable was given
+     *                      or the source cannot be made into a usable accent.
      */
     public static function derive(?string $source, string $background, float $target = self::TARGET): ?string
     {
         $rgb = self::parse($source);
-
-        if ($rgb === null) {
-            return null;
-        }
-
         $backgroundRgb = self::parse($background);
 
-        if ($backgroundRgb === null) {
+        if ($rgb === null || $backgroundRgb === null) {
             return null;
         }
 
         [$h, $s, $l] = self::toHsl($rgb);
 
         /*
-         * A colour with almost no saturation carries no hue worth preserving —
-         * a grey derived from a grey image would just be a worse version of
-         * the token accent. Give it a floor so the result still reads as a
-         * colour rather than as another shade of the text.
+         * A colour with almost no saturation carries no hue worth preserving.
+         * Give it a floor so the result still reads as a colour rather than as
+         * another shade of the text.
          */
-        $s = max($s, 0.18);
+        $s = max($s, 0.22);
 
         $backgroundLuminance = self::luminance($backgroundRgb);
+        $onDark = $backgroundLuminance < 0.5;
+        [$bandLow, $bandHigh] = self::BANDS[$onDark ? 'dark' : 'light'];
 
-        // Walk away from the background: lighten on a dark ground, darken on a
-        // light one. Stepping in 1% increments keeps the result as close to the
-        // photograph's own colour as the target allows.
-        $direction = $backgroundLuminance < 0.5 ? 1 : -1;
+        /*
+         * Walk the band from the end nearest the source, so the result stays
+         * as close to the photograph's own lightness as the constraints allow.
+         */
+        $candidates = [];
 
-        for ($i = 0; $i <= 100; $i++) {
-            $candidate = self::fromHsl($h, $s, self::clamp($l + ($direction * $i * 0.01)));
+        for ($step = 0; $step <= 100; $step++) {
+            $candidate = $bandLow + (($bandHigh - $bandLow) * ($step / 100));
+            $candidates[] = $candidate;
+        }
 
-            if (self::contrast(self::luminance($candidate), $backgroundLuminance) >= $target) {
-                return self::toHex($candidate);
+        usort($candidates, static fn (float $a, float $b): int => abs($a - $l) <=> abs($b - $l));
+
+        foreach ($candidates as $candidateLightness) {
+            if (abs($candidateLightness - $l) > self::MAX_LIGHTNESS_SHIFT) {
+                continue;
+            }
+
+            $rgbCandidate = self::fromHsl($h, $s, $candidateLightness);
+
+            if (self::contrast(self::luminance($rgbCandidate), $backgroundLuminance) >= $target) {
+                return self::toHex($rgbCandidate);
             }
         }
 
-        // Unreachable in practice: pure white on a dark ground, or pure black
-        // on a light one, always clears 4.5:1 long before this.
-        return self::toHex($direction > 0 ? [255, 255, 255] : [0, 0, 0]);
+        // Nothing in the band both clears the target and still resembles the
+        // source. The caller falls back to the token accent.
+        return null;
+    }
+
+    /**
+     * The HSL lightness of a colour, for asserting the band in tests.
+     */
+    public static function lightnessOf(string $colour): ?float
+    {
+        $rgb = self::parse($colour);
+
+        return $rgb === null ? null : self::toHsl($rgb)[2];
+    }
+
+    /**
+     * @return array{0: float, 1: float}
+     */
+    public static function bandFor(string $background): array
+    {
+        $rgb = self::parse($background);
+        $onDark = $rgb !== null && self::luminance($rgb) < 0.5;
+
+        return self::BANDS[$onDark ? 'dark' : 'light'];
     }
 
     public static function contrastAgainst(string $colour, string $background): float

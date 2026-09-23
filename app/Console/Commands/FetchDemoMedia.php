@@ -25,7 +25,9 @@ use Throwable;
  */
 class FetchDemoMedia extends Command
 {
-    protected $signature = 'media:fetch-demo {--count=24 : How many photographs to fetch}';
+    protected $signature = 'media:fetch-demo
+                            {--count=24 : How many photographs to fetch}
+                            {--only= : Restrict to one orientation (landscape, portrait, square)}';
 
     protected $description = 'Fetch marked demo photographs from Pexels';
 
@@ -76,10 +78,26 @@ class FetchDemoMedia extends Command
         $orientations = ['landscape' => 0, 'portrait' => 0, 'square' => 0];
         $keys = ['high' => 0, 'low' => 0, 'mid' => 0];
 
+        /*
+         * The plan normally supplies a deliberate mix. --only narrows it to a
+         * single orientation, for topping up a branch that real results left
+         * thinly covered — Pexels returns few genuine squares by default.
+         */
+        $only = $this->option('only');
+        $plan = $only === null || $only === ''
+            ? self::PLAN
+            : array_values(array_filter(self::PLAN, fn (array $slot): bool => $slot['orientation'] === $only));
+
+        if ($plan === []) {
+            $this->error('No search terms are configured for orientation: '.$only);
+
+            return self::FAILURE;
+        }
+
         // Round-robin the plan so the mix holds at any --count.
         $slots = [];
         for ($i = 0; count($slots) < $target; $i++) {
-            $slots[] = self::PLAN[$i % count(self::PLAN)];
+            $slots[] = $plan[$i % count($plan)];
         }
 
         $perTerm = [];

@@ -1,5 +1,10 @@
 <x-layouts::public :seo="$seo">
-    <x-home.hero :project="$hero" :accent="$heroAccent" />
+    {{-- One switch, in config/site.php. Deleting the loser is one commit. --}}
+    @if (config('site.hero_variant') === 'b')
+        <x-home.hero-b :project="$hero" :accent="$heroAccent" />
+    @else
+        <x-home.hero :project="$hero" :accent="$heroAccent" />
+    @endif
 
     <x-home.client-marquee :clients="$clients" />
 

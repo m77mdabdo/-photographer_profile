@@ -530,3 +530,266 @@
     /* The duplicate has no purpose once nothing is moving. */
     .marquee__track[aria-hidden='true'] { display: none; }
 }
+
+/* ---------------- Hero, variant B — vertical axis, bleeding plate -------- */
+
+/*
+ * A different silhouette, not a restyle of A.
+ *
+ * A is a horizontal band of word interrupted mid-stride by a plate that floats
+ * inside the grid. B stands the composition up: the name is set on two lines
+ * hard against the left edge, the supporting text continues straight down
+ * beneath it in one column, and the photograph is a single mass running off
+ * the opposite screen edge. The eye travels down the words and out into the
+ * picture, rather than across the word and through it.
+ */
+
+.hero-b {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    align-content: center;
+    min-height: 100svh;
+    padding-block: var(--sp-9);
+    padding-left: var(--gutter);
+    overflow: hidden;      /* the plate bleeds; nothing else may */
+
+    --hero-accent: var(--hero-accent-dark, var(--accent));
+}
+
+:root[data-theme='light'] .hero-b { --hero-accent: var(--hero-accent-light, var(--accent)); }
+
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme]) .hero-b { --hero-accent: var(--hero-accent-light, var(--accent)); }
+}
+
+/*
+ * Two lines from one word.
+ *
+ * The measure is set to roughly half the name's length and the word is allowed
+ * to break inside itself. That is a layout instruction — the text node is
+ * never split, so the heading still announces and copies as one word.
+ *
+ * The break point is the browser's, not ours: at this measure it lands near
+ * the middle, but a different face or a very short name may break elsewhere.
+ * That is an accepted looseness, not a guarantee.
+ */
+.hero-b__wordmark {
+    grid-column: 1 / span 7;
+    grid-row: 1;
+    z-index: var(--z-base);
+    margin: 0;
+    max-width: calc(var(--wordmark-chars) * 0.30em);
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-display);
+    font-size: min(calc(150vw / var(--wordmark-chars)), 30vh);
+    line-height: 0.84;
+    letter-spacing: var(--tracking-tight);
+    word-break: break-all;    /* permits the break inside the single word */
+    color: var(--text-primary);
+}
+
+/*
+ * The plate runs off the right edge. How far it reaches in, and how far past
+ * the edge it goes, follows the photograph's shape: a landscape wants width
+ * and can afford to lose more of itself off-screen; a portrait is already
+ * narrow and bleeds less; a square is handled from the left instead, so the
+ * composition flips and the page does not become monotonous when several
+ * square-cropped projects are featured in succession.
+ */
+.hero-b__plate {
+    grid-row: 1;
+    z-index: var(--z-media);
+    align-self: stretch;
+    display: grid;
+    overflow: hidden;
+    background-color: var(--bg);
+    margin-block: calc(var(--sp-9) * -1);
+}
+
+.hero-b__plate picture,
+.hero-b__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hero-b--landscape .hero-b__plate {
+    grid-column: 5 / -1;
+    margin-right: -12vw;
+}
+
+.hero-b--portrait .hero-b__plate {
+    grid-column: 7 / -1;
+    margin-right: -6vw;
+}
+
+/* A square flips the axis: the plate comes in from the left instead. */
+.hero-b--square .hero-b__plate {
+    grid-column: 1 / span 6;
+    margin-left: calc((var(--gutter) + 10vw) * -1);
+}
+
+.hero-b--square .hero-b__wordmark,
+.hero-b--square .hero-b__column {
+    grid-column: 7 / -1;
+    padding-right: var(--gutter);
+}
+
+/* One continuous column of words, directly beneath the name. */
+.hero-b__column {
+    grid-column: 1 / span 5;
+    grid-row: 2;
+    z-index: var(--z-nav);
+    display: grid;
+    gap: var(--sp-5);
+    max-width: 34ch;
+    margin-top: var(--sp-7);
+}
+
+.hero-b__statement {
+    font-family: var(--font-sans);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+.hero-b__link {
+    display: inline-grid;
+    gap: var(--sp-2);
+    min-height: 44px;
+    align-content: center;
+    justify-self: start;
+    text-decoration: none;
+    font-size: var(--fs-small);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.hero-b__link-rule {
+    display: block;
+    height: var(--rule-strong);
+    width: 100%;
+    background-color: var(--hero-accent);
+    transition: opacity var(--dur-base) var(--ease-editorial);
+}
+
+.hero-b__link:hover .hero-b__link-rule,
+.hero-b__link:focus-visible .hero-b__link-rule { opacity: 0.55; }
+
+.hero-b__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-4) var(--sp-5);
+    margin: 0;
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.hero-b__meta > div { display: grid; gap: 2px; }
+.hero-b__meta dt { opacity: 0.55; }
+.hero-b__meta dd { margin: 0; }
+
+.hero-b--empty .hero-b__wordmark { grid-column: 1 / -1; max-width: none; }
+
+/*
+ * Narrow: the bleed becomes the whole width and the stack becomes literal.
+ * The interlock is abandoned rather than compressed, because at this measure
+ * a two-line wordmark and an inset plate cannot both exist without the
+ * letters colliding with the picture.
+ */
+@media (max-width: 900px) {
+    .hero-b {
+        grid-template-columns: 1fr;
+        padding-inline: var(--gutter);
+        min-height: auto;
+        gap: var(--sp-5);
+    }
+
+    .hero-b__wordmark {
+        grid-column: 1;
+        grid-row: 1;
+        max-width: none;
+        word-break: normal;
+        font-size: min(calc(96vw / (var(--wordmark-chars) * 0.56)), 18vh);
+    }
+
+    .hero-b--landscape .hero-b__plate,
+    .hero-b--portrait .hero-b__plate,
+    .hero-b--square .hero-b__plate {
+        grid-column: 1;
+        grid-row: 2;
+        margin-inline: calc(var(--gutter) * -1);
+        margin-block: 0;
+        aspect-ratio: 4 / 5;
+    }
+
+    .hero-b--square .hero-b__wordmark,
+    .hero-b--square .hero-b__column,
+    .hero-b__column {
+        grid-column: 1;
+        grid-row: 3;
+        max-width: none;
+        margin-top: 0;
+        padding-right: 0;
+    }
+}
+
+/* ---------------- Hero comparison (local only) -------------------------- */
+
+.hero-lab__bar {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-modal);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-5);
+    align-items: center;
+    padding: var(--sp-3) var(--gutter);
+    background-color: var(--bg-elevated);
+    border-bottom: var(--rule-fine) solid var(--border);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+}
+
+.hero-lab__title { font-size: var(--fs-meta); }
+.hero-lab__controls { display: flex; gap: var(--sp-2); align-items: center; margin: 0; }
+.hero-lab__label { color: var(--text-secondary); opacity: 0.6; }
+
+.hero-lab__control {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding-inline: var(--sp-3);
+    color: var(--text-secondary);
+    text-decoration: none;
+    border: var(--rule-hair) solid transparent;
+}
+
+.hero-lab__control.is-current { color: var(--text-primary); border-color: var(--border); }
+.hero-lab__control:hover, .hero-lab__control:focus-visible { color: var(--text-primary); }
+
+.hero-lab__facts { display: flex; flex-wrap: wrap; gap: var(--sp-4); margin: 0; color: var(--text-secondary); }
+.hero-lab__facts > div { display: grid; gap: 2px; }
+.hero-lab__facts dt { opacity: 0.55; }
+.hero-lab__facts dd { margin: 0; display: flex; align-items: center; gap: var(--sp-2); }
+
+.hero-lab__swatch {
+    width: 12px; height: 12px;
+    border: var(--rule-hair) solid var(--border);
+    display: inline-block;
+}
+
+.hero-lab__marker {
+    padding: var(--sp-4) var(--gutter);
+    border-block: var(--rule-hair) solid var(--border);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}

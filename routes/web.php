@@ -33,6 +33,61 @@ Route::post('/theme', ThemeController::class)->name('theme.store');
  * exist in staging or production.
  */
 if (app()->environment('local')) {
+    /*
+     * Hero comparison. Renders both variants against the same photograph so
+     * they can be judged side by side rather than by memory, with server-
+     * rendered controls only — no JavaScript, same as every public page.
+     */
+    Route::get('/_dev/hero', function (\Illuminate\Http\Request $request) {
+        $shape = in_array($request->query('shape'), ['landscape', 'portrait', 'square'], true)
+            ? $request->query('shape')
+            : 'landscape';
+
+        // A real project, re-pointed in memory at a cover of the chosen shape.
+        $project = \App\Models\Project::query()
+            ->published()
+            ->with(['cover.variants', 'hero.variants', 'categories:id,name'])
+            ->orderByDesc('is_featured')
+            ->first();
+
+        $media = \App\Models\Media::query()
+            ->where('status', \App\Enums\MediaStatus::Ready)
+            ->with('variants')
+            ->get()
+            ->first(function (\App\Models\Media $m) use ($shape): bool {
+                if (! $m->width || ! $m->height) {
+                    return false;
+                }
+
+                $ratio = $m->width / $m->height;
+
+                return match ($shape) {
+                    'portrait' => $ratio < 0.95,
+                    'square' => $ratio >= 0.95 && $ratio <= 1.05,
+                    default => $ratio > 1.05,
+                };
+            });
+
+        if ($project !== null && $media !== null) {
+            // In memory only — nothing is saved.
+            $project->setRelation('cover', $media);
+            $project->setRelation('hero', $media);
+        }
+
+        $source = $media?->dominant_color;
+
+        return view('dev.hero', [
+            'project' => $project,
+            'media' => $media,
+            'shape' => $shape,
+            'accent' => [
+                'dark' => \App\Support\AccentColor::derive($source, '#0b0b0c'),
+                'light' => \App\Support\AccentColor::derive($source, '#f4f1ea'),
+            ],
+            'source' => $source,
+        ]);
+    })->name('dev.hero');
+
     Route::get('/_dev/media', function () {
         $items = Media::query()
             ->with('variants')
