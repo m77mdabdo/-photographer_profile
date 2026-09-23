@@ -43,6 +43,15 @@
         <div class="detail__side">
             <h1 class="admin-heading detail__title">{{ $medium->original_filename }}</h1>
 
+            @if ($medium->is_demo)
+                <p class="demo-notice" role="note">
+                    <span class="badge badge--demo">Demo</span>
+                    Stock photograph, not your own work.
+                    @if ($medium->credit) By {{ $medium->credit }}. @endif
+                    Remove every demo image with <code>php artisan media:purge-demo</code>.
+                </p>
+            @endif
+
             <dl class="facts">
                 <dt>Status</dt>
                 <dd><span class="badge badge--{{ $medium->status->value }}">{{ $medium->status->label() }}</span></dd>

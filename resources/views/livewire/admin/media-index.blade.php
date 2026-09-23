@@ -123,6 +123,11 @@
                             @if ($item->usages_count > 0)
                                 <span class="badge badge--used">Used {{ $item->usages_count }}×</span>
                             @endif
+
+                            {{-- Nobody should ever wonder whether an image is real work. --}}
+                            @if ($item->is_demo)
+                                <span class="badge badge--demo" title="Stock photograph, removable with media:purge-demo">Demo</span>
+                            @endif
                         </p>
                     </li>
                 @endforeach

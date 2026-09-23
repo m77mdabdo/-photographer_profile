@@ -487,3 +487,13 @@
 .warning-strip { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-4); border-left: 2px solid var(--accent); background: var(--bg-elevated); font-size: var(--fs-small); }
 .warning-strip--stale { border-left-color: var(--danger-text); }
 .warning-strip--network { border-left-color: var(--danger-text); }
+
+/* Demo content must be unmistakable in the library. */
+.badge--demo { border-color: var(--accent); color: var(--accent); border-style: dashed; }
+.demo-notice {
+    display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center;
+    padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-5);
+    border-left: var(--rule-strong) solid var(--accent);
+    background-color: var(--bg-elevated);
+    font-size: var(--fs-caption); color: var(--text-secondary);
+}

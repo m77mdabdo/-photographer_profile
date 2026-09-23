@@ -68,6 +68,45 @@ class DemoContentSeeder extends Seeder
             ['name' => $name, 'description' => $description, 'sort_order' => 0]
         ));
 
+        /*
+         * Covers are chosen by shape, not by whatever came back first. The
+         * layout planner branches on orientation and on what preceded it, so a
+         * set of eight identical landscapes exercises exactly one of its
+         * paths. This assigns a deliberate sequence — landscape, landscape,
+         * portrait, portrait, portrait, square, landscape, portrait — which
+         * walks every branch including the three-portrait fence break.
+         */
+        $byShape = $media->groupBy(function (Media $item): string {
+            $w = (int) $item->width;
+            $h = (int) $item->height;
+
+            if ($h === 0) {
+                return 'landscape';
+            }
+
+            return match (true) {
+                $w > $h * 1.05 => 'landscape',
+                $w < $h * 0.95 => 'portrait',
+                default => 'square',
+            };
+        });
+
+        $shapeSequence = ['landscape', 'landscape', 'portrait', 'portrait', 'portrait', 'square', 'landscape', 'portrait'];
+        $shapeCursor = [];
+
+        $coverFor = function (int $index) use ($byShape, $shapeSequence, &$shapeCursor, $media): Media {
+            $wanted = $shapeSequence[$index % count($shapeSequence)];
+            $pool = $byShape->get($wanted) ?? collect();
+
+            if ($pool->isEmpty()) {
+                $pool = $media;   // degrade rather than fail on a thin library
+            }
+
+            $shapeCursor[$wanted] = ($shapeCursor[$wanted] ?? -1) + 1;
+
+            return $pool[$shapeCursor[$wanted] % $pool->count()];
+        };
+
         $definitions = [
             [
                 'slug' => 'coastline-in-winter',
@@ -122,6 +161,24 @@ class DemoContentSeeder extends Seeder
                 'year' => 2023, 'location' => 'Various', 'client' => 'Granta',
                 'categories' => ['Portrait', 'Editorial'],
             ],
+            [
+                'slug' => 'concrete-and-light',
+                'title' => 'Concrete and Light',
+                'subtitle' => 'Brutalist interiors at midday',
+                'excerpt' => 'Buildings photographed only in the two hours when the light '
+                    .'reaches the bottom of the stairwells.',
+                'year' => 2023, 'location' => 'Marseille', 'client' => 'Self-initiated',
+                'categories' => ['Landscape', 'Documentary'],
+            ],
+            [
+                'slug' => 'the-long-table',
+                'title' => 'The Long Table',
+                'subtitle' => 'Objects, arranged and left',
+                'excerpt' => 'A still life made once a week for a year, always on the same '
+                    .'table, always in the same window.',
+                'year' => 2022, 'location' => 'Studio', 'client' => 'Self-initiated',
+                'categories' => ['Editorial'],
+            ],
         ];
 
         foreach ($definitions as $index => $definition) {
@@ -136,8 +193,8 @@ class DemoContentSeeder extends Seeder
                 'client' => $definition['client'],
                 'is_featured' => $definition['featured'] ?? false,
                 'sort_order' => $index,
-                'cover_media_id' => $media[$index % $media->count()]->id,
-                'hero_media_id' => $media[($index + 1) % $media->count()]->id,
+                'cover_media_id' => $coverFor($index)->id,
+                'hero_media_id' => $media[($index + 3) % $media->count()]->id,
             ]);
 
             $project->slug = $definition['slug'];

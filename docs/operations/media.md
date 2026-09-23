@@ -36,7 +36,21 @@ Output for that image totals roughly 830 KB across all 14 files.
 ## Memory — the important constraint
 
 Peak resident set size per worker process is **approximately 302 MB** while processing
-a 4000×2667 source.
+a 4000×2667 (10.7 MP) source.
+
+**That figure scales with the source, and scales badly.** Processing a batch of stock
+photographs up to 5464×8196 (44.8 MP) peaked at **1.32 GB**. GD holds the decoded
+bitmap plus the resize target, and both grow with pixel count, so a 45 MP frame needs
+roughly four times what a 10 MP frame does. Budget against the *largest* image you will
+accept, not a typical one:
+
+| Source | Megapixels | Observed peak RSS |
+| ------ | ---------: | ----------------: |
+| 4000×2667 | 10.7 | ~302 MB |
+| up to 5464×8196 | 44.8 | ~1.32 GB |
+
+The `max_megapixels` ceiling in `config/media.php` (80) is therefore also a memory
+ceiling. At 80 MP a single worker could be expected to need well over 2 GB.
 
 **PHP's `memory_limit` does not constrain GD.** GD allocates its pixel buffers outside
 PHP's allocator, so `memory_get_peak_usage()` reports about 15 MB for work that really
@@ -46,10 +60,13 @@ nor cause an out-of-memory kill here.
 The practical consequence: **cap media worker concurrency by available RAM, not by
 `memory_limit`.**
 
-> Recommended: **at most one media worker per 512 MB of available RAM.**
+> Recommended: **at most one media worker per 1.5 GB of available RAM**, if uploads of
+> any size up to the 80 MP ceiling are permitted. One per 512 MB is only safe if
+> `max_megapixels` is also lowered to around 12.
 
-A 2 GB container should run no more than 3 media workers, leaving headroom for the web
-process. Exceeding this produces OOM kills that PHP cannot report, because the kernel
+A 2 GB container should run **one** media worker, not three — the earlier figure was
+measured on a single 10 MP image and did not survive contact with real stock
+photography. Exceeding this produces OOM kills that PHP cannot report, because the kernel
 terminates the process before any PHP error handler runs.
 
 ## Retuning quality

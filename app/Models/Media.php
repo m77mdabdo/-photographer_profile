@@ -58,6 +58,7 @@ class Media extends Model
     {
         return [
             'status' => MediaStatus::class,
+            'is_demo' => 'boolean',
             'processed_at' => 'datetime',
             'focal_x' => 'float',
             'focal_y' => 'float',
@@ -111,6 +112,37 @@ class Media extends Model
     public function scopeReady(Builder $query): void
     {
         $query->where('status', MediaStatus::Ready);
+    }
+
+    /**
+     * Stock content, fetched to make the site judgeable before real work
+     * exists. Everything it touches must be removable in one command.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeDemo(Builder $query): void
+    {
+        $query->where('is_demo', true);
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     */
+    public function scopeReal(Builder $query): void
+    {
+        $query->where('is_demo', false);
+    }
+
+    /**
+     * Drop every usage row pointing at this image.
+     *
+     * media_usages is polymorphic, so nothing cascades from the media side —
+     * deleting an image would otherwise leave rows claiming it is still in
+     * use, and the next purge would refuse on a phantom.
+     */
+    public function mediaUsagesCleanup(): void
+    {
+        $this->usages()->delete();
     }
 
     public function isReady(): bool

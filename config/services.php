@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    /*
+     * Pexels, used only by the demo-content fetcher. The key is read through
+     * config so it is never interpolated into a command line, where it would
+     * land in shell history and in `ps` output.
+     */
+    'pexels' => [
+        'key' => env('PEXELS_API_KEY'),
+        'endpoint' => 'https://api.pexels.com/v1',
+    ],
+
 ];
