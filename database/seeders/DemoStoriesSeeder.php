@@ -406,15 +406,29 @@ class DemoStoriesSeeder extends Seeder
     {
         $own = Media::query()
             ->where('status', MediaStatus::Ready)
+            // Redundant alongside demo_set in practice, and stated anyway: the
+            // rule is "a seeder draws from demo media", not "a seeder draws
+            // from rows that happen to carry a set name".
+            ->where('is_demo', true)
             ->where('demo_set', $set)
             ->whereNotNull('width')
             ->whereNotIn('id', $this->spent)
             ->orderBy('id')
             ->get();
 
-        // Anything left over, for a set the fetch under-filled.
+        /*
+         * Anything left over, for a set the fetch under-filled — but DEMO
+         * media only.
+         *
+         * Without that condition the fallback reaches into the client's real
+         * library. It already did: three synthetic test images generated in an
+         * early task, with no demo_set, were pulled into a gallery strip and
+         * published, and turned up as the first three frames of the public
+         * archive. A seeder may borrow from its own content and nothing else.
+         */
         $rest = Media::query()
             ->where('status', MediaStatus::Ready)
+            ->where('is_demo', true)
             ->whereNotNull('width')
             ->whereNotIn('id', array_merge($this->spent, $own->pluck('id')->all()))
             ->orderBy('id')

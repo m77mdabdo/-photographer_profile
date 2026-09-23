@@ -627,9 +627,10 @@ class HomepageTest extends TestCase
         $this->assertNotContains('', $columns, 'every orientation places the plate: '.json_encode($columns));
         $this->assertSame(3, count(array_unique($columns)), 'the three columns must differ: '.json_encode($columns));
 
-        // ... and the supporting text moves to the side the picture leaves.
-        $this->assertMatchesRegularExpression('/\.hero--portrait \.hero__aside \{ grid-column: 1 \/ span 5; \}/', $css);
-        $this->assertMatchesRegularExpression('/\.hero--landscape \.hero__aside \{ grid-column: 10 \/ -1; \}/', $css);
+        // ... and the supporting text moves to the side the picture leaves,
+        // with clearance from it — see test_no_hero_text_shares_a_column.
+        $this->assertMatchesRegularExpression('/\.hero--portrait \.hero__aside \{\s*grid-column: 1 \/ span 5;/s', $css);
+        $this->assertMatchesRegularExpression('/\.hero--landscape \.hero__aside \{\s*grid-column: 10 \/ -1;/s', $css);
     }
 
     /**
@@ -841,6 +842,116 @@ class HomepageTest extends TestCase
         \App\Support\Settings::set('stage.1.label', 'Latent', 'string', 'hero');
 
         $this->assertStringContainsString('Latent', $this->get('/')->getContent());
+    }
+
+    /**
+     * No text column may sit in the plate's columns, and it may not abut them
+     * either.
+     *
+     * The Task 18 report claimed the statement is "never under the plate".
+     * Measured, that was true and irrelevant: with a portrait frame the text
+     * column ended at exactly 607px and the plate began at exactly 607px, so
+     * the last letter of the project link sat flush against a hard
+     * photographic edge and read as sliced in half. "Does not overlap" is not
+     * the requirement; "is visibly separate from" is.
+     */
+    public function test_no_hero_text_shares_a_column_with_the_plate(): void
+    {
+        $css = file_get_contents(resource_path('css/pages/home.css'));
+
+        $span = static function (string $pattern) use ($css): array {
+            preg_match($pattern, $css, $found);
+
+            self::assertNotEmpty($found, 'no rule matched '.$pattern);
+
+            $start = (int) $found[1];
+            // "a / span b" and "a / -1" both appear in this stylesheet.
+            $end = str_contains($found[2], 'span')
+                ? $start + (int) filter_var($found[2], FILTER_SANITIZE_NUMBER_INT) - 1
+                : 12;
+
+            return [$start, $end];
+        };
+
+        $orientations = [
+            'landscape' => [
+                'plate' => '/\.hero--landscape \.hero__plate \{ grid-column: (\d+) \/ ([^;]+); \}/',
+                'text' => '/\.hero--landscape \.hero__aside \{\s*grid-column: (\d+) \/ ([^;]+);/',
+            ],
+            'portrait' => [
+                'plate' => '/\.hero--portrait\s+\.hero__plate \{ grid-column: (\d+) \/ ([^;]+); \}/',
+                'text' => '/\.hero--portrait \.hero__aside \{\s*grid-column: (\d+) \/ ([^;]+);/',
+            ],
+            'square' => [
+                'plate' => '/\.hero--square\s+\.hero__plate \{ grid-column: (\d+) \/ ([^;]+); \}/',
+                'text' => '/\.hero--square \.hero__aside \{\s*grid-column: (\d+) \/ ([^;]+);/',
+            ],
+        ];
+
+        foreach ($orientations as $name => $patterns) {
+            [$plateStart, $plateEnd] = $span($patterns['plate']);
+            [$textStart, $textEnd] = $span($patterns['text']);
+
+            $overlap = min($textEnd, $plateEnd) - max($textStart, $plateStart) + 1;
+
+            $this->assertLessThanOrEqual(
+                0,
+                $overlap,
+                sprintf(
+                    '%s: text occupies columns %d-%d and the plate %d-%d, overlapping by %d',
+                    $name, $textStart, $textEnd, $plateStart, $plateEnd, $overlap
+                )
+            );
+        }
+
+        /*
+         * And a declared gap on the side that faces the picture, in all three.
+         * Adjacency is what actually looked broken.
+         */
+        $this->assertMatchesRegularExpression(
+            '/\.hero__voice,\s*\.hero__aside \{ --hero-plate-gap: var\(--sp-\d+\); \}/',
+            $css,
+            'no clearance is declared between the text column and the plate'
+        );
+
+        foreach ([
+            'landscape' => 'padding-left',
+            'square' => 'padding-left',
+            'portrait' => 'padding-right',
+        ] as $name => $side) {
+            $this->assertMatchesRegularExpression(
+                '/\.hero--'.$name.' \.hero__aside \{[^}]*'.$side.': var\(--hero-plate-gap\)/s',
+                $css,
+                "{$name}: the text column has no clearance from the plate"
+            );
+        }
+    }
+
+    public function test_the_statement_is_cut_by_the_wordmark_but_not_swallowed(): void
+    {
+        $css = file_get_contents(resource_path('css/pages/home.css'));
+
+        preg_match('/\.hero__voice \{[^}]*margin-top: calc\(var\(--wordmark-size\) \* (-[\d.]+)\)/s', $css, $found);
+
+        $this->assertNotEmpty($found, 'the statement declares no overlap with the wordmark');
+
+        $factor = (float) $found[1];
+
+        /*
+         * The band this has to sit in, established by measuring rather than by
+         * looking — twice, in both directions:
+         *
+         *   -0.42  two lines of three swallowed
+         *   -0.34  the statement's whole height inside the wordmark's band
+         *   -0.13  no visual overlap at all: the wordmark's BOX is 20px taller
+         *          than its glyphs, so box arithmetic reads an overlap the eye
+         *          cannot see
+         *
+         * Between -0.18 and -0.30 the first line is crossed by the letters'
+         * feet and the rest hangs clear.
+         */
+        $this->assertGreaterThanOrEqual(-0.30, $factor, 'the wordmark swallows the sentence');
+        $this->assertLessThanOrEqual(-0.18, $factor, 'the wordmark no longer crosses the sentence at all');
     }
 
     public function test_the_query_count_is_nine(): void

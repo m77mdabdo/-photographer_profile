@@ -14,8 +14,18 @@
             ?? $ogImage->variants->sortBy('width')->last();
     }
 
+    /*
+         * ABSOLUTE, deliberately, and the only image on the site that is.
+         *
+         * Every <img> carries a root-relative src so it resolves against
+         * whatever host served the page. A scraper reading this meta tag has
+         * no page to resolve against, so this one is absolutised here rather
+         * than by making the whole site absolute for its sake.
+         */
     $ogImageUrl = $ogVariant !== null
-        ? \Illuminate\Support\Facades\Storage::disk($ogVariant->disk)->url($ogVariant->path)
+        ? \App\Support\AbsoluteUrl::for(
+            \Illuminate\Support\Facades\Storage::disk($ogVariant->disk)->url($ogVariant->path)
+        )
         : null;
 
     $twitterHandle = config('seo.twitter_handle');

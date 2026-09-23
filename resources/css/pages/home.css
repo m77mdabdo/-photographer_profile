@@ -242,15 +242,27 @@
     text-align: right;
 
     /*
-     * Pulled up by a fifth of the wordmark's own height, so its first line
+     * Pulled up by an eighth of the wordmark's own height, so its first line
      * runs behind the feet of the letters and every line after it hangs clear
      * underneath. Expressed against --wordmark-size rather than as a fixed
-     * offset, so the overlap stays the same fraction at every viewport. The fraction was
-     * arrived at by looking: -0.42 swallowed two lines of three, which is not
-     * layering but losing the sentence, and -0.22 left the two elements merely
-     * touching, which is not layering either.
+     * offset, so the overlap stays the same fraction at every viewport.
+     *
+     * The fraction was arrived at by measuring, after two rounds of arriving
+     * at it by looking and being wrong. At -0.34 the statement's whole height
+     * sat inside the wordmark's band — measured, 554..590 against a band of
+     * 423..608 — so BOTH its lines were cut and the sentence was gone. -0.42
+     * swallowed two lines of three. -0.22 left the two merely touching.
+     *
+     * -0.13 then over-corrected in the other direction, and the reason is
+     * worth writing down: the wordmark's BOX is 20px taller than its glyphs,
+     * because it carries 0.10em of descender clearance. Measuring against the
+     * box says "10px of overlap" while the eye sees a clear gap.
+     *
+     * -0.23 is measured against the glyphs rather than the box: the first
+     * line is crossed by the letters' feet and the rest hangs clear, which is
+     * what layering is supposed to mean.
      */
-    margin-top: calc(var(--wordmark-size) * -0.34);
+    margin-top: calc(var(--wordmark-size) * -0.23);
 }
 
 .hero__statement {
@@ -287,15 +299,38 @@
 /*
  * Voice and link both live in whatever columns the photograph leaves, on the
  * side with the most room. The picture's position decides where the words go.
+ *
+ * THE GAP IS NOT OPTIONAL.
+ *
+ * Measured, these columns abut the plate at EXACTLY zero pixels: with a
+ * portrait frame the text column ends at 607 and the plate begins at 607. No
+ * element geometrically overlaps the picture — the Task 18 claim was true —
+ * and it looked entirely broken anyway, because the last letter of the
+ * project link sat flush against a hard, high-contrast photographic edge and
+ * read as sliced in half.
+ *
+ * "Does not overlap" is not the requirement. "Is visibly separate from" is.
  */
+.hero__voice,
+.hero__aside { --hero-plate-gap: var(--sp-6); }
+
 .hero--landscape .hero__voice,
-.hero--landscape .hero__aside { grid-column: 10 / -1; }
+.hero--landscape .hero__aside {
+    grid-column: 10 / -1;
+    padding-left: var(--hero-plate-gap);
+}
 
 .hero--portrait .hero__voice,
-.hero--portrait .hero__aside { grid-column: 1 / span 5; }
+.hero--portrait .hero__aside {
+    grid-column: 1 / span 5;
+    padding-right: var(--hero-plate-gap);
+}
 
 .hero--square .hero__voice,
-.hero--square .hero__aside { grid-column: 10 / -1; }
+.hero--square .hero__aside {
+    grid-column: 10 / -1;
+    padding-left: var(--hero-plate-gap);
+}
 
 .hero__link {
     display: inline-grid;

@@ -41,7 +41,21 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            /*
+             * ROOT-RELATIVE, not built from APP_URL.
+             *
+             * An absolute URL here bakes one host and port into every <img> on
+             * the site. APP_URL was http://localhost while the app was served
+             * on 127.0.0.1:8000, so every image 404'd in the browser while
+             * every test passed — the suite renders HTML and never fetches
+             * what the HTML points at.
+             *
+             * A root-relative path resolves against whatever host served the
+             * page, so local, staging and production all work with no
+             * configuration. The few places that genuinely need an absolute
+             * URL build one at the point of use: see App\Support\AbsoluteUrl.
+             */
+            'url' => '/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
@@ -57,7 +71,8 @@ return [
         'media_public' => [
             'driver' => 'local',
             'root' => storage_path('app/public/media'),
-            'url' => env('APP_URL').'/storage/media',
+            // Root-relative for the same reason as the 'public' disk above.
+            'url' => '/storage/media',
             'visibility' => 'public',
             'throw' => true,
         ],

@@ -301,6 +301,90 @@ class ArchiveTest extends TestCase
         );
     }
 
+    // ----------------------------------------------------------------- 4, 5
+
+    /**
+     * The seeder may borrow from its own content and nothing else.
+     *
+     * Three synthetic gradients generated in an early task — no demo_set, no
+     * credit, not photographs — were pulled into a published gallery strip by
+     * the fallback pool and became the first three frames of the archive. The
+     * fallback is now restricted to is_demo media; this asserts the property
+     * rather than the absence of those three particular rows.
+     */
+    public function test_the_story_seeder_never_reaches_into_real_media(): void
+    {
+        $source = (string) file_get_contents(base_path('database/seeders/DemoStoriesSeeder.php'));
+
+        // Scoped to poolFor(), which is the only place frames are chosen.
+        $start = strpos($source, 'private function poolFor(');
+        $end = strpos($source, 'private function take(', (int) $start);
+
+        $this->assertIsInt($start, 'poolFor() has been renamed; re-check this test');
+        $this->assertIsInt($end);
+
+        $poolFor = substr($source, $start, $end - $start);
+
+        preg_match_all('/Media::query\(\)(.*?)->get\(\);/s', $poolFor, $pools);
+
+        $this->assertCount(2, $pools[1], 'poolFor() no longer has exactly two pools; re-check this test');
+
+        foreach ($pools[1] as $index => $pool) {
+            $this->assertStringContainsString(
+                "->where('is_demo', true)",
+                $pool,
+                "pool {$index} can reach into the client's real library"
+            );
+        }
+    }
+
+    public function test_no_project_is_left_without_a_cover(): void
+    {
+        $this->fill();
+
+        // Whatever else happens to the library, an index of covers cannot
+        // have a hole in it.
+        $this->assertSame(
+            0,
+            \App\Models\Project::query()->published()->whereNull('cover_media_id')->count(),
+            'a published project has no cover'
+        );
+
+        $html = $this->get('/work')->assertOk()->getContent();
+
+        $this->assertSame(
+            substr_count($html, 'class="work__link"'),
+            substr_count($html, 'class="work__frame"'),
+            'a work card rendered without its frame'
+        );
+    }
+
+    public function test_the_sheet_holds_only_real_photographs(): void
+    {
+        $this->fill();
+
+        $html = $this->get('/archive')->assertOk()->getContent();
+
+        /*
+         * Every frame on the sheet came from a file with a credit. The three
+         * synthetic fixtures were the only media in the library with none,
+         * which is a better signature than their ids: a generated image has
+         * no photographer.
+         */
+        $ids = \App\Models\Media::query()->whereNull('credit')->orWhere('credit', '')->pluck('id');
+
+        foreach ($ids as $id) {
+            $media = \App\Models\Media::find($id);
+
+            $this->assertNotNull($media);
+            $this->assertStringNotContainsString(
+                (string) $media->uuid,
+                $html,
+                "an uncredited image reached the public archive: media {$id}"
+            );
+        }
+    }
+
     // ----------------------------------------------------------------- 11
 
     public function test_every_frame_on_the_sheet_has_an_alt_and_a_credit(): void

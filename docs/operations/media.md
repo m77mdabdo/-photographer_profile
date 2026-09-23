@@ -70,6 +70,33 @@ Two settings govern this, both in `config/media.php`:
 Raising `max_megapixels` without also raising the RAM per worker is how this comes
 back: the decode happens before the guard can help.
 
+## Neither `memory_limit` nor `queue:work --memory` constrains GD
+
+Stated plainly, because both look like they should:
+
+- **`php.ini` `memory_limit` does not apply.** It bounds PHP's own allocator. GD's
+  image buffers are allocated by the C library, outside it. A worker with
+  `memory_limit=256M` will happily hold 756 MB of resident memory and never raise
+  "Allowed memory size exhausted".
+- **`queue:work --memory` does not apply either**, for the same reason: it compares
+  `memory_get_usage()` against the limit, and that function reports the same PHP heap.
+
+Measured in one process, processing a single 48.8 MP image:
+
+| | |
+| --- | --- |
+| PHP heap after the job | **32 MB** ← what both limits see |
+| PHP peak heap | 39 MB |
+| Actual process RSS | **756 MB** ← what the OS sees |
+
+So the only limit that works is one that does not ask PHP how much memory it is using:
+`--max-jobs`, which counts jobs. This is why `composer dev` runs the media worker as
+`queue:work --queue=media --max-jobs=25` rather than relying on any memory setting.
+
+(`queue:listen` is immune, because it forks a fresh process per job and the memory goes
+back when that process exits. It is also several times slower, which is why the media
+queue uses `queue:work` with a job ceiling instead.)
+
 ## The worker leaks, and `--memory` cannot see it
 
 Measured while processing 145 images in one serial run, and then isolated with a
