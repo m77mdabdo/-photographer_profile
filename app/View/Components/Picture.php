@@ -27,6 +27,7 @@ class Picture extends Component
         public ?string $alt = null,
         public ?string $class = null,
         public bool $decorative = false,
+        public ?string $imgClass = null,
     ) {}
 
     public function render(): View

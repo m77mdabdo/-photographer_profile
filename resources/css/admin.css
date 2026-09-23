@@ -1,0 +1,9 @@
+/* Admin bundle. Deliberately minimal: no base layer, no public components. */
+
+@import 'tailwindcss';
+
+@source '../../storage/framework/views/*.php';
+@source '../views/admin/**/*.blade.php';
+@source './admin.css';
+
+@import './tokens.css';

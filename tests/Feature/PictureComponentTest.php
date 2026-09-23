@@ -227,4 +227,32 @@ class PictureComponentTest extends TestCase
         $this->assertStringContainsString('data-media-placeholder="missing"', $html);
         $this->assertStringContainsString('aspect-ratio: 3 / 2', $html);
     }
+
+    public function test_class_lands_on_the_picture_and_img_class_lands_on_the_img(): void
+    {
+        $html = $this->render(
+            $this->mediaWithVariants(),
+            'class="figure-frame" img-class="figure-image"'
+        );
+
+        $pictureTag = substr($html, 0, (int) strpos($html, '<img'));
+        $imgTag = substr($html, (int) strpos($html, '<img'));
+
+        // The wrapper carries $class and not $imgClass.
+        $this->assertStringContainsString('class="figure-frame"', $pictureTag);
+        $this->assertStringNotContainsString('figure-image', $pictureTag);
+
+        // The image carries $imgClass and not $class.
+        $this->assertStringContainsString('class="figure-image"', $imgTag);
+        $this->assertStringNotContainsString('figure-frame', $imgTag);
+    }
+
+    public function test_img_class_is_omitted_when_not_given(): void
+    {
+        $html = $this->render($this->mediaWithVariants(), 'class="only-wrapper"');
+
+        $imgTag = substr($html, (int) strpos($html, '<img'));
+
+        $this->assertStringNotContainsString('class=', $imgTag);
+    }
 }

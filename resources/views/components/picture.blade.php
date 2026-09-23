@@ -25,6 +25,7 @@
         fetchpriority="{{ $fetchPriority() }}"
         decoding="{{ $decoding() }}"
         style="{{ $styleAttributes() }}"
+        @if ($imgClass) class="{{ $imgClass }}" @endif
         {{ $attributes }}
     >
 </picture>

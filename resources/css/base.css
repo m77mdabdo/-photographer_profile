@@ -1,0 +1,138 @@
+/*
+ * Base layer: a modern reset plus the few global defaults the whole site
+ * depends on. Every value here comes from tokens.css.
+ */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+* {
+    margin: 0;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
+}
+
+body {
+    min-height: 100svh;
+    background-color: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* Headings default to the display face; sizes are applied per component. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    line-height: var(--lh-heading);
+    letter-spacing: var(--tracking-tight);
+    text-wrap: balance;
+}
+
+p {
+    text-wrap: pretty;
+}
+
+/* Media never overflows its container and never loses its aspect ratio. */
+img,
+picture,
+video,
+canvas,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+img,
+video {
+    height: auto;
+}
+
+/* Form controls inherit type rather than falling back to the UA font. */
+input,
+button,
+textarea,
+select {
+    font: inherit;
+    color: inherit;
+}
+
+button {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+a {
+    color: inherit;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+}
+
+ul[role='list'],
+ol[role='list'] {
+    list-style: none;
+    padding: 0;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid var(--border);
+}
+
+/*
+ * Focus. Keyboard users get an unmistakable ring; it must clear the dark
+ * background, so the accent sits on top of a contrasting outer ring rather
+ * than relying on the accent alone.
+ */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+}
+
+/* Only suppress the ring for pointer users, never for the keyboard. */
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+::selection {
+    background-color: var(--accent);
+    color: var(--c-ink);
+}
+
+/*
+ * Respect the system setting. This is a global override rather than a
+ * per-component concern: motion that has not been written yet is covered
+ * by it automatically.
+ */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
