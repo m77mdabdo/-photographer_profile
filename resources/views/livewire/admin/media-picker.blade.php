@@ -17,6 +17,13 @@
                                placeholder="Filename, alt text or credit" autofocus>
                     </div>
 
+                    @if ($projectId !== null)
+                        <button type="button" class="admin-link" wire:click="toggleRecent"
+                                aria-pressed="{{ $recentOnly ? 'true' : 'false' }}">
+                            {{ $recentOnly ? 'All images' : 'Recently used here' }}
+                        </button>
+                    @endif
+
                     @if ($multiple)
                         <button type="button" class="admin-link" wire:click="selectAllMatching">
                             Select all {{ $matchingCount }} matching

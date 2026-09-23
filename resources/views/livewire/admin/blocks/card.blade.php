@@ -9,7 +9,11 @@
     data-id="{{ $block['id'] ?? '' }}"
     data-type="{{ $type->value }}"
     data-min="{{ $type->minMedia() }}"
-    data-max="{{ $type->maxMedia() ?? '' }}">
+    data-max="{{ $type->maxMedia() ?? '' }}"
+    {{-- Rules rendered straight from the enum, so the browser's live checks
+         cannot drift from the server's. --}}
+    data-required="{{ implode(',', $type->requiredDataKeys()) }}"
+    data-label="{{ $type->label() }}">
 
     <header class="block-card__header">
         <button type="button" class="project-row__handle" data-drag-handle
@@ -21,6 +25,7 @@
         </button>
 
         <span class="block-card__summary" data-summary></span>
+        <span class="block-card__flag" data-flag hidden aria-hidden="true">!</span>
 
         <span class="block-card__actions">
             <button type="button" class="admin-link" data-move="-1" aria-label="Move block up">↑</button>
@@ -35,6 +40,8 @@
         <button type="button" class="admin-button admin-button--danger" data-remove-confirm>Yes, remove it</button>
         <button type="button" class="admin-link" data-remove-cancel>Cancel</button>
     </div>
+
+    <ul class="block-card__errors" data-errors role="alert" hidden></ul>
 
     <div class="block-card__body" data-body>
         @if ($type->acceptsMedia())
@@ -55,7 +62,7 @@
                 <ul class="block-media__list" role="list" data-media-items>
                     @foreach ($block['media'] ?? [] as $slot => $mediaId)
                         @php($item = $mediaById->get($mediaId))
-                        <li class="block-media__item" data-media-item data-media-id="{{ $mediaId }}">
+                        <li class="block-media__item" data-media-item data-media-id="{{ $mediaId }}" tabindex="0">
                             @if ($item && $item->thumbnailUrl())
                                 <img src="{{ $item->thumbnailUrl() }}" alt="" class="block-media__image" loading="lazy">
                             @else

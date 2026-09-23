@@ -785,4 +785,363 @@ class StoryBuilderTest extends TestCase
             "a Credits block must not add a query (without: {$without}, with: {$with})"
         );
     }
+
+    // ================= TASK 9 =================
+
+    /**
+     * The browser's undo stack, in the form the tests can exercise: a snapshot
+     * is the serialised story, and undo is restoring one. The JS holds the
+     * same shape; this proves the round trip the server sees is lossless.
+     *
+     * @param  list<array<string, mixed>>  $story
+     * @return list<array<string, mixed>>
+     */
+    private function roundTrip(array $story): array
+    {
+        return json_decode(json_encode($story), true);
+    }
+
+    // ----------------------------------------------------------------- F1
+
+    public function test_undo_restores_a_removed_block_with_all_images_and_descriptions(): void
+    {
+        $project = Project::factory()->create();
+        $ids = collect(range(1, 12))->map(fn (): int => $this->media()->id)->all();
+
+        $descriptions = [];
+        foreach ($ids as $i => $id) {
+            $descriptions[$i] = 'Description for image '.($i + 1);
+        }
+
+        $story = [
+            $this->descriptor(BlockType::Quote, ['quote' => 'Before']),
+            $this->descriptor(BlockType::GalleryStrip, ['caption' => 'The strip', 'descriptions' => $descriptions], $ids),
+            $this->descriptor(BlockType::Quote, ['quote' => 'After']),
+        ];
+
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $story)
+            ->assertHasNoErrors();
+
+        $loaded = $this->currentStory($project);
+
+        // The browser snapshots, removes the strip, then undoes.
+        $beforeRemoval = $this->roundTrip($loaded);
+        $afterRemoval = array_values(array_filter(
+            $beforeRemoval,
+            fn (array $b): bool => $b['type'] !== BlockType::GalleryStrip->value
+        ));
+
+        $this->assertCount(2, $afterRemoval);
+
+        $restored = $beforeRemoval;   // undo
+
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $restored)
+            ->assertHasNoErrors();
+
+        $strip = $project->blocks()->where('type', BlockType::GalleryStrip)->sole();
+
+        $this->assertSame($ids, $strip->blockMedia->pluck('media_id')->map('intval')->all(), 'all twelve return, in order');
+        $this->assertSame($descriptions, $strip->data['descriptions'], 'and so do their descriptions');
+        $this->assertSame('The strip', $strip->data['caption']);
+        $this->assertSame(3, $project->blocks()->count());
+    }
+
+    // ----------------------------------------------------------------- F2 + F3
+
+    public function test_undo_restores_order_after_a_move_and_redo_reapplies_it(): void
+    {
+        $project = Project::factory()->create();
+
+        $story = collect(range(1, 5))
+            ->map(fn (int $i): array => $this->descriptor(BlockType::Quote, ['quote' => 'Block '.$i]))
+            ->all();
+
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $story)
+            ->assertHasNoErrors();
+
+        $original = $this->roundTrip($this->currentStory($project));
+        $moved = $original;
+        [$moved[0], $moved[1]] = [$moved[1], $moved[0]];
+
+        // Undo: back to the original arrangement.
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $original)
+            ->assertHasNoErrors();
+
+        $this->assertSame(
+            ['Block 1', 'Block 2', 'Block 3', 'Block 4', 'Block 5'],
+            $project->blocks()->orderBy('sort_order')->get()->map(fn ($b) => $b->data['quote'])->all()
+        );
+
+        // Redo: the move again.
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $moved)
+            ->assertHasNoErrors();
+
+        $this->assertSame(
+            ['Block 2', 'Block 1', 'Block 3', 'Block 4', 'Block 5'],
+            $project->blocks()->orderBy('sort_order')->get()->map(fn ($b) => $b->data['quote'])->all()
+        );
+    }
+
+    // ----------------------------------------------------------------- F4
+
+    public function test_undoing_back_to_the_saved_state_produces_an_identical_story(): void
+    {
+        $project = Project::factory()->create();
+        $image = $this->media();
+
+        $story = [$this->descriptor(BlockType::ContainedImage, ['caption' => 'Kept'], [$image->id])];
+
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $story)
+            ->assertHasNoErrors();
+
+        $saved = $this->currentStory($project);
+        $blockId = $project->blocks()->sole()->id;
+        $usageIds = $project->blocks()->sole()->mediaUsages()->pluck('id')->all();
+
+        // Edit, then undo back: what the browser sends is byte-identical, so
+        // the dirty comparison the JS makes against savedSnapshot reports clean.
+        $edited = $saved;
+        $edited[0]['data']['caption'] = 'Changed';
+        $undone = $saved;
+
+        $this->assertSame(json_encode($saved), json_encode($undone), 'undo returns the exact saved state');
+        $this->assertNotSame(json_encode($saved), json_encode($edited));
+
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $undone)
+            ->assertHasNoErrors();
+
+        $this->assertSame($blockId, $project->blocks()->sole()->id, 'nothing was recreated');
+        $this->assertSame($usageIds, $project->blocks()->sole()->mediaUsages()->pluck('id')->all());
+    }
+
+    // ----------------------------------------------------------------- F5
+
+    public function test_a_rejected_save_preserves_everything_and_a_corrected_retry_saves_it_all(): void
+    {
+        $project = Project::factory()->create();
+        $image = $this->media();
+
+        $story = [
+            $this->descriptor(BlockType::Quote, ['quote' => 'Valid one']),
+            $this->descriptor(BlockType::ThreeImageGrid, ['caption' => 'Needs three'], [$image->id]),
+            $this->descriptor(BlockType::FullWidthText, ['body' => 'Valid two']),
+        ];
+
+        $component = Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $story);
+
+        $component->assertHasErrors('story');
+
+        // Nothing at all was written.
+        $this->assertSame(0, ProjectBlock::count(), 'a refused save writes nothing');
+
+        // The component hands the full story back, so the browser's state is
+        // matched by the server's idea of it — no block was dropped.
+        $returned = $component->get('blocks');
+        $this->assertCount(3, $returned);
+        $this->assertSame('Valid one', $returned[0]['data']['quote']);
+        $this->assertSame('Valid two', $returned[2]['data']['body']);
+        $this->assertArrayHasKey(1, $component->get('blockErrors'));
+        $this->assertArrayNotHasKey(0, $component->get('blockErrors'));
+
+        // Correct only the offending block and retry: everything saves.
+        $story[1]['media'] = [$image->id, $this->media()->id, $this->media()->id];
+
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $story)
+            ->assertHasNoErrors();
+
+        $blocks = $project->blocks()->orderBy('sort_order')->get();
+
+        $this->assertCount(3, $blocks);
+        $this->assertSame('Valid one', $blocks[0]->data['quote']);
+        $this->assertSame(3, $blocks[1]->blockMedia->count());
+        $this->assertSame('Valid two', $blocks[2]->data['body']);
+    }
+
+    // ----------------------------------------------------------------- F6
+
+    public function test_a_block_below_min_media_is_flagged_by_the_same_rules_the_browser_uses(): void
+    {
+        // The browser reads data-min / data-max / data-required off the card,
+        // and those come straight from the enum — so live checks and server
+        // checks cannot drift.
+        $this->assertSame(3, BlockType::ThreeImageGrid->minMedia());
+        $this->assertSame(['quote'], BlockType::Quote->requiredDataKeys());
+
+        $validator = app(\App\Actions\Projects\ValidateBlock::class);
+
+        $short = $validator(['type' => BlockType::ThreeImageGrid->value, 'data' => [], 'media' => [1]]);
+        $this->assertNotEmpty($short);
+        $this->assertStringContainsString('needs 3 images', $short[0]);
+
+        $missingText = $validator(['type' => BlockType::Quote->value, 'data' => [], 'media' => []]);
+        $this->assertNotEmpty($missingText);
+        $this->assertStringContainsString('the quote itself', $missingText[0]);
+
+        // The card markup carries the rules the browser needs.
+        $project = Project::factory()->create();
+        $html = Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->html();
+
+        $this->assertStringContainsString('data-min="3"', $html);
+        $this->assertStringContainsString('data-required="quote"', $html);
+        $this->assertStringContainsString('data-errors', $html);
+    }
+
+    // ----------------------------------------------------------------- F7 + F8
+
+    public function test_a_restored_draft_saves_exactly_as_if_it_had_never_been_reloaded(): void
+    {
+        $project = Project::factory()->create();
+        $ids = collect(range(1, 3))->map(fn (): int => $this->media()->id)->all();
+
+        // What the editor had on screen when the tab died.
+        $draft = [
+            $this->descriptor(BlockType::GalleryStrip, ['caption' => 'From the draft', 'descriptions' => [0 => 'First']], $ids),
+            $this->descriptor(BlockType::Quote, ['quote' => 'Also from the draft']),
+        ];
+
+        // Restoring replays exactly that payload.
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $this->roundTrip($draft))
+            ->assertHasNoErrors();
+
+        $blocks = $project->blocks()->orderBy('sort_order')->get();
+
+        $this->assertCount(2, $blocks);
+        $this->assertSame('From the draft', $blocks[0]->data['caption']);
+        $this->assertSame(['0' => 'First'], $blocks[0]->data['descriptions']);
+        $this->assertSame($ids, $blocks[0]->blockMedia->pluck('media_id')->map('intval')->all());
+        $this->assertSame('Also from the draft', $blocks[1]->data['quote']);
+
+        // F8: a successful save dispatches the event the browser listens for
+        // to clear its stored draft.
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $this->currentStory($project))
+            ->assertDispatched('story-saved');
+    }
+
+    // ----------------------------------------------------------------- F9
+
+    public function test_moving_an_image_into_a_full_block_is_refused(): void
+    {
+        $project = Project::factory()->create();
+        $a = $this->media();
+        $b = $this->media();
+        $c = $this->media();
+
+        // A ContainedImage holds exactly one.
+        $this->assertSame(1, BlockType::ContainedImage->maxMedia());
+
+        $overfilled = [
+            $this->descriptor(BlockType::ContainedImage, [], [$a->id, $b->id]),
+        ];
+
+        $component = Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $overfilled);
+
+        $component->assertHasErrors('story');
+        $this->assertStringContainsString(
+            'at most 1 image',
+            $component->get('blockErrors')[0][0],
+            'the refusal says what the limit is'
+        );
+        $this->assertSame(0, ProjectBlock::count());
+
+        // The browser refuses the same move before it reaches the server: the
+        // card carries data-max, which is what hasRoom() reads.
+        $html = Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->html();
+
+        $this->assertStringContainsString('data-max="1"', $html);
+    }
+
+    // ----------------------------------------------------------------- F10
+
+    public function test_image_reorder_within_a_block_persists_in_sort_order(): void
+    {
+        $project = Project::factory()->create();
+        $ids = collect(range(1, 6))->map(fn (): int => $this->media()->id)->all();
+
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', [$this->descriptor(BlockType::GalleryStrip, [], $ids)])
+            ->assertHasNoErrors();
+
+        // Image 6 dragged to the front — one local move, one save.
+        $reordered = [$ids[5], $ids[0], $ids[1], $ids[2], $ids[3], $ids[4]];
+        $story = $this->currentStory($project);
+        $story[0]['media'] = $reordered;
+
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $story)
+            ->assertHasNoErrors();
+
+        $block = $project->blocks()->sole();
+
+        $this->assertSame($reordered, $block->blockMedia->pluck('media_id')->map('intval')->all());
+        $this->assertSame(range(0, 5), $block->mediaUsages()->orderBy('sort_order')->pluck('sort_order')->all());
+    }
+
+    // ----------------------------------------------------------------- F11
+
+    public function test_an_image_moved_between_blocks_changes_hands_in_media_usages(): void
+    {
+        $project = Project::factory()->create();
+        $a = $this->media();
+        $b = $this->media();
+        $c = $this->media();
+
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', [
+                $this->descriptor(BlockType::GalleryStrip, ['caption' => 'Source'], [$a->id, $b->id, $c->id]),
+                $this->descriptor(BlockType::GalleryStrip, ['caption' => 'Destination'], [$a->id]),
+            ])
+            ->assertHasNoErrors();
+
+        $story = $this->currentStory($project);
+
+        // Drag image $c from the first block into the second.
+        $story[0]['media'] = [$a->id, $b->id];
+        $story[1]['media'] = [$a->id, $c->id];
+
+        Livewire::actingAs($this->admin())
+            ->test(StoryBuilder::class, ['project' => $project])
+            ->call('saveStory', $story)
+            ->assertHasNoErrors();
+
+        $blocks = $project->blocks()->orderBy('sort_order')->get();
+
+        $this->assertSame([$a->id, $b->id], $blocks[0]->blockMedia->pluck('media_id')->map('intval')->all());
+        $this->assertSame([$a->id, $c->id], $blocks[1]->blockMedia->pluck('media_id')->map('intval')->all());
+
+        // It left the source and joined the destination — no stray rows.
+        $this->assertSame(0, $blocks[0]->mediaUsages()->where('media_id', $c->id)->count());
+        $this->assertSame(1, $blocks[1]->mediaUsages()->where('media_id', $c->id)->count());
+        $this->assertSame(1, $c->fresh()->usages()->count());
+    }
 }

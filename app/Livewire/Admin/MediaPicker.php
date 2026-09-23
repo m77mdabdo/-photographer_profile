@@ -6,6 +6,8 @@ namespace App\Livewire\Admin;
 
 use App\Enums\MediaStatus;
 use App\Models\Media;
+use App\Models\MediaUsage;
+use App\Models\Project;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -48,30 +50,57 @@ class MediaPicker extends Component
 
     public string $limitMessage = '';
 
+    /**
+     * The project being edited, so "Recently used" can mean something. A
+     * convenience only: it changes which images are listed first, never what
+     * a confirmed selection contains.
+     */
+    public ?int $projectId = null;
+
+    public bool $recentOnly = false;
+
+    /** Session key for the remembered search, scoped per user. */
+    private function memoryKey(): string
+    {
+        return 'media-picker:last-search';
+    }
+
     #[On('open-picker')]
-    public function openPicker(string $slot, bool $multiple = false, ?int $max = null): void
+    public function openPicker(string $slot, bool $multiple = false, ?int $max = null, ?int $projectId = null): void
     {
         $this->slot = $slot;
         $this->multiple = $multiple;
         $this->max = $max;
+        $this->projectId = $projectId ?? $this->projectId;
         $this->selected = [];
         $this->anchorId = null;
         $this->limitMessage = '';
         $this->open = true;
+
+        // Reopening mid-task should not mean retyping the same filter.
+        $this->search = (string) session()->get($this->memoryKey(), '');
+
         $this->resetPage();
     }
 
     public function closePicker(): void
     {
         $this->open = false;
-        $this->search = '';
         $this->selected = [];
         $this->anchorId = null;
         $this->limitMessage = '';
+        // $search is kept deliberately: it is the remembered filter.
     }
 
     public function updatedSearch(): void
     {
+        session()->put($this->memoryKey(), $this->search);
+        $this->resetPage();
+    }
+
+    public function toggleRecent(): void
+    {
+        $this->recentOnly = ! $this->recentOnly;
         $this->resetPage();
     }
 
@@ -239,6 +268,24 @@ class MediaPicker extends Component
     {
         return Media::query()
             ->where('status', MediaStatus::Ready)
+            ->when($this->recentOnly && $this->projectId !== null, function ($query): void {
+                // Images this project already uses, most recently attached
+                // first — the set an editor is most likely to want again.
+                $query->whereIn('id', MediaUsage::query()
+                    ->whereIn('usable_id', Project::query()
+                        ->where('id', $this->projectId)
+                        ->select('id'))
+                    ->where('usable_type', Project::class)
+                    ->select('media_id')
+                    ->union(
+                        MediaUsage::query()
+                            ->where('usable_type', \App\Models\ProjectBlock::class)
+                            ->whereIn('usable_id', \App\Models\ProjectBlock::query()
+                                ->where('project_id', $this->projectId)
+                                ->select('id'))
+                            ->select('media_id')
+                    ));
+            })
             ->when($this->search !== '', function ($query): void {
                 $term = '%'.trim($this->search).'%';
                 $query->where(function ($inner) use ($term): void {

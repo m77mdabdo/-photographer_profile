@@ -1,4 +1,4 @@
-<div data-story-builder data-unsaved-guard data-dirty="0">
+<div data-story-builder data-project-id="{{ $project->id }}" data-unsaved-guard data-dirty="0">
     <p class="breadcrumb">
         <a href="{{ route('admin.projects.edit', $project) }}">← {{ $project->title }}</a>
     </p>
@@ -11,12 +11,41 @@
 
         <a href="{{ route('admin.projects.preview', $project) }}" class="admin-link" target="_blank" rel="noopener">Preview</a>
 
+        {{-- Visible undo: a keyboard-only affordance is not discoverable. --}}
+        <span class="undo-group">
+            <button type="button" class="admin-link" data-undo disabled
+                    title="Undo (Ctrl/Cmd+Z)">Undo</button>
+            <button type="button" class="admin-link" data-redo disabled
+                    title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>
+        </span>
+
         <button type="button" class="admin-button" data-save
                 wire:loading.attr="disabled" wire:target="saveStory">
             <span wire:loading.remove wire:target="saveStory">Save story</span>
             <span wire:loading wire:target="saveStory">Saving…</span>
         </button>
     </header>
+
+    {{-- Announcements for screen readers: undo, drag refusals, saves. --}}
+    <p class="sr-only" role="status" aria-live="polite" data-announce></p>
+
+    {{--
+        A restorable draft from this tab's session. Never restored silently:
+        the editor is told it exists and chooses.
+    --}}
+    <div class="draft-prompt" data-draft-prompt hidden role="alert">
+        <p>
+            An unsaved draft of this story from this session was found
+            (<span data-draft-count>0</span> blocks). It has not been saved to the server.
+        </p>
+        <button type="button" class="admin-button" data-draft-restore>Restore the draft</button>
+        <button type="button" class="admin-link" data-draft-discard>Discard it</button>
+    </div>
+
+    {{-- What is wrong, before Save is pressed. Clicking jumps to the first. --}}
+    <button type="button" class="save-notice" data-save-notice hidden>
+        <span data-invalid-count></span> — go to the first one
+    </button>
 
     @if ($message !== '')
         <p class="admin-flash__message" role="status" aria-live="polite">{{ $message }}</p>
