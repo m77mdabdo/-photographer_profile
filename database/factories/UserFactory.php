@@ -28,6 +28,9 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
+            // Mirrors the column default, so a freshly made model matches the
+            // row that was just inserted.
+            'role' => \App\Enums\UserRole::Editor,
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];

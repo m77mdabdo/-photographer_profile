@@ -44,3 +44,26 @@ if (app()->environment('local')) {
         ]);
     })->name('dev.media');
 }
+
+/*
+ * Admin area.
+ *
+ * Login, password reset and the two-factor challenge are registered by
+ * Fortify and live OUTSIDE this group — a visitor must be able to reach them
+ * while unauthenticated.
+ *
+ * The two-factor setup page is inside the group but deliberately outside the
+ * `twofactor` middleware: requiring a confirmed second factor to reach the
+ * page where you set up your second factor would be a redirect loop.
+ */
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware(['auth', 'verified', 'admin', 'throttle:admin'])
+    ->group(function () {
+        Route::view('/two-factor', 'admin.two-factor-setup')->name('two-factor.setup');
+
+        Route::middleware('twofactor')->group(function () {
+            // Placeholder: real admin screens arrive in a later task.
+            Route::view('/', 'admin.dashboard')->name('dashboard');
+        });
+    });

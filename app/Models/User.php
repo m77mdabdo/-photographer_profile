@@ -1,20 +1,30 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\UserRole;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory;
+    use Notifiable;
+    use TwoFactorAuthenticatable;
 
     /**
-     * The attributes that are mass assignable.
+     * Mass assignable attributes.
+     *
+     * `role` is deliberately absent. A privilege change must be an explicit,
+     * auditable act — never a side effect of filling a model from request
+     * input. Assign it directly on the model instead.
      *
      * @var list<string>
      */
@@ -25,18 +35,16 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
      * @var list<string>
      */
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
      * @return array<string, string>
      */
     protected function casts(): array
@@ -44,6 +52,41 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'last_login_at' => 'datetime',
+            'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Role, resolved leniently.
+     *
+     * A plain enum cast throws when the column holds something unknown, which
+     * turns a tampered or stale row into a 500 rather than a refusal. tryFrom
+     * yields null instead, and every authorisation check treats null as "not
+     * permitted" — so an unrecognised role fails closed.
+     *
+     * @return Attribute<?UserRole, string|UserRole|null>
+     */
+    protected function role(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value): ?UserRole => $value === null ? null : UserRole::tryFrom($value),
+            set: fn (UserRole|string|null $value): ?string => $value instanceof UserRole ? $value->value : $value,
+        );
+    }
+
+    public function isOwner(): bool
+    {
+        return $this->role === UserRole::Owner;
+    }
+
+    public function isEditor(): bool
+    {
+        return $this->role === UserRole::Editor;
+    }
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_confirmed_at !== null;
     }
 }
