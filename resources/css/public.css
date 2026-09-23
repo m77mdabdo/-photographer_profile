@@ -7,8 +7,10 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
+@import './fonts.css';
 @import './tokens.css';
 @import './base.css';
+@import './components/texture.css';
 @import './components/picture.css';
 @import './components/layout.css';
 @import './components/blocks.css';

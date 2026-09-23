@@ -81,6 +81,33 @@
     --sp-16: 20rem;    /* 320px */
 
     /* ---------------------------------------------------------------
+     * Vertical rhythm.
+     *
+     * Not one interval repeated. A page where every gap is identical has no
+     * pace — it reads as a stack. These four describe a relationship to the
+     * cinematic beats:
+     *
+     *   --rhythm-approach  before a full-bleed image: the page opens up, so
+     *                      the image arrives after a pause
+     *   --rhythm-settle    immediately after one: deliberately tight, so the
+     *                      caption or title feels attached to the picture
+     *   --rhythm-between   ordinary section to ordinary section
+     *   --rhythm-breath    around a single statement that should sit alone
+     * --------------------------------------------------------------- */
+    --rhythm-approach: var(--sp-13);   /* 10rem */
+    --rhythm-settle: var(--sp-7);      /*  2.5rem */
+    --rhythm-between: var(--sp-11);    /*  6rem */
+    --rhythm-breath: var(--sp-15);     /* 16rem */
+
+    /* ---------------------------------------------------------------
+     * Rule weights. Hairlines that are all identical read as a default
+     * stylesheet; print varies them by what they separate.
+     * --------------------------------------------------------------- */
+    --rule-hair: 0.5px;      /* inside a group */
+    --rule-fine: 1px;        /* section headers */
+    --rule-strong: 2px;      /* the one emphasised edge */
+
+    /* ---------------------------------------------------------------
      * Containers
      * --------------------------------------------------------------- */
     --container-wide: 1600px;
@@ -114,7 +141,12 @@
      * undecided — so these are system stacks. Swapping in a licensed
      * face later means editing one line here and nothing else.
      * --------------------------------------------------------------- */
-    --font-display: ui-serif, 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', Georgia, serif;
-    --font-sans: ui-sans-serif, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, system-ui, sans-serif;
+    /*
+     * Self-hosted variable faces, each followed by its metric-matched fallback
+     * so the swap causes no reflow, then the plain system stack as a last
+     * resort. Declared here and nowhere else.
+     */
+    --font-display: 'Bodoni Moda', 'Bodoni Fallback', 'Times New Roman', Georgia, serif;
+    --font-sans: 'Inter Tight', 'Inter Fallback', -apple-system, 'Segoe UI', system-ui, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }

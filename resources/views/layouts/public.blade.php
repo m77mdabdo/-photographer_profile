@@ -9,6 +9,15 @@
     <x-seo :page="$seo" />
 
     {{--
+        Only the display face is preloaded. It sets the largest text on the
+        page — the thing a visitor sees first and the thing whose swap would be
+        most visible — so it is worth the early request. The sans is used at
+        small sizes where a metric-matched swap is imperceptible, so it waits
+        its turn rather than competing with the hero image for bandwidth.
+    --}}
+    <link rel="preload" href="/fonts/bodoni-moda-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+    {{--
         CSS only. The public site runs no JavaScript: nothing here needs it,
         and loading the bundle shipped ~51 kB of axios that no public page ever
         called. The JS entry still builds; it is added back when there is
@@ -17,6 +26,13 @@
     @vite(['resources/css/public.css'])
 </head>
 <body>
+    {{--
+        Texture layers. Fixed, inert, above the background and below content.
+        Marked aria-hidden because they carry no information whatsoever.
+    --}}
+    <div class="texture" aria-hidden="true"></div>
+    <div class="vignette" aria-hidden="true"></div>
+
     {{-- First focusable element on the page, visible only once focused. --}}
     <a class="skip-link" href="#main">Skip to content</a>
 

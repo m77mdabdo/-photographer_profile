@@ -53,7 +53,15 @@
     color: var(--text-secondary);
 }
 
+/*
+ * Bodoni is a Didone: very high stroke contrast, and its hairlines are the
+ * first thing to disappear. On a dark ground the thick stems halate slightly
+ * and visually eat the thin ones, so the display sizes carry a little more
+ * weight than the text sizes do — 480 against 400. Enough to hold the
+ * hairlines together, not enough to read as bold.
+ */
 .hero__title {
+    font-variation-settings: 'wght' 480;
     font-family: var(--font-display);
     font-size: var(--fs-display-xl);
     line-height: var(--lh-tight);
@@ -78,9 +86,14 @@
     text-transform: uppercase;
 }
 
+/*
+ * The accent has exactly one job: it marks the single primary action in a
+ * section — the one link the visitor is meant to take. It appears nowhere
+ * else, so when it does appear it means something.
+ */
 .hero__link-rule, .story__link-rule, .closing__rule {
     display: block;
-    height: 1px;
+    height: var(--rule-strong);
     width: 100%;
     background-color: var(--accent);
     transition: opacity var(--dur-base) var(--ease-editorial);
@@ -95,13 +108,16 @@
 
 /* ---------------- 2. Introduction — one statement, much air ------------- */
 
+/* Tight to the hero above it, wide before the work below: the statement
+   belongs to the image it follows, not to the grid it precedes. */
 .intro {
     max-width: var(--container-wide);
     margin-inline: auto;
-    padding: var(--sp-13) var(--gutter) var(--sp-12);
+    padding: var(--rhythm-settle) var(--gutter) var(--rhythm-breath);
 }
 
 .intro__statement {
+    font-variation-settings: 'wght' 480;
     font-family: var(--font-display);
     font-size: var(--fs-display-l);
     line-height: var(--lh-heading);
@@ -120,7 +136,9 @@
     align-items: baseline;
     gap: var(--sp-5);
     padding-bottom: var(--sp-5);
-    border-bottom: 1px solid var(--border);
+    /* A section header is a fine rule; the hairline inside a group is lighter
+       still, and only the primary action gets the strong one. */
+    border-bottom: var(--rule-fine) solid var(--border);
     margin-bottom: var(--sp-9);
 }
 
@@ -134,19 +152,23 @@
 .works__list {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
-    gap: var(--sp-11) var(--sp-6);
+    gap: var(--rhythm-between) var(--sp-6);
     margin: 0;
     padding: 0;
 }
 
 /*
- * Four positions that repeat: wide-left, narrow-right-dropped, narrow-inset,
- * wide-right-dropped. The drops are what stop the page settling into rows.
+ * Every position is decided server-side by EditorialLayout, from the cover's
+ * own orientation and what came before it. The stylesheet only spends what it
+ * is given — there is no cycle here to fall back into.
  */
-.works__item--1 { grid-column: 1 / span 7; }
-.works__item--2 { grid-column: 9 / span 4; margin-top: var(--sp-12); }
-.works__item--3 { grid-column: 2 / span 4; }
-.works__item--4 { grid-column: 7 / span 6; margin-top: var(--sp-9); }
+.works__item {
+    grid-column: var(--start) / span var(--span);
+    margin-top: calc(var(--drop) * 0.5rem);
+}
+
+/* The one item per run that carries the full measure sets its type larger. */
+.works__item--feature .work__name { font-size: var(--fs-h1); }
 
 .work__link { display: grid; gap: var(--sp-4); text-decoration: none; }
 .work__frame { display: block; overflow: hidden; background-color: var(--bg-elevated); }
@@ -162,10 +184,22 @@
 .work__link:hover .work__image,
 .work__link:focus-visible .work__image { transform: scale(1.015); }
 
-.work__caption { display: grid; gap: var(--sp-2); }
-.work__index { font-size: var(--fs-meta); letter-spacing: var(--tracking-wide); color: var(--accent); }
+.work__caption {
+    display: grid;
+    gap: var(--sp-2);
+    padding-top: var(--sp-3);
+    border-top: var(--rule-hair) solid var(--border);
+}
+.work__index {
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    /* Was accent-coloured. Demoted: an index is a label, not an action. */
+    color: var(--text-secondary);
+}
 
+/* Sub-display: between the two, because it sits at h2/h1 size. */
 .work__name {
+    font-variation-settings: 'wght' 440;
     font-family: var(--font-display);
     font-size: var(--fs-h2);
     line-height: var(--lh-heading);
@@ -175,12 +209,14 @@
 
 /* ---------------- 4. Featured story — the cinematic moment -------------- */
 
+/* Approached slowly, left quickly — the contact sheet after it is a change
+   of register and wants to arrive without ceremony. */
 .story {
     position: relative;
     display: grid;
     align-content: end;
     min-height: 82svh;
-    margin-block: var(--sp-13);
+    margin-block: var(--rhythm-approach) var(--rhythm-settle);
     overflow: hidden;
     isolation: isolate;
 }
@@ -208,9 +244,11 @@
     justify-items: start;
 }
 
-.story__eyebrow { color: var(--accent); }
+/* Also demoted — an eyebrow labels, it does not invite a click. */
+.story__eyebrow { color: var(--text-secondary); }
 
 .story__title {
+    font-variation-settings: 'wght' 480;
     font-family: var(--font-display);
     font-size: var(--fs-display-l);
     line-height: var(--lh-tight);
@@ -222,8 +260,13 @@
 
 /* ---------------- 5. Contact sheet -------------------------------------- */
 
-.sheet { max-width: var(--container-wide); margin-inline: auto; padding-inline: var(--gutter); }
-.sheet__header { margin-bottom: var(--sp-6); }
+.sheet {
+    max-width: var(--container-wide);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    margin-top: var(--rhythm-between);
+}
+.sheet__header { margin-bottom: var(--sp-5); }
 
 /* Wraps rather than scrolling: nothing important sits off the right edge. */
 .sheet__grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--sp-3); margin: 0; padding: 0; }
@@ -235,13 +278,14 @@
 .closing {
     max-width: var(--container-wide);
     margin-inline: auto;
-    padding: var(--sp-13) var(--gutter) var(--sp-12);
+    padding: var(--rhythm-breath) var(--gutter) var(--rhythm-approach);
     display: grid;
     gap: var(--sp-7);
     justify-items: start;
 }
 
 .closing__title {
+    font-variation-settings: 'wght' 480;
     font-family: var(--font-display);
     font-size: var(--fs-display-l);
     line-height: var(--lh-heading);
@@ -259,13 +303,20 @@
 @media (max-width: 900px) {
     .works__list { gap: var(--sp-9); }
 
-    /* One column, but the alternating indent survives so the rhythm does. */
-    .works__item--1, .works__item--2, .works__item--3, .works__item--4 {
+    /*
+     * One column, but the composition is not thrown away: the planner's start
+     * column becomes an indent, so a narrow item still sits inset and the
+     * alternation the plan created survives the fold.
+     */
+    .works__item {
         grid-column: 1 / -1;
         margin-top: 0;
+        padding-left: calc((var(--start) - 1) * 0.35rem);
     }
 
-    .works__item--2, .works__item--4 { padding-left: var(--sp-6); }
+    /* A feature keeps the full measure. */
+    .works__item--feature { padding-left: 0; }
+
     .sheet__grid { grid-template-columns: repeat(4, 1fr); }
 }
 
@@ -279,6 +330,6 @@
     .closing__title { max-width: 13ch; }
 
     .hero__meta { gap: var(--sp-3); }
-    .works__item--2, .works__item--4 { padding-left: var(--sp-4); }
+    .works__item { padding-left: calc((var(--start) - 1) * 0.2rem); }
     .sheet__grid { grid-template-columns: repeat(3, 1fr); }
 }

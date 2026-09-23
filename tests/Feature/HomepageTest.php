@@ -84,9 +84,9 @@ class HomepageTest extends TestCase
         }
 
         // And each section holds real content, not just a shell.
-        $this->assertStringContainsString('Selected work', $html);
-        $this->assertStringContainsString('From the archive', $html);
-        $this->assertStringContainsString('Commissions and print enquiries are open.', $html);
+        $this->assertStringContainsString('Work, in series', $html);
+        $this->assertStringContainsString('Loose frames', $html);
+        $this->assertStringContainsString('The diary is open for next year.', $html);
     }
 
     // ----------------------------------------------------------------- 2
@@ -241,5 +241,202 @@ class HomepageTest extends TestCase
         $this->assertStringNotContainsString('livewire', strtolower($html));
         $this->assertStringNotContainsString('wire:', $html);
         $this->assertStringNotContainsString('onclick', $html);
+    }
+
+    // ================= TASK 11 =================
+
+    // ----------------------------------------------------------------- 4
+
+    public function test_the_display_font_is_preloaded_and_the_sans_is_not(): void
+    {
+        $this->populate();
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        // The display face sets the largest text on the page, so its swap
+        // would be the most visible; it earns the early request.
+        $this->assertStringContainsString(
+            '<link rel="preload" href="/fonts/bodoni-moda-latin.woff2" as="font" type="font/woff2" crossorigin>',
+            $html
+        );
+
+        // The sans must not compete with it, or with the hero image.
+        $this->assertStringNotContainsString('inter-tight', $html);
+        // @vite emits its own stylesheet preload, so count font preloads only.
+        $this->assertSame(1, substr_count($html, 'as="font"'), 'exactly one font is preloaded');
+
+        // Nothing is fetched from a third party.
+        $this->assertStringNotContainsString('fonts.googleapis.com', $html);
+        $this->assertStringNotContainsString('fonts.gstatic.com', $html);
+        $this->assertStringNotContainsString('cdn.jsdelivr.net', $html);
+
+        // And the files are actually self-hosted.
+        foreach (['bodoni-moda-latin', 'bodoni-moda-latin-ext',
+                  'inter-tight-latin', 'inter-tight-latin-ext'] as $file) {
+            $this->assertFileExists(public_path("fonts/{$file}.woff2"));
+        }
+    }
+
+    public function test_the_font_faces_declare_metric_matched_fallbacks(): void
+    {
+        $css = file_get_contents(resource_path('css/fonts.css'));
+
+        // Without these the swap reflows every line of the largest text.
+        $this->assertStringContainsString('size-adjust', $css);
+        $this->assertStringContainsString('ascent-override', $css);
+        $this->assertStringContainsString('descent-override', $css);
+        $this->assertStringContainsString('font-display: swap', $css);
+
+        $this->assertStringContainsString("font-family: 'Bodoni Fallback'", $css);
+        $this->assertStringContainsString("font-family: 'Inter Fallback'", $css);
+
+        // The tokens are the only place the families are named.
+        $tokens = file_get_contents(resource_path('css/tokens.css'));
+        $this->assertStringContainsString("--font-display: 'Bodoni Moda'", $tokens);
+        $this->assertStringContainsString("--font-sans: 'Inter Tight'", $tokens);
+        $this->assertStringContainsString('Bodoni Fallback', $tokens);
+    }
+
+    // ----------------------------------------------------------------- 5
+
+    public function test_the_page_still_contains_no_script_tags(): void
+    {
+        $this->populate();
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('<script', $html);
+        $this->assertStringNotContainsString('onclick', $html);
+        $this->assertStringNotContainsString('wire:', $html);
+    }
+
+    // ----------------------------------------------------------------- 6
+
+    public function test_the_grain_layer_is_inert_and_costs_no_request(): void
+    {
+        $this->populate();
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringContainsString('<div class="texture" aria-hidden="true">', $html);
+        $this->assertStringContainsString('<div class="vignette" aria-hidden="true">', $html);
+
+        $css = file_get_contents(resource_path('css/components/texture.css'));
+
+        // It must never intercept a pointer, or it would break every link
+        // underneath it.
+        $this->assertMatchesRegularExpression(
+            '/\.texture,\s*\.vignette\s*\{[^}]*pointer-events:\s*none/s',
+            $css
+        );
+
+        // Inline, so no extra request and nothing to cache.
+        $this->assertStringContainsString('data:image/svg+xml', $css);
+        $this->assertStringNotContainsString('.png', $css);
+    }
+
+    // ----------------------------------------------------------------- 7
+
+    public function test_reduced_motion_disables_the_vignette_animation(): void
+    {
+        $css = file_get_contents(resource_path('css/components/texture.css'));
+
+        $this->assertMatchesRegularExpression(
+            '/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.vignette\s*\{[^}]*animation:\s*none/s',
+            $css
+        );
+
+        // The global rule in base.css only shortens durations; an animation
+        // that still runs holds its final keyframe, so this one is stopped
+        // outright and settled on a fixed value.
+        $this->assertMatchesRegularExpression(
+            '/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.vignette\s*\{[^}]*opacity:\s*0\.85/s',
+            $css
+        );
+    }
+
+    // ----------------------------------------------------------------- 8
+
+    public function test_the_query_count_is_still_eight(): void
+    {
+        $this->populate(8);
+
+        $queries = [];
+        DB::listen(function ($query) use (&$queries): void {
+            $queries[] = $query->sql;
+        });
+
+        $this->get('/')->assertOk();
+
+        // Unchanged from Task 10: the layout planner reads covers that are
+        // already loaded, so composing the page costs nothing extra.
+        $this->assertCount(8, $queries, "expected 8 queries:\n".implode("\n", $queries));
+    }
+
+    // ----------------------------------------------------------------- 9
+
+    public function test_no_public_stylesheet_holds_a_colour_literal_except_tokens(): void
+    {
+        $files = array_merge(
+            glob(resource_path('css/*.css')) ?: [],
+            glob(resource_path('css/components/*.css')) ?: [],
+            glob(resource_path('css/pages/*.css')) ?: []
+        );
+
+        $this->assertNotEmpty($files);
+
+        $offenders = [];
+
+        foreach ($files as $file) {
+            if (in_array(basename($file), ['tokens.css', 'admin.css', 'auth.css'], true)) {
+                continue;   // tokens defines them; admin is not the public bundle
+            }
+
+            $source = file_get_contents($file);
+
+            foreach (preg_split('/\R/', $source) as $number => $line) {
+                if (preg_match('/#[0-9a-fA-F]{3,8}\b|rgb\(\s*\d|hsl\(/', $line) === 1) {
+                    $offenders[] = basename($file).':'.($number + 1).' '.trim($line);
+                }
+            }
+        }
+
+        $this->assertSame([], $offenders, "colour literals outside tokens.css:\n".implode("\n", $offenders));
+    }
+
+    // ----------------------------------------------------------------- extra
+
+    public function test_the_accent_marks_only_the_primary_action(): void
+    {
+        $css = file_get_contents(resource_path('css/pages/home.css'));
+
+        preg_match_all('/^\s*([^{}]+)\{[^}]*var\(--accent\)[^}]*\}/m', $css, $matches);
+
+        $selectors = array_map('trim', $matches[1]);
+
+        // Only the three primary-action rules may use it.
+        foreach ($selectors as $selector) {
+            $this->assertMatchesRegularExpression(
+                '/link-rule|closing__rule/',
+                $selector,
+                "the accent leaked into: {$selector}"
+            );
+        }
+
+        // Specifically, it was removed from the index numerals and eyebrows.
+        $this->assertMatchesRegularExpression('/\.work__index \{[^}]*--text-secondary/s', $css);
+        $this->assertMatchesRegularExpression('/\.story__eyebrow \{ color: var\(--text-secondary\)/', $css);
+    }
+
+    public function test_the_vertical_rhythm_is_not_one_repeated_interval(): void
+    {
+        $css = file_get_contents(resource_path('css/pages/home.css'));
+
+        foreach (['--rhythm-approach', '--rhythm-settle', '--rhythm-between', '--rhythm-breath'] as $token) {
+            $this->assertStringContainsString($token, $css, "{$token} is unused");
+        }
+
+        // The old uniform interval is gone from the section padding.
+        $this->assertStringNotContainsString('padding: var(--sp-13) var(--gutter) var(--sp-12)', $css);
     }
 }

@@ -1,6 +1,6 @@
 <section class="closing" aria-labelledby="closing-title">
     <h2 class="closing__title" id="closing-title">
-        Commissions and print enquiries are open.
+        The diary is open for next year.
     </h2>
 
     <a class="closing__link" href="mailto:hello@example.com">

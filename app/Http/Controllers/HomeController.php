@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Enums\MediaStatus;
 use App\Models\Media;
 use App\Models\Project;
+use App\Support\EditorialLayout;
 use App\Support\SeoData;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -45,6 +46,8 @@ class HomeController extends Controller
         return view('home', [
             'hero' => $hero,
             'selected' => $selected,
+            // Composition decided server-side from the covers themselves.
+            'layout' => app(EditorialLayout::class)->plan($selected),
             'story' => $story,
             'archive' => $this->archive(),
             'seo' => SeoData::make(

@@ -2,8 +2,8 @@
 @if ($media->isNotEmpty())
     <section class="sheet" aria-labelledby="sheet-title">
         <header class="sheet__header">
-            <h2 class="sheet__title" id="sheet-title">From the archive</h2>
-            <p class="sheet__note">Recent frames, unsorted.</p>
+            <h2 class="sheet__title" id="sheet-title">Loose frames</h2>
+            <p class="sheet__note">Unfiled, most recent first</p>
         </header>
 
         {{--

@@ -1,25 +1,28 @@
-@props(['projects'])
-@if ($projects->isNotEmpty())
+@props(['layout'])
+@if ($layout !== [])
     <section class="works" aria-labelledby="works-title">
         <header class="works__header">
-            <h2 class="works__title" id="works-title">Selected work</h2>
-            <p class="works__count">{{ $projects->count() }} {{ Str::plural('series', $projects->count()) }}</p>
+            <h2 class="works__title" id="works-title">Work, in series</h2>
+            <p class="works__count">{{ count($layout) }} {{ Str::plural('set', count($layout)) }}</p>
         </header>
 
         {{--
-            Deliberately not a uniform grid. Each item carries its own column
-            span and alignment from its index, so the eye moves down the page
-            in a rhythm rather than scanning rows of equal cards.
+            Positions come from EditorialLayout, which reads each cover's
+            orientation and what preceded it. Nothing here cycles — the page
+            composes differently when the photographs do.
         --}}
         <ol class="works__list" role="list">
-            @foreach ($projects as $index => $project)
-                <li class="works__item works__item--{{ ($index % 4) + 1 }}">
+            @foreach ($layout as $index => $placement)
+                @php($project = $placement['project'])
+                <li class="works__item @if ($placement['feature']) works__item--feature @endif"
+                    style="--span: {{ $placement['span'] }}; --start: {{ $placement['start'] }}; --drop: {{ $placement['drop'] }};"
+                    data-orientation="{{ $placement['orientation'] }}">
                     <article class="work">
                         <a class="work__link" href="{{ route('projects.show', $project) }}">
                             @if ($project->cover)
                                 <span class="work__frame">
                                     <x-picture :media="$project->cover"
-                                               sizes="(max-width: 700px) 100vw, 50vw"
+                                               sizes="(max-width: 900px) 100vw, {{ round($placement['span'] / 12 * 100) }}vw"
                                                img-class="work__image" />
                                 </span>
                             @endif

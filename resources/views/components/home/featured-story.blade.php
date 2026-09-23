@@ -9,7 +9,7 @@
         @endif
 
         <div class="story__inner">
-            <p class="story__eyebrow">In focus</p>
+            <p class="story__eyebrow">At length</p>
             <h2 class="story__title" id="story-title">{{ $project->title }}</h2>
 
             @if ($project->excerpt)

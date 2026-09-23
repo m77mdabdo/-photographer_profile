@@ -3,7 +3,7 @@
 
     <x-home.introduction :project="$hero" />
 
-    <x-home.selected-works :projects="$selected" />
+    <x-home.selected-works :layout="$layout" />
 
     <x-home.featured-story :project="$story" />
 
