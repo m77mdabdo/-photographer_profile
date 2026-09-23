@@ -7,10 +7,10 @@ namespace App\Enums;
 /**
  * The vocabulary of a project's story.
  *
- * mediaSlots() is how many images the layout expects. The Story Builder uses
- * it to decide how many pickers to show and to warn when a block is
- * incomplete; it is not a database constraint, because a half-filled block is
- * a legitimate draft state.
+ * Media bounds are expressed as two explicit methods rather than a single
+ * count with a magic value. minMedia()/maxMedia() answer different questions
+ * — "is this block finished?" and "may another image be added?" — and a
+ * sentinel like -1 silently answers both wrongly in a loop.
  */
 enum BlockType: string
 {
@@ -49,19 +49,119 @@ enum BlockType: string
         };
     }
 
-    public function mediaSlots(): int
+    /**
+     * How the type picker groups these for a human.
+     */
+    public function group(): string
+    {
+        return match ($this) {
+            self::FullWidthImage, self::ContainedImage, self::PortraitPair,
+            self::LandscapePair, self::ThreeImageGrid, self::GalleryStrip => 'Image',
+
+            self::ImageText, self::TextImage, self::FullWidthText,
+            self::Quote, self::Credits => 'Text',
+
+            self::Video, self::Embed, self::Spacer => 'Media',
+        };
+    }
+
+    /**
+     * The fewest images this block needs before it is complete.
+     */
+    public function minMedia(): int
+    {
+        return match ($this) {
+            self::FullWidthImage, self::ContainedImage, self::ImageText, self::TextImage => 1,
+            self::PortraitPair, self::LandscapePair => 2,
+            self::ThreeImageGrid => 3,
+            self::GalleryStrip => 1,
+
+            self::FullWidthText, self::Quote, self::Video,
+            self::Embed, self::Spacer, self::Credits => 0,
+        };
+    }
+
+    /**
+     * The most images this block accepts. Null means unbounded — only the
+     * gallery strip, which is an open-ended run of images by definition.
+     */
+    public function maxMedia(): ?int
     {
         return match ($this) {
             self::FullWidthImage, self::ContainedImage, self::ImageText, self::TextImage => 1,
             self::PortraitPair, self::LandscapePair => 2,
             self::ThreeImageGrid => 3,
 
-            // A strip holds an open-ended run of images; the builder treats
-            // anything negative as "as many as you like".
-            self::GalleryStrip => -1,
+            self::GalleryStrip => null,
 
-            self::FullWidthText, self::Quote, self::Video, self::Embed,
-            self::Spacer, self::Credits => 0,
+            self::FullWidthText, self::Quote, self::Video,
+            self::Embed, self::Spacer, self::Credits => 0,
+        };
+    }
+
+    public function acceptsMedia(): bool
+    {
+        return $this->maxMedia() === null || $this->maxMedia() > 0;
+    }
+
+    public function isUnbounded(): bool
+    {
+        return $this->maxMedia() === null;
+    }
+
+    /**
+     * Whether this type has any prose the editor writes — a caption, a body,
+     * a quote. Derived from allowedDataKeys() it would be wrong: a Spacer's
+     * only key is a numeric height, which is configuration, not text.
+     */
+    public function hasText(): bool
+    {
+        return match ($this) {
+            self::Spacer => false,
+            default => true,
+        };
+    }
+
+    /**
+     * Exactly which keys this type may store in `data`.
+     *
+     * Media ids are absent from every list on purpose: block images live in
+     * media_usages, which is what keeps MediaPolicy's delete protection
+     * working. A saving guard enforces this rather than trusting the list.
+     *
+     * @return list<string>
+     */
+    public function allowedDataKeys(): array
+    {
+        return match ($this) {
+            self::FullWidthImage, self::ContainedImage => ['caption'],
+            self::PortraitPair, self::LandscapePair, self::ThreeImageGrid => ['caption'],
+            self::GalleryStrip => ['caption'],
+
+            self::ImageText, self::TextImage => ['heading', 'body'],
+            self::FullWidthText => ['heading', 'body'],
+            self::Quote => ['quote', 'attribution'],
+            self::Credits => ['heading'],
+
+            self::Video => ['url', 'caption', 'poster_alt'],
+            self::Embed => ['url', 'caption'],
+            self::Spacer => ['height'],
+        };
+    }
+
+    /**
+     * Keys that must be present and non-empty for the block to be valid.
+     *
+     * @return list<string>
+     */
+    public function requiredDataKeys(): array
+    {
+        return match ($this) {
+            self::Quote => ['quote'],
+            self::FullWidthText => ['body'],
+            self::ImageText, self::TextImage => ['body'],
+            self::Video, self::Embed => ['url'],
+            default => [],
         };
     }
 }

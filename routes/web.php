@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 use App\Enums\MediaStatus;
 use App\Http\Controllers\Admin\MediaController;
+use App\Http\Controllers\ProjectController;
 use App\Livewire\Admin\CategoryManager;
 use App\Livewire\Admin\MediaIndex;
 use App\Livewire\Admin\ProjectForm;
 use App\Livewire\Admin\ProjectIndex;
+use App\Livewire\Admin\StoryBuilder;
 use App\Livewire\Admin\MediaTrash;
 use App\Models\Media;
 use Illuminate\Support\Facades\Blade;
@@ -51,6 +53,18 @@ if (app()->environment('local')) {
     })->name('dev.media');
 }
 
+
+/*
+ * Public project pages. `/work/{slug}` is the permanent address; the preview
+ * route renders the same template for an unpublished project and is protected
+ * by the signature alone.
+ */
+Route::get('/work/{project:slug}', [ProjectController::class, 'show'])->name('projects.show');
+
+Route::get('/work/{project:slug}/preview', [ProjectController::class, 'preview'])
+    ->middleware('signed')
+    ->name('projects.preview');
+
 /*
  * Admin area.
  *
@@ -77,6 +91,19 @@ Route::prefix('admin')
                 // as a slug and 404s.
                 Route::get('/create', ProjectForm::class)->name('create');
                 Route::get('/{project}/edit', ProjectForm::class)->name('edit');
+                Route::get('/{project}/story', StoryBuilder::class)->name('story');
+
+                /*
+                 * Draft preview. The signature is generated on demand below and
+                 * expires, so a preview link shared by accident stops working.
+                 */
+                Route::get('/{project}/preview', function (\App\Models\Project $project) {
+                    return redirect()->to(\Illuminate\Support\Facades\URL::temporarySignedRoute(
+                        'projects.preview',
+                        now()->addHour(),
+                        ['project' => $project->slug]
+                    ));
+                })->name('preview');
             });
 
             Route::get('/categories', CategoryManager::class)->name('categories.index');

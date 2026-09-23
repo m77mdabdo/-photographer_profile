@@ -143,6 +143,20 @@ class Project extends Model
         $query->where('is_featured', true);
     }
 
+    /**
+     * Force-deleting a project cascades project_blocks at the database level,
+     * and a database cascade fires no model events — so the blocks' usage rows
+     * would be orphaned. Deleting the blocks through Eloquent first lets each
+     * one clean up its own media_usages.
+     */
+    protected static function booted(): void
+    {
+        static::forceDeleting(function (self $project): void {
+            $project->blocks()->get()->each->delete();
+            $project->mediaUsages()->delete();
+        });
+    }
+
     public function isPubliclyVisible(): bool
     {
         return $this->status?->isPubliclyVisible() === true
