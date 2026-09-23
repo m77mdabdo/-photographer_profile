@@ -1,0 +1,129 @@
+/* Public shell: skip link, header, footer, and the error page. Tokens only. */
+
+.skip-link {
+    position: absolute;
+    left: var(--sp-4);
+    top: var(--sp-4);
+    z-index: var(--z-modal);
+    padding: var(--sp-2) var(--sp-4);
+    background-color: var(--bg-elevated);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    /* Off-screen until focused, but never display:none — that would remove it
+       from the tab order and defeat the point. */
+    transform: translateY(-200%);
+    transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.skip-link:focus-visible {
+    transform: translateY(0);
+}
+
+.site-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--sp-5);
+    padding: var(--sp-5) var(--gutter);
+    border-bottom: 1px solid var(--border);
+}
+
+.site-header__mark {
+    font-family: var(--font-display);
+    font-size: var(--fs-h3);
+    text-decoration: none;
+}
+
+.site-nav__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-5);
+    margin: 0;
+    font-size: var(--fs-small);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+}
+
+.site-nav__list a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color var(--dur-fast) var(--ease-out);
+}
+
+.site-nav__list a:hover,
+.site-nav__list a:focus-visible {
+    color: var(--text-primary);
+}
+
+main:focus {
+    outline: none;
+}
+
+.site-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-5);
+    align-items: baseline;
+    justify-content: space-between;
+    padding: var(--sp-9) var(--gutter) var(--sp-6);
+    margin-top: var(--sp-12);
+    border-top: 1px solid var(--border);
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+.site-footer__social {
+    display: flex;
+    gap: var(--sp-4);
+    margin: 0;
+}
+
+.site-footer__copyright {
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+}
+
+/* ------------------------------------------------------------------ *
+ * Error pages: one quiet headline, one line, one way back.
+ * ------------------------------------------------------------------ */
+
+.error-page {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 60svh;
+    max-width: var(--container-text);
+    margin-inline: auto;
+    padding: var(--sp-12) var(--gutter);
+}
+
+.error-page__code {
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: var(--sp-5);
+}
+
+.error-page__title {
+    font-size: var(--fs-display-l);
+    margin-bottom: var(--sp-5);
+}
+
+.error-page__body {
+    color: var(--text-secondary);
+    margin-bottom: var(--sp-7);
+}
+
+.error-page__home {
+    color: var(--accent);
+    align-self: flex-start;
+}
+
+/* A placeholder page heading until real homepage content exists. */
+.page-heading {
+    max-width: var(--container-wide);
+    margin-inline: auto;
+    padding: var(--sp-12) var(--gutter);
+    font-size: var(--fs-display-l);
+}

@@ -7,9 +7,13 @@ use App\Models\Media;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 
+/*
+ * Temporary home route: it exists so the public layout is visible. Real
+ * homepage content arrives in a later task.
+ */
 Route::get('/', function () {
-    return view('welcome');
-});
+    return view('home');
+})->name('home');
 
 /*
  * Development-only preview of the media pipeline's visual output. This block

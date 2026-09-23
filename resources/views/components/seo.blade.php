@@ -1,0 +1,83 @@
+@props(['page' => null])
+
+@php
+    /** @var \App\Support\SeoData $seo */
+    $seo = app(\App\Services\Seo\SeoResolver::class)->resolve($page);
+
+    // The Open Graph image is a real rendition, not the original: prefer the
+    // widest JPEG (the format every scraper can read), else the widest variant.
+    $ogImage = $seo->ogImage;
+    $ogVariant = null;
+
+    if ($ogImage !== null) {
+        $ogVariant = $ogImage->variantsFor('jpeg')->last()
+            ?? $ogImage->variants->sortBy('width')->last();
+    }
+
+    $ogImageUrl = $ogVariant !== null
+        ? \Illuminate\Support\Facades\Storage::disk($ogVariant->disk)->url($ogVariant->path)
+        : null;
+
+    $twitterHandle = config('seo.twitter_handle');
+@endphp
+<title>{{ $seo->title }}</title>
+
+@if ($seo->description)
+<meta name="description" content="{{ $seo->description }}">
+@endif
+
+@if ($seo->canonical)
+<link rel="canonical" href="{{ $seo->canonical }}">
+@endif
+
+@if ($seo->robots)
+<meta name="robots" content="{{ $seo->robots }}">
+@endif
+
+@if ($seo->ogTitle)
+<meta property="og:title" content="{{ $seo->ogTitle }}">
+@endif
+
+@if ($seo->ogDescription)
+<meta property="og:description" content="{{ $seo->ogDescription }}">
+@endif
+
+@if ($seo->ogType)
+<meta property="og:type" content="{{ $seo->ogType }}">
+@endif
+
+@if ($seo->canonical)
+<meta property="og:url" content="{{ $seo->canonical }}">
+@endif
+
+<meta property="og:site_name" content="{{ config('seo.site_name') }}">
+<meta property="og:locale" content="{{ config('seo.locale') }}">
+
+@if ($ogImageUrl)
+<meta property="og:image" content="{{ $ogImageUrl }}">
+<meta property="og:image:width" content="{{ $ogVariant->width }}">
+<meta property="og:image:height" content="{{ $ogVariant->height }}">
+@if ($ogImage->alt)
+<meta property="og:image:alt" content="{{ $ogImage->alt }}">
+@endif
+@endif
+
+@if ($seo->twitterCard)
+<meta name="twitter:card" content="{{ $seo->twitterCard }}">
+@endif
+
+@if ($twitterHandle)
+<meta name="twitter:site" content="{{ $twitterHandle }}">
+@endif
+
+@if ($seo->ogTitle)
+<meta name="twitter:title" content="{{ $seo->ogTitle }}">
+@endif
+
+@if ($seo->ogDescription)
+<meta name="twitter:description" content="{{ $seo->ogDescription }}">
+@endif
+
+@if ($ogImageUrl)
+<meta name="twitter:image" content="{{ $ogImageUrl }}">
+@endif
