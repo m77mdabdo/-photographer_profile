@@ -1,4 +1,4 @@
-<x-layouts::public :seo="$seo">
+<x-layouts::public :seo="$seo" :structured-data="$structuredData ?? null">
     @if ($preview)
         <p class="preview-banner" role="status">
             Preview of an unpublished project. This link expires and is not indexed.

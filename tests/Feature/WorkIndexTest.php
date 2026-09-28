@@ -14,6 +14,7 @@ use Tests\TestCase;
 
 class WorkIndexTest extends TestCase
 {
+    use \Tests\Support\AssertsNoJavaScript;
     use RefreshDatabase;
 
     private DemoWorld $world;
@@ -125,7 +126,7 @@ class WorkIndexTest extends TestCase
         foreach (['/work', '/work?page=1'] as $url) {
             $html = $this->get($url)->assertOk()->getContent();
 
-            $this->assertStringNotContainsString('<script', $html);
+            $this->assertNoExecutableJavaScript($html);
             $this->assertStringNotContainsString('onclick', $html);
             $this->assertStringNotContainsString('wire:', $html);
         }
@@ -183,6 +184,18 @@ class WorkIndexTest extends TestCase
             '<link rel="canonical" href="'.route('work.category', 'architecture').'">',
             $first
         );
+
+        /*
+         * IN PRODUCTION, deliberately.
+         *
+         * Outside production every page is noindex, nofollow — that is the
+         * staging-leak guard in SeoResolver and it overrides every page's own
+         * preference. The distinction this test is about only exists where
+         * indexing is correct, so it is asserted there.
+         */
+        $this->app->detectEnvironment(fn (): string => 'production');
+
+        $first = $this->get('/work/category/architecture')->assertOk()->getContent();
         $this->assertStringNotContainsString('noindex', $first);
 
         /*
@@ -245,7 +258,7 @@ class WorkIndexTest extends TestCase
         // Every frame is on the page, and none of them lost its dimensions.
         $this->assertSame(25, substr_count($html, '<img'));
         $this->assertSame(25, substr_count($html, 'width="'));
-        $this->assertStringNotContainsString('<script', $html);
+        $this->assertNoExecutableJavaScript($html);
     }
 
     public function test_the_short_story_holds_at_three_frames(): void
@@ -289,12 +302,24 @@ class WorkIndexTest extends TestCase
             $queries[] = $q->sql;
         });
 
+        /*
+         * WARM FIRST.
+         *
+         * Three site-wide maps are loaded once per process and cached
+         * forever: the settings map, the redirect map and the footer's legal
+         * links. Measuring the very first request of a process counts all
+         * three, which is a number no running site ever pays twice — so the
+         * measurement is taken on the second request, which is what every
+         * visitor after the first actually costs.
+         */
         foreach ([
             '/work' => 'index',
             '/work?page=2' => 'index page 2',
             '/work/category/architecture' => 'category',
             '/work/the-long-one' => '25-image story',
         ] as $url => $label) {
+            $this->get($url);
+
             $queries = [];
 
             $this->get($url)->assertOk();
@@ -320,7 +345,7 @@ class WorkIndexTest extends TestCase
 
         // Pinned. These are flat in the number of projects and images.
         $this->assertSame(
-            ['index' => 7, 'index page 2' => 6, 'category' => 7, '25-image story' => 9],
+            ['index' => 6, 'index page 2' => 6, 'category' => 7, '25-image story' => 9],
             $counts,
             'query counts moved: '.json_encode($counts)
         );

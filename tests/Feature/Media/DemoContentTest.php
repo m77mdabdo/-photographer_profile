@@ -304,12 +304,21 @@ class DemoContentTest extends TestCase
         foreach ([null, 'light', 'dark'] as $theme) {
             $queries = [];
 
+            /*
+             * Warmed first. Three site-wide maps — settings, redirects and the
+             * footer's legal links — are read once per process and cached
+             * forever, so the very first request of a process is a number no
+             * running site pays twice.
+             */
             $request = $theme === null ? $this : $this->withCookie(\App\Support\Theme::COOKIE, $theme);
+            $request->get('/');
+
+            $queries = [];
             $request->get('/')->assertOk();
 
-            // Ten: eight for the page, one for the client marquee, one for
-            // the journal strip.
-            $this->assertCount(10, $queries, 'theme='.($theme ?? 'system').' issued '.count($queries));
+            // Eleven: eight for the page, one for the client marquee, one for
+            // the journal strip, one for the services strip.
+            $this->assertCount(11, $queries, 'theme='.($theme ?? 'system').' issued '.count($queries));
         }
     }
 

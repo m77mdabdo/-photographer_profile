@@ -1,16 +1,12 @@
+{{--
+    The BlogPosting and breadcrumb blocks travel to the layout, which emits
+    every JSON-LD block on the page through one component. They used to be
+    written out here by hand, which meant the escaping rules lived in a
+    template and would have been re-derived — differently — by the next page
+    that needed them.
+--}}
 @php use App\Support\Settings; @endphp
-<x-layouts::public :seo="$seo">
-    {{--
-        BlogPosting, built in App\Support\StructuredData from the same record
-        this template renders. JSON_UNESCAPED_SLASHES keeps URLs readable;
-        JSON_HEX_TAG escapes < and > to < and >, so a title
-        containing "</script>" cannot break out of this block — the one XSS
-        that JSON-LD is actually prone to.
-    --}}
-    <script type="application/ld+json">
-        {!! json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}
-    </script>
-
+<x-layouts::public :seo="$seo" :structured-data="$structuredData">
     <article class="piece">
         <header class="piece__header">
             <p class="piece__eyebrow">

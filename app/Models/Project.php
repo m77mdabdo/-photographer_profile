@@ -18,6 +18,7 @@ class Project extends Model
 {
     /** @use HasFactory<\Database\Factories\ProjectFactory> */
     use HasFactory;
+    use Concerns\RedirectsOnSlugChange;
     use SoftDeletes;
 
     /**
@@ -63,6 +64,17 @@ class Project extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /**
+     * The public address for a slug of this model.
+     *
+     * Built from the route so it cannot drift from where the page actually
+     * lives, and reduced to a path because a redirect row stores a path.
+     */
+    public function publicPath(string $slug): string
+    {
+        return (string) parse_url(route('projects.show', $slug), PHP_URL_PATH);
     }
 
     /**

@@ -1,4 +1,4 @@
-@props(['seo' => null])
+@props(['seo' => null, 'structuredData' => null])
 <!DOCTYPE html>
 {{--
     The resolved theme is written here, on the server, before the document is
@@ -14,6 +14,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <x-seo :page="$seo" />
+
+    {{--
+        THE SITE'S OWN IDENTITY, on every page.
+
+        The studio and the website are facts about this installation rather
+        than about any one page, so they are emitted here instead of being
+        repeated by every controller. Both are built from the settings table
+        and both return nothing at all when the studio has no name stored, so
+        a fresh install emits no empty graph.
+
+        Page-specific blocks — BlogPosting, CreativeWork, Service, a
+        breadcrumb trail — come through $structuredData from the controller
+        that actually holds the record.
+    --}}
+    <x-structured-data :data="[
+        \App\Support\StructuredData::studio(),
+        \App\Support\StructuredData::website(),
+    ]" />
+
+    @isset($structuredData)
+        <x-structured-data :data="$structuredData" />
+    @endisset
 
     {{--
         Only the display face is preloaded, and only its Latin subset.
@@ -67,6 +89,7 @@
                  */
                 $navRoutes = [
                     'work' => route('work.index'),
+                    'services' => route('services.index'),
                     'archive' => route('archive.index'),
                     'journal' => route('journal.index'),
                     'about' => route('about'),
@@ -100,6 +123,19 @@
             @if ($contactLabel = \App\Support\Settings::get('nav.contact'))
                 <a href="{{ route('contact.show') }}">{{ $contactLabel }}</a>
             @endif
+
+            {{--
+                The legal pages, linked ONLY when they are actually published.
+
+                A footer link to an unpublished privacy notice is a 404 in the
+                one place a regulator, a client's legal team or a browser's
+                autofill will look for it. The Page model refuses to delete a
+                locked page for the same reason; this is the other half of that
+                arrangement.
+            --}}
+            @foreach (\App\Support\PageLinks::legal() as $legal)
+                <a href="{{ $legal['url'] }}">{{ $legal['label'] }}</a>
+            @endforeach
         </div>
 
         <div class="site-footer__group">

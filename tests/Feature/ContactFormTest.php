@@ -18,6 +18,7 @@ use Tests\TestCase;
 
 class ContactFormTest extends TestCase
 {
+    use \Tests\Support\AssertsNoJavaScript;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -124,7 +125,7 @@ class ContactFormTest extends TestCase
     {
         $html = $this->get('/contact')->assertOk()->getContent();
 
-        $this->assertStringNotContainsString('<script', $html);
+        $this->assertNoExecutableJavaScript($html, '/contact');
         $this->assertStringNotContainsString('onclick', $html);
         $this->assertStringNotContainsString('wire:', $html);
 
@@ -743,29 +744,38 @@ class ContactFormTest extends TestCase
         });
 
         /*
-         * The settings cache is flushed before EACH page, or the second one
-         * measured inherits the first one's warm map and the numbers depend
-         * on the order the assertions happen to be written in.
+         * WARMED FIRST, then measured.
+         *
+         * Three site-wide maps are read once per process and cached forever:
+         * the settings map, the redirect map and the footer's legal links.
+         * The earlier version of this test flushed settings before each page
+         * so the order would not matter — but the other two maps arrived
+         * later and could not be flushed the same way, which put the whole
+         * one-time cost on whichever page happened to be measured first.
+         *
+         * Warming both pages first removes that entirely: what is measured is
+         * the steady state, which is what every visitor after the very first
+         * actually pays.
          */
-        \App\Support\Settings::flush();
+        $this->get('/contact');
+        $this->get('/about');
+
         $queries = [];
         $this->get('/contact')->assertOk();
         $contact = count($queries);
 
-        \App\Support\Settings::flush();
         $queries = [];
         $this->get('/about')->assertOk();
         $about = count($queries);
 
         /*
-         * /contact is one query: the settings map, which carries every string
-         * on the page. /about costs that plus its client list.
-         *
-         * Neither touches a project, a media row or an inquiry, which is why
-         * the form stays this cheap under the load a spam run would put on it.
+         * /contact costs NOTHING. Every string on it comes from the cached
+         * settings map, and it touches no project, media row or inquiry —
+         * which is why the form stays this cheap under the load a spam run
+         * would put on it. /about pays for its client list.
          */
         $this->assertSame(
-            ['contact' => 1, 'about' => 2],
+            ['contact' => 0, 'about' => 1],
             ['contact' => $contact, 'about' => $about],
             'query counts moved: '.json_encode(['contact' => $contact, 'about' => $about])
         );

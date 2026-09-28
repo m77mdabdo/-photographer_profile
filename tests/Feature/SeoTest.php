@@ -94,7 +94,29 @@ class SeoTest extends TestCase
 
     public function test_robots_defaults_to_index_follow(): void
     {
+        /*
+         * IN PRODUCTION, deliberately.
+         *
+         * Outside production every page is noindex, nofollow — that is the
+         * staging-leak guard in SeoResolver and it overrides every page's own
+         * preference. The distinction this test is about only exists where
+         * indexing is correct, so it is asserted there.
+         */
+        $this->app->detectEnvironment(fn (): string => 'production');
+
         $this->get('/')->assertSee('<meta name="robots" content="index, follow">', false);
+    }
+
+    /**
+     * And the guard itself: nothing is indexable anywhere else.
+     */
+    public function test_nothing_is_indexable_outside_production(): void
+    {
+        foreach (['local', 'staging'] as $environment) {
+            $this->app->detectEnvironment(fn (): string => $environment);
+
+            $this->get('/')->assertSee('<meta name="robots" content="noindex, nofollow">', false);
+        }
     }
 
     public function test_a_page_can_override_the_title_description_and_robots(): void

@@ -13,6 +13,7 @@ use Tests\TestCase;
 
 class AboutPageTest extends TestCase
 {
+    use \Tests\Support\AssertsNoJavaScript;
     use RefreshDatabase;
 
     private DemoWorld $world;
@@ -53,7 +54,7 @@ class AboutPageTest extends TestCase
 
         $this->assertStringContainsString('Meridian Press', $html);
         $this->assertStringContainsString(route('contact.show'), $html);
-        $this->assertStringNotContainsString('<script', $html);
+        $this->assertNoExecutableJavaScript($html, '/about');
     }
 
     public function test_the_page_composes_without_a_portrait(): void

@@ -94,6 +94,11 @@ const PUBLIC_PAGES = [
   { label: 'about', path: '/about' },
   { label: 'contact', path: '/contact' },
   { label: 'contact sent', path: '/contact/sent' },
+  { label: 'services', path: '/services' },
+  { label: 'a service', path: '/services/editorial-commissions' },
+  { label: 'a quoted service', path: '/services/long-term-projects' },
+  { label: 'privacy', path: '/privacy' },
+  { label: 'terms', path: '/terms' },
   { label: 'journal', path: '/journal' },
   { label: 'journal subject', path: '/journal/category/process' },
   { label: 'an article', path: '/journal/the-edit-is-the-work' },
@@ -149,6 +154,14 @@ const ADMIN_PAGES = [
     discover: { from: '/admin/projects', selector: 'a[href*="/story"]' },
   },
   { label: 'admin journal', path: '/admin/articles', admin: true },
+  { label: 'admin services', path: '/admin/services', admin: true },
+  {
+    label: 'admin service editor',
+    admin: true,
+    discover: { from: '/admin/services', selector: 'a[href*="/edit"]' },
+  },
+  { label: 'admin pages', path: '/admin/pages', admin: true },
+  { label: 'admin redirects', path: '/admin/redirects', admin: true },
   {
     label: 'admin article editor',
     admin: true,
@@ -498,6 +511,7 @@ async function run() {
 
   const results = []
   const skipped = []
+  const crawlerFiles = []
   let failures = 0
   let adminPages = []
   let credentials = null
@@ -518,6 +532,40 @@ async function run() {
   }
 
   try {
+    /*
+     * THE CRAWLER-FACING FILES, checked once.
+     *
+     * robots.txt and the sitemaps are not HTML and have no viewport, so they
+     * do not belong in the matrix — but they are the files nobody looks at
+     * until a crawler stops indexing the site, and a 500 in one of them is
+     * invisible from every other angle. One fetch each, before anything else.
+     */
+    for (const [path, type] of [
+      ['/robots.txt', 'text/plain'],
+      ['/sitemap.xml', 'application/xml'],
+      ['/sitemap-pages.xml', 'application/xml'],
+      ['/sitemap-projects.xml', 'application/xml'],
+      ['/sitemap-journal.xml', 'application/xml'],
+      ['/sitemap-services.xml', 'application/xml'],
+      ['/sitemap-images.xml', 'application/xml'],
+    ]) {
+      const res = await fetch(BASE + path)
+      const body = await res.text()
+
+      if (!res.ok) {
+        skipped.push(`${path} returned ${res.status}`)
+        failures++
+      } else if (!(res.headers.get('content-type') || '').includes(type.split('/')[1])) {
+        skipped.push(`${path} served as ${res.headers.get('content-type')}, expected ${type}`)
+        failures++
+      } else if (path.endsWith('.xml') && !body.trimStart().startsWith('<?xml')) {
+        skipped.push(`${path} is not XML`)
+        failures++
+      }
+
+      crawlerFiles.push({ path, status: res.status, bytes: body.length })
+    }
+
     if (credentials) {
       const page = await browser.newPage()
       await page.setViewport({ width: 1440, height: 900 })
@@ -715,10 +763,10 @@ async function run() {
     skipped.push(`admin pages not checked — ${loginProblem}`)
   }
 
-  report(results, failures, skipped)
+  report(results, failures, skipped, crawlerFiles)
 }
 
-function report(results, failures, skipped = []) {
+function report(results, failures, skipped = [], crawlerFiles = []) {
   const pages = [...new Set(results.map((r) => r.page))]
   const combos = [...new Set(results.map((r) => `${r.viewport} ${r.theme}`))]
 
@@ -767,6 +815,13 @@ function report(results, failures, skipped = []) {
 
     for (const [problem, where] of grouped) {
       process.stdout.write(`\n  ${problem}\n    at ${where.join(', ')}\n`)
+    }
+  }
+
+  if (crawlerFiles.length) {
+    process.stdout.write('\nCRAWLER FILES\n')
+    for (const f of crawlerFiles) {
+      process.stdout.write(`  ${String(f.status).padEnd(4)} ${f.path.padEnd(24)} ${f.bytes} bytes\n`)
     }
   }
 

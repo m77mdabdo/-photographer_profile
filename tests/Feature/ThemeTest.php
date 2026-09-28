@@ -10,6 +10,7 @@ use Tests\TestCase;
 
 class ThemeTest extends TestCase
 {
+    use \Tests\Support\AssertsNoJavaScript;
     use RefreshDatabase;
 
     // ----------------------------------------------------------------- 1
@@ -107,7 +108,7 @@ class ThemeTest extends TestCase
             $request = $cookie === null ? $this : $this->withCookie(Theme::COOKIE, $cookie);
             $html = $request->get('/')->assertOk()->getContent();
 
-            $this->assertStringNotContainsString('<script', $html, "theme={$cookie}");
+            $this->assertNoExecutableJavaScript($html, "theme={$cookie}");
             $this->assertStringNotContainsString('onclick', $html);
             $this->assertStringNotContainsString('localStorage', $html);
         }
@@ -227,18 +228,27 @@ class ThemeTest extends TestCase
         foreach ([null, 'light', 'dark'] as $cookie) {
             $queries = [];
 
+            /*
+             * Warmed first. Three site-wide maps — settings, redirects and the
+             * footer's legal links — are read once per process and cached
+             * forever, so the very first request of a process is a number no
+             * running site pays twice.
+             */
             $request = $cookie === null ? $this : $this->withCookie(Theme::COOKIE, $cookie);
+            $request->get('/');
+
+            $queries = [];
             $request->get('/')->assertOk();
 
             /*
-             * Ten since the journal strip landed, nine since the client
-             * marquee before it: neither the clients table nor the articles
-             * table is about projects, so neither can ride along on an
-             * existing load. The theme itself still touches nothing — it is a
-             * cookie read and an attribute — which is what this pins.
+             * Eleven: eight for the page, then one each for the client
+             * marquee, the journal strip and the services strip. None of
+             * those three tables is about projects, so none can ride along on
+             * an existing load. The theme itself still touches nothing — it is
+             * a cookie read and an attribute — which is what this pins.
              */
             $this->assertCount(
-                10,
+                11,
                 $queries,
                 "theme=".($cookie ?? 'system')." issued ".count($queries).' queries'
             );

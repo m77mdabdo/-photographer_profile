@@ -1,0 +1,472 @@
+/* ---------------- Services, and flat documents --------------------------- */
+
+/*
+ * The same vocabulary as every other section — mono eyebrow, condensed display
+ * heading, accent rule under the one action — so a visitor moving from the work
+ * index to the rate card does not feel handed off to a different site.
+ *
+ * The one thing this page does differently is state a price, and prices are set
+ * in the display face at heading weight rather than buried in body copy: the
+ * number is the second thing somebody came here for and hiding it is a way of
+ * not answering.
+ */
+
+.offer,
+.offering,
+.document {
+    max-width: var(--container-wide);
+    margin-inline: auto;
+    padding: var(--sp-9) var(--gutter) var(--sp-11);
+}
+
+.offer__header { margin-bottom: var(--sp-9); }
+
+.offer__eyebrow,
+.offering__eyebrow {
+    font-family: var(--font-mono);
+    font-variation-settings: 'wght' var(--wght-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: var(--sp-3);
+}
+
+.offering__eyebrow a { color: inherit; text-decoration: none; }
+.offering__eyebrow a:hover { text-decoration: underline; }
+
+.offer__title,
+.offering__title {
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-display);
+    font-size: var(--fs-h1);
+    line-height: 0.92;
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
+    max-width: 16ch;
+    color: var(--text-primary);
+    padding-bottom: 0.06em;   /* descender clearance, in em */
+}
+
+.offer__standfirst,
+.offering__standfirst {
+    max-width: 56ch;
+    margin-top: var(--sp-5);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+/* ---------------- The index --------------------------------------------- */
+
+.offers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: var(--sp-8);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.offer-card > article {
+    display: grid;
+    gap: var(--sp-5);
+    height: 100%;
+    align-content: start;
+}
+
+/*
+ * THE RATIO LIVES ON THE FRAME, NOT ON THE IMAGE.
+ *
+ * x-picture writes the photograph's own aspect-ratio as an INLINE style, which
+ * beats any stylesheet rule — so a portrait cover would stand twice as tall as
+ * a landscape one beside it and the grid would read as broken. The frame owns
+ * the box; the image fills it. The journal index learned this the same way.
+ */
+.offer-card__frame {
+    display: block;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background-color: var(--bg-elevated);
+}
+
+.offer-card__frame picture { display: block; height: 100%; }
+
+.offer-card__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.offer-card__body { display: grid; gap: var(--sp-3); }
+
+.offer-card__name {
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-mid);
+    font-size: var(--fs-h3);
+    line-height: 1.05;
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
+}
+
+.offer-card__name a { color: var(--text-primary); text-decoration: none; }
+.offer-card__name a:hover { color: var(--accent); }
+
+.offer-card__name a:focus-visible {
+    outline: var(--rule-strong) solid var(--accent);
+    outline-offset: 4px;
+}
+
+.offer-card__summary {
+    font-size: var(--fs-small);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+.offer-card__price {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.offer-card__price-note,
+.offering__price-note {
+    color: var(--text-secondary);
+    opacity: 0.75;
+}
+
+.offer__cta,
+.offering__cta {
+    display: inline-grid;
+    gap: var(--sp-2);
+    justify-items: start;
+    min-height: 44px;
+    align-content: center;
+    margin-top: var(--sp-11);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: var(--fs-small);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.offer__cta-rule {
+    display: block;
+    width: 100%;
+    height: var(--rule-strong);
+    background-color: var(--accent);
+}
+
+/* ---------------- One service -------------------------------------------- */
+
+.offering__header { max-width: 40ch; margin-bottom: var(--sp-8); }
+
+/*
+ * The price at display weight. It is the second thing somebody came for and
+ * setting it in body copy is a way of not answering the question.
+ */
+.offering__price {
+    margin-top: var(--sp-6);
+    font-family: var(--font-mono);
+    font-size: var(--fs-small);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.offering__price strong {
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-display);
+    font-size: var(--fs-h3);
+    letter-spacing: var(--tracking-tight);
+    color: var(--text-primary);
+}
+
+/*
+ * A FIXED FRAME, because a service cover is illustrative rather than the work.
+ *
+ * At full container width a 4000×6000 portrait renders about 2,900px tall —
+ * nearly three screens before a reader reaches the first sentence about what
+ * the service actually is. On a project page that is the right trade, because
+ * the photograph IS the content; here the prose is, and the picture is
+ * setting a tone.
+ *
+ * The ratio lives on the frame rather than the image, because x-picture
+ * writes the photograph's own aspect-ratio as an inline style and an inline
+ * style beats any stylesheet rule — the journal index learned this the same
+ * way.
+ */
+.offering__figure { margin: 0 0 var(--sp-9); }
+
+.offering__frame {
+    display: block;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    background-color: var(--bg-elevated);
+}
+
+.offering__frame picture { display: block; height: 100%; }
+
+.offering__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.offering__figure figcaption {
+    margin-top: var(--sp-3);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    color: var(--text-secondary);
+}
+
+/*
+ * The body shares the journal's measure and its rules. Sixty-eight characters
+ * is the same decision for the same reason — anything wider loses the reader's
+ * place on the return sweep.
+ */
+.offering__body,
+.document__body {
+    max-width: 68ch;
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+.offering__body > * + *,
+.document__body > * + * { margin-top: var(--sp-5); }
+
+.offering__body h2,
+.offering__body h3,
+.document__body h2,
+.document__body h3 {
+    margin-top: var(--sp-8);
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-mid);
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.offering__body h2,
+.document__body h2 { font-size: var(--fs-h3); line-height: 1.1; }
+
+.offering__body h3,
+.document__body h3 { font-size: var(--fs-body); }
+
+.offering__body strong,
+.document__body strong { color: var(--text-primary); font-weight: 600; }
+
+.offering__body a,
+.document__body a {
+    color: var(--text-primary);
+    text-decoration-color: var(--accent);
+    text-underline-offset: 0.2em;
+}
+
+.offering__body a:focus-visible,
+.document__body a:focus-visible {
+    outline: var(--rule-strong) solid var(--accent);
+    outline-offset: 2px;
+}
+
+.offering__body ul,
+.offering__body ol,
+.document__body ul,
+.document__body ol { padding-left: var(--sp-5); }
+
+.offering__body li + li,
+.document__body li + li { margin-top: var(--sp-3); }
+
+.offering__body blockquote,
+.document__body blockquote {
+    margin-block: var(--sp-8);
+    padding-left: var(--sp-5);
+    border-left: var(--rule-strong) solid var(--accent);
+    font-size: var(--fs-h3);
+    line-height: 1.3;
+    color: var(--text-primary);
+}
+
+/* ---------------- The gallery -------------------------------------------- */
+
+.offering__gallery {
+    margin-top: var(--sp-11);
+    padding-top: var(--sp-7);
+    border-top: var(--rule-hair) solid var(--border);
+}
+
+.offering__gallery-title {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: var(--sp-5);
+}
+
+.offering__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+    gap: var(--sp-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.offering__grid li { background-color: var(--bg-elevated); }
+
+.offering__grid picture,
+.offering__grid-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+}
+
+/* ---------------- Flat documents ----------------------------------------- */
+
+.document__header {
+    max-width: 68ch;
+    margin-bottom: var(--sp-8);
+    padding-bottom: var(--sp-5);
+    border-bottom: var(--rule-hair) solid var(--border);
+}
+
+.document__title {
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-display);
+    font-size: var(--fs-h1);
+    line-height: 0.94;
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
+    color: var(--text-primary);
+    padding-bottom: 0.06em;
+}
+
+.document__standfirst {
+    max-width: 56ch;
+    margin-top: var(--sp-5);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+/*
+ * The date a legal document last changed is not decoration — it is the fact a
+ * reader checks first — so it is set in the accent rather than dimmed away.
+ */
+.document__updated {
+    margin-top: var(--sp-5);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+/* ---------------- The home page strip ------------------------------------ */
+
+.services-strip {
+    max-width: var(--container-wide);
+    margin-inline: auto;
+    padding: var(--sp-11) var(--gutter) 0;
+}
+
+.services-strip__title {
+    font-family: var(--font-mono);
+    font-variation-settings: 'wght' var(--wght-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: var(--sp-7);
+}
+
+.services-strip__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: var(--sp-7);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.services-strip__item {
+    padding-top: var(--sp-5);
+    border-top: var(--rule-hair) solid var(--border);
+}
+
+.services-strip__name {
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-mid);
+    font-size: var(--fs-body);
+    line-height: 1.1;
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
+}
+
+.services-strip__name a { color: var(--text-primary); text-decoration: none; }
+.services-strip__name a:hover { color: var(--accent); }
+
+.services-strip__name a:focus-visible {
+    outline: var(--rule-strong) solid var(--accent);
+    outline-offset: 4px;
+}
+
+.services-strip__summary {
+    margin-top: var(--sp-3);
+    font-size: var(--fs-small);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+.services-strip__price {
+    margin-top: var(--sp-3);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+.services-strip__cta {
+    display: inline-grid;
+    gap: var(--sp-2);
+    justify-items: start;
+    min-height: 44px;
+    align-content: center;
+    margin-top: var(--sp-8);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: var(--fs-small);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+/* ---------------- Narrow -------------------------------------------------- */
+
+@media (max-width: 900px) {
+    .offer,
+    .offering,
+    .document { padding-block: var(--sp-7) var(--sp-9); }
+
+    .services-strip { padding-block: var(--sp-9) 0; }
+
+    .offering__header,
+    .document__header { max-width: none; }
+}

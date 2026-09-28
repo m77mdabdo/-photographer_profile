@@ -82,6 +82,20 @@ main:focus {
     color: var(--text-secondary);
 }
 
+/*
+ * The footer's link groups.
+ *
+ * Never had a rule of its own — with one link inside it did not need one, and
+ * the moment the privacy and terms links landed beside it the three ran
+ * together as "Contact Privacy Terms" separated by a single collapsed space.
+ */
+.site-footer__group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-4);
+    align-items: baseline;
+}
+
 .site-footer__social {
     display: flex;
     gap: var(--sp-4);

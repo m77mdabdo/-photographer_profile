@@ -9,12 +9,20 @@ use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JournalController;
+use App\Http\Controllers\PageController;
+use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\RobotsController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\WorkController;
 use App\Livewire\Admin\ArticleForm;
 use App\Livewire\Admin\ArticleIndex;
 use App\Livewire\Admin\CategoryManager;
+use App\Livewire\Admin\PageManager;
+use App\Livewire\Admin\RedirectManager;
+use App\Livewire\Admin\ServiceForm;
+use App\Livewire\Admin\ServiceIndex;
 use App\Livewire\Admin\ClientManager;
 use App\Livewire\Admin\InquiryDetail;
 use App\Livewire\Admin\InquiryIndex;
@@ -182,6 +190,16 @@ Route::get('/journal/{article:slug}', [JournalController::class, 'show'])
     ->name('journal.show');
 
 /*
+ * Services.
+ *
+ * Same ordering discipline as /work and /journal: the literal index first,
+ * then the wildcard. There is no literal segment under /services today, so the
+ * wildcard carries no exclusion — but the guard is added the moment one is.
+ */
+Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
+Route::get('/services/{service:slug}', [ServiceController::class, 'show'])->name('services.show');
+
+/*
  * The studio itself.
  */
 Route::get('/about', AboutController::class)->name('about');
@@ -204,6 +222,39 @@ Route::get('/work/{project:slug}', [ProjectController::class, 'show'])->name('pr
 Route::get('/work/{project:slug}/preview', [ProjectController::class, 'preview'])
     ->middleware('signed')
     ->name('projects.preview');
+
+/*
+ * SEO INFRASTRUCTURE.
+ *
+ * Declared before the flat-page wildcard so a page slug can never shadow them,
+ * and excluded from that wildcard's constraint as well — belt and braces, for
+ * the reason the wildcard's own comment gives.
+ */
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap.index');
+
+Route::get('/sitemap-{segment}.xml', [SitemapController::class, 'segment'])
+    ->where('segment', '[a-z]+')
+    ->name('sitemap.segment');
+
+Route::get('/robots.txt', RobotsController::class)->name('robots');
+
+/*
+ * FLAT EDITORIAL PAGES — privacy, terms, and whatever the studio adds.
+ *
+ * DECLARED LAST, and constrained.
+ *
+ * This is the widest wildcard on the site: a single segment at the root. It
+ * has to be last so it cannot shadow /work, /journal, /services or any other
+ * real section — but "last" is only a property of this file, and a route added
+ * below it in six months would be swallowed silently.
+ *
+ * So the constraint is explicit as well. Every reserved top-level segment is
+ * excluded by name, which makes the exclusion something a future reader can
+ * see and a test can assert, rather than an accident of line order.
+ */
+Route::get('/{page:slug}', [PageController::class, 'show'])
+    ->where('page', '^(?!work$|journal$|services$|archive$|about$|contact$|admin$|login$|logout$|register$|storage$|up$|_dev$|sitemap.*|robots\.txt$)[a-z0-9-]+$')
+    ->name('pages.show');
 
 /*
  * Admin area.
@@ -263,6 +314,19 @@ Route::prefix('admin')
                 Route::get('/create', ArticleForm::class)->name('create');
                 Route::get('/{article}/edit', ArticleForm::class)->name('edit');
             });
+
+            /*
+             * Services. Same shape as projects and the journal: literal
+             * segments before the wildcard.
+             */
+            Route::prefix('services')->name('services.')->group(function () {
+                Route::get('/', ServiceIndex::class)->name('index');
+                Route::get('/create', ServiceForm::class)->name('create');
+                Route::get('/{service}/edit', ServiceForm::class)->name('edit');
+            });
+
+            Route::get('/pages', PageManager::class)->name('pages.index');
+            Route::get('/redirects', RedirectManager::class)->name('redirects.index');
 
             Route::get('/settings', SettingsManager::class)->name('settings.index');
 

@@ -768,13 +768,27 @@ class StoryBuilderTest extends TestCase
                 ]);
             }
 
+            /*
+             * Warm first, then measure.
+             *
+             * Two things would otherwise make these two builds
+             * incomparable: the site-wide maps (settings, redirects, legal
+             * links) are paid once per process by whichever build runs
+             * first, and DB::listen registered inside this closure would be
+             * registered TWICE — stacking, so the second build counts every
+             * query twice. One listener, outside, and a warm-up request each.
+             */
+            $this->get(route('projects.show', $project));
+
             $queries = [];
-            DB::listen(function ($q) use (&$queries): void { $queries[] = $q->sql; });
 
             $this->get(route('projects.show', $project))->assertOk();
 
             return count($queries);
         };
+
+        $queries = [];
+        DB::listen(function ($q) use (&$queries): void { $queries[] = $q->sql; });
 
         $without = $build(false);
         $with = $build(true);

@@ -19,6 +19,7 @@ class Article extends Model
 {
     /** @use HasFactory<\Database\Factories\ArticleFactory> */
     use HasFactory;
+    use Concerns\RedirectsOnSlugChange;
     use SoftDeletes;
 
     /**
@@ -62,6 +63,17 @@ class Article extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /**
+     * The public address for a slug of this model.
+     *
+     * Built from the route so it cannot drift from where the page actually
+     * lives, and reduced to a path because a redirect row stores a path.
+     */
+    public function publicPath(string $slug): string
+    {
+        return (string) parse_url(route('journal.show', $slug), PHP_URL_PATH);
     }
 
     /**

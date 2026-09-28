@@ -93,7 +93,22 @@ class JournalController extends Controller
              * engines treat a mismatch as a reason to distrust all of it, and
              * they are right to.
              */
-            'structuredData' => StructuredData::blogPosting($article),
+            'structuredData' => array_values(array_filter([
+                StructuredData::blogPosting($article),
+
+                /*
+                 * A real hierarchy: the journal, optionally its subject, then
+                 * the piece. When an article is unfiled the subject step is
+                 * simply absent rather than being invented as "Uncategorised".
+                 */
+                StructuredData::breadcrumbs(array_values(array_filter([
+                    ['name' => Settings::get('nav.journal', 'Journal'), 'url' => route('journal.index')],
+                    $article->category !== null
+                        ? ['name' => $article->category->name, 'url' => route('journal.category', $article->category)]
+                        : null,
+                    ['name' => $article->title, 'url' => route('journal.show', $article)],
+                ]))),
+            ])),
 
             'seo' => SeoData::make(
                 title: $article->seo_title ?: $article->title,

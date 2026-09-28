@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use App\Support\SeoData;
+use App\Support\Settings;
+use App\Support\StructuredData;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -60,6 +62,21 @@ class ProjectController extends Controller
         return [
             'project' => $project,
             'preview' => $preview,
+
+            /*
+             * CreativeWork with every photograph the page shows as an
+             * ImageObject carrying the credit and copyright held on its own
+             * media record. On a preview it is omitted entirely: a draft is not
+             * a published work, and describing one to a machine as though it
+             * were is the kind of small untruth this file exists to avoid.
+             */
+            'structuredData' => $preview ? null : array_values(array_filter([
+                StructuredData::project($project),
+                StructuredData::breadcrumbs([
+                    ['name' => Settings::get('nav.work', 'Work'), 'url' => route('work.index')],
+                    ['name' => $project->title, 'url' => route('projects.show', $project)],
+                ]),
+            ])),
             'seo' => SeoData::make(
                 title: $project->title,
                 description: $project->excerpt ?: $project->subtitle,

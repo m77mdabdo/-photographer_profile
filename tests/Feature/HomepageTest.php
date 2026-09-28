@@ -16,6 +16,7 @@ use Tests\TestCase;
 
 class HomepageTest extends TestCase
 {
+    use \Tests\Support\AssertsNoJavaScript;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -227,7 +228,7 @@ class HomepageTest extends TestCase
 
         $html = $this->get('/')->assertOk()->getContent();
 
-        $this->assertStringNotContainsString('<script', $html);
+        $this->assertNoExecutableJavaScript($html);
         $this->assertStringNotContainsString('livewire', strtolower($html));
         $this->assertStringNotContainsString('wire:', $html);
         $this->assertStringNotContainsString('onclick', $html);
@@ -353,7 +354,7 @@ class HomepageTest extends TestCase
 
         $html = $this->get('/')->assertOk()->getContent();
 
-        $this->assertStringNotContainsString('<script', $html);
+        $this->assertNoExecutableJavaScript($html);
         $this->assertStringNotContainsString('onclick', $html);
         $this->assertStringNotContainsString('wire:', $html);
     }
@@ -563,7 +564,7 @@ class HomepageTest extends TestCase
 
         $html = $this->get('/')->assertOk()->getContent();
 
-        $this->assertStringNotContainsString('<script', $html);
+        $this->assertNoExecutableJavaScript($html);
         $this->assertStringNotContainsString('onclick', $html);
         $this->assertStringNotContainsString('wire:', $html);
     }
@@ -954,7 +955,7 @@ class HomepageTest extends TestCase
         $this->assertLessThanOrEqual(-0.18, $factor, 'the wordmark no longer crosses the sentence at all');
     }
 
-    public function test_the_query_count_is_nine(): void
+    public function test_the_query_count_is_flat_and_the_settings_map_is_one_query(): void
     {
         $this->populate(8);
 
@@ -966,34 +967,38 @@ class HomepageTest extends TestCase
         $this->get('/')->assertOk();
 
         /*
-         * Eleven on a cold cache, ten on a warm one.
+         * Fourteen on a cold cache, eleven on a warm one.
          *
-         * The eleventh is the settings map: one flat `select value, key from
-         * settings` that carries every string the hero renders — the studio
-         * name, the statement, the attribution, five navigation labels, four
-         * stage labels and four rail labels. It is cached forever and dropped
-         * only when a setting is written, so a running site pays it once.
+         * THE THREE THAT DISAPPEAR are the site-wide maps, each read once per
+         * process and then cached forever:
          *
-         * Asserting both numbers is the point. A bare "11" would pass just as
-         * happily if the map were being read once per key, which is the
-         * failure this design exists to avoid.
+         *   - the SETTINGS map: one flat `select value, key from settings`
+         *     carrying every string the hero renders — the studio name, the
+         *     statement, the attribution, five navigation labels, four stage
+         *     labels and four rail labels;
+         *   - the REDIRECT map, which is why a 404 costs no query (Task 25);
+         *   - the footer's LEGAL LINKS, which is why the footer can ask
+         *     whether a privacy notice exists without asking on every page.
          *
-         * RAISED BY ONE IN TASK 24, deliberately: the home page now carries a
-         * journal strip, and three recent articles cannot ride along on a
-         * query about projects. It is one flat select for the three rows —
-         * their categories are eager loaded and the strip is typographic, so
-         * no image is ever read for it.
+         * Asserting BOTH numbers is the point. A bare "14" would pass just as
+         * happily if the settings map were being read once per key, which is
+         * the failure this design exists to avoid — hence the separate
+         * assertion that there is exactly one settings query.
+         *
+         * RAISED IN TASK 24 for the journal strip, and again in TASK 25 for
+         * the services strip: neither articles nor services can ride along on
+         * a query about projects, and each is one flat select.
          */
         $settingsQueries = array_filter($queries, static fn (string $sql): bool => str_contains($sql, '`settings`'));
 
         $this->assertCount(1, $settingsQueries, 'the settings map must be one query, not one per key');
-        $this->assertCount(11, $queries, 'cold: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
+        $this->assertCount(14, $queries, 'cold: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
 
         // Warm, which is every request after the first.
         $queries = [];
         $this->get('/')->assertOk();
 
-        $this->assertCount(10, $queries, 'warm: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
+        $this->assertCount(11, $queries, 'warm: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
     }
 
     /**

@@ -9,6 +9,7 @@ use App\Models\Article;
 use App\Models\Client;
 use App\Models\Media;
 use App\Models\Project;
+use App\Models\Service;
 use App\Support\AccentColor;
 use App\Support\EditorialLayout;
 use App\Support\SeoData;
@@ -68,6 +69,17 @@ class HomeController extends Controller
                 ->with('category:id,name')
                 ->orderByDesc('published_at')
                 ->limit(3)
+                ->get(),
+
+            /*
+             * The four most prominent services. No images are loaded — the
+             * strip is typographic — so this is one flat select.
+             */
+            'services' => Service::query()
+                ->published()
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->limit(4)
                 ->get(),
 
             'clients' => Client::active()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'url']),

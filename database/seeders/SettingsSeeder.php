@@ -36,7 +36,10 @@ class SettingsSeeder extends Seeder
         ['key' => 'nav.archive', 'value' => 'Archive', 'type' => 'string', 'group' => 'navigation'],
         ['key' => 'nav.about', 'value' => 'About', 'type' => 'string', 'group' => 'navigation'],
         ['key' => 'nav.journal', 'value' => 'Journal', 'type' => 'string', 'group' => 'navigation'],
+        ['key' => 'nav.services', 'value' => 'Services', 'type' => 'string', 'group' => 'navigation'],
         ['key' => 'nav.contact', 'value' => 'Contact', 'type' => 'string', 'group' => 'navigation'],
+        ['key' => 'nav.privacy', 'value' => 'Privacy', 'type' => 'string', 'group' => 'navigation'],
+        ['key' => 'nav.terms', 'value' => 'Terms', 'type' => 'string', 'group' => 'navigation'],
 
         /*
          * --- the hero's stage rail -------------------------------------
@@ -94,6 +97,17 @@ class SettingsSeeder extends Seeder
         ['key' => 'contact.acknowledgement_note', 'value' => 'A copy of this is on its way to', 'type' => 'string', 'group' => 'contact'],
         ['key' => 'contact.confirmation_heading', 'value' => 'It arrived', 'type' => 'string', 'group' => 'contact'],
         ['key' => 'contact.confirmation_body', 'value' => 'Thank you — that is with the studio now. You will get a reply from a person, not an autoresponder, within two working days.', 'type' => 'text', 'group' => 'contact'],
+
+        // --- services ---------------------------------------------------------
+        ['key' => 'services.heading', 'value' => 'What the studio does', 'type' => 'string', 'group' => 'services'],
+        ['key' => 'services.standfirst', 'value' => 'The ways this studio works, and roughly what each one costs. Every job is quoted properly once there is a brief — these are the starting points, not the answer.', 'type' => 'text', 'group' => 'services'],
+        ['key' => 'services.price_prefix', 'value' => 'From', 'type' => 'string', 'group' => 'services'],
+        ['key' => 'services.cta', 'value' => 'Talk about a commission', 'type' => 'string', 'group' => 'services'],
+        ['key' => 'services.gallery_heading', 'value' => 'From this kind of work', 'type' => 'string', 'group' => 'services'],
+        ['key' => 'services.empty_line', 'value' => 'Nothing listed here yet.', 'type' => 'string', 'group' => 'services'],
+        ['key' => 'services.empty_note', 'value' => 'The studio takes commissions whether or not they appear on this page. Write and describe the work.', 'type' => 'text', 'group' => 'services'],
+        ['key' => 'services.home_heading', 'value' => 'Working together', 'type' => 'string', 'group' => 'services'],
+        ['key' => 'services.home_cta', 'value' => 'Everything the studio does', 'type' => 'string', 'group' => 'services'],
 
         // --- the journal -----------------------------------------------------
         ['key' => 'journal.heading', 'value' => 'Notes from the darkroom', 'type' => 'string', 'group' => 'journal'],

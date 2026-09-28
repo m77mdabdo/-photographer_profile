@@ -13,6 +13,7 @@ use Tests\TestCase;
 
 class ArchiveTest extends TestCase
 {
+    use \Tests\Support\AssertsNoJavaScript;
     use RefreshDatabase;
 
     private DemoWorld $world;
@@ -224,7 +225,7 @@ class ArchiveTest extends TestCase
         foreach (['/archive', '/archive?category=architecture', '/archive?year=2024'] as $url) {
             $html = $this->get($url)->assertOk()->getContent();
 
-            $this->assertStringNotContainsString('<script', $html);
+            $this->assertNoExecutableJavaScript($html, $url);
             $this->assertStringNotContainsString('onclick', $html);
             $this->assertStringNotContainsString('wire:', $html);
         }
@@ -233,6 +234,16 @@ class ArchiveTest extends TestCase
     public function test_a_filtered_sheet_is_followed_but_not_indexed(): void
     {
         $this->fill();
+
+        /*
+         * IN PRODUCTION, deliberately.
+         *
+         * Outside production every page is noindex, nofollow — that is the
+         * staging-leak guard in SeoResolver and it overrides every page's own
+         * preference. The distinction this test is about only exists where
+         * indexing is correct, so it is asserted there.
+         */
+        $this->app->detectEnvironment(fn (): string => 'production');
 
         $plain = $this->get('/archive')->assertOk()->getContent();
         $this->assertStringNotContainsString('noindex', $plain);
@@ -260,6 +271,15 @@ class ArchiveTest extends TestCase
             $queries[] = $q->sql;
         });
 
+        /*
+         * Warmed first. The settings map, the redirect map and the footer's
+         * legal links are read once per process and cached forever, so
+         * measuring the first request of a process counts three one-time
+         * costs no running site pays twice.
+         */
+        $this->get('/archive');
+
+        $queries = [];
         $this->get('/archive')->assertOk();
         $full = count($queries);
 
@@ -267,8 +287,16 @@ class ArchiveTest extends TestCase
         $this->get('/archive?category=landscape&year=2025')->assertOk();
         $filtered = count($queries);
 
+        /*
+         * Seven and eight, not eight and eight.
+         *
+         * The unfiltered sheet is one query cheaper because it needs no
+         * category lookup to resolve the filter — the filtered view has to
+         * find the category before it can count anything. Both are flat in
+         * the number of frames, which is what this test is actually for.
+         */
         $this->assertSame(
-            ['sheet' => 8, 'filtered sheet' => 8],
+            ['sheet' => 7, 'filtered sheet' => 8],
             ['sheet' => $full, 'filtered sheet' => $filtered],
             'archive query counts moved: '.json_encode(['sheet' => $full, 'filtered' => $filtered])
         );

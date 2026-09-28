@@ -36,6 +36,28 @@ class JournalTest extends TestCase
         $this->world = new DemoWorld();
     }
 
+    /**
+     * One JSON-LD block from a page, chosen by @type.
+     *
+     * @return array<string, mixed>
+     */
+    private function blockOfType(string $html, string $type): array
+    {
+        preg_match_all('#<script type="application/ld\+json">(.*?)</script>#s', $html, $matches);
+
+        $this->assertNotEmpty($matches[1], 'there is no structured data on the page');
+
+        foreach ($matches[1] as $json) {
+            $decoded = json_decode(trim($json), true, 512, JSON_THROW_ON_ERROR);
+
+            if (($decoded['@type'] ?? null) === $type) {
+                return $decoded;
+            }
+        }
+
+        $this->fail("the page carries no {$type} block");
+    }
+
     private function category(string $name, string $slug): ArticleCategory
     {
         $category = new ArticleCategory(['name' => $name, 'description' => 'About '.$name.'.']);
@@ -242,11 +264,15 @@ class JournalTest extends TestCase
 
         $html = $this->get(route('journal.show', $article))->assertOk()->getContent();
 
-        preg_match('#<script type="application/ld\+json">(.*?)</script>#s', $html, $matches);
-
-        $this->assertNotEmpty($matches, 'there is no structured data on the page');
-
-        $data = json_decode(trim($matches[1]), true, 512, JSON_THROW_ON_ERROR);
+        /*
+         * The BlogPosting block, picked out by type.
+         *
+         * The page carries several blocks now — the studio and the website are
+         * emitted site-wide by the layout, and a breadcrumb trail comes with
+         * the article — so taking "the first script tag" would assert against
+         * ProfessionalService and pass for the wrong reason.
+         */
+        $data = $this->blockOfType($html, 'BlogPosting');
 
         $this->assertSame('https://schema.org', $data['@context']);
         $this->assertSame('BlogPosting', $data['@type']);
@@ -270,8 +296,19 @@ class JournalTest extends TestCase
 
         $this->assertSame('editing, process', $data['keywords']);
 
-        // Absolute, because a consumer has no page to resolve a path against.
-        $this->assertStringStartsWith('http', $data['image'][0]);
+        /*
+         * An ImageObject, not a bare URL.
+         *
+         * Task 25 made every image in every block a full ImageObject carrying
+         * the credit and copyright held on its own media record — on a
+         * photography platform the photograph is the thing being described,
+         * and a naked URL says nothing about who took it.
+         *
+         * contentUrl is absolute, because a consumer of this has no page to
+         * resolve a relative path against.
+         */
+        $this->assertSame('ImageObject', $data['image'][0]['@type']);
+        $this->assertStringStartsWith('http', $data['image'][0]['contentUrl']);
 
         // Counted, not estimated.
         $this->assertGreaterThan(0, $data['wordCount']);
@@ -298,8 +335,7 @@ class JournalTest extends TestCase
 
         $html = $this->get(route('journal.show', $article))->assertOk()->getContent();
 
-        preg_match('#<script type="application/ld\+json">(.*?)</script>#s', $html, $matches);
-        $data = json_decode(trim($matches[1]), true, 512, JSON_THROW_ON_ERROR);
+        $data = $this->blockOfType($html, 'BlogPosting');
 
         $this->assertArrayNotHasKey('author', $data);
         $this->assertArrayNotHasKey('articleSection', $data);
@@ -327,17 +363,20 @@ class JournalTest extends TestCase
          * been satisfied by dropping the title. What matters is that no second
          * <script> was opened and that the JSON did not break.
          */
-        $this->assertSame(1, substr_count($html, '<script'));
-        $this->assertStringContainsString('<script type="application/ld+json">', $html);
+        /*
+         * Every script element on the page is a JSON-LD data block — there are
+         * four of them now (studio, website, BlogPosting, breadcrumbs) and not
+         * one of them executes.
+         */
+        preg_match_all('/<script\b([^>]*)>/i', $html, $tags);
+
+        foreach ($tags[1] as $attributes) {
+            $this->assertStringContainsString('type="application/ld+json"', $attributes);
+        }
+
         $this->assertStringNotContainsString('</script><script>', $html);
 
-        preg_match('#<script type="application/ld\+json">(.*?)</script>#s', $html, $matches);
-
-        // Still valid JSON, with the title intact inside it, and the closing
-        // tag escaped rather than emitted.
-        $this->assertStringNotContainsString('</script>', $matches[1]);
-
-        $data = json_decode(trim($matches[1]), true, 512, JSON_THROW_ON_ERROR);
+        $data = $this->blockOfType($html, 'BlogPosting');
         $this->assertStringContainsString('alert(1)', $data['headline']);
 
         // And in the visible document it is text, not markup.

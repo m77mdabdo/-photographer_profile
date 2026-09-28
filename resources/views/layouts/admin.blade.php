@@ -87,6 +87,27 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{{ route('admin.services.index') }}"
+                       @class(['is-current' => request()->routeIs('admin.services.*')])
+                       @if (request()->routeIs('admin.services.*')) aria-current="page" @endif>
+                        Services
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.pages.index') }}"
+                       @class(['is-current' => request()->routeIs('admin.pages.*')])
+                       @if (request()->routeIs('admin.pages.*')) aria-current="page" @endif>
+                        Pages
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.redirects.index') }}"
+                       @class(['is-current' => request()->routeIs('admin.redirects.*')])
+                       @if (request()->routeIs('admin.redirects.*')) aria-current="page" @endif>
+                        Redirects
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('admin.clients.index') }}"
                        @class(['is-current' => request()->routeIs('admin.clients.*')])
                        @if (request()->routeIs('admin.clients.*')) aria-current="page" @endif>
@@ -133,7 +154,7 @@
             <p class="admin-sidebar__heading" id="planned-heading">Planned</p>
 
             <ul role="list" class="admin-sidebar__list admin-sidebar__list--disabled" aria-labelledby="planned-heading">
-                @foreach (['Galleries', 'Pages', 'Users'] as $planned)
+                @foreach (['Galleries', 'Users'] as $planned)
                     <li>
                         <span aria-disabled="true">{{ $planned }}</span>
                     </li>

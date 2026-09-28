@@ -33,7 +33,9 @@ class SeoResolver
             title: $title,
             description: $description,
             canonical: $page->canonical ?? $this->canonical(),
-            robots: $page->robots ?? (string) config('seo.default_robots'),
+
+            // See robots() — outside production this is never index, follow.
+            robots: $this->robots($page),
 
             // Open Graph mirrors the page values unless given something better.
             ogTitle: $page->ogTitle ?? $title,
@@ -46,6 +48,33 @@ class SeoResolver
 
             rawTitle: true,
         );
+    }
+
+    /**
+     * The robots directive, and the one thing a page may not override.
+     *
+     * OUTSIDE PRODUCTION, EVERY PAGE IS noindex, nofollow.
+     *
+     * A staging copy being indexed is one of the most damaging and most common
+     * SEO failures there is: the staging site competes with the real one for
+     * its own terms, and usually wins some of them with half-finished content
+     * or a login prompt. robots.txt alone does not prevent it — a disallowed
+     * page that something links to can still be listed as a bare URL — so the
+     * meta tag is the belt to that braces.
+     *
+     * It is enforced HERE, above every page's own preference, because the one
+     * way this protection fails is a single page having a good reason to opt
+     * out. There is no good reason. A page that wants to be noindex in
+     * production still gets noindex; a page that wants to be indexed gets it
+     * only where indexing is correct.
+     */
+    private function robots(SeoData $page): string
+    {
+        if (! app()->environment('production')) {
+            return 'noindex, nofollow';
+        }
+
+        return $page->robots ?? (string) config('seo.default_robots');
     }
 
     /**
