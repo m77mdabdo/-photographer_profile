@@ -9,6 +9,8 @@
 
     <x-home.featured-story :project="$story" />
 
+    <x-home.journal-preview :articles="$journal" />
+
     <x-home.archive-strip :media="$archive" />
 
     <x-home.closing />

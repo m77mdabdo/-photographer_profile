@@ -59,16 +59,17 @@
             --}}
             @php
                 /*
-                 * The destinations that exist. A nav item without a route is
-                 * still rendered — the shape of the site stays legible while
-                 * it is being built — but it is not a link to nowhere: it has
-                 * no href, so it is not focusable and not announced as a link.
+                 * Every item now has a destination. The routeless branch below
+                 * is kept because the next section to be built will need it
+                 * again, and because a nav item without a route must stay
+                 * unfocusable and unannounced rather than become a link to
+                 * nowhere — the journal spent six tasks as one of these.
                  */
                 $navRoutes = [
                     'work' => route('work.index'),
                     'archive' => route('archive.index'),
+                    'journal' => route('journal.index'),
                     'about' => route('about'),
-                    'journal' => null,
                     'contact' => route('contact.show'),
                 ];
             @endphp
@@ -78,7 +79,7 @@
                         <li>
                             @if ($href)
                                 <a href="{{ $href }}"
-                                   @if (request()->url() === $href) aria-current="page" @endif>{{ $label }}</a>
+                                   @if (request()->url() === $href || str_starts_with(request()->url(), $href.'/')) aria-current="page" @endif>{{ $label }}</a>
                             @else
                                 <span aria-disabled="true">{{ $label }}</span>
                             @endif

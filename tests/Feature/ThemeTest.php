@@ -231,13 +231,14 @@ class ThemeTest extends TestCase
             $request->get('/')->assertOk();
 
             /*
-             * Nine since the client marquee landed: the clients table is
-             * unrelated to projects and cannot ride along on an existing load.
-             * The theme itself still touches nothing — it is a cookie read and
-             * an attribute — which is what this pins.
+             * Ten since the journal strip landed, nine since the client
+             * marquee before it: neither the clients table nor the articles
+             * table is about projects, so neither can ride along on an
+             * existing load. The theme itself still touches nothing — it is a
+             * cookie read and an attribute — which is what this pins.
              */
             $this->assertCount(
-                9,
+                10,
                 $queries,
                 "theme=".($cookie ?? 'system')." issued ".count($queries).' queries'
             );

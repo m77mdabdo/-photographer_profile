@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\MediaStatus;
+use App\Models\Article;
 use App\Models\Client;
 use App\Models\Media;
 use App\Models\Project;
@@ -55,6 +56,20 @@ class HomeController extends Controller
             'layout' => app(EditorialLayout::class)->plan($selected),
             'story' => $story,
             'archive' => $this->archive(),
+
+            /*
+             * Three most recent pieces. The category comes along because the
+             * strip prints it; without the eager load this is four queries
+             * for three rows. No images are loaded at all — the strip is
+             * deliberately typographic, so the featured frames are never read.
+             */
+            'journal' => Article::query()
+                ->published()
+                ->with('category:id,name')
+                ->orderByDesc('published_at')
+                ->limit(3)
+                ->get(),
+
             'clients' => Client::active()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'url']),
             'seo' => SeoData::make(
                 description: $hero?->excerpt,

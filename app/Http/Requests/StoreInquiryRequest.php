@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Support\LooseDate;
 use App\Support\SpamGuard;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
@@ -47,12 +48,24 @@ class StoreInquiryRequest extends FormRequest
             'company' => ['nullable', 'string', 'max:120'],
 
             'project_type' => ['nullable', 'string', 'max:60'],
-            // after_or_equal:today rather than after: a shoot being arranged
-            // for this afternoon is a real thing.
-            'shoot_date' => ['nullable', 'date', 'after_or_equal:today'],
+            /*
+             * FREE TEXT, AND DELIBERATELY NOT A DATE RULE.
+             *
+             * This was `date|after_or_equal:today` behind a native date
+             * picker. The picker rendered as a stock mm/dd/yyyy control — the
+             * one thing on a typeset page that looked like a browser default —
+             * and the rule refused every honest answer that is not a calendar
+             * date: "late April", "the week of the 14th", "flexible".
+             *
+             * The only constraint now is length, because the only thing that
+             * could go wrong is somebody pasting an essay into it. What can be
+             * parsed is parsed into shoot_date; what cannot is kept verbatim.
+             * Nobody's enquiry is refused over the least important field on
+             * the form.
+             */
+            'shoot_date_text' => ['nullable', 'string', 'max:120'],
             'location' => ['nullable', 'string', 'max:120'],
             'budget_range' => ['nullable', 'string', 'max:40'],
-            'heard_from' => ['nullable', 'string', 'max:60'],
 
             /*
              * Twenty characters minimum. Not to be difficult: "hi" is not an
@@ -86,8 +99,7 @@ class StoreInquiryRequest extends FormRequest
             'email.email' => 'That email address does not look complete — check for a typo.',
             'email.max' => 'That email address is longer than 190 characters, which is longer than any real one.',
 
-            'shoot_date.after_or_equal' => 'That date has already passed. Leave it blank if you are not sure yet.',
-            'shoot_date.date' => 'That date could not be read. Leave it blank if you are not sure yet.',
+            'shoot_date_text.max' => 'That is longer than the date box can hold — put the detail in the message instead.',
 
             'message.required' => 'Please say something about the work — this is the part that gets read first.',
             'message.min' => 'A little more detail would help: what the pictures are for, and roughly when.',
@@ -110,10 +122,9 @@ class StoreInquiryRequest extends FormRequest
             'phone' => 'phone number',
             'company' => 'company',
             'project_type' => 'kind of work',
-            'shoot_date' => 'date',
+            'shoot_date_text' => 'date',
             'location' => 'location',
             'budget_range' => 'budget',
-            'heard_from' => 'how you heard',
             'message' => 'message',
             'consent' => 'consent',
         ];
@@ -164,10 +175,19 @@ class StoreInquiryRequest extends FormRequest
             'phone' => $this->filledOrNull('phone'),
             'company' => $this->filledOrNull('company'),
             'project_type' => $this->filledOrNull('project_type'),
-            'shoot_date' => $this->filledOrNull('shoot_date'),
+
+            /*
+             * Both, always. The text is what they wrote; the date is what we
+             * could make of it, and is null whenever that would mean guessing.
+             * heard_from is absent on purpose — it is no longer asked on the
+             * public form, and the column is now the studio's to fill in
+             * after a conversation.
+             */
+            'shoot_date_text' => $this->filledOrNull('shoot_date_text'),
+            'shoot_date' => LooseDate::parse($this->input('shoot_date_text'))?->toDateString(),
+
             'location' => $this->filledOrNull('location'),
             'budget_range' => $this->filledOrNull('budget_range'),
-            'heard_from' => $this->filledOrNull('heard_from'),
             'message' => trim((string) $this->string('message')),
             'source' => 'contact_form',
         ];

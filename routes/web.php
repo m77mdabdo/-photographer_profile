@@ -8,9 +8,12 @@ use App\Http\Controllers\AboutController;
 use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\JournalController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\WorkController;
+use App\Livewire\Admin\ArticleForm;
+use App\Livewire\Admin\ArticleIndex;
 use App\Livewire\Admin\CategoryManager;
 use App\Livewire\Admin\ClientManager;
 use App\Livewire\Admin\InquiryDetail;
@@ -148,6 +151,37 @@ Route::post('/contact', [ContactController::class, 'store'])
 Route::get('/contact/sent', [ContactController::class, 'sent'])->name('contact.sent');
 
 /*
+ * The journal.
+ *
+ * ORDER MATTERS, and this is the second place in this file where it does.
+ * `/journal/{article:slug}` is a wildcard that would happily swallow the
+ * literal segment "category" and 404 looking for an article called that, so
+ * every literal path under /journal is declared first. The work index has the
+ * same shape and the same comment, because it is the same trap.
+ */
+Route::get('/journal', [JournalController::class, 'index'])->name('journal.index');
+
+Route::get('/journal/category/{category:slug}', [JournalController::class, 'category'])
+    ->name('journal.category');
+
+/*
+ * And the wildcard is constrained so it can NEVER match a reserved segment.
+ *
+ * Declaration order alone is not enough. /journal/category/process is safe
+ * because the literal route is declared first — but /journal/category, with no
+ * slug after it, falls through to this route and would resolve an article
+ * whose slug happens to be "category". A test wrote exactly that article and
+ * got a 200, which is how this was found.
+ *
+ * The constraint makes the namespace a property of the route rather than of
+ * the order two lines happen to be in, so it holds for seeded content, for an
+ * import, and for anything typed into the admin.
+ */
+Route::get('/journal/{article:slug}', [JournalController::class, 'show'])
+    ->where('article', '^(?!category$).+$')
+    ->name('journal.show');
+
+/*
  * The studio itself.
  */
 Route::get('/about', AboutController::class)->name('about');
@@ -219,6 +253,16 @@ Route::prefix('admin')
              */
             Route::get('/inquiries', InquiryIndex::class)->name('inquiries.index');
             Route::get('/inquiries/{inquiry}', InquiryDetail::class)->name('inquiries.show');
+
+            /*
+             * The journal. Same shape as projects: literal segments before
+             * the wildcard, or "create" is read as a record key.
+             */
+            Route::prefix('articles')->name('articles.')->group(function () {
+                Route::get('/', ArticleIndex::class)->name('index');
+                Route::get('/create', ArticleForm::class)->name('create');
+                Route::get('/{article}/edit', ArticleForm::class)->name('edit');
+            });
 
             Route::get('/settings', SettingsManager::class)->name('settings.index');
 

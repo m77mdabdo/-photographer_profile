@@ -40,6 +40,8 @@ use Illuminate\Support\Facades\DB;
  */
 class DemoStoriesSeeder extends Seeder
 {
+    use \Database\Seeders\Concerns\ProtectsEditedContent;
+
     /**
      * A block in a score: its type, how many frames it takes, and which
      * orientation those frames should be if the pool can supply them.
@@ -313,6 +315,18 @@ class DemoStoriesSeeder extends Seeder
         $project = Project::withTrashed()->firstOrNew(['slug' => $slug]);
 
         /*
+         * Leave alone anything the studio has taken over or binned.
+         *
+         * This used to rebuild the project unconditionally and set deleted_at
+         * to null, which meant re-running the seeder reverted every edit to a
+         * demo story and resurrected any that had been deleted on purpose.
+         * See Concerns\ProtectsEditedContent.
+         */
+        if (! $this->mayOverwrite($project)) {
+            return;
+        }
+
+        /*
          * forceFill rather than fill: slug and status are outside $fillable on
          * Project by design, so that no mass assignment anywhere can move a
          * project's public address or publish a draft. A seeder saying both
@@ -333,7 +347,6 @@ class DemoStoriesSeeder extends Seeder
         ]);
 
         $project->published_at ??= now()->subDays(30 - $order);
-        $project->deleted_at = null;
         $project->save();
 
         $project->categories()->sync(

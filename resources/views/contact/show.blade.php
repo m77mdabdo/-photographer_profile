@@ -3,19 +3,42 @@
     use App\Support\SpamGuard;
 
     /*
-     * Every field, in one place, so the markup below stays readable and the
-     * error summary and the inputs cannot drift apart.
+     * THE MESSAGE COMES FIRST.
+     *
+     * It used to be last, under nine short boxes. The page's own copy says
+     * "tell me what you are making" and then made you fill in a record before
+     * you could. The layout now agrees with the copy: the brief is the first
+     * thing on the form and the largest thing on the page, and the logistics
+     * sit underneath it where somebody can add them if they know them.
+     *
+     * The short fields are grouped into two fieldsets, which is both the
+     * editorial division — who you are, what the job is — and a real
+     * accessibility improvement: a screen reader announces the legend when
+     * focus enters the group, so "Email" is heard as "Email, about you".
+     *
+     * `heard_from` is gone. It was a marketing question asked of somebody who
+     * has not been replied to yet. The column and the admin field remain, so
+     * the studio can record it themselves after a conversation.
      */
-    $fields = [
-        'name' => ['label' => 'Your name', 'type' => 'text', 'required' => true, 'autocomplete' => 'name'],
-        'email' => ['label' => 'Email', 'type' => 'email', 'required' => true, 'autocomplete' => 'email'],
-        'phone' => ['label' => 'Phone', 'type' => 'tel', 'required' => false, 'autocomplete' => 'tel', 'hint' => 'Only if you would rather talk than type.'],
-        'company' => ['label' => 'Company or publication', 'type' => 'text', 'required' => false, 'autocomplete' => 'organization'],
-        'project_type' => ['label' => 'Kind of work', 'type' => 'text', 'required' => false, 'hint' => 'Portrait, editorial, archive, something else.'],
-        'shoot_date' => ['label' => 'Date, if you have one', 'type' => 'date', 'required' => false],
-        'location' => ['label' => 'Where', 'type' => 'text', 'required' => false],
-        'budget_range' => ['label' => 'Budget', 'type' => 'text', 'required' => false, 'hint' => 'A range is fine. It decides what is possible, not whether you get a reply.'],
-        'heard_from' => ['label' => 'How you heard', 'type' => 'text', 'required' => false],
+    $groups = [
+        'about-you' => [
+            'legend' => 'About you',
+            'fields' => [
+                'name' => ['label' => 'Your name', 'type' => 'text', 'required' => true, 'autocomplete' => 'name'],
+                'email' => ['label' => 'Email', 'type' => 'email', 'required' => true, 'autocomplete' => 'email'],
+                'phone' => ['label' => 'Phone', 'type' => 'tel', 'required' => false, 'autocomplete' => 'tel', 'hint' => 'Only if you would rather talk than type.'],
+                'company' => ['label' => 'Company or publication', 'type' => 'text', 'required' => false, 'autocomplete' => 'organization'],
+            ],
+        ],
+        'the-job' => [
+            'legend' => 'If you know it yet',
+            'fields' => [
+                'project_type' => ['label' => 'Kind of work', 'type' => 'text', 'required' => false, 'hint' => 'Portrait, editorial, archive, something else.'],
+                'shoot_date_text' => ['label' => 'Date', 'type' => 'text', 'required' => false, 'hint' => 'In whatever form you have it — “14 May”, “late spring”, “the week of the 3rd”.'],
+                'location' => ['label' => 'Where', 'type' => 'text', 'required' => false],
+                'budget_range' => ['label' => 'Budget', 'type' => 'text', 'required' => false, 'hint' => 'A range is fine. It decides what is possible, not whether you get a reply.'],
+            ],
+        ],
     ];
 @endphp
 <x-layouts::public :seo="$seo">
@@ -95,69 +118,78 @@
             {{-- Encrypted render time. See App\Support\SpamGuard. --}}
             <input type="hidden" name="{{ SpamGuard::TIMER }}" value="{{ $timer }}">
 
-            <div class="enquiry__grid">
-                @foreach ($fields as $name => $field)
-                    @php
-                        $hasError = $errors->has($name);
-                        $described = array_filter([
-                            isset($field['hint']) ? "hint-{$name}" : null,
-                            $hasError ? "error-{$name}" : null,
-                        ]);
-                    @endphp
-                    <div @class(['field', 'field--wide' => in_array($name, ['name', 'email'], true), 'field--invalid' => $hasError])>
-                        <label class="field__label" for="field-{{ $name }}">
-                            {{ $field['label'] }}
-                            @if ($field['required'])
-                                <span class="field__required">required</span>
-                            @else
-                                <span class="field__optional">optional</span>
-                            @endif
-                        </label>
+            {{-- ---------- 1. THE BRIEF ---------------------------------- --}}
+            <div @class(['field', 'field--brief', 'field--invalid' => $errors->has('message')])>
+                <label class="field__label field__label--lead" for="field-message">
+                    {{ Settings::get('contact.message_label') }}
+                    <span class="field__required">required</span>
+                </label>
 
-                        @if (isset($field['hint']))
-                            <p class="field__hint" id="hint-{{ $name }}">{{ $field['hint'] }}</p>
-                        @endif
+                <p class="field__hint" id="hint-message">
+                    {{ Settings::get('contact.message_hint') }}
+                </p>
 
-                        <input type="{{ $field['type'] }}"
-                               id="field-{{ $name }}"
-                               name="{{ $name }}"
-                               value="{{ old($name) }}"
-                               @if ($field['required']) required @endif
-                               @if (isset($field['autocomplete'])) autocomplete="{{ $field['autocomplete'] }}" @endif
-                               @if ($described !== []) aria-describedby="{{ implode(' ', $described) }}" @endif
-                               @if ($hasError) aria-invalid="true" @endif>
+                <textarea id="field-message"
+                          name="message"
+                          rows="10"
+                          required
+                          autofocus
+                          aria-describedby="hint-message{{ $errors->has('message') ? ' error-message' : '' }}"
+                          @if ($errors->has('message')) aria-invalid="true" @endif
+                >{{ old('message') }}</textarea>
 
-                        {{-- The error is bound to the input by aria-describedby, so a
-                             screen reader reads the problem when focus arrives. --}}
-                        @if ($hasError)
-                            <p class="field__error" id="error-{{ $name }}">{{ $errors->first($name) }}</p>
-                        @endif
-                    </div>
-                @endforeach
-
-                <div @class(['field', 'field--full', 'field--invalid' => $errors->has('message')])>
-                    <label class="field__label" for="field-message">
-                        What are you making?
-                        <span class="field__required">required</span>
-                    </label>
-
-                    <p class="field__hint" id="hint-message">
-                        The part that gets read first. What the pictures are for, who will see them, and roughly when.
-                    </p>
-
-                    <textarea id="field-message"
-                              name="message"
-                              rows="9"
-                              required
-                              aria-describedby="hint-message{{ $errors->has('message') ? ' error-message' : '' }}"
-                              @if ($errors->has('message')) aria-invalid="true" @endif
-                    >{{ old('message') }}</textarea>
-
-                    @if ($errors->has('message'))
-                        <p class="field__error" id="error-message">{{ $errors->first('message') }}</p>
-                    @endif
-                </div>
+                @if ($errors->has('message'))
+                    <p class="field__error" id="error-message">{{ $errors->first('message') }}</p>
+                @endif
             </div>
+
+            {{-- ---------- 2. THE LOGISTICS, UNDERNEATH ------------------ --}}
+            @foreach ($groups as $key => $group)
+                <fieldset class="enquiry__group">
+                    <legend class="enquiry__legend">{{ $group['legend'] }}</legend>
+
+                    <div class="enquiry__grid">
+                        @foreach ($group['fields'] as $name => $field)
+                            @php
+                                $hasError = $errors->has($name);
+                                $described = array_filter([
+                                    isset($field['hint']) ? "hint-{$name}" : null,
+                                    $hasError ? "error-{$name}" : null,
+                                ]);
+                            @endphp
+                            <div @class(['field', 'field--invalid' => $hasError])>
+                                <label class="field__label" for="field-{{ $name }}">
+                                    {{ $field['label'] }}
+                                    @if ($field['required'])
+                                        <span class="field__required">required</span>
+                                    @else
+                                        <span class="field__optional">optional</span>
+                                    @endif
+                                </label>
+
+                                @if (isset($field['hint']))
+                                    <p class="field__hint" id="hint-{{ $name }}">{{ $field['hint'] }}</p>
+                                @endif
+
+                                <input type="{{ $field['type'] }}"
+                                       id="field-{{ $name }}"
+                                       name="{{ $name }}"
+                                       value="{{ old($name) }}"
+                                       @if ($field['required']) required @endif
+                                       @if (isset($field['autocomplete'])) autocomplete="{{ $field['autocomplete'] }}" @endif
+                                       @if ($described !== []) aria-describedby="{{ implode(' ', $described) }}" @endif
+                                       @if ($hasError) aria-invalid="true" @endif>
+
+                                {{-- The error is bound to the input by aria-describedby, so a
+                                     screen reader reads the problem when focus arrives. --}}
+                                @if ($hasError)
+                                    <p class="field__error" id="error-{{ $name }}">{{ $errors->first($name) }}</p>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </fieldset>
+            @endforeach
 
             {{--
                 CONSENT. Unticked, always — `old('consent')` is the only thing
@@ -182,8 +214,17 @@
                 @endif
             </div>
 
+            {{--
+                "Send this", not "Send this enquiry".
+
+                An enquiry is what a CRM calls it. The person pressing the
+                button has just written a few sentences about a job they care
+                about, and "send this" is what you would say handing somebody a
+                note — it refers to the thing they wrote rather than
+                reclassifying it as a form submission on the way out.
+            --}}
             <button type="submit" class="enquiry__submit">
-                Send this enquiry
+                {{ Settings::get('contact.submit') }}
                 <span class="enquiry__submit-rule" aria-hidden="true"></span>
             </button>
         </form>

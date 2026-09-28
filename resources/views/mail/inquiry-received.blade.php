@@ -1,17 +1,17 @@
 <x-mail::message>
 # Enquiry from {{ $inquiry->name }}
 
-{{ $inquiry->email }}@if ($inquiry->phone) · {{ $inquiry->phone }}@endif
-@if ($inquiry->company)
-{{ $inquiry->company }}
-@endif
+{{-- One line, with real separators. These ran together into
+     "frances@example.testMeridian Press" because a Markdown line break needs
+     two spaces and a bare @if on its own line supplies neither. --}}
+{{ $inquiry->email }}@if ($inquiry->phone) · {{ $inquiry->phone }}@endif @if ($inquiry->company) · {{ $inquiry->company }}@endif
 
 **{{ $inquiry->message }}**
 
 @php
     $facts = array_filter([
         'Kind of work' => $inquiry->project_type,
-        'Date' => $inquiry->shoot_date?->format('j F Y'),
+        'Date' => $inquiry->shootDateForHumans(),
         'Location' => $inquiry->location,
         'Budget' => $inquiry->budget_range,
         'Heard via' => $inquiry->heard_from,

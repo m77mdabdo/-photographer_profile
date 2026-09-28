@@ -307,8 +307,9 @@ class DemoContentTest extends TestCase
             $request = $theme === null ? $this : $this->withCookie(\App\Support\Theme::COOKIE, $theme);
             $request->get('/')->assertOk();
 
-            // Nine: eight for the page, one for the client marquee.
-            $this->assertCount(9, $queries, 'theme='.($theme ?? 'system').' issued '.count($queries));
+            // Ten: eight for the page, one for the client marquee, one for
+            // the journal strip.
+            $this->assertCount(10, $queries, 'theme='.($theme ?? 'system').' issued '.count($queries));
         }
     }
 

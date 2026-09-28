@@ -231,6 +231,46 @@
     text-transform: none;
 }
 
+/* ---------------- The brief, which now leads ----------------------------- */
+
+/*
+ * The message field is the first and largest thing on the form, because the
+ * page's copy asks for a brief and the layout should agree with the copy.
+ */
+.field--brief { margin-bottom: var(--sp-9); }
+
+.field__label--lead {
+    font-size: var(--fs-small);
+    color: var(--text-primary);
+}
+
+.field--brief .field__hint { max-width: 60ch; }
+
+/* ---------------- The two groups underneath ------------------------------ */
+
+/*
+ * Real fieldsets, so a screen reader announces "Email, about you" rather than
+ * just "Email". The browser default border and padding are removed because the
+ * legend and the spacing already do the grouping visually — a box around four
+ * inputs is the look of a 2003 form.
+ */
+.enquiry__group {
+    margin: 0 0 var(--sp-8);
+    padding: 0;
+    border: 0;
+}
+
+.enquiry__legend {
+    padding: 0;
+    margin-bottom: var(--sp-5);
+    font-family: var(--font-mono);
+    font-variation-settings: 'wght' var(--wght-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
 /* ---------------- Consent ------------------------------------------------ */
 
 .consent {
@@ -299,6 +339,68 @@
 /* ---------------- The confirmation --------------------------------------- */
 
 .enquiry--sent { padding-block: var(--sp-11) var(--sp-13); }
+
+/*
+ * THE RECEIPT.
+ *
+ * Their own words, shown back to them on the page they land on. Set in the
+ * body face rather than the mono the rest of the page's metadata uses,
+ * because it is a quotation of something a person wrote and should read like
+ * one.
+ */
+.receipt {
+    max-width: 62ch;
+    margin-top: var(--sp-9);
+    padding: var(--sp-6);
+    border-left: var(--rule-strong) solid var(--accent);
+    background-color: var(--bg-elevated);
+}
+
+.receipt__note {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.receipt__note strong { color: var(--text-primary); }
+
+.receipt__message {
+    margin: var(--sp-5) 0 0;
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--text-primary);
+    white-space: pre-line;   /* their paragraph breaks, kept */
+    text-wrap: pretty;
+}
+
+.receipt__facts {
+    display: grid;
+    gap: var(--sp-3);
+    margin: var(--sp-6) 0 0;
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.receipt__facts > div { display: grid; grid-template-columns: 12ch minmax(0, 1fr); gap: var(--sp-4); }
+.receipt__facts dt { opacity: 0.55; }
+.receipt__facts dd { margin: 0; color: var(--text-primary); }
+
+.receipt__stamp {
+    margin-top: var(--sp-6);
+    padding-top: var(--sp-4);
+    border-top: var(--rule-hair) solid var(--border);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
 
 .enquiry__onward {
     display: flex;
@@ -446,4 +548,6 @@
     .studio__body { gap: var(--sp-7); }
 
     .enquiry__grid { grid-template-columns: 1fr; }
+
+    .receipt__facts > div { grid-template-columns: 1fr; gap: 2px; }
 }

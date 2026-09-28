@@ -80,6 +80,13 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{{ route('admin.articles.index') }}"
+                       @class(['is-current' => request()->routeIs('admin.articles.*')])
+                       @if (request()->routeIs('admin.articles.*')) aria-current="page" @endif>
+                        Journal
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('admin.clients.index') }}"
                        @class(['is-current' => request()->routeIs('admin.clients.*')])
                        @if (request()->routeIs('admin.clients.*')) aria-current="page" @endif>
@@ -126,7 +133,7 @@
             <p class="admin-sidebar__heading" id="planned-heading">Planned</p>
 
             <ul role="list" class="admin-sidebar__list admin-sidebar__list--disabled" aria-labelledby="planned-heading">
-                @foreach (['Galleries', 'Journal', 'Pages', 'Users'] as $planned)
+                @foreach (['Galleries', 'Pages', 'Users'] as $planned)
                     <li>
                         <span aria-disabled="true">{{ $planned }}</span>
                     </li>

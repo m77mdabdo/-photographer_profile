@@ -82,8 +82,27 @@ class SettingsSeeder extends Seeder
         ['key' => 'contact.consent', 'value' => 'I am happy for my details to be kept so this enquiry can be answered.', 'type' => 'text', 'group' => 'contact'],
         ['key' => 'contact.consent_detail', 'value' => 'Your message is stored in this studio\'s own admin and emailed to the studio. It is not passed to anyone else, never used for marketing, and deleted on request.', 'type' => 'text', 'group' => 'contact'],
         ['key' => 'contact.recipient', 'value' => 'studio@example.com', 'type' => 'string', 'group' => 'contact'],
+
+        /*
+         * The brief, which is now the first and largest thing on the form.
+         * Both strings are the studio's voice at the moment somebody decides
+         * whether to write anything at all, so neither belongs in a template.
+         */
+        ['key' => 'contact.message_label', 'value' => 'What are you making?', 'type' => 'string', 'group' => 'contact'],
+        ['key' => 'contact.message_hint', 'value' => 'The part that gets read first. What the pictures are for, who will see them, and roughly when. Everything underneath is optional.', 'type' => 'text', 'group' => 'contact'],
+        ['key' => 'contact.submit', 'value' => 'Send this', 'type' => 'string', 'group' => 'contact'],
+        ['key' => 'contact.acknowledgement_note', 'value' => 'A copy of this is on its way to', 'type' => 'string', 'group' => 'contact'],
         ['key' => 'contact.confirmation_heading', 'value' => 'It arrived', 'type' => 'string', 'group' => 'contact'],
         ['key' => 'contact.confirmation_body', 'value' => 'Thank you — that is with the studio now. You will get a reply from a person, not an autoresponder, within two working days.', 'type' => 'text', 'group' => 'contact'],
+
+        // --- the journal -----------------------------------------------------
+        ['key' => 'journal.heading', 'value' => 'Notes from the darkroom', 'type' => 'string', 'group' => 'journal'],
+        ['key' => 'journal.standfirst', 'value' => 'Writing about how the work gets made: process, equipment that earns its place, and the occasional argument about printing.', 'type' => 'text', 'group' => 'journal'],
+        ['key' => 'journal.empty_note', 'value' => 'Pieces appear here when there is something worth saying.', 'type' => 'text', 'group' => 'journal'],
+        ['key' => 'journal.tags_label', 'value' => 'Filed under', 'type' => 'string', 'group' => 'journal'],
+        ['key' => 'journal.back_label', 'value' => 'All writing', 'type' => 'string', 'group' => 'journal'],
+        ['key' => 'journal.home_heading', 'value' => 'From the journal', 'type' => 'string', 'group' => 'journal'],
+        ['key' => 'journal.home_cta', 'value' => 'Everything written', 'type' => 'string', 'group' => 'journal'],
 
         // --- the about page ------------------------------------------------
         ['key' => 'about.heading', 'value' => 'Available dark', 'type' => 'string', 'group' => 'about'],

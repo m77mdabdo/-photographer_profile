@@ -966,28 +966,34 @@ class HomepageTest extends TestCase
         $this->get('/')->assertOk();
 
         /*
-         * Ten on a cold cache, nine on a warm one.
+         * Eleven on a cold cache, ten on a warm one.
          *
-         * The tenth is the settings map: one flat `select value, key from
+         * The eleventh is the settings map: one flat `select value, key from
          * settings` that carries every string the hero renders — the studio
          * name, the statement, the attribution, five navigation labels, four
          * stage labels and four rail labels. It is cached forever and dropped
          * only when a setting is written, so a running site pays it once.
          *
-         * Asserting both numbers is the point. A bare "10" would pass just as
+         * Asserting both numbers is the point. A bare "11" would pass just as
          * happily if the map were being read once per key, which is the
          * failure this design exists to avoid.
+         *
+         * RAISED BY ONE IN TASK 24, deliberately: the home page now carries a
+         * journal strip, and three recent articles cannot ride along on a
+         * query about projects. It is one flat select for the three rows —
+         * their categories are eager loaded and the strip is typographic, so
+         * no image is ever read for it.
          */
         $settingsQueries = array_filter($queries, static fn (string $sql): bool => str_contains($sql, '`settings`'));
 
         $this->assertCount(1, $settingsQueries, 'the settings map must be one query, not one per key');
-        $this->assertCount(10, $queries, 'cold: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
+        $this->assertCount(11, $queries, 'cold: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
 
         // Warm, which is every request after the first.
         $queries = [];
         $this->get('/')->assertOk();
 
-        $this->assertCount(9, $queries, 'warm: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
+        $this->assertCount(10, $queries, 'warm: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
     }
 
     /**

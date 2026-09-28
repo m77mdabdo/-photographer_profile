@@ -1,0 +1,485 @@
+/* ---------------- The journal ------------------------------------------- */
+
+/*
+ * A studio's writing, not a blog.
+ *
+ * The distinction is mostly one of restraint. A blog template reaches for
+ * cards, author avatars, share buttons, related posts and a comment count; an
+ * editorial page reaches for a measure, a rule and a date. Everything below is
+ * the same vocabulary the work index and the enquiry page already use — mono
+ * eyebrow, condensed display heading, accent rule under the one action — so
+ * arriving here does not feel like leaving the site.
+ */
+
+.journal {
+    max-width: var(--container-wide);
+    margin-inline: auto;
+    padding: var(--sp-9) var(--gutter) var(--sp-11);
+}
+
+.journal__header { margin-bottom: var(--sp-9); }
+
+.journal__eyebrow {
+    font-family: var(--font-mono);
+    font-variation-settings: 'wght' var(--wght-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: var(--sp-3);
+}
+
+.journal__title {
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-display);
+    font-size: var(--fs-h1);
+    line-height: 0.92;
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
+    max-width: 16ch;
+    color: var(--text-primary);
+    padding-bottom: 0.06em;   /* descender clearance, in em */
+}
+
+.journal__standfirst {
+    max-width: 56ch;
+    margin-top: var(--sp-5);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+.journal__count {
+    margin-top: var(--sp-4);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+/* ---------------- The index --------------------------------------------- */
+
+.entries {
+    display: grid;
+    gap: 0;
+    margin: var(--sp-9) 0 0;
+    padding: 0;
+    list-style: none;
+    border-top: var(--rule-hair) solid var(--border);
+}
+
+/*
+ * A list of entries divided by rules, not a grid of cards.
+ *
+ * Cards make every piece the same size and the same importance, which is a
+ * claim the writing has not earned and cannot vary. A ruled list lets a long
+ * piece take more room than a short one and reads like a contents page.
+ */
+
+/*
+ * ONE MEASURE FOR THE WHOLE INDEX.
+ *
+ * A contents page, not a full-width table: capped well inside the wide
+ * container so the eye travels from thumbnail to title to summary without
+ * crossing half a metre of empty dark.
+ *
+ * The filter nav takes the same cap, or its rule runs 300px past the rules
+ * between the entries and the page has two different right edges.
+ */
+.entries,
+.journal .work-filter { max-width: 62rem; }
+
+.entry {
+    border-bottom: var(--rule-hair) solid var(--border);
+}
+
+.entry > article {
+    display: grid;
+    grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
+    gap: var(--sp-7);
+    align-items: start;
+    padding-block: var(--sp-7);
+}
+
+/*
+ * THE RATIO LIVES ON THE FRAME, NOT ON THE IMAGE.
+ *
+ * x-picture writes `aspect-ratio: 6000 / 4000` as an INLINE style on the
+ * <img>, which is how it reserves the right space before the file arrives and
+ * is exactly right for a page showing a photograph at its own proportions. An
+ * inline style beats any stylesheet rule, so setting aspect-ratio on
+ * .entry__image did nothing and a portrait frame rendered 490px tall next to
+ * a landscape one at 200px — the index read as broken rather than as an index.
+ *
+ * So the frame owns the box and the image fills it. height is not written
+ * inline, so a class can still claim it.
+ */
+.entry__frame {
+    display: block;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    background-color: var(--bg-elevated);
+}
+
+.entry__frame picture { display: block; height: 100%; }
+
+.entry__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.entry__body { display: grid; gap: var(--sp-3); }
+
+.entry__meta {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.entry__title {
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-mid);
+    font-size: var(--fs-h3);
+    line-height: 1.05;
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
+    max-width: 22ch;
+}
+
+.entry__title a {
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+.entry__title a:hover { color: var(--accent); }
+
+.entry__title a:focus-visible {
+    outline: var(--rule-strong) solid var(--accent);
+    outline-offset: 4px;
+}
+
+.entry__excerpt {
+    max-width: 60ch;
+    font-size: var(--fs-small);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+/* ---------------- One piece ---------------------------------------------- */
+
+.piece {
+    max-width: var(--container-wide);
+    margin-inline: auto;
+    padding: var(--sp-9) var(--gutter) var(--sp-11);
+}
+
+.piece__header { max-width: 34ch; margin-bottom: var(--sp-8); }
+
+.piece__eyebrow {
+    font-family: var(--font-mono);
+    font-variation-settings: 'wght' var(--wght-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: var(--sp-3);
+}
+
+.piece__eyebrow a { color: inherit; text-decoration: none; }
+.piece__eyebrow a:hover { text-decoration: underline; }
+
+.piece__title {
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-display);
+    font-size: var(--fs-h1);
+    line-height: 0.94;
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
+    color: var(--text-primary);
+    padding-bottom: 0.06em;
+}
+
+.piece__standfirst {
+    margin-top: var(--sp-5);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+.piece__byline {
+    margin-top: var(--sp-5);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.piece__author { color: var(--text-primary); }
+
+.piece__frame {
+    margin: 0 0 var(--sp-9);
+    background-color: var(--bg-elevated);
+}
+
+.piece__frame picture,
+.piece__image { display: block; width: 100%; height: auto; }
+
+.piece__frame figcaption {
+    margin-top: var(--sp-3);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    color: var(--text-secondary);
+}
+
+/* ---------------- The body ----------------------------------------------- */
+
+/*
+ * THE MEASURE IS THE WHOLE TYPOGRAPHIC DECISION.
+ *
+ * 68 characters, and every child inherits it rather than the container being
+ * narrow — so a pull quote and a rule can break out later without restructuring
+ * the markup. Anything wider than about 75 characters loses the reader's place
+ * on the return sweep, which is the one thing a page of prose must not do.
+ */
+.piece__body {
+    max-width: 68ch;
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+.piece__body > * + * { margin-top: var(--sp-5); }
+
+.piece__body h2,
+.piece__body h3 {
+    margin-top: var(--sp-8);
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-mid);
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.piece__body h2 { font-size: var(--fs-h3); line-height: 1.1; }
+.piece__body h3 { font-size: var(--fs-body); }
+
+.piece__body strong { color: var(--text-primary); font-weight: 600; }
+
+.piece__body a {
+    color: var(--text-primary);
+    text-decoration-color: var(--accent);
+    text-underline-offset: 0.2em;
+}
+
+.piece__body a:focus-visible {
+    outline: var(--rule-strong) solid var(--accent);
+    outline-offset: 2px;
+}
+
+.piece__body ul,
+.piece__body ol { padding-left: var(--sp-5); }
+
+.piece__body li + li { margin-top: var(--sp-3); }
+
+/*
+ * A quotation breaks the measure and loses its quotation marks: the rule and
+ * the indent already say what it is, and a decorative " is a second, louder
+ * way of saying the same thing.
+ */
+.piece__body blockquote {
+    margin-block: var(--sp-8);
+    padding-left: var(--sp-5);
+    border-left: var(--rule-strong) solid var(--accent);
+    font-size: var(--fs-h3);
+    line-height: 1.3;
+    color: var(--text-primary);
+}
+
+.piece__body blockquote p + p { margin-top: var(--sp-4); }
+
+.piece__body hr {
+    margin-block: var(--sp-8);
+    border: 0;
+    border-top: var(--rule-hair) solid var(--border);
+}
+
+.piece__body img {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-block: var(--sp-7);
+}
+
+.piece__body code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    color: var(--text-primary);
+}
+
+.piece__body pre {
+    padding: var(--sp-4);
+    overflow-x: auto;
+    background-color: var(--bg-elevated);
+    border: var(--rule-hair) solid var(--border);
+}
+
+/* ---------------- Tags and onward ---------------------------------------- */
+
+.piece__tags {
+    max-width: 68ch;
+    margin-top: var(--sp-9);
+    padding-top: var(--sp-5);
+    border-top: var(--rule-hair) solid var(--border);
+}
+
+.piece__tags-title {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: var(--sp-3);
+}
+
+.piece__tags ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-3) var(--sp-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.piece__onward {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-7);
+    margin-top: var(--sp-9);
+}
+
+/* ---------------- The home page strip ------------------------------------ */
+
+.journal-strip {
+    max-width: var(--container-wide);
+    margin-inline: auto;
+    padding: var(--sp-11) var(--gutter);
+}
+
+.journal-strip__title {
+    font-family: var(--font-mono);
+    font-variation-settings: 'wght' var(--wght-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: var(--sp-7);
+}
+
+.journal-strip__list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--sp-8);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.journal-strip__item {
+    padding-top: var(--sp-5);
+    border-top: var(--rule-hair) solid var(--border);
+}
+
+.journal-strip__meta {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    opacity: 0.7;
+    margin-bottom: var(--sp-3);
+}
+
+.journal-strip__name {
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-mid);
+    font-size: var(--fs-h3);
+    line-height: 1.05;
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
+}
+
+.journal-strip__name a { color: var(--text-primary); text-decoration: none; }
+.journal-strip__name a:hover { color: var(--accent); }
+
+.journal-strip__name a:focus-visible {
+    outline: var(--rule-strong) solid var(--accent);
+    outline-offset: 4px;
+}
+
+.journal-strip__excerpt {
+    margin-top: var(--sp-3);
+    font-size: var(--fs-small);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+.journal-strip__cta {
+    display: inline-grid;
+    gap: var(--sp-2);
+    justify-items: start;
+    min-height: 44px;
+    align-content: center;
+    margin-top: var(--sp-8);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: var(--fs-small);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.journal-strip__rule {
+    display: block;
+    width: 100%;
+    height: var(--rule-strong);
+    background-color: var(--accent);
+}
+
+/* ---------------- Narrow -------------------------------------------------- */
+
+@media (max-width: 900px) {
+    .journal,
+    .piece { padding-block: var(--sp-7) var(--sp-9); }
+
+    .journal-strip { padding-block: var(--sp-9); }
+
+    /*
+     * One column. The three-up strip and the image-beside-text entry both
+     * collapse rather than compressing: a 20rem image column inside a 390px
+     * viewport forces its track to min-content and stretches the page, which
+     * is the exact overflow the browser harness caught on /work.
+     */
+    .journal-strip__list { grid-template-columns: 1fr; gap: var(--sp-7); }
+
+    .entry > article { grid-template-columns: 1fr; gap: var(--sp-5); }
+
+    .piece__header { max-width: none; }
+}

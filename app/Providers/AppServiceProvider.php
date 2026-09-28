@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Article;
 use App\Models\Category;
 use App\Models\Client;
 use App\Models\Inquiry;
 use App\Models\Media;
 use App\Models\Project;
 use App\Models\Setting;
+use App\Policies\ArticlePolicy;
 use App\Policies\CategoryPolicy;
 use App\Policies\ClientPolicy;
 use App\Policies\InquiryPolicy;
@@ -70,5 +72,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Client::class, ClientPolicy::class);
         Gate::policy(Setting::class, SettingPolicy::class);
         Gate::policy(Inquiry::class, InquiryPolicy::class);
+        Gate::policy(Article::class, ArticlePolicy::class);
     }
 }

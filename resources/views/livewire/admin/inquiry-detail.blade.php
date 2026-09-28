@@ -28,17 +28,25 @@
         @if ($inquiry->project_type)
             <dt>Kind of work</dt><dd>{{ $inquiry->project_type }}</dd>
         @endif
-        @if ($inquiry->shoot_date)
-            <dt>Date</dt><dd>{{ $inquiry->shoot_date->format('j F Y') }}</dd>
+        @if ($inquiry->shootDateForHumans())
+            {{--
+                As they typed it. The parsed shoot_date is shown alongside
+                only when it adds something, because "the week of the 3rd"
+                is the useful sentence and "3 May" is an interpretation.
+            --}}
+            <dt>Date</dt>
+            <dd>
+                {{ $inquiry->shootDateForHumans() }}
+                @if ($inquiry->shoot_date && $inquiry->shoot_date_text)
+                    <span class="admin-note">(read as {{ $inquiry->shoot_date->format('j F Y') }})</span>
+                @endif
+            </dd>
         @endif
         @if ($inquiry->location)
             <dt>Location</dt><dd>{{ $inquiry->location }}</dd>
         @endif
         @if ($inquiry->budget_range)
             <dt>Budget</dt><dd>{{ $inquiry->budget_range }}</dd>
-        @endif
-        @if ($inquiry->heard_from)
-            <dt>Heard via</dt><dd>{{ $inquiry->heard_from }}</dd>
         @endif
 
         <dt>Arrived</dt>
@@ -74,6 +82,26 @@
             <p>{{ $paragraph }}</p>
         @endforeach
     </div>
+
+    {{--
+        HEARD VIA — now the studio's field, not the sender's.
+
+        It was a question on the public form, asked of somebody who had not
+        been replied to yet. It is genuinely useful to a studio, so the column
+        stayed and the answer is recorded here after a conversation, where it
+        is a note rather than a toll gate.
+    --}}
+    <h2 class="admin-subheading">Heard via</h2>
+    <form wire:submit="saveHeardFrom" class="filters">
+        <div class="field">
+            <label for="heard-from">How they found the studio</label>
+            <input type="text" id="heard-from" wire:model="heardFrom"
+                   placeholder="A previous client, an editor, a search — once you know">
+            @error('heardFrom') <p class="field__error" role="alert">{{ $message }}</p> @enderror
+        </div>
+
+        <button type="submit" class="admin-button">Save</button>
+    </form>
 
     <h2 class="admin-subheading">Status</h2>
     <form wire:submit="updateStatus" class="filters">

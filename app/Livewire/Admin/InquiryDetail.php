@@ -22,6 +22,8 @@ class InquiryDetail extends Component
 
     public string $note = '';
 
+    public string $heardFrom = '';
+
     public string $confirmation = '';
 
     public bool $confirmingErasure = false;
@@ -44,6 +46,28 @@ class InquiryDetail extends Component
         $inquiry->markRead();
 
         $this->status = $inquiry->refresh()->status->value;
+        $this->heardFrom = (string) $inquiry->heard_from;
+    }
+
+    /**
+     * The studio's own record of how somebody found them.
+     *
+     * Nullable on purpose: clearing the box means "I do not know", which is
+     * a different and more honest state than an empty string.
+     */
+    public function saveHeardFrom(): void
+    {
+        $this->authorize('update', $this->inquiry);
+
+        $validated = $this->validate([
+            'heardFrom' => ['nullable', 'string', 'max:60'],
+        ]);
+
+        $this->inquiry->forceFill([
+            'heard_from' => trim((string) $validated['heardFrom']) ?: null,
+        ])->save();
+
+        $this->message = 'Saved.';
     }
 
     public function updateStatus(): void

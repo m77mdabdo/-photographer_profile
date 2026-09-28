@@ -30,7 +30,7 @@ class Inquiry extends Model
      */
     protected $fillable = [
         'name', 'email', 'phone', 'company',
-        'project_type', 'shoot_date', 'location', 'budget_range', 'heard_from',
+        'project_type', 'shoot_date', 'shoot_date_text', 'location', 'budget_range', 'heard_from',
         'message', 'source',
     ];
 
@@ -85,6 +85,19 @@ class Inquiry extends Model
     public function scopeOpen(Builder $query): void
     {
         $query->whereNotIn('status', [InquiryStatus::Closed, InquiryStatus::Spam]);
+    }
+
+    /**
+     * The date as it should be shown: what they wrote, always.
+     *
+     * The parsed column exists for sorting and for a future diary view. It is
+     * NOT what the studio reads, because "the week of the 14th" carries
+     * information that "14 May" quietly drops.
+     */
+    public function shootDateForHumans(): ?string
+    {
+        return $this->shoot_date_text
+            ?? $this->shoot_date?->format('j F Y');
     }
 
     public function markRead(): void

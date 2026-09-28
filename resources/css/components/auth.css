@@ -197,12 +197,37 @@
     color: var(--text-primary);
 }
 
+/*
+ * minmax(0, 1fr), NOT 1fr.
+ *
+ * A grid item's default min-width is auto, which means a 1fr track refuses to
+ * shrink below its content's min-content width. So one long unbroken string
+ * anywhere in the admin — a filename, an email address, a row of buttons —
+ * pushed this track wider than the viewport, and the whole page scrolled
+ * sideways at 390px. Measured: 433px on the media library, 460px on the story
+ * builder, 430px on an enquiry.
+ *
+ * It is the same trap as the /work index in Task 22, where a twelve-column
+ * track could not shrink either. minmax(0, …) is the fix in both places:
+ * it says the track may be as narrow as zero, so the content wraps instead of
+ * the page stretching.
+ */
 .admin-body {
     display: grid;
-    grid-template-columns: 13rem 1fr;
+    grid-template-columns: 13rem minmax(0, 1fr);
     gap: var(--sp-6);
     align-items: start;
 }
+
+/*
+ * Belt and braces, at both levels.
+ *
+ * The item may shrink below its min-content, and so may everything directly
+ * inside it — which matters because Livewire wraps every component in an
+ * unclassed <div> that no other selector can reach.
+ */
+.admin-main { min-width: 0; }
+.admin-main > * { min-width: 0; }
 
 .admin-sidebar {
     position: sticky;
@@ -235,7 +260,7 @@
 }
 
 @media (max-width: 820px) {
-    .admin-body { grid-template-columns: 1fr; }
+    .admin-body { grid-template-columns: minmax(0, 1fr); }
     .admin-sidebar { position: static; padding: var(--sp-4) var(--gutter); border-bottom: 1px solid var(--border); }
     .admin-sidebar.is-collapsed { display: none; }
 }
@@ -266,13 +291,45 @@
 
 /* ---------------- media library ---------------- */
 
-.module-header { display: flex; align-items: baseline; gap: var(--sp-4); margin-bottom: var(--sp-6); }
+/*
+ * flex-wrap, because a heading, a count and a button do not fit across 390px.
+ *
+ * A real narrow-width improvement, but NOT a cause of the sideways scroll.
+ * The harness names every ancestor that reaches the scroll edge and
+ * module-header was one of them; fixing a name off that list without measuring
+ * changed nothing and left the page 513px wide. The five actual causes are
+ * commented where they are: .admin-body's 1fr track, .project-row, the file
+ * input, the story builder's grid, and the status <select>.
+ */
+.module-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-4);
+    margin-bottom: var(--sp-6);
+}
+
+/* The heading takes the row; the count and the action share the next one. */
+.module-header .admin-heading { margin-bottom: 0; }
 
 .uploader { margin-bottom: var(--sp-7); }
 .uploader__heading { font-size: var(--fs-h3); margin-bottom: var(--sp-4); }
-.uploader__form { display: flex; flex-direction: column; gap: var(--sp-4); align-items: flex-start; }
+.uploader__form { display: flex; flex-direction: column; gap: var(--sp-4); align-items: flex-start; min-width: 0; }
+.uploader { min-width: 0; }
+
+/*
+ * A native multi-file input reports an intrinsic width of ~240px for its
+ * button plus whatever filename text it is showing, and it does not wrap. On
+ * a 390px screen that was enough to stretch the whole admin sideways. width
+ * rather than max-width, because max-width leaves the intrinsic size in place
+ * for min-content purposes.
+ */
+.uploader__form input[type='file'] { width: 100%; min-width: 0; }
 .uploader__dropzone {
     width: 100%;
+    /* A native file input has a large intrinsic width — "Choose file" plus a
+       filename — and without this the dropzone cannot shrink below it. */
+    min-width: 0;
     padding: var(--sp-6);
     border: 1px dashed var(--border);
     border-radius: 2px;
@@ -285,7 +342,7 @@
 
 .upload-row {
     display: grid;
-    grid-template-columns: 1fr auto 8rem auto;
+    grid-template-columns: minmax(0, 1fr) auto 8rem auto;
     gap: var(--sp-3);
     align-items: center;
     padding: var(--sp-2) var(--sp-3);
@@ -343,7 +400,7 @@
 
 .breadcrumb { margin-bottom: var(--sp-4); font-size: var(--fs-small); }
 .detail { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: var(--sp-7); align-items: start; }
-@media (max-width: 900px) { .detail { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .detail { grid-template-columns: minmax(0, 1fr); } }
 .detail__title { font-size: var(--fs-h2); margin-bottom: var(--sp-5); }
 .detail__pending { padding: var(--sp-9); border: 1px solid var(--border); text-align: center; }
 .detail__actions { display: flex; flex-direction: column; gap: var(--sp-4); margin-top: var(--sp-6); }
@@ -362,13 +419,13 @@
 }
 .focal__readout { margin-top: var(--sp-3); }
 
-.facts { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-2) var(--sp-4); margin-bottom: var(--sp-6); font-size: var(--fs-small); }
+.facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--sp-2) var(--sp-4); margin-bottom: var(--sp-6); font-size: var(--fs-small); }
 .facts dt { color: var(--text-secondary); }
 .facts dd { margin: 0; }
 
 .admin-form { display: flex; flex-direction: column; gap: var(--sp-4); }
 .admin-form textarea { padding: var(--sp-3); background-color: var(--bg-elevated); color: var(--text-primary); border: 1px solid var(--border); }
-.field--pair { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: var(--sp-2) var(--sp-3); align-items: center; }
+.field--pair { display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); gap: var(--sp-2) var(--sp-3); align-items: center; }
 .field__legend { grid-column: 1 / -1; font-size: var(--fs-small); color: var(--text-secondary); text-transform: uppercase; letter-spacing: var(--tracking-wide); }
 
 .danger summary { cursor: pointer; color: var(--danger-text); font-size: var(--fs-small); }
@@ -399,7 +456,32 @@
 /* ---------------- projects ---------------- */
 .order-bar { display:flex; gap:var(--sp-4); align-items:center; padding:var(--sp-3) var(--sp-4); margin-bottom:var(--sp-4); border:1px solid var(--accent); font-size:var(--fs-small); }
 .project-list, .category-list { display:flex; flex-direction:column; gap:var(--sp-2); margin:0 0 var(--sp-6); }
-.project-row, .category-row { display:flex; gap:var(--sp-4); align-items:center; padding:var(--sp-3); border:1px solid var(--border); }
+/*
+ * THE ADMIN'S SIDEWAYS SCROLL ON A PHONE.
+ *
+ * ONE OF FIVE CAUSES of the admin's sideways scroll at 390px.
+ *
+ * A row is a handle, a thumbnail, a title block, a status and up to four
+ * actions. Across a 390px viewport that is 463–513px of content on one line.
+ * Measured, not guessed: the widest element was the row itself, at 480px on
+ * /admin/clients.
+ *
+ * flex-wrap lets the actions drop under the title, and project-row__main
+ * claims the full width below the breakpoint so they drop cleanly rather than
+ * squeezing the title into two characters.
+ *
+ * Nothing in the suite could see this — no test measures geometry — and the
+ * admin had never been opened in a narrow browser, because until this task
+ * the harness could not log in.
+ */
+.project-row, .category-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-4);
+    align-items: center;
+    padding: var(--sp-3);
+    border: 1px solid var(--border);
+}
 .project-row.is-dragging, .category-row.is-dragging { opacity:.5; border-color:var(--accent); }
 /* An unread enquiry, marked once — the badge on the right says which status. */
 .project-row--unread { border-left:var(--rule-strong) solid var(--accent); }
@@ -456,8 +538,8 @@
 .block-media__item { cursor: grab; touch-action: none; }
 .block-media__item.is-dragging { opacity: .5; }
 .block-media__item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.builder { display: grid; grid-template-columns: 14rem 1fr; gap: var(--sp-6); align-items: start; }
-@media (max-width: 900px) { .builder { grid-template-columns: 1fr; } }
+.builder { display: grid; grid-template-columns: 14rem minmax(0, 1fr); gap: var(--sp-6); align-items: start; }
+@media (max-width: 900px) { .builder { grid-template-columns: minmax(0, 1fr); } }
 .outline { position: sticky; top: var(--sp-4); font-size: var(--fs-caption); }
 .outline__heading { font-size: var(--fs-meta); text-transform: uppercase; letter-spacing: var(--tracking-wide); color: var(--text-secondary); margin-bottom: var(--sp-3); }
 .outline__list { margin: 0; padding: 0; list-style: none; max-height: 60vh; overflow-y: auto; }
@@ -590,7 +672,7 @@
 
 .hero-check__note {
     display: grid;
-    grid-template-columns: 1.25rem 1fr;
+    grid-template-columns: 1.25rem minmax(0, 1fr);
     gap: var(--sp-3);
     align-items: start;
     font-size: var(--fs-small);
@@ -650,3 +732,83 @@
     padding: var(--sp-5);
     border: var(--rule-hair) solid var(--border);
 }
+
+/* ---------------- The journal editor's sanitiser preview ------------------ */
+
+/*
+ * What RichText::toHtml() actually produced, shown to the author as they type.
+ * Styled just enough to be legible as prose — this is a proof that the
+ * sanitiser kept what they meant, not a preview of the published page.
+ */
+.richtext-preview {
+    max-width: 62ch;
+    padding: var(--sp-4);
+    border: var(--rule-hair) solid var(--border);
+    background-color: var(--bg-elevated);
+    font-size: var(--fs-small);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+}
+
+.richtext-preview > * + * { margin-top: var(--sp-4); }
+.richtext-preview h2, .richtext-preview h3 { color: var(--text-primary); font-weight: 600; }
+.richtext-preview strong { color: var(--text-primary); }
+.richtext-preview blockquote { padding-left: var(--sp-4); border-left: var(--rule-strong) solid var(--accent); }
+.richtext-preview ul, .richtext-preview ol { padding-left: var(--sp-5); }
+.richtext-preview img { max-width: 100%; height: auto; }
+.richtext-preview code { font-family: var(--font-mono); font-size: 0.9em; }
+
+/* The journal list reuses the project row; its thumbnail needs the same box. */
+.project-row__thumb { display: block; width: 80px; height: auto; aspect-ratio: 3/2; object-fit: cover; }
+
+/* ---------------- The admin on a phone ----------------------------------- */
+
+@media (max-width: 700px) {
+    /*
+     * The title block takes its own line, so the status and the actions wrap
+     * underneath instead of crushing it. See .project-row above.
+     */
+    .project-row__main, .category-row__main { flex-basis: 100%; }
+
+    .project-row__status,
+    .project-row__actions,
+    .category-row__actions { flex-wrap: wrap; row-gap: var(--sp-2); }
+
+    /* The breadcrumb is a single long link on the story builder. */
+    .breadcrumb { overflow-wrap: anywhere; }
+
+    /* Filters stack rather than sitting in a row that cannot fit. */
+    .filters { flex-wrap: wrap; }
+    .filters .field { flex-basis: 100%; }
+}
+
+/*
+ * A <select> is as wide as its widest <option>, and it neither wraps nor
+ * shrinks. The enquiry status menu carries full sentences — "New — Arrived,
+ * not yet read." — so one control set the width of the whole admin at 390px.
+ * Found by hiding elements one at a time until the page stopped scrolling
+ * sideways; it was the last of five separate causes.
+ *
+ * Applied to every control rather than that one menu, because the next long
+ * option somebody adds should not reintroduce it.
+ */
+/*
+ * width, not max-width.
+ *
+ * max-width: 100% resolves against a containing block that is itself sized
+ * from this control's intrinsic width, so the two chase each other and the
+ * select stays as wide as its longest option. A definite width takes the
+ * control out of the intrinsic calculation entirely, which is the only thing
+ * that actually worked.
+ */
+.field select,
+.field input,
+.field textarea {
+    width: 100%;
+    min-width: 0;
+}
+
+.filters { min-width: 0; }
+
+/* Flex items default to min-width:auto, so each filter needs its own floor. */
+.filters .field { min-width: 0; flex: 1 1 12rem; }

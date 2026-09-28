@@ -134,6 +134,15 @@
                         </button>
 
                         <a href="{{ route('admin.projects.edit', $project) }}" class="admin-link">Edit</a>
+
+                        {{--
+                            The story builder had no link anywhere in the admin.
+                            The route and the component both existed and the only
+                            way to reach it was to type the URL — found when the
+                            browser harness could not discover a link to a page it
+                            was meant to check.
+                        --}}
+                        <a href="{{ route('admin.projects.story', $project) }}" class="admin-link">Story</a>
                     </span>
                 </li>
             @endforeach

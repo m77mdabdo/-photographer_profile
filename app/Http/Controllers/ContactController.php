@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\InquiryStatus;
 use App\Http\Requests\StoreInquiryRequest;
+use App\Mail\InquiryAcknowledged;
 use App\Mail\InquiryReceived;
 use App\Models\Inquiry;
 use App\Support\SeoData;
@@ -13,6 +14,7 @@ use App\Support\Settings;
 use App\Support\SpamGuard;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
@@ -68,19 +70,40 @@ class ContactController extends Controller
         // real visitor out of the form.
         SpamGuard::recordAccepted($request, $inquiry->email);
 
-        $this->notify($inquiry);
+        $this->notifyStudio($inquiry);
+        $this->acknowledgeSender($inquiry);
 
         /*
          * Post/Redirect/Get. A refresh on the confirmation page re-requests a
          * GET and cannot resubmit; the browser's "confirm resubmission"
          * dialog never appears.
+         *
+         * The id travels in the session rather than the URL, so the
+         * confirmation can show the sender what they sent without putting a
+         * guessable key to somebody's message in an address bar, a browser
+         * history or a referrer header.
          */
-        return redirect()->route('contact.sent');
+        return redirect()
+            ->route('contact.sent')
+            ->with('inquiry_id', $inquiry->id);
     }
 
-    public function sent(): View
+    public function sent(Request $request): View
     {
+        /*
+         * Only ever the enquiry this session just sent, and only once — the
+         * flash is gone on the next request. Anyone arriving at /contact/sent
+         * directly gets the page without the copy, which is correct: there is
+         * nothing of theirs to show.
+         */
+        $id = $request->session()->get('inquiry_id');
+
+        $inquiry = is_int($id) || ctype_digit((string) $id)
+            ? Inquiry::query()->find((int) $id)
+            : null;
+
         return view('contact.sent', [
+            'inquiry' => $inquiry,
             'seo' => SeoData::make(
                 title: Settings::get('contact.confirmation_heading', 'Sent'),
                 // A thank-you page has nothing to offer a search result and
@@ -90,7 +113,10 @@ class ContactController extends Controller
         ]);
     }
 
-    private function notify(Inquiry $inquiry): void
+    /**
+     * The studio's notification.
+     */
+    private function notifyStudio(Inquiry $inquiry): void
     {
         $recipient = Settings::get('contact.recipient');
 
@@ -100,17 +126,47 @@ class ContactController extends Controller
             return;
         }
 
+        $this->send(
+            fn () => Mail::to($recipient)->queue(new InquiryReceived($inquiry)),
+            'studio notification',
+            $inquiry,
+        );
+    }
+
+    /**
+     * The sender's copy of their own enquiry.
+     */
+    private function acknowledgeSender(Inquiry $inquiry): void
+    {
+        $this->send(
+            fn () => Mail::to($inquiry->email, $inquiry->name)->queue(new InquiryAcknowledged($inquiry)),
+            'sender acknowledgement',
+            $inquiry,
+        );
+    }
+
+    /**
+     * TWO MESSAGES, INDEPENDENTLY FAILURE-SAFE.
+     *
+     * Each send is wrapped separately, so one failing cannot stop the other
+     * being attempted — a studio address that bounces must not also cost the
+     * sender their receipt, and a sender's mail server refusing must not cost
+     * the studio its notification. Both are attempted after the record is
+     * committed, so neither can lose the enquiry.
+     *
+     * Everything is swallowed and loudly logged. The visitor asked a question
+     * and it is safe; showing them a failure would make them think it had not
+     * arrived and either send it again or give up, both worse than a studio
+     * finding an unnotified enquiry in its own admin.
+     *
+     * @param  callable(): mixed  $send
+     */
+    private function send(callable $send, string $what, Inquiry $inquiry): void
+    {
         try {
-            Mail::to($recipient)->queue(new InquiryReceived($inquiry));
+            $send();
         } catch (Throwable $e) {
-            /*
-             * Swallowed on purpose, and loudly logged. The enquiry is already
-             * committed; the visitor asked a question and it is safe. Showing
-             * them a failure would make them think it had not arrived and
-             * either send it again or give up — both worse than a studio
-             * finding an unnotified enquiry in its own admin.
-             */
-            Log::error('Inquiry notification could not be queued.', [
+            Log::error('Inquiry '.$what.' could not be queued.', [
                 'inquiry' => $inquiry->id,
                 'exception' => $e->getMessage(),
             ]);

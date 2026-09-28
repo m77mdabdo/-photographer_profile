@@ -25,6 +25,8 @@ use Illuminate\Support\Str;
  */
 class DemoContentSeeder extends Seeder
 {
+    use \Database\Seeders\Concerns\ProtectsEditedContent;
+
     public function run(): void
     {
         /*
@@ -76,10 +78,15 @@ class DemoContentSeeder extends Seeder
             'Portrait' => 'People, made slowly.',
             'Landscape' => 'Place and weather.',
             'Documentary' => 'Long-form reportage.',
-        ])->map(fn (string $description, string $name): Category => Category::updateOrCreate(
+        ])->map(fn (string $description, string $name): Category => $this->createIfMissing(
+            Category::class,
             ['slug' => Str::slug($name)],
             ['name' => $name, 'description' => $description, 'sort_order' => 0]
         ));
+        // createIfMissing, not updateOrCreate: categories carry no is_demo
+        // flag, so there is no way to tell a seeded one from one the studio
+        // has since renamed. Never touching an existing row is the only
+        // answer that cannot destroy an edit.
 
         /*
          * Covers are chosen by shape, not by whatever came back first. The
@@ -197,6 +204,16 @@ class DemoContentSeeder extends Seeder
         foreach ($definitions as $index => $definition) {
             $project = Project::withTrashed()->firstOrNew(['slug' => $definition['slug']]);
 
+            /*
+             * Refuse to touch a project the studio has taken over or thrown
+             * away. Previously this filled and saved unconditionally AND set
+             * deleted_at to null, so every run reverted any edit to a demo
+             * project and un-binned one that had been deleted on purpose.
+             */
+            if (! $this->mayOverwrite($project)) {
+                continue;
+            }
+
             $project->fill([
                 'title' => html_entity_decode($definition['title']),
                 'subtitle' => $definition['subtitle'],
@@ -213,7 +230,7 @@ class DemoContentSeeder extends Seeder
             $project->slug = $definition['slug'];
             $project->status = PublishStatus::Published;
             $project->published_at ??= now()->subDays(($index + 1) * 9);
-            $project->deleted_at = null;
+            $project->is_demo = true;
             $project->save();
 
             $project->categories()->sync(
@@ -233,7 +250,8 @@ class DemoContentSeeder extends Seeder
             'Studio Halcyon', 'Ferrous Editions', 'Blue Hour Journal', 'Atelier Rive'];
 
         foreach ($clientNames as $position => $clientName) {
-            Client::updateOrCreate(
+            $this->createIfMissing(
+                Client::class,
                 ['name' => $clientName],
                 [
                     'url' => 'https://example.com/'.Str::slug($clientName),
@@ -245,21 +263,39 @@ class DemoContentSeeder extends Seeder
         }
 
         // One hidden, so the active filter is visibly doing something.
-        Client::updateOrCreate(
+        $this->createIfMissing(
+            Client::class,
             ['name' => 'Withdrawn Commission'],
             ['sort_order' => 99, 'is_active' => false, 'is_demo' => true]
         );
 
-        // Two that must never reach the homepage, so the filtering is visible.
-        Project::updateOrCreate(
+        /*
+         * Two that must never reach the homepage, so the filtering is
+         * visibly doing something.
+         *
+         * Created only. These were updateOrCreate, which forced the status
+         * back to Draft on every run — so a studio that published the project
+         * sitting on this slug would find it unpublished by the next deploy.
+         */
+        $inProgress = $this->createIfMissing(
+            Project::class,
             ['slug' => 'work-in-progress'],
-            ['title' => 'Work in Progress', 'sort_order' => 90]
-        )->forceFill(['status' => PublishStatus::Draft, 'published_at' => null])->save();
+            ['title' => 'Work in Progress', 'sort_order' => 90, 'is_demo' => true]
+        );
 
-        Project::updateOrCreate(
+        if ($inProgress->wasRecentlyCreated) {
+            $inProgress->forceFill(['status' => PublishStatus::Draft, 'published_at' => null])->save();
+        }
+
+        $retired = $this->createIfMissing(
+            Project::class,
             ['slug' => 'retired-series'],
-            ['title' => 'Retired Series', 'sort_order' => 91]
-        )->forceFill(['status' => PublishStatus::Archived, 'published_at' => now()->subYear()])->save();
+            ['title' => 'Retired Series', 'sort_order' => 91, 'is_demo' => true]
+        );
+
+        if ($retired->wasRecentlyCreated) {
+            $retired->forceFill(['status' => PublishStatus::Archived, 'published_at' => now()->subYear()])->save();
+        }
 
         $this->command?->info(sprintf(
             'Demo content ready: %d published projects, %d categories, using %d processed images.',
