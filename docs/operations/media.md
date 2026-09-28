@@ -124,19 +124,45 @@ GD allocates its image buffers through the C library, outside PHP's allocator.
 `memory_get_usage()` therefore reports 32 MB while the process is holding 756 MB, and
 the worker's built-in memory guard — whatever you set it to — will never fire.
 
-**Run media workers with an explicit job ceiling:**
+**Locally: `queue:listen`. In production: `queue:work --max-jobs`.**
 
 ```
+# local — what composer dev runs
+php artisan queue:listen --queue=media --tries=1 --timeout=0
+
+# production, under Supervisor or Horizon with autorestart
 php artisan queue:work --queue=media --max-jobs=25
 ```
+
+`queue:listen` forks a fresh PHP process for every job, so GD's memory is returned to the
+OS when that process exits. It is immune to the leak **by construction** rather than by a
+ceiling somebody has to tune.
+
+The usual objection to `listen` is the per-job boot cost, and it does not apply here:
+
+| | |
+| --- | --- |
+| Laravel boot, measured | **0.18 s** |
+| Median media job, measured over 145 images | **~5.4 s** |
+| Overhead | **~3%** |
+
+Three per cent is nothing against a laptop that is also running an IDE, a browser, MySQL
+and Vite, where a worker climbing past a gigabyte is a real nuisance. On the default queue,
+where jobs take milliseconds, the same 0.18 s would be most of the work — which is why
+`composer dev` uses `listen` for both but for opposite reasons.
+
+In production, throughput is worth more and a supervisor replaces an exited worker
+instantly, so `work` with a job ceiling is the better trade.
 
 `--max-jobs` restarts the worker after a fixed number of jobs regardless of what
 `memory_get_usage()` claims, which is the only limit that sees this. Under Supervisor
 or Horizon, pair it with `autorestart=true` so the exit is immediately replaced.
 
-For a one-off backfill, `--stop-when-empty` is fine if the queue is short. The 145-image
-run in this project peaked at 1022 MB on a machine with room for it; the same run on a
-1 GB container would have been OOM-killed part way through with no error in the log.
+For a one-off backfill of hundreds of images, prefer `queue:listen --queue=media` for the
+same reason as local: it will be a few per cent slower and it cannot run out of memory.
+The 145-image run in this project used `queue:work` and peaked at 1022 MB on a machine
+with room for it; the same run on a 1 GB container would have been OOM-killed part way
+through with no error in the log.
 
 ## Retuning quality
 

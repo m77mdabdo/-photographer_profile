@@ -314,28 +314,51 @@ class ArchiveTest extends TestCase
      */
     public function test_the_story_seeder_never_reaches_into_real_media(): void
     {
-        $source = (string) file_get_contents(base_path('database/seeders/DemoStoriesSeeder.php'));
+        /*
+         * EVERY seeder, not just the one that was caught.
+         *
+         * The property is: a seeder may select demo media and nothing else.
+         * Asserting it on DemoStoriesSeeder alone would have left
+         * DemoContentSeeder — which is where the leak actually originated and
+         * which selected media with no condition at all — free to do it again
+         * the next time anybody ran it.
+         */
+        $seeders = glob(base_path('database/seeders/*.php')) ?: [];
 
-        // Scoped to poolFor(), which is the only place frames are chosen.
-        $start = strpos($source, 'private function poolFor(');
-        $end = strpos($source, 'private function take(', (int) $start);
+        $this->assertNotEmpty($seeders);
 
-        $this->assertIsInt($start, 'poolFor() has been renamed; re-check this test');
-        $this->assertIsInt($end);
+        $selections = 0;
 
-        $poolFor = substr($source, $start, $end - $start);
+        foreach ($seeders as $file) {
+            $source = (string) file_get_contents($file);
 
-        preg_match_all('/Media::query\(\)(.*?)->get\(\);/s', $poolFor, $pools);
+            // Every Media query chain that ends in a fetch.
+            /*
+             * [^;]*? rather than .*? — a chain cannot span a statement. With
+             * .*? the scan ran past an exists() call in markInheritedDemoWork,
+             * which deliberately looks for NON-demo media in order to decide
+             * whether a project is entirely demo, and joined it to the next
+             * unrelated query.
+             */
+            preg_match_all('/Media::query\(\)([^;]*?)->(get|first|pluck|cursor)\(/s', $source, $chains);
 
-        $this->assertCount(2, $pools[1], 'poolFor() no longer has exactly two pools; re-check this test');
+            foreach ($chains[1] as $chain) {
+                $selections++;
 
-        foreach ($pools[1] as $index => $pool) {
-            $this->assertStringContainsString(
-                "->where('is_demo', true)",
-                $pool,
-                "pool {$index} can reach into the client's real library"
-            );
+                $this->assertStringContainsString(
+                    "->where('is_demo', true)",
+                    $chain,
+                    basename($file).' selects media without restricting to demo content: '
+                    .trim(preg_replace('/\s+/', ' ', $chain) ?? '')
+                );
+            }
         }
+
+        $this->assertGreaterThanOrEqual(
+            3,
+            $selections,
+            'expected at least three media selections across the seeders; the scan found '.$selections
+        );
     }
 
     public function test_no_project_is_left_without_a_cover(): void

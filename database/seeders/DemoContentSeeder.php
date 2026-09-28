@@ -27,8 +27,20 @@ class DemoContentSeeder extends Seeder
 {
     public function run(): void
     {
+        /*
+         * DEMO MEDIA ONLY.
+         *
+         * This is where the original leak was. Without the is_demo condition
+         * a seeder reaches into whatever is in the library — and it did:
+         * three synthetic test images generated during development were
+         * picked up here, attached to published projects, and became the
+         * first three frames of the public archive.
+         *
+         * A seeder may borrow from its own content and nothing else.
+         */
         $media = Media::query()
             ->where('status', MediaStatus::Ready)
+            ->where('is_demo', true)
             ->with('variants')
             ->orderBy('id')
             ->get();

@@ -708,7 +708,21 @@
 /* ---------------- Recomposed for narrow screens, not shrunk ------------- */
 
 @media (max-width: 900px) {
-    .works__list { gap: var(--sp-9); }
+    /*
+     * ONE COLUMN, not twelve with everything spanning them.
+     *
+     * The track stayed at repeat(12, 1fr) here while every item spanned
+     * 1 / -1, which leaves eleven column gaps of 32px in the layout — 352px
+     * of pure gap in a 390px viewport, so the twelve tracks were squeezed to
+     * 38px between them and each one expanded to its min-content instead. The
+     * grid came out 721px wide and the whole page scrolled sideways on a
+     * phone. It was on /work, on the category pages and on the home page's
+     * selected works, and it had never been opened in a browser.
+     */
+    .works__list {
+        grid-template-columns: 1fr;
+        gap: var(--sp-9);
+    }
 
     /*
      * One column, but the composition is not thrown away: the planner's start
@@ -716,7 +730,7 @@
      * alternation the plan created survives the fold.
      */
     .works__item {
-        grid-column: 1 / -1;
+        grid-column: 1;
         margin-top: 0;
         padding-left: calc((var(--start) - 1) * 0.35rem);
     }
