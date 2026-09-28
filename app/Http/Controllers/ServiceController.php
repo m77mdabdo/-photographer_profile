@@ -24,10 +24,14 @@ class ServiceController extends Controller
 
         return view('services.index', [
             'services' => $services,
-            'structuredData' => StructuredData::breadcrumbs([
-                ['name' => Settings::get('site.name', 'Home'), 'url' => route('home')],
-                ['name' => Settings::get('services.heading', 'Services'), 'url' => route('services.index')],
-            ]),
+
+            /*
+             * NO BREADCRUMB TRAIL.
+             *
+             * Home → Services is two items and the second is this page. A
+             * trail needs a step between the root and where you are, and an
+             * index has none — see StructuredData::MIN_BREADCRUMBS.
+             */
             'seo' => SeoData::make(
                 title: Settings::get('services.heading', 'Services'),
                 description: Settings::get('services.standfirst'),

@@ -50,7 +50,17 @@
      */
     $exposure = $image?->exposureLine();
 @endphp
+{{--
+    data-motion is how an element opts into the registry. The registry scans
+    for these names and dynamically imports ONLY the modules a page actually
+    uses — the journal downloads neither of these.
+
+    Both names are listed here and nothing is hidden by their presence: every
+    initial state lives in motion.css behind the `.motion` class, which the
+    server never writes.
+--}}
 <section @class(['hero', 'hero--'.$orientation, 'hero--empty' => $image === null])
+         data-motion="hero-develop parallax rule"
          aria-labelledby="hero-title"
          style="--wordmark-chars: {{ mb_strlen($wordmark) }};
                 @if ($accent['dark']) --hero-accent-dark: {{ $accent['dark'] }}; @endif

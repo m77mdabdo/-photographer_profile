@@ -102,6 +102,7 @@ class JournalController extends Controller
                  * simply absent rather than being invented as "Uncategorised".
                  */
                 StructuredData::breadcrumbs(array_values(array_filter([
+                    ['name' => Settings::get('site.name', 'Home'), 'url' => route('home')],
                     ['name' => Settings::get('nav.journal', 'Journal'), 'url' => route('journal.index')],
                     $article->category !== null
                         ? ['name' => $article->category->name, 'url' => route('journal.category', $article->category)]

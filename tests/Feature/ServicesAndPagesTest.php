@@ -21,6 +21,7 @@ use Tests\TestCase;
 
 class ServicesAndPagesTest extends TestCase
 {
+    use \Tests\Support\AssertsNoJavaScript;
     use RefreshDatabase;
 
     private DemoWorld $world;
@@ -341,25 +342,7 @@ class ServicesAndPagesTest extends TestCase
         foreach ($pages as $url) {
             $html = $this->get($url)->assertOk()->getContent();
 
-            preg_match_all('/<script\b([^>]*)>/i', $html, $matches);
-
-            /*
-             * The one permitted exception, stated rather than hidden: JSON-LD
-             * is embedded in a script element with type application/ld+json.
-             * It is a data block — browsers never execute it — and there is no
-             * other way to carry structured data, which the same task asks
-             * for. Nothing executes and nothing is fetched.
-             */
-            foreach ($matches[1] as $attributes) {
-                $this->assertStringContainsString(
-                    'type="application/ld+json"',
-                    $attributes,
-                    "{$url} has an executable <script{$attributes}>"
-                );
-            }
-
-            $this->assertStringNotContainsString('<script src', $html, "{$url} loads a script file");
-            $this->assertDoesNotMatchRegularExpression('/\son[a-z]+\s*=/i', $html, "{$url} has an inline handler");
+            $this->assertNoExecutableJavaScript($html, $url);
         }
     }
 }

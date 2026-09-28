@@ -892,6 +892,23 @@
     }
 
     .marquee__track {
+        /*
+         * `flex: none` IS THE WHOLE BUG THIS OVERRIDES.
+         *
+         * The base rule sets it so the moving strip is sized to its own
+         * content and never squeezed by the viewport. Left in place here it
+         * also means the track cannot shrink to the width of a line — a flex
+         * item that may not shrink is laid out at max-content — so
+         * `flex-wrap: wrap` below had nothing to wrap within and the strip
+         * simply ran off the side of the page.
+         *
+         * A browser found it at every width, in both themes, the first time
+         * the harness was run with reduced motion forced. It had been in the
+         * stylesheet unexercised since the marquee was written.
+         */
+        flex: 1 1 auto;
+        min-width: 0;
+
         flex-wrap: wrap;
         gap: var(--sp-3) var(--sp-6);
         padding-left: 0;

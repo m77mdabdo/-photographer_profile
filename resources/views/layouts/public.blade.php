@@ -13,6 +13,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    {{--
+        FIRST, BEFORE ANYTHING ELSE.
+
+        Decides whether motion is allowed and writes one class name, before the
+        stylesheet and before the first paint. See the component for why this
+        cannot live in the module.
+    --}}
+    <x-motion-boot />
+
     <x-seo :page="$seo" />
 
     {{--
@@ -57,7 +66,15 @@
         called. The JS entry still builds; it is added back when there is
         something to run.
     --}}
-    @vite(['resources/css/public.css'])
+    {{--
+        THE CSS BLOCKS; THE JAVASCRIPT DOES NOT.
+
+        @vite emits the module with type="module", which is deferred by
+        definition — it cannot delay parsing, layout or the first paint, and
+        the hero photograph is painted and eligible for LCP before a byte of
+        GSAP is executed.
+    --}}
+    @vite(['resources/css/public.css', 'resources/js/public.js'])
 </head>
 <body>
     {{--

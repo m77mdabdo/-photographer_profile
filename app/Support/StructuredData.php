@@ -40,6 +40,9 @@ final class StructuredData
 {
     public const CONTEXT = 'https://schema.org';
 
+    /** See breadcrumbs(). */
+    public const MIN_BREADCRUMBS = 3;
+
     // ------------------------------------------------------------------ site
 
     /**
@@ -149,8 +152,14 @@ final class StructuredData
     /**
      * A breadcrumb trail, only where a real hierarchy exists.
      *
-     * Two or more entries or nothing: a one-item "trail" is not a hierarchy,
-     * it is a page asserting its own existence twice.
+     * THREE entries or nothing.
+     *
+     * Two was the bar in Task 25 and it was too low: "Home → Services" has one
+     * real ancestor, and the rich result it produces is the site name followed
+     * by the page title — which a reader already has from the nav and the
+     * heading. A trail earns its place when there is a step BETWEEN the root
+     * and the page, because that step is the thing a reader cannot otherwise
+     * see.
      *
      * @param  list<array{name: string, url: string}>  $trail
      * @return array<string, mixed>
@@ -162,7 +171,7 @@ final class StructuredData
             static fn (array $crumb): bool => filled($crumb['name'] ?? null) && filled($crumb['url'] ?? null)
         ));
 
-        if (count($trail) < 2) {
+        if (count($trail) < self::MIN_BREADCRUMBS) {
             return [];
         }
 

@@ -1,0 +1,201 @@
+/* ---------------- Motion ------------------------------------------------- */
+
+/*
+ * EVERY RULE IN THIS FILE IS SCOPED TO .motion ON <html>.
+ *
+ * That class is written by one inline script in the document head, and only
+ * when three things are true: the visitor has not asked for reduced motion,
+ * they have not already seen the sequence this session, and JavaScript ran at
+ * all. It is removed again the moment the sequence finishes, the moment
+ * anything fails, and by a dead-man's timer if the module never arrives.
+ *
+ * The consequence is the contract this whole feature rests on: WITH JAVASCRIPT
+ * DISABLED, NOTHING IN HERE APPLIES. The server sends a finished page and it
+ * stays finished. There is no initial hidden state anywhere in the HTML — only
+ * in this file, behind a class the server never writes.
+ *
+ * Every property below is transform, opacity or clip-path. Nothing here can
+ * trigger layout.
+ */
+
+/* ---------------- The hero's initial state ------------------------------- */
+
+/*
+ * The band. The photograph is PAINTED, opaque, at full size — it is clipped,
+ * not faded, so Chrome counts it toward LCP from the first frame. Clipping the
+ * plate rather than the image leaves the measured element free of transforms.
+ */
+.motion:not(.motion-hero-done) .hero__plate {
+    clip-path: inset(0% 42% 0% 42%);
+}
+
+/*
+ * The wordmark waits under a line clip. One text node, clipped as a whole —
+ * never split into characters, which would fragment the site's only <h1>.
+ */
+.motion:not(.motion-hero-done) .hero__wordmark {
+    clip-path: inset(100% 0% 0% 0%);
+    transform: translateY(8%);
+}
+
+/*
+ * Everything that arrives after the frame.
+ *
+ * `:not(.motion-hero-done)` rather than `.motion` alone: the hero's sequence
+ * finishing must retire the HERO's initial states without retiring the
+ * reveals', which are still waiting for a reader to scroll. An earlier version
+ * called settle() here and dropped `.motion` entirely — which left every
+ * below-the-fold section pinned at the opacity GSAP had set on it, with the
+ * class that was supposed to rescue them already gone.
+ */
+.motion:not(.motion-hero-done) .hero__voice,
+.motion:not(.motion-hero-done) .hero__technical,
+.motion:not(.motion-hero-done) .hero__aside,
+.motion:not(.motion-hero-done) .hero__rail,
+.motion:not(.motion-hero-done) .hero__stages,
+.motion:not(.motion-hero-done) .hero__place {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+/*
+ * THE MARQUEE WAITS.
+ *
+ * It animates in CSS and would otherwise be drifting sideways underneath a
+ * sequence that has not resolved. Paused while `.motion` is on and no
+ * `.motion-marquee` yet; the timeline adds the second class at 875ms.
+ *
+ * Both classes are gone on a settled page, so this selector cannot match and
+ * the marquee runs exactly as it did before this task.
+ */
+.motion:not(.motion-marquee) .marquee__viewport {
+    animation-play-state: paused;
+}
+
+/* ---------------- Section reveals ---------------------------------------- */
+
+/*
+ * Hidden on an ATTRIBUTE the module adds, not on the element itself.
+ *
+ * The attribute is written by reveal.js after it has confirmed it can observe
+ * and can reveal; until then nothing is hidden. And because the selector also
+ * requires `.motion`, dropping that one class on <html> reveals every section
+ * on the page at once — which is the blanket guarantee behind every failure
+ * path in the module.
+ */
+/*
+ * THE HIDDEN STATE IS CSS, NOT AN INLINE GSAP STYLE.
+ *
+ * This was the other way round and it broke the guarantee. gsap.set() writes
+ * an inline opacity, and an inline style is not affected by removing a class —
+ * so "dropping .motion reveals everything", which every failure path in
+ * reveal.js relies on, was simply not true.
+ *
+ * Declared here, TWO conditions have to hold for anything to be hidden: the
+ * `.motion` class on <html>, and the `data-reveal-pending` attribute the
+ * module writes. Removing either one reveals the content, and both the
+ * module's success path and every one of its failure paths remove one.
+ *
+ * A group with marked children hides the children so they can stagger; a group
+ * without any hides itself, and the module gives it the item attribute so this
+ * one rule covers both.
+ */
+.motion [data-reveal-pending] [data-reveal-item],
+.motion [data-reveal-pending][data-reveal-item] {
+    opacity: 0;
+    transform: translateY(16px);
+    will-change: opacity, transform;
+}
+
+
+/* ---------------- The progress rule -------------------------------------- */
+
+/*
+ * A thin accent rule across the top of the viewport, drawn only when there is
+ * real outstanding work — a photograph still decoding, or the display face
+ * still loading — and only when that work has already taken 120ms.
+ *
+ * scaleX on a transform, so it composites and never lays out. The element is
+ * created and removed by JavaScript; there is no markup for it anywhere.
+ */
+.motion-progress {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: var(--z-modal);
+    height: 2px;
+    background-color: var(--accent);
+    transform: scaleX(var(--motion-progress, 0));
+    transform-origin: left center;
+    transition: transform var(--dur-base) var(--ease-out), opacity var(--dur-fast) linear;
+    pointer-events: none;
+}
+
+/* ---------------- The link rule ------------------------------------------ */
+
+/*
+ * The accent rule under a primary link, drawn in from the leading edge.
+ *
+ * HOVER AND FOCUS ARE THE SAME STATE. rule.js sets one attribute for both, so
+ * there is no way for this to become a pointer-only affordance by somebody
+ * later editing one selector and not the other.
+ *
+ * The site's existing rules are full-width bars; this scales one in rather
+ * than fading it, so the gesture reads as drawing rather than appearing.
+ */
+.hero__link-rule,
+.enquiry__submit-rule,
+.offer__cta-rule,
+.journal-strip__rule,
+.studio__cta-rule {
+    transform-origin: left center;
+    transition: transform var(--dur-base) var(--ease-editorial);
+}
+
+[data-rule='in'] .hero__link-rule,
+[data-rule='in'] .enquiry__submit-rule,
+[data-rule='in'] .offer__cta-rule,
+[data-rule='in'] .journal-strip__rule,
+[data-rule='in'] .studio__cta-rule {
+    transform: scaleX(1.03);
+}
+
+/* ---------------- The one rule that overrides everything ----------------- */
+
+/*
+ * A BELT FOR THE BRACES.
+ *
+ * Everything above is already gated behind a class that is never written when
+ * reduced motion is set. This exists in case a future edit forgets that: it
+ * cannot be overridden by specificity, and it means a visitor who has asked
+ * their operating system for less motion cannot be given more by an accident
+ * three files away.
+ *
+ * The marquee's own reduced-motion rule already lives beside the marquee; this
+ * covers everything this file introduces.
+ */
+@media (prefers-reduced-motion: reduce) {
+    .motion .hero__plate,
+    .motion .hero__wordmark,
+    .motion .hero__voice,
+    .motion .hero__technical,
+    .motion .hero__aside,
+    .motion .hero__rail,
+    .motion .hero__stages,
+    .motion .hero__place,
+    .motion [data-reveal-pending] [data-reveal-item],
+    .motion [data-reveal-pending][data-reveal-item] {
+        clip-path: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    .motion-progress { display: none !important; }
+
+    [data-rule='in'] .hero__link-rule,
+    [data-rule='in'] .enquiry__submit-rule,
+    [data-rule='in'] .offer__cta-rule,
+    [data-rule='in'] .journal-strip__rule,
+    [data-rule='in'] .studio__cta-rule {
+        transform: none !important;
+    }
+}

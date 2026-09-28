@@ -73,6 +73,7 @@ class ProjectController extends Controller
             'structuredData' => $preview ? null : array_values(array_filter([
                 StructuredData::project($project),
                 StructuredData::breadcrumbs([
+                    ['name' => Settings::get('site.name', 'Home'), 'url' => route('home')],
                     ['name' => Settings::get('nav.work', 'Work'), 'url' => route('work.index')],
                     ['name' => $project->title, 'url' => route('projects.show', $project)],
                 ]),

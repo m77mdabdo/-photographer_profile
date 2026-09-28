@@ -1,6 +1,15 @@
 @props(['layout'])
 @if ($layout !== [])
-    <section class="works" aria-labelledby="works-title">
+    {{--
+        data-motion="reveal" opts this section into the shared reveal module.
+    
+        It hides NOTHING by itself: the initial state lives in motion.css behind
+        the `.motion` class, and the module adds a `data-reveal-pending` attribute
+        only after it has confirmed it can both observe and reveal. With JavaScript
+        off, or reduced motion set, or the module failing to load, this attribute
+        is inert.
+    --}}
+    <section class="works" data-motion="reveal" aria-labelledby="works-title">
         <header class="works__header">
             <h2 class="works__title" id="works-title">Work, in series</h2>
             <p class="works__count">{{ count($layout) }} {{ Str::plural('set', count($layout)) }}</p>
@@ -14,7 +23,7 @@
         <ol class="works__list" role="list">
             @foreach ($layout as $index => $placement)
                 @php($project = $placement['project'])
-                <li class="works__item @if ($placement['feature']) works__item--feature @endif"
+                <li data-reveal-item class="works__item @if ($placement['feature']) works__item--feature @endif"
                     style="--span: {{ $placement['span'] }}; --start: {{ $placement['start'] }}; --drop: {{ $placement['drop'] }};"
                     data-orientation="{{ $placement['orientation'] }}">
                     <article class="work">

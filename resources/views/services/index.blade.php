@@ -1,6 +1,6 @@
 @php use App\Support\Settings; @endphp
-<x-layouts::public :seo="$seo" :structured-data="$structuredData">
-    <section class="offer" aria-labelledby="offer-title">
+<x-layouts::public :seo="$seo">
+    <section class="offer" data-motion="reveal rule" aria-labelledby="offer-title">
         <header class="offer__header">
             <p class="offer__eyebrow">{{ Settings::get('nav.services') }}</p>
 
@@ -8,6 +8,20 @@
 
             @if ($standfirst = Settings::get('services.standfirst'))
                 <p class="offer__standfirst">{{ $standfirst }}</p>
+            @endif
+
+            {{--
+                THE COUNT COMES FROM THE DATA.
+
+                The standfirst used to say "Four ways of working" while the
+                seeder shipped five. A number written into copy is a fact that
+                stops being true the moment somebody adds a service, and
+                nobody edits a standfirst when they add one.
+            --}}
+            @if ($services->isNotEmpty())
+                <p class="offer__count">
+                    {{ $services->count() }} {{ Str::plural('way', $services->count()) }} of working
+                </p>
             @endif
         </header>
 
@@ -21,7 +35,7 @@
         @else
             <ol class="offers" role="list">
                 @foreach ($services as $service)
-                    <li class="offer-card">
+                    <li class="offer-card" data-reveal-item>
                         <article>
                             @if ($service->cover)
                                 <a class="offer-card__frame"

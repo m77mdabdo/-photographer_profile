@@ -18,6 +18,7 @@ use Tests\TestCase;
 
 class RobotsAndStructuredDataTest extends TestCase
 {
+    use \Tests\Support\AssertsNoJavaScript;
     use RefreshDatabase;
 
     private DemoWorld $world;
@@ -224,9 +225,12 @@ class RobotsAndStructuredDataTest extends TestCase
 
         $pages = [
             '/' => ['ProfessionalService', 'WebSite'],
-            '/services' => ['ProfessionalService', 'WebSite', 'BreadcrumbList'],
+            // No trail on an index: Home → Services is two items and the
+            // second is this page. See StructuredData::MIN_BREADCRUMBS.
+            '/services' => ['ProfessionalService', 'WebSite'],
             route('services.show', $service) => ['ProfessionalService', 'WebSite', 'Service', 'BreadcrumbList'],
             route('projects.show', $project) => ['ProfessionalService', 'WebSite', 'CreativeWork', 'BreadcrumbList'],
+            // Home → Journal → Process → the piece: four, and every step real.
             route('journal.show', $article) => ['ProfessionalService', 'WebSite', 'BlogPosting', 'BreadcrumbList'],
             '/privacy' => ['ProfessionalService', 'WebSite'],
         ];
@@ -350,6 +354,17 @@ class RobotsAndStructuredDataTest extends TestCase
 
         $this->assertNotContains('BreadcrumbList', $types, 'the home page has no hierarchy above it');
 
+        /*
+         * Nor does an index. Home → Services is two items and the second is
+         * the page you are on — a trail needs a step in between.
+         */
+        $indexTypes = array_map(
+            static fn (array $block): string => $block['@type'],
+            $this->blocks('/services')
+        );
+
+        $this->assertNotContains('BreadcrumbList', $indexTypes, 'an index page emitted a two-item trail');
+
         // And where one exists, the positions are sequential from 1.
         $service = Service::factory()->create();
 
@@ -397,12 +412,7 @@ class RobotsAndStructuredDataTest extends TestCase
         $html = $this->get(route('services.show', $service))->assertOk()->getContent();
 
         // Every script element on the page is a data block.
-        preg_match_all('/<script\b([^>]*)>/i', $html, $matches);
-
-        foreach ($matches[1] as $attributes) {
-            $this->assertStringContainsString('type="application/ld+json"', $attributes);
-        }
-
+        $this->assertNoExecutableJavaScript($html, 'a service');
         $this->assertStringNotContainsString('</script><script>', $html);
 
         // And the JSON still parses, with the name intact inside it.

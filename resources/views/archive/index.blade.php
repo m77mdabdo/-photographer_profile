@@ -1,3 +1,19 @@
+{{--
+    THE ARCHIVE GETS NO MOTION. A deliberate decision, not an oversight.
+
+    It is the heaviest page on the site: thirty-six frames to a page, every one
+    a real photograph, and on a phone that is already the most expensive thing
+    this site asks a device to do. A staggered reveal would add thirty-six
+    tweens and thirty-six will-change layers on top of that, to decorate a page
+    whose entire value is scanning density — a contact sheet works because you
+    can take it in at once, and revealing it in sequence actively fights that.
+
+    It also has no hero, no single focal image and no narrative order, so there
+    is nothing here for a sequence to be ABOUT.
+
+    So: no data-motion attribute, no chunk downloaded, and the archive keeps
+    the 1.3 kB entry and nothing else. The page it was before this task.
+--}}
 <x-layouts::public :seo="$seo">
     <section class="sheet-page" aria-labelledby="archive-title">
         <header class="sheet-page__header">

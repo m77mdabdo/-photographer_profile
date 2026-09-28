@@ -18,6 +18,7 @@ use Tests\TestCase;
 
 class JournalTest extends TestCase
 {
+    use \Tests\Support\AssertsNoJavaScript;
     use RefreshDatabase;
 
     private DemoWorld $world;
@@ -368,12 +369,7 @@ class JournalTest extends TestCase
          * four of them now (studio, website, BlogPosting, breadcrumbs) and not
          * one of them executes.
          */
-        preg_match_all('/<script\b([^>]*)>/i', $html, $tags);
-
-        foreach ($tags[1] as $attributes) {
-            $this->assertStringContainsString('type="application/ld+json"', $attributes);
-        }
-
+        $this->assertNoExecutableJavaScript($html, 'an article');
         $this->assertStringNotContainsString('</script><script>', $html);
 
         $data = $this->blockOfType($html, 'BlogPosting');
@@ -485,21 +481,15 @@ class JournalTest extends TestCase
         foreach ($pages as $url) {
             $html = $this->get($url)->assertOk()->getContent();
 
-            preg_match_all('/<script\b([^>]*)>/i', $html, $matches);
+            /*
+             * The policy lives in one place now — see the trait. It changed
+             * in Task 26 when the site started shipping motion, and one
+             * description of what IS allowed beats each test re-deriving it
+             * slightly differently.
+             */
+            $this->assertNoExecutableJavaScript($html, $url);
 
-            foreach ($matches[1] as $attributes) {
-                $this->assertStringContainsString(
-                    'type="application/ld+json"',
-                    $attributes,
-                    "{$url} has an executable <script{$attributes}>"
-                );
-            }
-
-            // Nothing is fetched, by any route.
-            $this->assertStringNotContainsString('<script src', $html, "{$url} loads a script file");
-            $this->assertDoesNotMatchRegularExpression('/\son[a-z]+\s*=/i', $html, "{$url} has an inline event handler");
-
-            // And Vite's JS entry is not referenced.
+            // The ADMIN bundle is never referenced from a public page.
             $this->assertStringNotContainsString('/build/assets/admin-', $html);
         }
     }

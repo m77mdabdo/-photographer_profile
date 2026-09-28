@@ -10,7 +10,7 @@
         the one section whose point is that there are words here. Set as type,
         it changes register, which is the only way a reader notices it at all.
     --}}
-    <section class="journal-strip" aria-labelledby="journal-strip-title">
+    <section class="journal-strip" data-motion="reveal rule" aria-labelledby="journal-strip-title">
         <header class="journal-strip__header">
             <h2 class="journal-strip__title" id="journal-strip-title">
                 {{ Settings::get('journal.home_heading') }}
@@ -19,7 +19,7 @@
 
         <ol class="journal-strip__list" role="list">
             @foreach ($articles as $article)
-                <li class="journal-strip__item">
+                <li class="journal-strip__item" data-reveal-item>
                     <article>
                         <p class="journal-strip__meta">
                             <time datetime="{{ $article->published_at?->toDateString() }}">

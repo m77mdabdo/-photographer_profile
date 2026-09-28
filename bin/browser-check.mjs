@@ -80,6 +80,17 @@ const THEMES = [
 ]
 
 /*
+ * --reduced-motion runs the whole matrix with the OS preference forced on.
+ *
+ * It is a separate run rather than an extra column because the assertion
+ * changes: with motion allowed the harness checks that nothing is left
+ * hidden after the sequence; with it refused it checks that no sequence ever
+ * started and no indicator was ever drawn. Those are different questions
+ * about the same page.
+ */
+const REDUCED = Boolean(args['reduced-motion'])
+
+/*
  * Every public page, including the ones nobody has ever opened.
  * `status` is the expected HTTP status; error pages are checked too because a
  * 404 page that is itself broken is the worst page to have broken.
@@ -283,7 +294,7 @@ function chromePath() {
  * image the browser could decode, and a stylesheet that exists is not the same
  * as a font that applied.
  */
-function inPageAudit(isAdmin) {
+function inPageAudit(isAdmin, isReducedMotion) {
   const problems = []
 
   // --- 1. every image actually decoded -------------------------------------
@@ -422,6 +433,60 @@ function inPageAudit(isAdmin) {
 
     if (control.tabIndex < 0) {
       problems.push(`form control is not reachable by keyboard: ${control.name || control.id}`)
+    }
+  }
+
+  // --- 4c. motion left nothing hidden and nothing stuck --------------------
+  /*
+   * THE ONE THING A MOTION BUG LOOKS LIKE: invisible content.
+   *
+   * Every failure path in the motion modules ends with the gating class
+   * removed and every element visible. This checks the outcome rather than
+   * the mechanism — if anything a reveal or a sequence touched is still
+   * transparent, clipped away or shifted off its place by the time the page
+   * has settled, it is a bug whatever the cause.
+   */
+  for (const element of document.querySelectorAll(
+    '[data-motion], [data-reveal-item], .hero__plate, .hero__wordmark, .hero__voice, .hero__stages'
+  )) {
+    const style = getComputedStyle(element)
+    const box = element.getBoundingClientRect()
+
+    // Genuinely absent elements (an empty section) are not a motion problem.
+    if (box.width === 0 && box.height === 0) continue
+
+    if (parseFloat(style.opacity) < 0.99) {
+      problems.push(`still transparent after settling: ${element.className || element.tagName}`)
+    }
+
+    if (style.clipPath && style.clipPath !== 'none') {
+      problems.push(`still clipped after settling: ${element.className || element.tagName} (${style.clipPath})`)
+    }
+  }
+
+  // Nothing is left mid-reveal.
+  const pending = document.querySelectorAll('[data-reveal-pending]').length
+
+  if (pending > 0) {
+    problems.push(`${pending} section(s) never revealed`)
+  }
+
+  // And the transient progress rule was cleaned up.
+  if (document.querySelector('.motion-progress')) {
+    problems.push('the progress indicator was left in the document')
+  }
+
+  if (isReducedMotion) {
+    /*
+     * REFUSED MEANS REFUSED. Not a shorter sequence — none at all. The gating
+     * class is the whole mechanism, so its presence is the assertion.
+     */
+    if (document.documentElement.classList.contains('motion')) {
+      problems.push('the motion class was written despite prefers-reduced-motion')
+    }
+
+    if (document.documentElement.classList.contains('motion-hero-done')) {
+      problems.push('a hero sequence ran despite prefers-reduced-motion')
     }
   }
 
@@ -588,6 +653,7 @@ async function run() {
         await page.setViewport({ width: viewport.width, height: viewport.height })
         await page.emulateMediaFeatures([
           { name: 'prefers-color-scheme', value: theme.scheme },
+          ...(REDUCED ? [{ name: 'prefers-reduced-motion', value: 'reduce' }] : []),
         ])
 
         for (const target of PAGES) {
@@ -697,7 +763,23 @@ async function run() {
               )
               .catch(() => {})
 
-            const audit = await page.evaluate(inPageAudit, target.admin === true)
+            /*
+           * Let the hero sequence finish before judging what is hidden.
+           *
+           * The choreography is 875ms and the reveal deadline is 3s; auditing
+           * before either has run would report a page mid-animation as broken.
+           * This waits for the real signals and falls back to a bound.
+           */
+          await page
+            .waitForFunction(
+              () =>
+                document.querySelectorAll('[data-reveal-pending]').length === 0 &&
+                !document.querySelector('.motion-progress'),
+              { timeout: 4000, polling: 200 }
+            )
+            .catch(() => {})
+
+          const audit = await page.evaluate(inPageAudit, target.admin === true, REDUCED)
             problems = problems.concat(audit.problems)
             stats = audit
 
@@ -783,7 +865,7 @@ function report(results, failures, skipped = [], crawlerFiles = []) {
 
   const width = Math.max(...pages.map((p) => p.length)) + 2
 
-  process.stdout.write('\nBROWSER CHECK\n\n')
+  process.stdout.write(`\nBROWSER CHECK${REDUCED ? ' — prefers-reduced-motion: reduce' : ''}\n\n`)
   process.stdout.write(' '.repeat(width) + combos.map((c) => c.padEnd(12)).join('') + '\n')
 
   for (const page of pages) {

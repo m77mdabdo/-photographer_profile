@@ -100,7 +100,7 @@ class SettingsSeeder extends Seeder
 
         // --- services ---------------------------------------------------------
         ['key' => 'services.heading', 'value' => 'What the studio does', 'type' => 'string', 'group' => 'services'],
-        ['key' => 'services.standfirst', 'value' => 'The ways this studio works, and roughly what each one costs. Every job is quoted properly once there is a brief — these are the starting points, not the answer.', 'type' => 'text', 'group' => 'services'],
+        ['key' => 'services.standfirst', 'value' => 'How this studio works, and roughly what each way costs. Every job is quoted properly once there is a brief — these are the starting points, not the answer.', 'type' => 'text', 'group' => 'services'],
         ['key' => 'services.price_prefix', 'value' => 'From', 'type' => 'string', 'group' => 'services'],
         ['key' => 'services.cta', 'value' => 'Talk about a commission', 'type' => 'string', 'group' => 'services'],
         ['key' => 'services.gallery_heading', 'value' => 'From this kind of work', 'type' => 'string', 'group' => 'services'],

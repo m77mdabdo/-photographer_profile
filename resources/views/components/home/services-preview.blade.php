@@ -9,7 +9,7 @@
         the journal strip: the home page is already several grids of
         photographs, and a fourth would read as more of the same.
     --}}
-    <section class="services-strip" aria-labelledby="services-strip-title">
+    <section class="services-strip" data-motion="reveal rule" aria-labelledby="services-strip-title">
         <header class="services-strip__header">
             <h2 class="services-strip__title" id="services-strip-title">
                 {{ Settings::get('services.home_heading') }}
@@ -18,7 +18,7 @@
 
         <ol class="services-strip__list" role="list">
             @foreach ($services as $service)
-                <li class="services-strip__item">
+                <li class="services-strip__item" data-reveal-item>
                     <h3 class="services-strip__name">
                         <a href="{{ route('services.show', $service) }}">{{ $service->name }}</a>
                     </h3>

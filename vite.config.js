@@ -23,6 +23,17 @@ export default defineConfig({
                 'resources/css/public.css',
                 'resources/css/admin.css',
                 'resources/js/admin.js',
+
+                /*
+                 * The public bundle returns, with a purpose.
+                 *
+                 * It was removed in Task 23 because nothing on the public site
+                 * used it and it was dragging 51 kB of axios in behind it.
+                 * It is back for motion only, it shares no module with the
+                 * admin entry, and its size is asserted against a budget by
+                 * the test suite rather than watched by hand.
+                 */
+                'resources/js/public.js',
             ],
             refresh: true,
         }),
@@ -51,6 +62,24 @@ export default defineConfig({
                         return;
                     }
 
+                    /*
+                     * SCROLLTRIGGER GETS ITS OWN CHUNK.
+                     *
+                     * It is 18 kB gzipped and exactly one module needs it —
+                     * the hero parallax, which imports it on demand. Grouping
+                     * it with GSAP core under one name made Rollup merge the
+                     * two, and the entry's STATIC import of core then dragged
+                     * ScrollTrigger onto every page: the journal and the
+                     * archive would each have paid 45 kB for a scrub they
+                     * never run.
+                     *
+                     * Named separately, it stays a dynamic chunk and only a
+                     * page carrying data-motion="parallax" fetches it.
+                     */
+                    if (id.includes('gsap/ScrollTrigger')) {
+                        return 'gsap-scrolltrigger';
+                    }
+
                     const seen = new Set();
                     const stack = [id];
                     let reachedPublic = false;
@@ -71,7 +100,20 @@ export default defineConfig({
                             continue;
                         }
 
-                        for (const importer of info.importers) {
+                        /*
+                         * BOTH KINDS OF IMPORTER.
+                         *
+                         * Rollup keeps static and dynamic importers in
+                         * separate lists, and walking only `importers` meant a
+                         * dynamically imported dependency had no traceable
+                         * owner at all — it fell through to 'vendor-shared',
+                         * which reads as "the admin and the public site both
+                         * use this" when in fact only one does.
+                         *
+                         * ScrollTrigger is exactly that case: imported on
+                         * demand by the parallax module and by nothing else.
+                         */
+                        for (const importer of [...info.importers, ...info.dynamicImporters]) {
                             if (importer.includes('/resources/js/admin') || importer.includes('/resources/css/admin')) {
                                 reachedAdmin = true;
                             } else if (importer.includes('/resources/')) {
