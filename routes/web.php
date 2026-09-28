@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 use App\Enums\MediaStatus;
 use App\Http\Controllers\Admin\MediaController;
+use App\Http\Controllers\AboutController;
 use App\Http\Controllers\ArchiveController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\WorkController;
 use App\Livewire\Admin\CategoryManager;
 use App\Livewire\Admin\ClientManager;
+use App\Livewire\Admin\InquiryDetail;
+use App\Livewire\Admin\InquiryIndex;
 use App\Livewire\Admin\MediaIndex;
 use App\Livewire\Admin\ProjectForm;
 use App\Livewire\Admin\ProjectIndex;
@@ -130,6 +134,25 @@ Route::get('/work/category/{category:slug}', [WorkController::class, 'category']
     ->name('work.category');
 
 /*
+ * The enquiry form.
+ *
+ * Post/Redirect/Get: the confirmation is its own address, so a refresh after
+ * sending re-requests a page rather than re-posting a message. The throttle
+ * is a blunt outer limit on the endpoint itself; the real defences are in
+ * App\Support\SpamGuard.
+ */
+Route::get('/contact', [ContactController::class, 'show'])->name('contact.show');
+Route::post('/contact', [ContactController::class, 'store'])
+    ->middleware('throttle:contact')
+    ->name('contact.store');
+Route::get('/contact/sent', [ContactController::class, 'sent'])->name('contact.sent');
+
+/*
+ * The studio itself.
+ */
+Route::get('/about', AboutController::class)->name('about');
+
+/*
  * The archive: a contact sheet of frames that reached a published page.
  * Filters are query parameters rather than path segments — unlike a category
  * of work, a filtered view of the archive is a way of looking rather than a
@@ -188,6 +211,14 @@ Route::prefix('admin')
                     ));
                 })->name('preview');
             });
+
+            /*
+             * Enquiries. The detail route marks an enquiry read on open, so
+             * it is a GET with a side effect — acceptable because the effect
+             * is idempotent and is the literal meaning of opening it.
+             */
+            Route::get('/inquiries', InquiryIndex::class)->name('inquiries.index');
+            Route::get('/inquiries/{inquiry}', InquiryDetail::class)->name('inquiries.show');
 
             Route::get('/settings', SettingsManager::class)->name('settings.index');
 

@@ -1,23 +1,5 @@
-/* Public shell: skip link, header, footer, and the error page. Tokens only. */
-
-.skip-link {
-    position: absolute;
-    left: var(--sp-4);
-    top: var(--sp-4);
-    z-index: var(--z-modal);
-    padding: var(--sp-2) var(--sp-4);
-    background-color: var(--bg-elevated);
-    color: var(--text-primary);
-    border: 1px solid var(--border);
-    /* Off-screen until focused, but never display:none — that would remove it
-       from the tab order and defeat the point. */
-    transform: translateY(-200%);
-    transition: transform var(--dur-fast) var(--ease-out);
-}
-
-.skip-link:focus-visible {
-    transform: translateY(0);
-}
+/* Public shell: header, footer, and the error page. Tokens only.
+   The skip link lives in base.css — both shells have one. */
 
 .site-header {
     display: flex;
@@ -57,11 +39,26 @@
     text-transform: uppercase;
 }
 
+/*
+ * A nav item with no route yet renders as a span rather than a link to
+ * nowhere. Unstyled it inherited the body colour and came out BRIGHTER than
+ * the real links, so the one destination that does not exist read as the
+ * current page. It is dimmed below the links instead, which is what
+ * "not available" should look like.
+ */
+.site-nav__list span[aria-disabled] {
+    color: var(--text-secondary);
+    opacity: 0.4;
+    cursor: default;
+}
+
 .site-nav__list a {
     color: var(--text-secondary);
     text-decoration: none;
     transition: color var(--dur-fast) var(--ease-out);
 }
+
+.site-nav__list a[aria-current='page'] { color: var(--text-primary); }
 
 .site-nav__list a:hover,
 .site-nav__list a:focus-visible {

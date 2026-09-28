@@ -10,9 +10,17 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
     plugins: [
         laravel({
+            /*
+             * Three entries, not four.
+             *
+             * resources/js/public.js was removed. The public layout stopped
+             * referencing it in Task 11 when axios was taken off every public
+             * page, but the entry stayed and Vite kept emitting a 138-byte
+             * bundle plus a 51 kB shared vendor chunk that nothing requested.
+             * The public site ships no JavaScript, so it has no JS entry.
+             */
             input: [
                 'resources/css/public.css',
-                'resources/js/public.js',
                 'resources/css/admin.css',
                 'resources/js/admin.js',
             ],

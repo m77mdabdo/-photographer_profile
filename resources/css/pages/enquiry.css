@@ -1,0 +1,449 @@
+/* ---------------- The enquiry page and the studio page ------------------ */
+
+/*
+ * The last page of an editorial site, not a generic form.
+ *
+ * It uses the same vocabulary as every other page here — mono eyebrow,
+ * condensed display heading, accent rule under the one primary action — so
+ * that arriving at it does not feel like being handed off to a different
+ * website at the moment somebody decides to get in touch.
+ */
+
+.enquiry,
+.studio {
+    max-width: var(--container-wide);
+    margin-inline: auto;
+    padding: var(--sp-9) var(--gutter) var(--sp-11);
+}
+
+.enquiry__eyebrow,
+.studio__eyebrow {
+    font-family: var(--font-mono);
+    font-variation-settings: 'wght' var(--wght-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: var(--sp-3);
+}
+
+.enquiry__title,
+.studio__title {
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-display);
+    font-size: var(--fs-h1);
+    line-height: 0.92;
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
+    max-width: 14ch;
+    color: var(--text-primary);
+    padding-bottom: 0.06em;   /* descender clearance, in em */
+}
+
+.enquiry__standfirst {
+    max-width: 52ch;
+    margin-top: var(--sp-5);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+.enquiry__note {
+    max-width: 52ch;
+    margin-top: var(--sp-4);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+/* ---------------- The error summary ------------------------------------- */
+
+/*
+ * Bordered in the accent rather than in red. This is a page where somebody is
+ * trying to start a working relationship; the tone of "you got it wrong" is
+ * worth getting right, and the information is identical either way.
+ */
+.enquiry__errors {
+    max-width: 60ch;
+    margin-top: var(--sp-7);
+    padding: var(--sp-5);
+    border-left: var(--rule-strong) solid var(--accent);
+    background-color: var(--bg-elevated);
+}
+
+.enquiry__errors:focus-visible {
+    outline: var(--rule-strong) solid var(--accent);
+    outline-offset: 4px;
+}
+
+.enquiry__errors-title {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.enquiry__errors-list {
+    display: grid;
+    gap: var(--sp-2);
+    margin: var(--sp-3) 0 0;
+    padding-left: var(--sp-5);
+    font-size: var(--fs-small);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+}
+
+.enquiry__errors-list a { color: var(--text-primary); }
+
+/* ---------------- The form ---------------------------------------------- */
+
+.enquiry__form { margin-top: var(--sp-9); }
+
+.enquiry__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: var(--sp-6) var(--sp-6);
+}
+
+.field--wide { grid-column: span 1; }
+.field--full { grid-column: 1 / -1; }
+
+.field { display: grid; gap: var(--sp-2); align-content: start; }
+
+/*
+ * FIELDS IN A ROW SHARE THEIR ROWS.
+ *
+ * Without this, a field carrying a hint pushes its own input a line lower
+ * than its neighbours', and a row of four boxes steps down the page instead
+ * of sitting on one line. It reads as a broken layout rather than a set of
+ * questions.
+ *
+ * Subgrid fixes it at the only level that can: the four parts of a field
+ * (label, hint, control, error) become four shared tracks of the parent, so
+ * every label in a row starts at the same height and every input does too,
+ * whether or not the field beside it has anything to explain. A field with no
+ * hint simply leaves that track empty.
+ *
+ * The parent's 2rem row gap would be far too loose between a label and its
+ * own input, so the subgrid states its own.
+ */
+@supports (grid-template-rows: subgrid) {
+    .enquiry__grid > .field {
+        grid-template-rows: subgrid;
+        grid-row: span 4;
+        row-gap: var(--sp-2);
+    }
+
+    /*
+     * Each part is placed explicitly. Auto-placement would drop a hintless
+     * field's input into the hint track, which is the exact misalignment this
+     * is here to remove.
+     */
+    .enquiry__grid > .field > .field__label { grid-row: 1; }
+    .enquiry__grid > .field > .field__hint { grid-row: 2; }
+    .enquiry__grid > .field > input { grid-row: 3; }
+    .enquiry__grid > .field > .field__error { grid-row: 4; }
+
+    /* The message box is alone on its row and sizes itself. */
+    .enquiry__grid > .field--full {
+        grid-template-rows: none;
+        grid-row: auto;
+    }
+}
+
+.field__label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-3);
+    font-family: var(--font-mono);
+    font-variation-settings: 'wght' var(--wght-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+/*
+ * "required" and "optional" are words, not an asterisk. An asterisk means
+ * nothing until it is explained, and the explanation is always somewhere
+ * else on the page.
+ */
+.field__required { color: var(--accent); }
+.field__optional { color: var(--text-secondary); opacity: 0.5; }
+
+.field__hint {
+    font-size: var(--fs-small);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+    opacity: 0.75;
+}
+
+.enquiry__form input[type='text'],
+.enquiry__form input[type='email'],
+.enquiry__form input[type='tel'],
+.enquiry__form input[type='date'],
+.enquiry__form textarea {
+    width: 100%;
+    padding: var(--sp-3);
+    min-height: 44px;
+    font-family: var(--font-sans);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--text-primary);
+    background-color: var(--bg-elevated);
+    border: var(--rule-hair) solid var(--border);
+    border-radius: 0;
+    transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+.enquiry__form textarea { resize: vertical; }
+
+.enquiry__form input:hover,
+.enquiry__form textarea:hover { border-color: var(--text-secondary); }
+
+/*
+ * A focus ring that is genuinely visible on both grounds, and is never
+ * removed. Keyboard use is the whole route through this page for some people.
+ */
+.enquiry__form input:focus-visible,
+.enquiry__form textarea:focus-visible,
+.enquiry__submit:focus-visible {
+    outline: var(--rule-strong) solid var(--accent);
+    outline-offset: 2px;
+    border-color: var(--accent);
+}
+
+.field--invalid input,
+.field--invalid textarea { border-color: var(--danger-text); }
+
+.field__error {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    color: var(--danger-text);
+    line-height: var(--lh-body);
+    text-transform: none;
+}
+
+/* ---------------- Consent ------------------------------------------------ */
+
+.consent {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--sp-2) var(--sp-3);
+    align-items: start;
+    max-width: 60ch;
+    margin-top: var(--sp-7);
+    padding-top: var(--sp-5);
+    border-top: var(--rule-hair) solid var(--border);
+}
+
+.consent input[type='checkbox'] {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.15rem;
+    accent-color: var(--accent);
+}
+
+.consent__label {
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--text-primary);
+}
+
+.consent__detail,
+.consent .field__error {
+    grid-column: 2;
+    font-size: var(--fs-small);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+}
+
+/* ---------------- Submit -------------------------------------------------- */
+
+.enquiry__submit {
+    display: inline-grid;
+    gap: var(--sp-2);
+    justify-items: start;
+    min-height: 44px;
+    align-content: center;
+    margin-top: var(--sp-7);
+    padding: 0;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-variation-settings: 'wght' var(--wght-mono);
+    font-size: var(--fs-small);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.enquiry__submit-rule {
+    display: block;
+    width: 100%;
+    height: var(--rule-strong);
+    background-color: var(--accent);
+    transition: opacity var(--dur-base) var(--ease-editorial);
+}
+
+.enquiry__submit:hover .enquiry__submit-rule { opacity: 0.55; }
+
+/* ---------------- The confirmation --------------------------------------- */
+
+.enquiry--sent { padding-block: var(--sp-11) var(--sp-13); }
+
+.enquiry__onward {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-7);
+    margin-top: var(--sp-9);
+}
+
+.enquiry__onward-link {
+    display: inline-grid;
+    gap: var(--sp-2);
+    min-height: 44px;
+    align-content: center;
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+/* ---------------- The studio page ---------------------------------------- */
+
+.studio__header { margin-bottom: var(--sp-9); }
+
+/*
+ * Portrait and opening text in one band.
+ *
+ * A 2:3 frame at 42% of a 1440 viewport is roughly 900px tall. Stacked, it
+ * left the right half of the page empty and put every word of the biography
+ * below the fold; beside the text it reads as a spread, which is what an
+ * about page in this language should be.
+ */
+.studio__composition {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    gap: var(--sp-9) var(--sp-10);
+    align-items: start;
+}
+
+.studio__portrait {
+    margin: 0;
+    background-color: var(--bg-elevated);
+}
+
+.studio__portrait picture,
+.studio__portrait-image { display: block; width: 100%; height: auto; }
+
+.studio__body {
+    display: grid;
+    gap: var(--sp-8);
+    align-content: start;
+}
+
+.studio__prose {
+    display: grid;
+    gap: var(--sp-5);
+    max-width: 62ch;
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+.studio__facts {
+    display: grid;
+    gap: var(--sp-4);
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.studio__facts > div { display: grid; gap: 2px; }
+.studio__facts dt { opacity: 0.55; }
+.studio__facts dd { margin: 0; color: var(--text-primary); }
+
+.studio__approach,
+.studio__clients {
+    margin-top: var(--sp-11);
+    padding-top: var(--sp-7);
+    border-top: var(--rule-hair) solid var(--border);
+}
+
+.studio__approach-title,
+.studio__clients-title {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: var(--sp-5);
+}
+
+.studio__clients-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-4) var(--sp-7);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-mid);
+    font-size: var(--fs-h3);
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.studio__clients-list a { color: inherit; text-decoration: none; }
+.studio__clients-list a:hover { color: var(--text-primary); }
+
+.studio__cta {
+    display: inline-grid;
+    gap: var(--sp-2);
+    justify-items: start;
+    min-height: 44px;
+    align-content: center;
+    margin-top: var(--sp-11);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: var(--fs-small);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.studio__cta-rule {
+    display: block;
+    width: 100%;
+    height: var(--rule-strong);
+    background-color: var(--accent);
+}
+
+/* ---------------- Narrow -------------------------------------------------- */
+
+@media (max-width: 900px) {
+    .enquiry,
+    .studio { padding-block: var(--sp-7) var(--sp-9); }
+
+    .studio__composition { grid-template-columns: 1fr; gap: var(--sp-7); }
+
+    .studio__body { gap: var(--sp-7); }
+
+    .enquiry__grid { grid-template-columns: 1fr; }
+}

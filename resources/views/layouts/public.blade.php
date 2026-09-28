@@ -57,10 +57,32 @@
                 the real routes land in a later task. The key is the address the
                 template asks for; the word a visitor reads is the client's.
             --}}
+            @php
+                /*
+                 * The destinations that exist. A nav item without a route is
+                 * still rendered — the shape of the site stays legible while
+                 * it is being built — but it is not a link to nowhere: it has
+                 * no href, so it is not focusable and not announced as a link.
+                 */
+                $navRoutes = [
+                    'work' => route('work.index'),
+                    'archive' => route('archive.index'),
+                    'about' => route('about'),
+                    'journal' => null,
+                    'contact' => route('contact.show'),
+                ];
+            @endphp
             <ul role="list" class="site-nav__list">
-                @foreach (['work', 'archive', 'about', 'journal', 'contact'] as $item)
+                @foreach ($navRoutes as $item => $href)
                     @if ($label = \App\Support\Settings::get('nav.'.$item))
-                        <li><a href="#">{{ $label }}</a></li>
+                        <li>
+                            @if ($href)
+                                <a href="{{ $href }}"
+                                   @if (request()->url() === $href) aria-current="page" @endif>{{ $label }}</a>
+                            @else
+                                <span aria-disabled="true">{{ $label }}</span>
+                            @endif
+                        </li>
                     @endif
                 @endforeach
             </ul>
@@ -73,8 +95,10 @@
 
     <footer class="site-footer">
         <div class="site-footer__group">
-            {{-- Placeholder contact details until the settings table exists. --}}
-            <a href="mailto:hello@example.com">hello@example.com</a>
+            {{-- The footer route to the enquiry form, alongside the nav's. --}}
+            @if ($contactLabel = \App\Support\Settings::get('nav.contact'))
+                <a href="{{ route('contact.show') }}">{{ $contactLabel }}</a>
+            @endif
         </div>
 
         <div class="site-footer__group">

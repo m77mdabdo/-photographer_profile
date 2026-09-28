@@ -6,11 +6,13 @@ namespace App\Providers;
 
 use App\Models\Category;
 use App\Models\Client;
+use App\Models\Inquiry;
 use App\Models\Media;
 use App\Models\Project;
 use App\Models\Setting;
 use App\Policies\CategoryPolicy;
 use App\Policies\ClientPolicy;
+use App\Policies\InquiryPolicy;
 use App\Policies\MediaPolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\SettingPolicy;
@@ -67,5 +69,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Category::class, CategoryPolicy::class);
         Gate::policy(Client::class, ClientPolicy::class);
         Gate::policy(Setting::class, SettingPolicy::class);
+        Gate::policy(Inquiry::class, InquiryPolicy::class);
     }
 }

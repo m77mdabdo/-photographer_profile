@@ -69,6 +69,18 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by((string) $request->session()->get('login.id'));
         });
 
+        /*
+         * A blunt outer ceiling on the enquiry endpoint.
+         *
+         * This is NOT the spam defence — App\Support\SpamGuard does that,
+         * with limits tuned per address and per email. This is the crude
+         * protection that stops somebody hammering the route itself, and it
+         * is set well above anything a person filling in a form could reach.
+         */
+        RateLimiter::for('contact', function (Request $request) {
+            return Limit::perMinute(10)->by((string) $request->ip());
+        });
+
         // A ceiling on everything behind /admin. Generous enough never to
         // interrupt real editorial work, low enough to stop a runaway script.
         RateLimiter::for('admin', function (Request $request) {

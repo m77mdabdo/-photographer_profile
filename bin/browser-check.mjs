@@ -79,6 +79,9 @@ const PAGES = [
   { label: 'category', path: '/work/category/architecture' },
   { label: 'archive', path: '/archive' },
   { label: 'archive filtered', path: '/archive?category=street&year=2024' },
+  { label: 'about', path: '/about' },
+  { label: 'contact', path: '/contact' },
+  { label: 'contact sent', path: '/contact/sent' },
   { label: 'long story', path: '/work/nine-streets' },
   { label: 'short story', path: '/work/three-rooms' },
   { label: '404', path: '/no-such-page-exists', status: 404 },
@@ -201,6 +204,28 @@ function inPageAudit() {
     // cuts content is not.
     if (clips && !ellipsis && el.scrollWidth > el.clientWidth + 1) {
       problems.push(`${el.className} is clipped: scrollWidth ${el.scrollWidth} > ${el.clientWidth}`)
+    }
+  }
+
+  // --- 4b. form controls are labelled and focusable -------------------------
+  /*
+   * Only meaningful where there is a form, and this is the page the whole
+   * site leads to. A label that lost its `for`, or a focus ring an author
+   * removed, is invisible in the markup tests and obvious here.
+   */
+  for (const control of document.querySelectorAll('form input:not([type="hidden"]), form textarea, form select')) {
+    if (control.closest('[aria-hidden="true"]')) continue   // the honeypot
+
+    const labelled = control.labels?.length > 0
+      || control.getAttribute('aria-label')
+      || control.getAttribute('aria-labelledby')
+
+    if (!labelled) {
+      problems.push(`form control has no label: ${control.name || control.id || control.type}`)
+    }
+
+    if (control.tabIndex < 0) {
+      problems.push(`form control is not reachable by keyboard: ${control.name || control.id}`)
     }
   }
 

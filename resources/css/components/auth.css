@@ -401,6 +401,9 @@
 .project-list, .category-list { display:flex; flex-direction:column; gap:var(--sp-2); margin:0 0 var(--sp-6); }
 .project-row, .category-row { display:flex; gap:var(--sp-4); align-items:center; padding:var(--sp-3); border:1px solid var(--border); }
 .project-row.is-dragging, .category-row.is-dragging { opacity:.5; border-color:var(--accent); }
+/* An unread enquiry, marked once — the badge on the right says which status. */
+.project-row--unread { border-left:var(--rule-strong) solid var(--accent); }
+.project-row--unread .project-row__title { color:var(--text-primary); }
 .project-row__handle { cursor:grab; padding:var(--sp-2); color:var(--text-secondary); touch-action:none; }
 .project-row__handle:focus-visible { color:var(--accent); }
 .project-row__cover { width:80px; flex:none; }
@@ -611,3 +614,39 @@
 
 /* Deliberately the secondary text colour and not --danger-text. */
 .hero-check__note--warn .hero-check__mark { color: var(--text-primary); opacity: 0.7; }
+
+/* The unread enquiry count in the sidebar. */
+.admin-sidebar__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    margin-left: var(--sp-2);
+    padding-inline: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    font-variant-numeric: tabular-nums;
+    color: var(--on-accent, var(--bg));
+    background-color: var(--accent);
+}
+
+/* The message as it was typed, with its paragraphs preserved. */
+.inquiry-message {
+    display: grid;
+    gap: var(--sp-4);
+    max-width: 68ch;
+    margin-bottom: var(--sp-6);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--text-primary);
+}
+
+.danger-zone {
+    display: grid;
+    gap: var(--sp-3);
+    justify-items: start;
+    margin-top: var(--sp-5);
+    padding: var(--sp-5);
+    border: var(--rule-hair) solid var(--border);
+}

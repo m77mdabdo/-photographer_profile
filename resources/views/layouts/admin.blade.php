@@ -94,6 +94,22 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{{ route('admin.inquiries.index') }}"
+                       @class(['is-current' => request()->routeIs('admin.inquiries.*')])
+                       @if (request()->routeIs('admin.inquiries.*')) aria-current="page" @endif>
+                        Enquiries
+                        {{--
+                            Counted once per admin render. Only genuinely
+                            unattended enquiries — a badge that includes
+                            everything anybody has touched stops being read.
+                        --}}
+                        @php($unreadInquiries = \App\Models\Inquiry::query()->unread()->count())
+                        @if ($unreadInquiries > 0)
+                            <span class="admin-sidebar__count" aria-label="{{ $unreadInquiries }} unread">{{ $unreadInquiries }}</span>
+                        @endif
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('admin.settings.index') }}"
                        @class(['is-current' => request()->routeIs('admin.settings.*')])
                        @if (request()->routeIs('admin.settings.*')) aria-current="page" @endif>
@@ -110,7 +126,7 @@
             <p class="admin-sidebar__heading" id="planned-heading">Planned</p>
 
             <ul role="list" class="admin-sidebar__list admin-sidebar__list--disabled" aria-labelledby="planned-heading">
-                @foreach (['Galleries', 'Journal', 'Pages', 'Enquiries', 'Users', 'Settings'] as $planned)
+                @foreach (['Galleries', 'Journal', 'Pages', 'Users'] as $planned)
                     <li>
                         <span aria-disabled="true">{{ $planned }}</span>
                     </li>

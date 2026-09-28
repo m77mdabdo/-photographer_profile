@@ -136,3 +136,56 @@ hr {
         scroll-behavior: auto !important;
     }
 }
+
+/*
+ * Hidden from EVERYONE — the honeypot, and nothing else.
+ *
+ * This is not .sr-only. That utility hides a thing visually while keeping it
+ * in the accessibility tree, which is the opposite of what a honeypot needs:
+ * a screen reader user must never be asked to fill in a trap field.
+ *
+ * Deliberately not `display: none`. Some form-filling bots skip fields whose
+ * computed display is none, which would make the trap useless. Taking it out
+ * of the flow and clipping it achieves the same invisibility while still
+ * looking like a real field to a script. The markup adds aria-hidden and
+ * tabindex="-1", so it is out of the accessibility tree and out of the tab
+ * order as well.
+ */
+.visually-gone {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+/* ---------------- The skip link ------------------------------------------ */
+
+/*
+ * BOTH SHELLS, which is why it is here rather than in the public layout.
+ *
+ * It lived in components/layout.css, which only public.css imports — so on
+ * every admin page the link had no styling at all and sat visible above the
+ * header as a stray line of text. The suite could not see it: the markup was
+ * correct and the stylesheet was correct, and the bug was the join between
+ * them. It took opening an admin page in a browser.
+ */
+.skip-link {
+    position: absolute;
+    left: var(--sp-4);
+    top: var(--sp-4);
+    z-index: var(--z-modal);
+    padding: var(--sp-2) var(--sp-4);
+    background-color: var(--bg-elevated);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    /* Off-screen until focused, but never display:none — that would remove it
+       from the tab order and defeat the point. */
+    transform: translateY(-200%);
+    transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.skip-link:focus-visible {
+    transform: translateY(0);
+}
