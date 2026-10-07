@@ -16,13 +16,17 @@
  * SCROLLTRIGGER IS IMPORTED HERE AND NOWHERE ELSE. It is 14.25 kB gzipped and
  * only this module needs scrub, so only pages carrying data-motion="parallax"
  * ever download it. The reveals deliberately use IntersectionObserver instead.
+ *
+ * REGISTERING it is still core's job — this module carries the bytes in and
+ * hands the plugin over, so there remains exactly one place that knows how
+ * GSAP is configured and exactly one place that can register anything.
  */
 
 /** Maximum travel, as a percentage of the image's own height. */
 const TRAVEL = 6
 
 export async function init(context) {
-  const { gsap, mm } = context
+  const { gsap, mm, registerPlugin } = context
 
   const image = document.querySelector('[data-motion~="parallax"] .hero__image')
 
@@ -30,7 +34,7 @@ export async function init(context) {
 
   const { ScrollTrigger } = await import('gsap/ScrollTrigger')
 
-  gsap.registerPlugin(ScrollTrigger)
+  registerPlugin(ScrollTrigger)
 
   /*
    * DESKTOP ONLY, and reduced motion excluded by the condition rather than by

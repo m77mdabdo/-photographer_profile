@@ -21,6 +21,40 @@ let context = null
 /** Named so a module can read the same breakpoint the stylesheet uses. */
 export const BREAKPOINT = 900
 
+/*
+ * PLUGIN REGISTRATION LIVES HERE, AND IS DONE ONCE.
+ *
+ * The awkwardness this resolves: registration belongs to core — it is
+ * configuration, and the comment above promises a module never does it — but
+ * the IMPORT cannot live here. `import ScrollTrigger from 'gsap/ScrollTrigger'`
+ * at the top of this file would put 14.25 kB gzipped into the chunk that every
+ * animating page loads, including the journal and the services index, which
+ * need reveals and no scrub at all. That is a third of the homepage's entire
+ * JavaScript budget spent on pages that cannot use it.
+ *
+ * So the import stays where the need is, in parallax.js, and the plugin is
+ * handed here to be registered. One place still owns how GSAP is configured;
+ * the module just carries the bytes in.
+ *
+ * The Set is what makes "once" true rather than merely likely —
+ * gsap.registerPlugin is idempotent, but a second call is a sign that two
+ * modules both think they own a plugin, and this makes that impossible rather
+ * than harmless.
+ */
+const registered = new Set()
+
+/**
+ * Register a GSAP plugin exactly once for the lifetime of the page.
+ *
+ * @param {object} plugin a GSAP plugin, e.g. ScrollTrigger
+ */
+export function registerPlugin(plugin) {
+  if (!plugin || registered.has(plugin)) return
+
+  registered.add(plugin)
+  gsap.registerPlugin(plugin)
+}
+
 export function getContext() {
   if (context) return context
 
@@ -39,6 +73,11 @@ export function getContext() {
     gsap,
     mm,
     tokens,
+
+    // Handed to every module so none of them has to import core to register
+    // a plugin — the context is the only thing a module is given.
+    registerPlugin,
+
     conditions: {
       reduced: '(prefers-reduced-motion: reduce)',
       mobile: `(prefers-reduced-motion: no-preference) and (max-width: ${BREAKPOINT - 1}px)`,
@@ -58,6 +97,13 @@ export function revertAll() {
     context.mm.revert()
     context = null
   }
+
+  /*
+   * Forget the registrations too. A revert that left them behind would make
+   * the harness's "revert leaves no transform behind" check pass against a
+   * half-reset context, which is the kind of test that stops meaning anything.
+   */
+  registered.clear()
 
   settle()
 }
