@@ -69,12 +69,33 @@ final class Settings
         }
 
         try {
-            return self::$memo = Cache::rememberForever(self::CACHE_KEY, static function (): array {
-                /** @var array<string, string|null> $map */
-                $map = Setting::query()->pluck('value', 'key')->all();
+            /*
+             * THE CACHE HOLDS EVERY LOCALE, AND get() PICKS ONE.
+             *
+             * It used to hold `key => value` from a pluck(). Two things broke
+             * when settings became translatable: pluck() reads raw columns and
+             * bypasses the model entirely, so the map filled with JSON
+             * documents rather than strings — and the cache is ONE shared
+             * entry, so whichever locale warmed it would have served its
+             * strings to the other.
+             *
+             * Caching `key => [locale => value]` fixes both at once. One cache
+             * entry, no per-locale key (which would be a cache key derived
+             * from a request property, and two entries to invalidate), and the
+             * fallback is applied at read time where the active locale is
+             * actually known.
+             */
+            $raw = Cache::rememberForever(self::CACHE_KEY, static function (): array {
+                $map = [];
+
+                foreach (Setting::query()->get(['key', 'value']) as $setting) {
+                    $map[(string) $setting->key] = $setting->translations('value');
+                }
 
                 return $map;
             });
+
+            return self::$memo = $raw;
         } catch (Throwable) {
             /*
              * The guard belongs HERE, not only around the config overlay.
@@ -92,11 +113,54 @@ final class Settings
         }
     }
 
+    /**
+     * One setting in the active locale, falling back to the default locale and
+     * then to the caller's default.
+     *
+     * The same fallback rule the models use: an untranslated setting shows its
+     * English text rather than a gap in the page.
+     */
     public static function get(string $key, ?string $default = null): ?string
     {
-        $value = self::all()[$key] ?? null;
+        $entry = self::all()[$key] ?? null;
 
-        return ($value === null || $value === '') ? $default : $value;
+        // Tolerates the pre-translation shape, so a cache warmed by an older
+        // deploy degrades to the right answer instead of to an array.
+        if (is_string($entry)) {
+            return $entry === '' ? $default : $entry;
+        }
+
+        if (! is_array($entry)) {
+            return $default;
+        }
+
+        $value = $entry[Locale::current()] ?? null;
+
+        if (! is_string($value) || $value === '') {
+            $value = $entry[Locale::DEFAULT] ?? null;
+        }
+
+        return (! is_string($value) || $value === '') ? $default : $value;
+    }
+
+    /** Every locale's text for one key, for the admin's locale tabs. */
+    public static function translations(string $key): array
+    {
+        $entry = self::all()[$key] ?? null;
+
+        if (is_string($entry)) {
+            return [Locale::DEFAULT => $entry];
+        }
+
+        return is_array($entry) ? $entry : [];
+    }
+
+    /** Is this key present in the given locale, ignoring fallback? */
+    public static function isTranslated(string $key, ?string $locale = null): bool
+    {
+        $value = self::translations($key)[$locale ?? Locale::current()] ?? null;
+
+        return is_string($value) && $value !== '';
     }
 
     public static function bool(string $key, bool $default = false): bool

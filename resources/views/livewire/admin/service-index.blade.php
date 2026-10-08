@@ -57,6 +57,7 @@
                         <a href="{{ route('admin.services.edit', $service) }}" class="project-row__title">
                             {{ $service->name }}
                         </a>
+                        <x-admin.translation-state :record="$service" />
 
                         <span class="project-row__meta">
                             {{ $service->priceFrom() ? 'From '.$service->priceFrom() : 'Quoted on request' }}

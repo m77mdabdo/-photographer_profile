@@ -27,6 +27,7 @@ use App\Livewire\Admin\StoryBuilder;
 use App\Livewire\Admin\MediaTrash;
 use App\Models\Media;
 use Illuminate\Support\Facades\Blade;
+use App\Http\Middleware\EnsureCanonicalSlug;
 use App\Http\Middleware\SetLocale;
 use App\Support\Locale;
 use Illuminate\Support\Facades\Route;
@@ -147,7 +148,7 @@ foreach (array_reverse(Locale::codes()) as $locale) {
      * the path, so it is not attached here. The group exists for the prefix
      * and the route-name namespace.
      */
-    $group = Route::prefix('');
+    $group = Route::middleware(EnsureCanonicalSlug::class);
 
     if (! Locale::isDefault($locale)) {
         $group = $group->prefix(Locale::prefix($locale))->name(Locale::routePrefix($locale));

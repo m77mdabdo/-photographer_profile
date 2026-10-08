@@ -18,7 +18,12 @@
      */
     $path = request()->getPathInfo();
 
-    $alternates = Locale::alternates($path);
+    /*
+     * SLUG-AWARE. Locale::alternates() swaps only the prefix, which emits an
+     * annotation pointing at an address that 301s once slugs differ per
+     * locale — see LocaleAlternates for why that is worse than it sounds.
+     */
+    $alternates = \App\Support\LocaleAlternates::forRequest(request());
 
     /*
      * x-default is the address for a visitor whose language we do not serve.

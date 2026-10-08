@@ -69,6 +69,7 @@
                         <a href="{{ route('admin.articles.edit', $article) }}" class="project-row__title">
                             {{ $article->title }}
                         </a>
+                        <x-admin.translation-state :record="$article" />
 
                         <span class="project-row__meta">
                             @if ($article->published_at)

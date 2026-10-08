@@ -1,4 +1,30 @@
 <div data-story-builder data-project-id="{{ $project->id }}" data-unsaved-guard data-dirty="0">
+
+    {{--
+        WHICH LANGUAGE THIS EDITOR IS POINTED AT.
+
+        The builder edits one locale at a time and merges what it saves into
+        the others — see StoryBuilder::$editingLocale for why that is the
+        honest answer rather than per-locale fields inside every block.
+    --}}
+    <div class="story-locale" role="group" aria-label="Editing language">
+        <span class="story-locale__label">Editing</span>
+
+        @foreach ($this->locales() as $code)
+            <button type="button"
+                    class="story-locale__option"
+                    wire:click="switchLocale('{{ $code }}')"
+                    @if ($code === $editingLocale) aria-current="true" @endif
+                    lang="{{ \App\Support\Locale::html($code) }}">
+                {{ \App\Support\Locale::native($code) }}
+            </button>
+        @endforeach
+
+        <p class="story-locale__note">
+            Fields show this language only. Saving leaves the other languages untouched.
+        </p>
+    </div>
+
     <p class="breadcrumb">
         <a href="{{ route('admin.projects.edit', $project) }}">← {{ $project->title }}</a>
     </p>

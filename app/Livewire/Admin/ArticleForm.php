@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
+use App\Livewire\Concerns\EditsTranslations;
 use App\Actions\Articles\GenerateUniqueArticleSlug;
 use App\Actions\Articles\SyncArticleMedia;
 use App\Enums\PublishStatus;
@@ -30,6 +31,7 @@ class ArticleForm extends Component
 {
     use AuthorizesRequests;
 
+    use EditsTranslations;
     /**
      * Slugs the journal's own routes own. See rules().
      *
@@ -68,6 +70,12 @@ class ArticleForm extends Component
     /** Drives the beforeunload warning; cleared on save. */
     public bool $dirty = false;
 
+    /** @return list<string> */
+    protected function translatedFields(): array
+    {
+        return ['title', 'subtitle', 'excerpt', 'body'];
+    }
+
     public function mount(?Article $article = null): void
     {
         if ($article?->exists) {
@@ -89,10 +97,16 @@ class ArticleForm extends Component
             $this->status = $article->status->value;
             $this->published_at = $article->published_at?->format('Y-m-d\TH:i');
 
+
+            $this->loadTranslations($article);
+
+
             return;
         }
 
         $this->authorize('create', Article::class);
+
+        $this->resetTranslations();
     }
 
     /**
@@ -183,6 +197,9 @@ class ArticleForm extends Component
             $article->status = PublishStatus::from($this->status);
             $article->published_at = $publishedAt;
             $article->author_id ??= auth()->id();
+
+            // Both locales, before the write. See EditsTranslations.
+            $this->applyTranslations($article);
 
             $article->save();
 

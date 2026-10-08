@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\Translatable;
 use App\Support\Settings;
 use Illuminate\Database\Eloquent\Model;
 
 class Setting extends Model
 {
+    use Translatable;
+
     /** @var list<string> */
     protected $fillable = ['key', 'value', 'type', 'group'];
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\Translatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -14,6 +15,7 @@ class Tag extends Model
     /** @use HasFactory<\Database\Factories\TagFactory> */
     use HasFactory;
 
+    use Translatable;
     public $timestamps = true;
 
     /** @var list<string> */

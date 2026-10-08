@@ -6,6 +6,7 @@ namespace App\Models\Concerns;
 
 use App\Models\Redirect;
 use App\Support\Locale;
+use App\Support\SlugRedirects;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -33,16 +34,36 @@ use Throwable;
  */
 trait RedirectsOnSlugChange
 {
+    /**
+     * Run something with slug-change redirects switched off.
+     *
+     * THE STATE LIVES IN App\Support\SlugRedirects, NOT HERE, and the reason
+     * is a bug this nearly shipped with: a static property declared in a trait
+     * is a separate property per consuming class, so suppressing it on Project
+     * would have left Article, Service and Page firing. The data migration
+     * touches all four.
+     *
+     * See that class for why it is a counter, and why there is no
+     * disable()/enable() pair.
+     *
+     * @template TReturn
+     *
+     * @param  callable(): TReturn  $callback
+     * @return TReturn
+     */
+    public static function withoutSlugRedirects(callable $callback): mixed
+    {
+        return SlugRedirects::without($callback);
+    }
+
     public static function bootRedirectsOnSlugChange(): void
     {
         static::updating(function (self|\Illuminate\Database\Eloquent\Model $model): void {
-            if (! $model->isDirty('slug')) {
+            if (SlugRedirects::suppressed()) {
                 return;
             }
 
-            $previous = $model->getOriginal('slug');
-
-            if (! is_string($previous) || $previous === '') {
+            if (! $model->isDirty('slug')) {
                 return;
             }
 
@@ -51,13 +72,38 @@ trait RedirectsOnSlugChange
              * in the same save that renames it never had a public address
              * under the old slug.
              */
-            $wasVisible = self::wasPubliclyVisible($model);
-
-            if (! $wasVisible) {
+            if (! self::wasPubliclyVisible($model)) {
                 return;
             }
 
-            $model->recordSlugRedirect($previous, (string) $model->slug);
+            /*
+             * PER LOCALE, BECAUSE SLUGS ARE NOW PER LOCALE.
+             *
+             * This read getOriginal('slug') as a string and handed it to
+             * publicPath(). Once the column became JSON that string was the
+             * whole document, and route() was asked to build a URL from
+             * `{"en":"…","ar":"…"}`:
+             *
+             *     Missing required parameter for [Route: journal.show]
+             *
+             * Comparing the two maps locale by locale is also simply more
+             * correct than it was before: an editor who changes only the
+             * Arabic slug moves only the Arabic address, and only that one
+             * needs a redirect. The previous version would have written both.
+             */
+            $before = $model->translationsOf('slug', $model->getOriginal('slug'));
+            $after = $model->translations('slug');
+
+            foreach (Locale::codes() as $locale) {
+                $old = $before[$locale] ?? null;
+                $new = $after[$locale] ?? null;
+
+                if (! is_string($old) || $old === '' || ! is_string($new) || $new === '' || $old === $new) {
+                    continue;
+                }
+
+                $model->recordSlugRedirect($old, $new, $locale);
+            }
         });
     }
 
@@ -90,11 +136,13 @@ trait RedirectsOnSlugChange
      * rename a project because the redirects table is unavailable is a worse
      * outcome than a missing redirect.
      */
-    public function recordSlugRedirect(string $oldSlug, string $newSlug): void
+    public function recordSlugRedirect(string $oldSlug, string $newSlug, ?string $locale = null): void
     {
         if ($oldSlug === $newSlug) {
             return;
         }
+
+        $locale ??= Locale::DEFAULT;
 
         $bareFrom = Redirect::normalise($this->publicPath($oldSlug));
         $bareTo = Redirect::normalise($this->publicPath($newSlug));
@@ -121,12 +169,10 @@ trait RedirectsOnSlugChange
          * place that changes, and it changes by reading the slug per locale
          * rather than by growing another branch.
          */
-        foreach (Locale::codes() as $locale) {
-            $this->recordMove(
-                Locale::pathFor($locale, $bareFrom),
-                Locale::pathFor($locale, $bareTo),
-            );
-        }
+        $this->recordMove(
+            Locale::pathFor($locale, $bareFrom),
+            Locale::pathFor($locale, $bareTo),
+        );
 
         Redirect::forgetMap();
     }

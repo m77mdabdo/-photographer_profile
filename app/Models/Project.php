@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\Translatable;
 use App\Enums\PublishStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,6 +19,7 @@ class Project extends Model
 {
     /** @use HasFactory<\Database\Factories\ProjectFactory> */
     use HasFactory;
+    use Translatable;
     use Concerns\RedirectsOnSlugChange;
     use SoftDeletes;
 

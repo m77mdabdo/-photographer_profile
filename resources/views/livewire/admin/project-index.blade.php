@@ -102,6 +102,7 @@
                                 <span class="badge badge--demo" title="Seeded demonstration content">Demo</span>
                             @endif
                         </a>
+                        <x-admin.translation-state :record="$project" />
                         <span class="project-row__meta">
                             {{ $project->slug }}
                             @if ($project->year) · {{ $project->year }} @endif

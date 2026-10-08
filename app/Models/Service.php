@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\Translatable;
 use App\Enums\PublishStatus;
 use App\Support\RichText;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,6 +20,7 @@ class Service extends Model
 {
     /** @use HasFactory<\Database\Factories\ServiceFactory> */
     use HasFactory;
+    use Translatable;
     use Concerns\RedirectsOnSlugChange;
     use SoftDeletes;
 

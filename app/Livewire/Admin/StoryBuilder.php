@@ -9,6 +9,7 @@ use App\Actions\Projects\ValidateBlock;
 use App\Enums\BlockType;
 use App\Models\Media;
 use App\Models\Project;
+use App\Support\Locale;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
@@ -60,6 +61,65 @@ class StoryBuilder extends Component
     public ?string $loadedVersion = null;
 
     public bool $stale = false;
+
+    /**
+     * Which locale the builder is editing.
+     *
+     * ───────────────────────────────────────────────────────────────────────
+     * D3, ANSWERED HONESTLY.
+     *
+     * The story builder edits ONE LOCALE AT A TIME, chosen here, and merges
+     * what it saves into the other locales rather than replacing them.
+     *
+     * WHAT IS NOT DONE, AND WHY NOT HALF-DONE INSTEAD
+     *
+     * Side-by-side per-locale fields inside each block — an English caption
+     * next to its Arabic one, the way the project form now does it — is not
+     * implemented. It would mean every text input in story-builder.js becoming
+     * N inputs, and that file is 993 lines of undo history, localStorage
+     * drafts, cross-block image drag and keyboard parity, all of which key off
+     * the current one-input-per-field shape. Doubling the fields means
+     * rewriting the snapshot format that undo and draft recovery both depend
+     * on.
+     *
+     * That work is real and it is not worth doing to a component ADR 0002
+     * schedules for deletion at step 8. So the builder gets a locale selector
+     * instead: the same editor, pointed at one language at a time.
+     *
+     * WHAT WOULD HAVE BEEN DANGEROUS is leaving the save path alone, because
+     * the editor sends plain strings and the column holds locale maps — so an
+     * English save would have erased every Arabic caption with no error. That
+     * part is done; see SaveStory::mergeLocale().
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public string $editingLocale = Locale::DEFAULT;
+
+    /** @return list<string> */
+    public function locales(): array
+    {
+        return Locale::codes();
+    }
+
+    /**
+     * Point the builder at another language.
+     *
+     * Refuses while there is unsaved work: switching reloads every block's
+     * text from the database, so doing it with a dirty editor would discard
+     * whatever had been typed. The editor saves or discards first.
+     */
+    public function switchLocale(string $locale): void
+    {
+        if (! Locale::supports($locale)) {
+            return;
+        }
+
+        $this->editingLocale = $locale;
+        $this->resetErrorBag();
+        $this->loadFromDatabase();
+
+        $this->message = 'Now editing '.Locale::native($locale).'.';
+        $this->dispatch('story-reloaded');
+    }
 
     public function mount(Project $project): void
     {
@@ -132,7 +192,7 @@ class StoryBuilder extends Component
             return;
         }
 
-        app(SaveStory::class)($this->project, $normalised);
+        app(SaveStory::class)($this->project, $normalised, $this->editingLocale);
 
         $this->project->refresh();
         $this->loadedVersion = $this->project->updated_at?->toIso8601String();
@@ -155,7 +215,14 @@ class StoryBuilder extends Component
                 'key' => 'b'.$block->id,
                 'id' => $block->id,
                 'type' => $block->type->value,
-                'data' => (array) ($block->data ?? []),
+                /*
+                 * The EDITING LOCALE's own text, with no fallback. An editor
+                 * translating into Arabic has to see an empty field where
+                 * nothing is translated — a field pre-filled with the English
+                 * would be saved as a translation, turning "untranslated" into
+                 * "translated, identically", which nobody can find again.
+                 */
+                'data' => $this->textFor($block),
                 'media' => $block->blockMedia->pluck('media_id')->map('intval')->all(),
             ])
             ->all();
@@ -186,5 +253,38 @@ class StoryBuilder extends Component
             'types' => collect(BlockType::cases())->groupBy(fn (BlockType $t): string => $t->group()),
             'allTypes' => BlockType::cases(),
         ]);
+    }
+
+    /**
+     * A block's text in the editing locale, flattened for the editor.
+     *
+     * @return array<string, mixed>
+     */
+    private function textFor(\App\Models\ProjectBlock $block): array
+    {
+        $raw = $block->rawData();
+        $translatable = $block->type->translatableDataKeys();
+        $nested = $block->type->nestedTextKeys();
+        $out = [];
+
+        foreach ($raw as $key => $value) {
+            if (! in_array($key, $translatable, true)) {
+                $out[$key] = $value;
+
+                continue;
+            }
+
+            if (in_array($key, $nested, true)) {
+                foreach ((array) $value as $index => $map) {
+                    $out[$key][$index] = is_array($map) ? ($map[$this->editingLocale] ?? '') : $map;
+                }
+
+                continue;
+            }
+
+            $out[$key] = is_array($value) ? ($value[$this->editingLocale] ?? '') : $value;
+        }
+
+        return $out;
     }
 }

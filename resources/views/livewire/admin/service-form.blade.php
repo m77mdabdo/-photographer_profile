@@ -208,7 +208,25 @@
 
             <a href="{{ route('admin.services.index') }}" class="admin-link">Cancel</a>
         </div>
-    </form>
+    
+    {{--
+        EVERY OTHER LOCALE, beside the form rather than behind a tab — see the
+        component for why. This is step-4 scaffolding: it exists so the custom
+        admin can still edit content after the columns became per-locale, and
+        it is deleted with the rest of this admin at step 10.
+    --}}
+    @foreach ($this->otherLocales() as $otherLocale)
+        <x-admin.translation-panel
+            :locale="$otherLocale"
+            :untranslated="$this->untranslatedFields($otherLocale)"
+            :fields="[
+            'name' => ['label' => 'Name', 'type' => 'text'],
+            'summary' => ['label' => 'Summary', 'type' => 'textarea', 'rows' => 6],
+            'description' => ['label' => 'Description', 'type' => 'textarea', 'rows' => 6]
+        ]" />
+    @endforeach
+
+</form>
 
     <livewire:admin.media-picker />
 </div>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\Translatable;
 use App\Enums\PublishStatus;
 use App\Support\RichText;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,6 +17,7 @@ class Page extends Model
 {
     /** @use HasFactory<\Database\Factories\PageFactory> */
     use HasFactory;
+    use Translatable;
     use SoftDeletes;
 
     /**

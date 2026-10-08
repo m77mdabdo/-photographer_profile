@@ -91,6 +91,21 @@ final class Locale
      */
     public static function current(): string
     {
+        /*
+         * Tolerates there being no application at all.
+         *
+         * A pure unit test constructs a model without booting Laravel, and the
+         * translatable attribute cast reads the current locale on every get —
+         * so reaching straight for the facade turned nine passing unit tests
+         * into "A facade root has not been set." The locale of a process with
+         * no application is the default by definition, and saying so here is
+         * better than making every unit test boot a container it does not
+         * otherwise need.
+         */
+        if (! app()->bound('translator') && ! app()->bound('config')) {
+            return self::DEFAULT;
+        }
+
         $code = App::getLocale();
 
         return self::supports($code) ? $code : self::DEFAULT;

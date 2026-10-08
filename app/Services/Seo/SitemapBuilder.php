@@ -12,6 +12,7 @@ use App\Models\Page;
 use App\Models\Project;
 use App\Models\Service;
 use App\Support\Locale;
+use App\Support\LocaleAlternates;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -387,6 +388,56 @@ final class SitemapBuilder
      */
     private function alternates(string $loc): array
     {
-        return Locale::alternates((string) (parse_url($loc, PHP_URL_PATH) ?: '/'));
+        $path = (string) (parse_url($loc, PHP_URL_PATH) ?: '/');
+
+        /*
+         * SLUG-AWARE, resolved from the address rather than from a model.
+         *
+         * The sitemap builds URLs for records it is iterating, and threading
+         * each model down into this helper meant editing six call sites and a
+         * signature — easy to do and easy to get subtly wrong, as one attempt
+         * demonstrated. Looking the record up from the slug already in the URL
+         * is one query per entry on a cached document that regenerates rarely,
+         * and it cannot drift from the route that produced the path.
+         */
+        $swaps = [];
+        $segments = explode('/', trim($path, '/'));
+        $last = rawurldecode((string) end($segments));
+
+        foreach (self::SLUG_MODELS as $prefix => $model) {
+            if (count($segments) < 2 || $segments[0] !== $prefix) {
+                continue;
+            }
+
+            /** @var \Illuminate\Database\Eloquent\Model|null $record */
+            $record = $model::query()->where('slug', $last)->first();
+
+            if ($record === null) {
+                continue;
+            }
+
+            foreach (Locale::codes() as $locale) {
+                $slug = $record->getTranslation('slug', $locale);
+
+                if (is_string($slug) && $slug !== '') {
+                    $swaps[$locale][$last] = $slug;
+                }
+            }
+
+            break;
+        }
+
+        return LocaleAlternates::build($path, $swaps);
     }
+
+    /**
+     * The first path segment that identifies a model bound by slug.
+     *
+     * @var array<string, class-string<\Illuminate\Database\Eloquent\Model>>
+     */
+    private const SLUG_MODELS = [
+        'work' => Project::class,
+        'journal' => Article::class,
+        'services' => Service::class,
+    ];
 }

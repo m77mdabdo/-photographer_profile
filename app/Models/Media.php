@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\Translatable;
 use App\Enums\MediaStatus;
 use App\Support\AccentPalette;
 use App\Support\ExposureLine;
@@ -21,6 +22,7 @@ class Media extends Model
 {
     /** @use HasFactory<\Database\Factories\MediaFactory> */
     use HasFactory;
+    use Translatable;
     use SoftDeletes;
 
     protected $table = 'media';

@@ -30,7 +30,20 @@ final class PageLinks
      */
     public static function legal(): array
     {
-        return Cache::rememberForever(self::CACHE_KEY, static function (): array {
+        /*
+         * THE CACHE KEY CARRIES THE LOCALE.
+         *
+         * Both halves of this map are locale-dependent: the label comes from
+         * a translatable setting and the url carries the locale's prefix. One
+         * shared key meant whichever locale warmed the cache served its
+         * labels and its URLs to the other — an Arabic footer linking to the
+         * English privacy page in English.
+         *
+         * A cache key built from request input is normally a way to let anyone
+         * fill the cache with junk. Not here: the locale comes from a closed
+         * set of two, so this is two entries, for ever.
+         */
+        return Cache::rememberForever(self::CACHE_KEY.'.'.Locale::current(), static function (): array {
             $slugs = [
                 Page::PRIVACY => Settings::get('nav.privacy', 'Privacy'),
                 Page::TERMS => Settings::get('nav.terms', 'Terms'),
@@ -60,8 +73,20 @@ final class PageLinks
         });
     }
 
+    /**
+     * Forget every locale's copy, not merely the active one.
+     *
+     * A page published while an English admin session is open has to vanish
+     * from the Arabic footer too, and the admin has no idea which locales
+     * exist. Looping the closed set is the only version of this that cannot
+     * leave a stale entry behind.
+     */
     public static function forget(): void
     {
-        Cache::forget(self::CACHE_KEY);
+        Cache::forget(self::CACHE_KEY);   // the pre-locale key, for safety
+
+        foreach (Locale::codes() as $locale) {
+            Cache::forget(self::CACHE_KEY.'.'.$locale);
+        }
     }
 }

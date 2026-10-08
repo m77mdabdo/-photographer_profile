@@ -137,7 +137,12 @@ class SettingsTest extends TestCase
          * no model event fires in THIS process — the memo is then the only
          * thing that could still be serving the old value.
          */
-        DB::table('settings')->where('key', 'site.name')->update(['value' => 'Changed Elsewhere']);
+        DB::table('settings')->where('key', 'site.name')->update([
+            // JSON, because settings are per-locale now. A raw string here is
+            // rejected by the column, which is the database refusing to hold
+            // an untranslatable value — correct, and worth writing out.
+            'value' => json_encode(['en' => 'Changed Elsewhere'], JSON_UNESCAPED_UNICODE),
+        ]);
         Cache::forget(Settings::CACHE_KEY);
 
         // Within one request the memo is still authoritative, and should be.

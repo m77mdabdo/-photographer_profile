@@ -160,6 +160,50 @@ enum BlockType: string
     }
 
     /**
+     * Keys inside data that hold READER-FACING TEXT and therefore translate.
+     *
+     * LOCALE KEYS NEST AT THE FIELD, NOT AT THE BLOCK.
+     *
+     * The alternative was `{"en": {...whole block...}, "ar": {...}}`, and it
+     * is wrong for two reasons. It duplicates keys that have no language —
+     * a spacer's `height`, a video's `url` — so a block could end up 120px
+     * tall in English and 80px in Arabic, which is not a translation, it is a
+     * bug with somewhere to live. And it makes the block's structure itself
+     * per-locale, so `allowedDataKeys()` and `requiredDataKeys()` would have
+     * to validate each locale separately and could disagree about whether a
+     * block is valid.
+     *
+     * Nesting at the field keeps the block's shape single and canonical:
+     *
+     *     {"heading": {"en": "Forty minutes", "ar": "أربعون دقيقة"},
+     *      "body":    {"en": "The chair was placed once…"},
+     *      "height":  120}
+     *
+     * which is the SAME shape a translatable column has. One cast, one
+     * fallback rule, one mental model — rather than a second arrangement that
+     * exists only inside this one column.
+     *
+     * `descriptions` is per-image alt text keyed by image index, so its LEAVES
+     * translate rather than the key itself: {"0": {"en": "…", "ar": "…"}}.
+     *
+     * @return list<string>
+     */
+    public function translatableDataKeys(): array
+    {
+        return array_values(array_filter(
+            $this->allowedDataKeys(),
+            // url is an address and height is a number. Neither has a language.
+            static fn (string $key): bool => ! in_array($key, ['url', 'height'], true),
+        ));
+    }
+
+    /** Keys whose values are a map of index => text, not text. */
+    public function nestedTextKeys(): array
+    {
+        return array_values(array_intersect($this->allowedDataKeys(), ['descriptions']));
+    }
+
+    /**
      * Keys that must be present and non-empty for the block to be valid.
      *
      * @return list<string>

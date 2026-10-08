@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
+use App\Livewire\Concerns\EditsTranslations;
 use App\Actions\Projects\GenerateUniqueSlug;
 use App\Actions\Projects\SyncProjectMedia;
 use App\Enums\PublishStatus;
@@ -29,6 +30,7 @@ class ProjectForm extends Component
 {
     use AuthorizesRequests;
 
+    use EditsTranslations;
     public ?Project $project = null;
 
     // --- Basic information -------------------------------------------------
@@ -64,6 +66,12 @@ class ProjectForm extends Component
     /** Drives the beforeunload warning; cleared on save. */
     public bool $dirty = false;
 
+    /** @return list<string> */
+    protected function translatedFields(): array
+    {
+        return ['title', 'subtitle', 'excerpt', 'description', 'location', 'client'];
+    }
+
     public function mount(?Project $project = null): void
     {
         if ($project?->exists) {
@@ -89,10 +97,16 @@ class ProjectForm extends Component
             $this->published_at = $project->published_at?->format('Y-m-d\TH:i');
             $this->is_featured = $project->is_featured;
 
+
+            $this->loadTranslations($project);
+
+
             return;
         }
 
         $this->authorize('create', Project::class);
+
+        $this->resetTranslations();
     }
 
     /**
@@ -207,6 +221,9 @@ class ProjectForm extends Component
             $project->status = PublishStatus::from($this->status);
             $project->published_at = $publishedAt;
             $project->created_by ??= auth()->id();
+
+            // Both locales, before the write. See EditsTranslations.
+            $this->applyTranslations($project);
 
             $project->save();
 

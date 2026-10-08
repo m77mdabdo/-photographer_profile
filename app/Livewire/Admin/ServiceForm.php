@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
+use App\Livewire\Concerns\EditsTranslations;
 use App\Actions\Services\GenerateUniqueServiceSlug;
 use App\Enums\PublishStatus;
 use App\Models\Media;
@@ -26,6 +27,7 @@ class ServiceForm extends Component
 {
     use AuthorizesRequests;
 
+    use EditsTranslations;
     public ?Service $service = null;
 
     // --- The service -------------------------------------------------------
@@ -62,6 +64,12 @@ class ServiceForm extends Component
 
     public bool $dirty = false;
 
+    /** @return list<string> */
+    protected function translatedFields(): array
+    {
+        return ['name', 'summary', 'description'];
+    }
+
     public function mount(?Service $service = null): void
     {
         if ($service?->exists) {
@@ -87,10 +95,16 @@ class ServiceForm extends Component
             $this->published_at = $service->published_at?->format('Y-m-d\TH:i');
             $this->sort_order = (int) $service->sort_order;
 
+
+            $this->loadTranslations($service);
+
+
             return;
         }
 
         $this->authorize('create', Service::class);
+
+        $this->resetTranslations();
     }
 
     /**
@@ -204,6 +218,9 @@ class ServiceForm extends Component
             $service->slug = $this->slug;
             $service->status = PublishStatus::from($this->status);
             $service->published_at = $publishedAt;
+
+            // Both locales, before the write. See EditsTranslations.
+            $this->applyTranslations($service);
 
             $service->save();
 

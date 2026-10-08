@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Projects;
 
 use App\Enums\BlockType;
+use App\Support\Locale;
 use App\Models\Project;
 use App\Models\ProjectBlock;
 use Illuminate\Support\Facades\DB;
@@ -24,9 +25,11 @@ class SaveStory
     /**
      * @param  list<array{id: ?int, type: string, data: array<string, mixed>, media: list<int>}>  $blocks
      */
-    public function __invoke(Project $project, array $blocks): void
+    public function __invoke(Project $project, array $blocks, ?string $locale = null): void
     {
-        DB::transaction(function () use ($project, $blocks): void {
+        $locale ??= Locale::DEFAULT;
+
+        DB::transaction(function () use ($project, $blocks, $locale): void {
             $existing = $project->blocks()->get()->keyBy('id');
             $keptIds = [];
 
@@ -41,7 +44,25 @@ class SaveStory
 
                 $block->type = BlockType::from($descriptor['type']);
                 $block->sort_order = $position;
-                $block->data = $this->cleanData($descriptor);
+                /*
+                 * MERGED INTO THE EXISTING LOCALES, NEVER REPLACING THEM.
+                 *
+                 * The editor sends plain strings for ONE locale. Assigning
+                 * them straight to `data` would have replaced
+                 * {"en": …, "ar": …} with {"caption": "…"} and destroyed every
+                 * Arabic caption the moment an English editor pressed save —
+                 * silently, with no error and no way back except the backup.
+                 *
+                 * This is the single most destructive thing that could have
+                 * been left undone in this task, which is why it is done even
+                 * though the builder's UI only edits one locale at a time.
+                 */
+                $block->data = $this->mergeLocale(
+                    $block->exists ? $block->rawData() : [],
+                    $this->cleanData($descriptor),
+                    $type = BlockType::from($descriptor['type']),
+                    $locale,
+                );
 
                 // Only touch the row when something actually differs, so an
                 // unchanged save leaves updated_at alone too.
@@ -108,5 +129,76 @@ class SaveStory
         }
 
         ($this->syncBlockMedia)($block, $mediaIds);
+    }
+
+    /**
+     * Fold one locale's plain text into a block's existing locale maps.
+     *
+     * Non-text keys — a spacer's height, a video's url — are taken from the
+     * incoming data as they always were, because they have no language. Text
+     * keys are written into their locale slot, leaving every other locale
+     * exactly as it was.
+     *
+     * @param  array<string, mixed>  $existing
+     * @param  array<string, mixed>  $incoming
+     * @return array<string, mixed>
+     */
+    private function mergeLocale(array $existing, array $incoming, BlockType $type, string $locale): array
+    {
+        $translatable = $type->translatableDataKeys();
+        $nested = $type->nestedTextKeys();
+        $out = $existing;
+
+        foreach ($incoming as $key => $value) {
+            if (! in_array($key, $translatable, true)) {
+                $out[$key] = $value;
+
+                continue;
+            }
+
+            if (in_array($key, $nested, true)) {
+                foreach ((array) $value as $index => $text) {
+                    $map = is_array($out[$key][$index] ?? null) ? $out[$key][$index] : [];
+
+                    if (is_string($text) && $text !== '') {
+                        $map[$locale] = $text;
+                    } else {
+                        unset($map[$locale]);
+                    }
+
+                    $out[$key][$index] = $map;
+                }
+
+                continue;
+            }
+
+            $map = is_array($out[$key] ?? null) ? $out[$key] : [];
+
+            if (is_string($value) && $value !== '') {
+                $map[$locale] = $value;
+            } else {
+                unset($map[$locale]);
+            }
+
+            $out[$key] = $map;
+        }
+
+        /*
+         * A key the editor did not send at all is removed for THIS locale
+         * only, so deleting a caption in English does not delete it in Arabic.
+         */
+        foreach ($translatable as $key) {
+            if (array_key_exists($key, $incoming) || ! isset($out[$key]) || ! is_array($out[$key])) {
+                continue;
+            }
+
+            unset($out[$key][$locale]);
+
+            if ($out[$key] === []) {
+                unset($out[$key]);
+            }
+        }
+
+        return array_filter($out, static fn ($v): bool => $v !== [] && $v !== null);
     }
 }

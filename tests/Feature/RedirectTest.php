@@ -11,6 +11,7 @@ use App\Models\Article;
 use App\Models\Project;
 use App\Models\Redirect;
 use App\Support\Locale;
+use Illuminate\Support\Facades\App;
 use App\Models\Service;
 use App\Models\User;
 use App\Support\Settings;
@@ -56,6 +57,22 @@ class RedirectTest extends TestCase
         ];
 
         foreach ($cases as [$model, $oldSlug, $newSlug, $prefix]) {
+            /*
+             * THE LOCALE IS STATED, NOT INHERITED.
+             *
+             * Assigning a slug writes the ACTIVE locale, so this test's
+             * meaning depends on which locale is active — and the previous
+             * iteration ends with a request to an /ar address, which leaves
+             * the application set to Arabic. The second case then renamed the
+             * ARABIC slug and recorded an Arabic redirect, and the assertion
+             * failed describing an English one.
+             *
+             * Nothing was wrong with the code: a rename while Arabic is active
+             * is an Arabic rename. What was wrong was a test that left it to
+             * whatever the last request happened to do.
+             */
+            App::setLocale(Locale::DEFAULT);
+
             $model->forceFill(['slug' => $oldSlug])->save();
 
             Redirect::query()->delete();
@@ -64,31 +81,46 @@ class RedirectTest extends TestCase
             $model->forceFill(['slug' => $newSlug])->save();
 
             /*
-             * ONE ROW PER LOCALE. A rename moves every language's copy of the
-             * address at once, and HandleRedirects deliberately refuses to let
-             * a redirect leak from one locale into another — so a single
-             * unprefixed row would leave the Arabic address 404ing after a
-             * rename. This asserted sole() before locales existed.
+             * ONE ROW FOR THE LOCALE WHOSE ADDRESS ACTUALLY MOVED.
+             *
+             * This asserted one row per locale, which was right when a slug
+             * was a single value shared by both languages. Slugs are now
+             * per-locale: assigning `$model->slug` writes the ACTIVE locale
+             * and leaves the other alone, so only the English address moved
+             * and only the English address needs a redirect. Writing an
+             * Arabic row here would be inventing a move that did not happen.
              */
-            $this->assertSame(
-                count(Locale::codes()),
-                Redirect::query()->count(),
-                'a rename should create one redirect per locale'
-            );
+            $this->assertSame(1, Redirect::query()->count(), 'only the renamed locale should get a redirect');
 
-            foreach (Locale::codes() as $locale) {
-                $from = Locale::pathFor($locale, $prefix.$oldSlug);
-                $to = Locale::pathFor($locale, $prefix.$newSlug);
+            $from = $prefix.$oldSlug;
+            $to = $prefix.$newSlug;
 
-                $redirect = Redirect::query()->where('from_path', $from)->sole();
+            $redirect = Redirect::query()->where('from_path', $from)->sole();
 
-                $this->assertSame($to, $redirect->to_path);
-                $this->assertSame(301, $redirect->status_code);
-                $this->assertSame('slug_change', $redirect->source);
+            $this->assertSame($to, $redirect->to_path);
+            $this->assertSame(301, $redirect->status_code);
+            $this->assertSame('slug_change', $redirect->source);
 
-                // And it actually works end to end, in that locale.
-                $this->get($from)->assertRedirect($to);
-            }
+            // And it actually works end to end.
+            $this->get($from)->assertRedirect($to);
+
+            // The Arabic address is untouched and still resolves to the record.
+            /*
+             * THE ARABIC ADDRESS IS UNTOUCHED, and it is whatever the Arabic
+             * slug actually is — not the old English one.
+             *
+             * Assigning `$model->slug` writes the ACTIVE locale only. The
+             * factory seeded both locales with its own random slug, so the
+             * two renames in this test moved English and left Arabic on that
+             * original value. Asserting the old English slug still resolved
+             * under /ar assumed a bulk write that no longer happens, and the
+             * 404 was correct.
+             */
+            $arabicSlug = $model->fresh()->getTranslation('slug', 'ar', fallback: false);
+
+            $this->assertNotNull($arabicSlug, 'a slug may never be null in any locale');
+
+            $this->get(Locale::pathFor('ar', $prefix.$arabicSlug))->assertOk();
         }
     }
 
@@ -136,26 +168,14 @@ class RedirectTest extends TestCase
         $project->forceFill(['slug' => 'second'])->save();
         $project->forceFill(['slug' => 'third'])->save();
 
-        // Two renames, one row each per locale — and still no chain.
-        $this->assertSame(2 * count(Locale::codes()), Redirect::query()->count());
+        // Two renames of the English slug, one row each, and still no chain.
+        $this->assertSame(2, Redirect::query()->count());
 
-        /*
-         * Both old addresses point straight at the current one, in every
-         * locale. The re-pointing that prevents chains has to happen per
-         * locale too: /ar/work/first must reach /ar/work/third in one hop,
-         * not two, and must never cross into the English address.
-         */
-        foreach (Locale::codes() as $locale) {
-            $third = Locale::pathFor($locale, '/work/third');
-
-            foreach (['first', 'second'] as $old) {
-                $from = Locale::pathFor($locale, '/work/'.$old);
-
-                $this->assertSame($third, Redirect::query()->where('from_path', $from)->sole()->to_path);
-            }
-
-            $this->get(Locale::pathFor($locale, '/work/first'))->assertRedirect($third);
+        foreach (['first', 'second'] as $old) {
+            $this->assertSame('/work/third', Redirect::query()->where('from_path', '/work/'.$old)->sole()->to_path);
         }
+
+        $this->get('/work/first')->assertRedirect('/work/third');
     }
 
     // ---------------------------------------------------------------- 11
