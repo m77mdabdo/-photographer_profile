@@ -25,6 +25,8 @@ use App\Policies\InquiryPolicy;
 use App\Policies\MediaPolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\SettingPolicy;
+use App\Routing\LocaleUrlGenerator;
+use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Facades\Blade;
 use App\Support\Settings;
 use App\Support\Sitemap;
@@ -40,7 +42,49 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->registerLocaleUrlGenerator();
+    }
+
+    /**
+     * Swap Laravel's URL generator for the locale-aware one.
+     *
+     * WHY `extend` AND NOT A FRESH BINDING
+     *
+     * The container's `url` instance is wired to several things after it is
+     * created — the session's resolver, the key resolver for signed URLs, the
+     * request. Rebinding it from scratch means reproducing all of that and
+     * getting it wrong the first time signed preview links are used.
+     *
+     * Extending instead means Laravel builds its generator exactly as it
+     * normally would, and this copies its state into the subclass. The only
+     * behavioural difference is the one in LocaleUrlGenerator::route().
+     */
+    private function registerLocaleUrlGenerator(): void
+    {
+        $this->app->extend('url', function (UrlGenerator $generator, $app): UrlGenerator {
+            $localised = new LocaleUrlGenerator(
+                $app['router']->getRoutes(),
+                $generator->getRequest(),
+                $app['config']->get('app.asset_url'),
+            );
+
+            // Signed URLs — the project preview route depends on this.
+            $localised->setKeyResolver(fn () => $app->make('config')->get('app.key'));
+
+            /*
+             * The session resolver is what makes url()->previous() work. It is
+             * bound lazily because the session is not available this early in
+             * the container's life.
+             */
+            $localised->setSessionResolver(fn () => $app['session'] ?? null);
+
+            // Keep the generator pointed at the live request as it changes.
+            $app->rebinding('request', function ($app, $request) use ($localised): void {
+                $localised->setRequest($request);
+            });
+
+            return $localised;
+        });
     }
 
     /**

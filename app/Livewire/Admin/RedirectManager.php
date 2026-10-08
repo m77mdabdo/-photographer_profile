@@ -6,6 +6,7 @@ namespace App\Livewire\Admin;
 
 use App\Http\Middleware\HandleRedirects;
 use App\Models\Redirect;
+use App\Support\Locale;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Validation\Rule;
@@ -33,6 +34,9 @@ class RedirectManager extends Component
     // --- the add form ------------------------------------------------------
     public string $from_path = '';
     public string $to_path = '';
+
+    /** Opt in to creating the same move in every locale. See add(). */
+    public bool $mirror_locales = false;
     public string $status_code = '301';
 
     public string $message = '';
@@ -58,19 +62,69 @@ class RedirectManager extends Component
 
         $validated = $this->validate();
 
+        $from = Redirect::normalise($validated['from_path']);
+        $to = Redirect::normalise($validated['to_path']);
+        $status = (int) $validated['status_code'];
+
+        $written = $this->write($from, $to, $status);
+
+        /*
+         * MIRRORING IS OPT-IN, and it writes real rows.
+         *
+         * The rule the middleware enforces is that a redirect belongs to the
+         * address it names. "Also redirect the other language" does not relax
+         * that rule — it creates the second address's row, so the map stays a
+         * flat path lookup with no locale logic in it at all.
+         *
+         * Both paths are stripped of any prefix first, so ticking the box on
+         * an address that already carries /ar produces the English row rather
+         * than /ar/ar/….
+         */
+        if ($this->mirror_locales) {
+            [, $bareFrom] = Locale::split($from);
+            [, $bareTo] = Locale::split($to);
+
+            foreach (Locale::codes() as $locale) {
+                $written += $this->write(
+                    Locale::pathFor($locale, $bareFrom),
+                    Locale::pathFor($locale, $bareTo),
+                    $status,
+                );
+            }
+        }
+
+        $this->reset(['from_path', 'to_path', 'mirror_locales']);
+        $this->status_code = '301';
+
+        $this->message = $written > 1
+            ? $written.' redirects saved — one per language.'
+            : 'Redirect saved.';
+    }
+
+    /**
+     * Write one row. Returns 1 when it was stored, 0 when it was a no-op.
+     *
+     * A row pointing at itself is refused rather than stored: it is the one
+     * shape the middleware has to throw away at map-build time, and not
+     * creating it is better than detecting it later.
+     */
+    private function write(string $from, string $to, int $status): int
+    {
+        if ($from === $to) {
+            return 0;
+        }
+
         Redirect::query()->updateOrCreate(
-            ['from_path' => Redirect::normalise($validated['from_path'])],
+            ['from_path' => $from],
             [
-                'to_path' => Redirect::normalise($validated['to_path']),
-                'status_code' => (int) $validated['status_code'],
+                'to_path' => $to,
+                'status_code' => $status,
                 'is_active' => true,
                 'source' => 'manual',
             ],
         );
 
-        $this->reset(['from_path', 'to_path']);
-        $this->status_code = '301';
-        $this->message = 'Redirect saved.';
+        return 1;
     }
 
     public function toggle(int $id): void

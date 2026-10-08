@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Models\Redirect;
+use App\Support\Locale;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -39,6 +40,32 @@ use Symfony\Component\HttpFoundation\Response;
  * renamed the same page. Loops are detected at the same point and dropped: a
  * row that cannot resolve is not served at all, rather than being served until
  * the browser gives up.
+ *
+ * ───────────────────────────────────────────────────────────────────────────
+ * LOCALES: A REDIRECT BELONGS TO THE ADDRESS IT NAMES, AND TO NO OTHER
+ *
+ * The rule, stated once and enforced by arithmetic rather than by a branch:
+ *
+ *   A redirect matches the FULL request path, locale prefix included. A row
+ *   for `/work/old-name` applies to the English address and to nothing else.
+ *   A row for `/ar/work/old-name` applies to the Arabic address and to nothing
+ *   else. Neither leaks into the other, ever, and making one apply to both
+ *   means creating both rows.
+ *
+ * This was not a change to how matching works — it is how it already worked.
+ * The map is keyed by path, and `/work/x` and `/ar/work/x` are different
+ * strings, so they were already different keys. That is the entire reason the
+ * no-query-on-a-miss property survived becoming locale-aware: the lookup is
+ * the same single isset() against the same single cached array, and the array
+ * did not grow a dimension. A locale-aware design that stripped the prefix and
+ * matched the remainder would have needed either a second map or a per-locale
+ * cache key, and a per-locale key is a cache key derived from user input,
+ * which is the thing the first half of this comment exists to refuse.
+ *
+ * What DID need changing is the protected-prefix check below, which looked at
+ * the first path segment and would see `ar` rather than `admin` for a path
+ * like `/ar/admin/…`. See isProtected().
+ * ───────────────────────────────────────────────────────────────────────────
  */
 class HandleRedirects
 {
@@ -94,11 +121,32 @@ class HandleRedirects
         return redirect()->to($destination, $status);
     }
 
+    /**
+     * Is this path in a namespace redirects may never touch?
+     *
+     * THE LOCALE PREFIX IS STRIPPED FIRST, and that is the one real change
+     * locale support required here. This read the first path segment, which
+     * for `/ar/admin/projects` is `ar` — so the admin guard, the whole point
+     * of which is that no redirect row can ever intercept an editor or lock
+     * the studio out of its own site, silently stopped covering anything
+     * under a locale prefix the moment locale prefixes existed.
+     *
+     * Checked BOTH ways: the bare path for the normal case, and the prefixed
+     * one in case a locale code is ever added to NEVER.
+     */
     private function isProtected(string $path): bool
     {
-        $first = explode('/', ltrim($path, '/'))[0] ?? '';
+        [, $bare] = Locale::split($path);
 
-        return in_array($first, self::NEVER, true);
+        foreach ([$bare, $path] as $candidate) {
+            $first = explode('/', ltrim($candidate, '/'))[0] ?? '';
+
+            if (in_array($first, self::NEVER, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

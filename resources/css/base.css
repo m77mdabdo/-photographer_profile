@@ -153,7 +153,22 @@ hr {
  */
 .visually-gone {
     position: absolute;
-    left: -9999px;
+
+    /*
+     * LOGICAL, NOT PHYSICAL, and it has to be.
+     *
+     * This was `left: -9999px`, which parks the honeypot off the left edge.
+     * In a left-to-right document the browser does not make overflow to the
+     * left scrollable, so it costs nothing. Flip the document to RTL and the
+     * origin moves to the other side: the same -9999px is now overflow the
+     * browser WILL scroll to, and /ar/contact reported a document 11,439px
+     * wide against a 1,440px viewport.
+     *
+     * inset-inline-start follows the writing direction, so the field is parked
+     * off the LEADING edge in both — invisible, unscrollable, and identical in
+     * either script. Found by running the browser harness with --locale=ar.
+     */
+    inset-inline-start: -9999px;
     top: auto;
     width: 1px;
     height: 1px;

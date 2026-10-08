@@ -10,6 +10,7 @@ use App\Http\Middleware\HandleRedirects;
 use App\Models\Article;
 use App\Models\Project;
 use App\Models\Redirect;
+use App\Support\Locale;
 use App\Models\Service;
 use App\Models\User;
 use App\Support\Settings;
@@ -62,15 +63,32 @@ class RedirectTest extends TestCase
 
             $model->forceFill(['slug' => $newSlug])->save();
 
-            $redirect = Redirect::query()->sole();
+            /*
+             * ONE ROW PER LOCALE. A rename moves every language's copy of the
+             * address at once, and HandleRedirects deliberately refuses to let
+             * a redirect leak from one locale into another — so a single
+             * unprefixed row would leave the Arabic address 404ing after a
+             * rename. This asserted sole() before locales existed.
+             */
+            $this->assertSame(
+                count(Locale::codes()),
+                Redirect::query()->count(),
+                'a rename should create one redirect per locale'
+            );
 
-            $this->assertSame($prefix.$oldSlug, $redirect->from_path);
-            $this->assertSame($prefix.$newSlug, $redirect->to_path);
-            $this->assertSame(301, $redirect->status_code);
-            $this->assertSame('slug_change', $redirect->source);
+            foreach (Locale::codes() as $locale) {
+                $from = Locale::pathFor($locale, $prefix.$oldSlug);
+                $to = Locale::pathFor($locale, $prefix.$newSlug);
 
-            // And it actually works end to end.
-            $this->get($prefix.$oldSlug)->assertRedirect($prefix.$newSlug);
+                $redirect = Redirect::query()->where('from_path', $from)->sole();
+
+                $this->assertSame($to, $redirect->to_path);
+                $this->assertSame(301, $redirect->status_code);
+                $this->assertSame('slug_change', $redirect->source);
+
+                // And it actually works end to end, in that locale.
+                $this->get($from)->assertRedirect($to);
+            }
         }
     }
 
@@ -118,13 +136,26 @@ class RedirectTest extends TestCase
         $project->forceFill(['slug' => 'second'])->save();
         $project->forceFill(['slug' => 'third'])->save();
 
-        $this->assertSame(2, Redirect::query()->count());
+        // Two renames, one row each per locale — and still no chain.
+        $this->assertSame(2 * count(Locale::codes()), Redirect::query()->count());
 
-        // Both old addresses point straight at the current one.
-        $this->assertSame('/work/third', Redirect::query()->where('from_path', '/work/first')->sole()->to_path);
-        $this->assertSame('/work/third', Redirect::query()->where('from_path', '/work/second')->sole()->to_path);
+        /*
+         * Both old addresses point straight at the current one, in every
+         * locale. The re-pointing that prevents chains has to happen per
+         * locale too: /ar/work/first must reach /ar/work/third in one hop,
+         * not two, and must never cross into the English address.
+         */
+        foreach (Locale::codes() as $locale) {
+            $third = Locale::pathFor($locale, '/work/third');
 
-        $this->get('/work/first')->assertRedirect('/work/third');
+            foreach (['first', 'second'] as $old) {
+                $from = Locale::pathFor($locale, '/work/'.$old);
+
+                $this->assertSame($third, Redirect::query()->where('from_path', $from)->sole()->to_path);
+            }
+
+            $this->get(Locale::pathFor($locale, '/work/first'))->assertRedirect($third);
+        }
     }
 
     // ---------------------------------------------------------------- 11

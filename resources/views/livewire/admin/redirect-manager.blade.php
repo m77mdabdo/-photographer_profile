@@ -15,6 +15,23 @@
             Add one here when an address changed somewhere else — an old site, a printed card.
         </p>
 
+        {{--
+            THE LOCALE RULE, STATED WHERE THE EDITOR IS.
+
+            HandleRedirects matches the whole address including its language
+            prefix, so a redirect never leaks from one language into the other.
+            That is the safe behaviour, but it is invisible: an editor who adds
+            /old-address and tests it in English has no way to discover that
+            /ar/old-address still 404s. So the rule is written next to the
+            field, and the checkbox below makes obeying it one click rather
+            than a second trip through this form.
+        --}}
+        <p class="admin-note admin-note--rule">
+            <strong>A redirect applies to the language in its address, and to no other.</strong>
+            <code>/old-address</code> moves the English page.
+            <code>/ar/old-address</code> moves the Arabic one. Neither affects the other.
+        </p>
+
         <form wire:submit="add" class="filters">
             <div class="field">
                 <label for="from_path">From</label>
@@ -35,6 +52,26 @@
                     <option value="302">302 — temporary</option>
                 </select>
                 @error('status_code') <p class="field__error" role="alert">{{ $message }}</p> @enderror
+            </div>
+
+            {{--
+                The explicit "both" affordance. The rule is that a redirect
+                does not cross languages unless that is intended — this is how
+                an editor states the intention, and it creates two real rows
+                rather than one row with special powers, so the map stays a
+                plain path lookup.
+            --}}
+            <div class="field field--check">
+                <label for="mirror_locales">
+                    <input type="checkbox"
+                           id="mirror_locales"
+                           wire:model="mirror_locales">
+                    Also redirect the other language
+                </label>
+                <p class="field__hint">
+                    Adds <code>{{ \App\Support\Locale::pathFor('ar', '/old-address') }}</code>
+                    alongside <code>/old-address</code>, pointing at the matching translated address.
+                </p>
             </div>
 
             <button type="submit" class="admin-button">Add</button>

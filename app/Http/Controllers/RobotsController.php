@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Support\Locale;
+
 use Illuminate\Http\Response;
 
 /**
@@ -49,6 +51,25 @@ class RobotsController extends Controller
         '/_dev',
         '/up',
 
+    ];
+
+    /**
+     * Disallowed paths that EXIST ONCE PER LOCALE.
+     *
+     * Kept apart from the list above because the two need different treatment
+     * and conflating them is how a bilingual robots.txt ends up half right.
+     * Everything above is infrastructure with exactly one address —
+     * /admin, /livewire, /up — and prefixing it would emit rules for
+     * addresses that do not exist. Everything here is a public page, so it has
+     * an address in every locale and every one of them needs the rule.
+     *
+     * This was a single entry in the list above, and a locale prefix made it
+     * silently incomplete: /contact/sent was disallowed and
+     * /ar/contact/sent was not.
+     *
+     * @var list<string>
+     */
+    private const DISALLOWED_PER_LOCALE = [
         /*
          * The enquiry confirmation. It is already noindex in its own meta tag;
          * disallowing it as well means a crawler does not fetch it at all.
@@ -58,6 +79,24 @@ class RobotsController extends Controller
          */
         '/contact/sent',
     ];
+
+    /**
+     * Every path to disallow, with the per-locale ones expanded.
+     *
+     * @return list<string>
+     */
+    private function disallowed(): array
+    {
+        $paths = self::DISALLOWED;
+
+        foreach (self::DISALLOWED_PER_LOCALE as $path) {
+            foreach (Locale::codes() as $locale) {
+                $paths[] = Locale::pathFor($locale, $path);
+            }
+        }
+
+        return $paths;
+    }
 
     public function __invoke(): Response
     {
@@ -79,7 +118,7 @@ class RobotsController extends Controller
             'User-agent: *',
         ];
 
-        foreach (self::DISALLOWED as $path) {
+        foreach ($this->disallowed() as $path) {
             $lines[] = 'Disallow: '.$path;
         }
 
@@ -89,7 +128,9 @@ class RobotsController extends Controller
          * Left alone, a crawler will enumerate them and spend its entire
          * budget on permutations of a page that has one canonical form.
          */
-        $lines[] = 'Disallow: /archive?';
+        foreach (Locale::codes() as $locale) {
+            $lines[] = 'Disallow: '.Locale::pathFor($locale, '/archive').'?';
+        }
         $lines[] = '';
 
         /*

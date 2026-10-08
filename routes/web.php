@@ -4,18 +4,11 @@ declare(strict_types=1);
 
 use App\Enums\MediaStatus;
 use App\Http\Controllers\Admin\MediaController;
-use App\Http\Controllers\AboutController;
-use App\Http\Controllers\ArchiveController;
-use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\JournalController;
-use App\Http\Controllers\PageController;
-use App\Http\Controllers\ServiceController;
-use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\ThemeController;
-use App\Http\Controllers\WorkController;
 use App\Livewire\Admin\ArticleForm;
 use App\Livewire\Admin\ArticleIndex;
 use App\Livewire\Admin\CategoryManager;
@@ -34,9 +27,10 @@ use App\Livewire\Admin\StoryBuilder;
 use App\Livewire\Admin\MediaTrash;
 use App\Models\Media;
 use Illuminate\Support\Facades\Blade;
+use App\Http\Middleware\SetLocale;
+use App\Support\Locale;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', HomeController::class)->name('home');
 
 /*
  * Theme preference. A POST because it changes state, from a real form with a
@@ -133,95 +127,70 @@ if (app()->environment('local')) {
 
 
 /*
- * The work index and its category landing pages.
+ * ───────────────────────────────────────────────────────────────────────────
+ * THE PUBLIC SITE, ONCE PER LOCALE.
  *
- * ORDER MATTERS. `/work/{project:slug}` below is a wildcard, so it would
- * happily match the literal segment "category" and 404 looking for a project
- * of that name. Every literal path under /work is declared first.
- */
-Route::get('/work', [WorkController::class, 'index'])->name('work.index');
-
-Route::get('/work/category/{category:slug}', [WorkController::class, 'category'])
-    ->name('work.category');
-
-/*
- * The enquiry form.
+ * English is unprefixed and keeps every route name it has always had, so no
+ * existing call site, sitemap entry, canonical tag or redirect row changes.
+ * Arabic is registered again under /ar with an `ar.` name prefix.
  *
- * Post/Redirect/Get: the confirmation is its own address, so a refresh after
- * sending re-requests a page rather than re-posting a message. The throttle
- * is a blunt outer limit on the endpoint itself; the real defences are in
- * App\Support\SpamGuard.
+ * ARABIC IS REGISTERED FIRST, deliberately. Both groups end in the
+ * single-segment flat-page wildcard, and although that wildcard's constraint
+ * already refuses `ar` and `en` by name, relying on only one of the two
+ * guards would mean a future edit to either could open the hole. Order and
+ * constraint both, for the widest route on the site.
+ * ───────────────────────────────────────────────────────────────────────────
  */
-Route::get('/contact', [ContactController::class, 'show'])->name('contact.show');
-Route::post('/contact', [ContactController::class, 'store'])
-    ->middleware('throttle:contact')
-    ->name('contact.store');
-Route::get('/contact/sent', [ContactController::class, 'sent'])->name('contact.sent');
+foreach (array_reverse(Locale::codes()) as $locale) {
+    /*
+     * SetLocale is global (see bootstrap/app.php) and reads the locale from
+     * the path, so it is not attached here. The group exists for the prefix
+     * and the route-name namespace.
+     */
+    $group = Route::prefix('');
+
+    if (! Locale::isDefault($locale)) {
+        $group = $group->prefix(Locale::prefix($locale))->name(Locale::routePrefix($locale));
+    }
+
+    /*
+     * The home route is registered here rather than in routes/public.php
+     * because the default locale's root is the one address that negotiates —
+     * see SetLocale — and keeping it beside the group that owns it is clearer
+     * than hiding it among twenty routes that do not.
+     */
+    $group->group(function () use ($locale): void {
+        Route::get('/', HomeController::class)->name('home');
+
+        require __DIR__.'/public.php';
+    });
+
+    unset($group);
+}
 
 /*
- * The journal.
+ * `/en/...` IS AN ALIAS, NOT AN ADDRESS.
  *
- * ORDER MATTERS, and this is the second place in this file where it does.
- * `/journal/{article:slug}` is a wildcard that would happily swallow the
- * literal segment "category" and 404 looking for an article called that, so
- * every literal path under /journal is declared first. The work index has the
- * same shape and the same comment, because it is the same trap.
- */
-Route::get('/journal', [JournalController::class, 'index'])->name('journal.index');
-
-Route::get('/journal/category/{category:slug}', [JournalController::class, 'category'])
-    ->name('journal.category');
-
-/*
- * And the wildcard is constrained so it can NEVER match a reserved segment.
+ * People type it, and a bilingual site that 404s one of its two obvious
+ * prefixes looks broken. But English already lives at the unprefixed path, so
+ * serving content here as well would be two addresses for one page — a
+ * duplicate-content question with no good answer and a canonical tag that
+ * contradicts the URL it was fetched from.
  *
- * Declaration order alone is not enough. /journal/category/process is safe
- * because the literal route is declared first — but /journal/category, with no
- * slug after it, falls through to this route and would resolve an article
- * whose slug happens to be "category". A test wrote exactly that article and
- * got a 200, which is how this was found.
- *
- * The constraint makes the namespace a property of the route rather than of
- * the order two lines happen to be in, so it holds for seeded content, for an
- * import, and for anything typed into the admin.
+ * So it resolves, permanently, to the real address. 301 rather than 302
+ * because this mapping is a fact about the site rather than about the visitor,
+ * which is the opposite of the root's negotiation.
  */
-Route::get('/journal/{article:slug}', [JournalController::class, 'show'])
-    ->where('article', '^(?!category$).+$')
-    ->name('journal.show');
+Route::get('/'.Locale::DEFAULT.'/{rest?}', function (?string $rest = null) {
+    return redirect()->to('/'.ltrim((string) $rest, '/'), 301);
+})->where('rest', '.*')->name('locale.default-alias');
 
 /*
- * Services.
- *
- * Same ordering discipline as /work and /journal: the literal index first,
- * then the wildcard. There is no literal segment under /services today, so the
- * wildcard carries no exclusion — but the guard is added the moment one is.
+ * The locale switcher's endpoint. A POST, like the theme, because it writes a
+ * preference — and a preference must be a choice, not a side effect of
+ * following a link. See LocaleController.
  */
-Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
-Route::get('/services/{service:slug}', [ServiceController::class, 'show'])->name('services.show');
-
-/*
- * The studio itself.
- */
-Route::get('/about', AboutController::class)->name('about');
-
-/*
- * The archive: a contact sheet of frames that reached a published page.
- * Filters are query parameters rather than path segments — unlike a category
- * of work, a filtered view of the archive is a way of looking rather than a
- * body of work with its own address.
- */
-Route::get('/archive', ArchiveController::class)->name('archive.index');
-
-/*
- * Public project pages. `/work/{slug}` is the permanent address; the preview
- * route renders the same template for an unpublished project and is protected
- * by the signature alone.
- */
-Route::get('/work/{project:slug}', [ProjectController::class, 'show'])->name('projects.show');
-
-Route::get('/work/{project:slug}/preview', [ProjectController::class, 'preview'])
-    ->middleware('signed')
-    ->name('projects.preview');
+Route::post('/locale', LocaleController::class)->name('locale.store');
 
 /*
  * SEO INFRASTRUCTURE.
@@ -238,23 +207,6 @@ Route::get('/sitemap-{segment}.xml', [SitemapController::class, 'segment'])
 
 Route::get('/robots.txt', RobotsController::class)->name('robots');
 
-/*
- * FLAT EDITORIAL PAGES — privacy, terms, and whatever the studio adds.
- *
- * DECLARED LAST, and constrained.
- *
- * This is the widest wildcard on the site: a single segment at the root. It
- * has to be last so it cannot shadow /work, /journal, /services or any other
- * real section — but "last" is only a property of this file, and a route added
- * below it in six months would be swallowed silently.
- *
- * So the constraint is explicit as well. Every reserved top-level segment is
- * excluded by name, which makes the exclusion something a future reader can
- * see and a test can assert, rather than an accident of line order.
- */
-Route::get('/{page:slug}', [PageController::class, 'show'])
-    ->where('page', '^(?!work$|journal$|services$|archive$|about$|contact$|admin$|login$|logout$|register$|storage$|up$|_dev$|sitemap.*|robots\.txt$)[a-z0-9-]+$')
-    ->name('pages.show');
 
 /*
  * Admin area.

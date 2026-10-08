@@ -61,7 +61,17 @@
 @endif
 
 <meta property="og:site_name" content="{{ config('seo.site_name') }}">
-<meta property="og:locale" content="{{ config('seo.locale') }}">
+{{--
+    og:locale follows the page, and og:locale:alternate names the other one.
+    Both come from App\Support\Locale rather than config('seo.locale'), which
+    was a single hard-coded value from before the site had two.
+--}}
+<meta property="og:locale" content="{{ \App\Support\Locale::openGraph() }}">
+@foreach (\App\Support\Locale::codes() as $otherLocale)
+@if ($otherLocale !== \App\Support\Locale::current())
+<meta property="og:locale:alternate" content="{{ \App\Support\Locale::openGraph($otherLocale) }}">
+@endif
+@endforeach
 
 @if ($ogImageUrl)
 <meta property="og:image" content="{{ $ogImageUrl }}">

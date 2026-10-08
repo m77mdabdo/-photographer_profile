@@ -7,8 +7,17 @@
     preference the attribute is absent entirely and the stylesheet's
     prefers-color-scheme query governs.
 --}}
-<html lang="{{ str_replace('_', '-', config('seo.locale')) }}" dir="ltr"@if ($theme->attribute()) data-theme="{{ $theme->attribute() }}"@endif>
-{{-- dir is hard-coded to ltr for now; it becomes config-driven when a RTL locale is added. --}}
+{{--
+    lang AND dir ARE SERVER-RENDERED, for the same reason the theme is.
+
+    Writing direction is not a decoration that can settle in after the first
+    paint. A page that renders LTR and then flips to RTL does not flash a
+    colour — it relays out the entire document, moves every scrollbar, rail and
+    alignment, and does it after the reader has already started reading. There
+    is no JavaScript involved in either attribute and there is nothing to
+    reconcile: by the time the first byte of <body> is sent, both are final.
+--}}
+<html lang="{{ \App\Support\Locale::html() }}" dir="{{ \App\Support\Locale::direction() }}"@if ($theme->attribute()) data-theme="{{ $theme->attribute() }}"@endif>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -23,6 +32,16 @@
     <x-motion-boot />
 
     <x-seo :page="$seo" />
+
+    {{--
+        hreflang. Every locale, plus x-default, on every public page.
+
+        Emitted beside the canonical rather than in the SEO component because
+        these describe the page's SIBLINGS, not the page — and keeping them
+        here makes it visible that the canonical is per-locale while the
+        alternates are the set.
+    --}}
+    <x-hreflang />
 
     {{--
         THE SITE'S OWN IDENTITY, on every page.
@@ -128,6 +147,14 @@
                 @endforeach
             </ul>
         </nav>
+
+        {{--
+            The language switcher sits in the header, not the footer, because
+            it is the one control a visitor in the wrong language needs before
+            they read anything else. The theme switch stays in the footer: a
+            palette is a comfort, a language is comprehension.
+        --}}
+        <x-locale-switch />
     </header>
 
     <main id="main" tabindex="-1">

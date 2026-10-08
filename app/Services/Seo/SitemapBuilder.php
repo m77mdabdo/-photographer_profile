@@ -11,6 +11,7 @@ use App\Models\Media;
 use App\Models\Page;
 use App\Models\Project;
 use App\Models\Service;
+use App\Support\Locale;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -357,6 +358,35 @@ final class SitemapBuilder
             'lastmod' => $date?->toAtomString(),
             'changefreq' => $changefreq,
             'priority' => $priority,
+            'alternates' => $this->alternates($loc),
         ];
+    }
+
+    /**
+     * Every locale's address for one URL, for the <xhtml:link> set.
+     *
+     * ALTERNATES ARE EMITTED INLINE, NOT SEGMENTED PER LOCALE.
+     *
+     * The alternative — sitemap-projects-en.xml beside sitemap-projects-ar.xml
+     * — was considered and rejected, because it is strictly more work for no
+     * benefit. The protocol requires each <url> to carry the COMPLETE
+     * alternate set including a self-reference, so a per-locale file would
+     * still need every <xhtml:link> that an inline file needs. Segmenting
+     * would double the number of files, double the index, and leave the
+     * alternates exactly where they are.
+     *
+     * It would also be the second place that has to know the locale list.
+     * Here there is one: every entry in every segment passes through url()
+     * above, so a segment cannot be added that forgets its alternates.
+     *
+     * Derived from the path rather than from a route name because that is what
+     * url() is handed, and because a path is a path in both locales — no
+     * reconstruction, no per-model branch.
+     *
+     * @return array<string, string>
+     */
+    private function alternates(string $loc): array
+    {
+        return Locale::alternates((string) (parse_url($loc, PHP_URL_PATH) ?: '/'));
     }
 }

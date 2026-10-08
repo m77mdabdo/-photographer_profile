@@ -91,6 +91,29 @@ const THEMES = [
 const REDUCED = Boolean(args['reduced-motion'])
 
 /*
+ * --locale=ar runs the whole public matrix against the Arabic prefix.
+ *
+ * The admin is deliberately NOT prefixed: it has one address per page and
+ * there is no /ar/admin, so prefixing those rows would check 404s and call
+ * them failures. Only rows without `admin: true` move.
+ *
+ * The expected writing direction travels with the flag, so the in-page audit
+ * can assert that <html dir> actually changed rather than merely that the page
+ * rendered — an RTL page that is still laid out LTR returns 200 and looks
+ * fine to a status check.
+ */
+const LOCALE = typeof args.locale === 'string' ? args.locale : 'en'
+const LOCALE_PREFIX = LOCALE === 'en' ? '' : `/${LOCALE}`
+const EXPECTED_DIR = LOCALE === 'ar' ? 'rtl' : 'ltr'
+
+/** A public page's path under the active locale. */
+function localised(path) {
+  if (!LOCALE_PREFIX) return path
+
+  return path === '/' ? LOCALE_PREFIX : LOCALE_PREFIX + path
+}
+
+/*
  * Every public page, including the ones nobody has ever opened.
  * `status` is the expected HTTP status; error pages are checked too because a
  * 404 page that is itself broken is the worst page to have broken.
@@ -294,8 +317,57 @@ function chromePath() {
  * image the browser could decode, and a stylesheet that exists is not the same
  * as a font that applied.
  */
-function inPageAudit(isAdmin, isReducedMotion) {
+function inPageAudit(isAdmin, isReducedMotion, expectedDir) {
   const problems = []
+
+  // --- 0. the document's language and direction ----------------------------
+  /*
+   * Checked FIRST, and checked at all because a 200 proves nothing here.
+   * An Arabic page that renders left-to-right returns 200, loads every image
+   * and passes every other check in this file while being completely wrong.
+   * The admin is not localised, so it is exempt.
+   */
+  if (!isAdmin) {
+    const dir = document.documentElement.getAttribute('dir')
+
+    if (dir !== expectedDir) {
+      problems.push(`<html dir> is "${dir}", expected "${expectedDir}"`)
+    }
+
+    if (!document.documentElement.getAttribute('lang')) {
+      problems.push('<html> has no lang attribute')
+    }
+
+    /*
+     * The alternates have to be there on every page, because a page that
+     * omits them breaks the reciprocity the whole annotation depends on.
+     */
+    if (!document.querySelector('link[rel="alternate"][hreflang="x-default"]')) {
+      problems.push('no x-default hreflang alternate')
+    }
+
+    const canonical = document.querySelector('link[rel="canonical"]')
+
+    if (canonical) {
+      /*
+       * SEGMENT COMPARISON, NOT A STRING PREFIX.
+       *
+       * The first version of this check read `pathname.startsWith('/ar')` and
+       * reported every /archive page as crossing locales, because "/archive"
+       * does begin with "/ar". That is the identical trap the flat-page
+       * wildcard needed guarding against, found here by the harness within
+       * one run of being written.
+       */
+      const localeOf = (pathname) => pathname.split('/')[1] || ''
+
+      const isArabic = localeOf(location.pathname) === 'ar'
+      const canonicalIsArabic = localeOf(new URL(canonical.href).pathname) === 'ar'
+
+      if (isArabic !== canonicalIsArabic) {
+        problems.push(`canonical crosses locales: ${canonical.getAttribute('href')}`)
+      }
+    }
+  }
 
   // --- 1. every image actually decoded -------------------------------------
   /*
@@ -693,7 +765,13 @@ async function run() {
           let status = 0
 
           try {
-            const response = await page.goto(BASE + target.path, {
+            /*
+             * The admin keeps its single address; public pages move under the
+             * active locale prefix. See `localised` and the --locale flag.
+             */
+            const requestPath = target.admin ? target.path : localised(target.path)
+
+            const response = await page.goto(BASE + requestPath, {
               waitUntil: 'networkidle2',
               timeout: 30000,
             })
@@ -779,7 +857,7 @@ async function run() {
             )
             .catch(() => {})
 
-          const audit = await page.evaluate(inPageAudit, target.admin === true, REDUCED)
+          const audit = await page.evaluate(inPageAudit, target.admin === true, REDUCED, EXPECTED_DIR)
             problems = problems.concat(audit.problems)
             stats = audit
 
@@ -865,7 +943,7 @@ function report(results, failures, skipped = [], crawlerFiles = []) {
 
   const width = Math.max(...pages.map((p) => p.length)) + 2
 
-  process.stdout.write(`\nBROWSER CHECK${REDUCED ? ' — prefers-reduced-motion: reduce' : ''}\n\n`)
+  process.stdout.write(`\nBROWSER CHECK${LOCALE !== 'en' ? ` — locale: ${LOCALE} (${EXPECTED_DIR})` : ''}${REDUCED ? ' — prefers-reduced-motion: reduce' : ''}\n\n`)
   process.stdout.write(' '.repeat(width) + combos.map((c) => c.padEnd(12)).join('') + '\n')
 
   for (const page of pages) {

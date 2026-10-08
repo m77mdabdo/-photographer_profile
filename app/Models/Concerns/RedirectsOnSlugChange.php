@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\Concerns;
 
 use App\Models\Redirect;
+use App\Support\Locale;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -95,9 +96,46 @@ trait RedirectsOnSlugChange
             return;
         }
 
-        $from = Redirect::normalise($this->publicPath($oldSlug));
-        $to = Redirect::normalise($this->publicPath($newSlug));
+        $bareFrom = Redirect::normalise($this->publicPath($oldSlug));
+        $bareTo = Redirect::normalise($this->publicPath($newSlug));
 
+        if ($bareFrom === $bareTo) {
+            return;
+        }
+
+        /*
+         * ONE ROW PER LOCALE, because a slug change moves every locale's copy
+         * of the address at once.
+         *
+         * HandleRedirects matches the full path including the locale prefix
+         * and deliberately never leaks a redirect from one locale into
+         * another — so a single row for `/work/old` would leave
+         * `/ar/work/old` returning a 404 after a rename. The rule that keeps
+         * an editor's hand-written redirect from applying to a language they
+         * were not thinking about is the same rule that obliges this, which
+         * knows it is moving both, to say so twice.
+         *
+         * The slugs themselves are not per-locale yet — that is step 3 of the
+         * migration plan and not this task — so both paths are built from the
+         * same slug today. When slugs become translatable this loop is the
+         * place that changes, and it changes by reading the slug per locale
+         * rather than by growing another branch.
+         */
+        foreach (Locale::codes() as $locale) {
+            $this->recordMove(
+                Locale::pathFor($locale, $bareFrom),
+                Locale::pathFor($locale, $bareTo),
+            );
+        }
+
+        Redirect::forgetMap();
+    }
+
+    /**
+     * Record one address move, for one locale.
+     */
+    private function recordMove(string $from, string $to): void
+    {
         if ($from === $to) {
             return;
         }
@@ -129,8 +167,6 @@ trait RedirectsOnSlugChange
              * left as a loop for the middleware to discard silently.
              */
             Redirect::query()->where('from_path', $to)->where('to_path', $to)->delete();
-
-            Redirect::forgetMap();
         } catch (Throwable $e) {
             Log::error('Could not record a slug-change redirect.', [
                 'model' => static::class,
