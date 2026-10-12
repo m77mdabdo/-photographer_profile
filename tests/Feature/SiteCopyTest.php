@@ -224,6 +224,79 @@ class SiteCopyTest extends TestCase
         }
     }
 
+    /**
+     * ───────────────────────────────────────────────────────────────────────
+     * PART 3c — EVERY PROSE SETTING SHIPS WITH REAL ARABIC.
+     *
+     * The registry grew `ar` values in this task, but 63 rows pre-dated that
+     * and had none — so a fresh install rendered them through the fallback,
+     * which means English on an Arabic page. The 3d scan did not catch it
+     * because the scan SETS the Arabic itself in order to isolate code
+     * strings from owner strings; this is the other half of that guarantee.
+     *
+     * Three rows are exempt and each is named, because an exemption list that
+     * is a count rather than a list is where the next gap hides.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public function test_every_prose_setting_ships_with_arabic(): void
+    {
+        /*
+         *   attribution.name    a person's name. A. Marsden is A. Marsden in
+         *                       Arabic; transliterating somebody's name for
+         *                       them is not translation.
+         *   contact.recipient   an email address.
+         *   footer.social_3_*   the empty third slot: no label, no url, no
+         *                       translation to have.
+         */
+        $exempt = [
+            'attribution.name',
+            'contact.recipient',
+            'footer.social_3_label',
+            'footer.social_3_url',
+        ];
+
+        $missing = [];
+
+        foreach (SiteCopy::defaults() as $row) {
+            if (in_array($row['key'], $exempt, true)) {
+                continue;
+            }
+
+            // A url or a media id is not prose.
+            if (str_ends_with($row['key'], '_url') || str_ends_with($row['key'], '_media_id')) {
+                continue;
+            }
+
+            if ($row['value'] === null) {
+                continue;
+            }
+
+            if (($row['ar'] ?? null) === null) {
+                $missing[] = $row['key'];
+            }
+        }
+
+        $this->assertSame(
+            [],
+            $missing,
+            "these settings would render English on an Arabic page:\n  ".implode("\n  ", $missing)
+        );
+    }
+
+    /** And the seeded Arabic really reaches the table. */
+    public function test_the_arabic_defaults_reach_the_database(): void
+    {
+        $untranslated = \App\Models\Setting::query()->get()
+            ->reject(fn ($setting): bool => str_ends_with($setting->key, '_url')
+                || str_ends_with($setting->key, '_media_id')
+                || in_array($setting->key, ['attribution.name', 'contact.recipient', 'footer.social_3_label'], true))
+            ->reject(fn ($setting): bool => Settings::isTranslated($setting->key, 'ar'))
+            ->pluck('key')
+            ->all();
+
+        $this->assertSame([], array_values($untranslated));
+    }
+
     /** Both locales are seeded for every string an owner reads. */
     public function test_every_copy_key_is_seeded_in_both_locales(): void
     {

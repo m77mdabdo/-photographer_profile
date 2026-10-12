@@ -39,25 +39,30 @@ final class SiteCopy
      */
     private const DEFAULTS = [
         // --- identity ---------------------------------------------------
-        ['key' => 'site.name', 'value' => 'Photographer', 'type' => 'string', 'group' => 'identity'],
-        ['key' => 'site.statement', 'value' => 'Working in available dark. Portraits, series and commissions made slowly, printed carefully, and kept.', 'type' => 'text', 'group' => 'identity'],
-        ['key' => 'site.location', 'value' => 'Northumberland, UK', 'type' => 'string', 'group' => 'identity'],
-        ['key' => 'site.disciplines', 'value' => 'Portrait — Editorial — Archive', 'type' => 'string', 'group' => 'identity'],
+        /*
+         * The SEEDED value is a placeholder common noun, so it gets one in
+         * each language. A real studio's name is a proper noun and the owner
+         * will replace both — but a fresh install should not be half-English.
+         */
+        ['key' => 'site.name', 'value' => 'Photographer', 'ar' => 'مصوّر فوتوغرافي', 'type' => 'string', 'group' => 'identity'],
+        ['key' => 'site.statement', 'value' => 'Working in available dark. Portraits, series and commissions made slowly, printed carefully, and kept.', 'ar' => 'نعمل في الضوء المتاح. بورتريهات ومتتاليات وتكليفات تُصنع على مهل، وتُطبع بعناية، وتُحفَظ.', 'type' => 'text', 'group' => 'identity'],
+        ['key' => 'site.location', 'value' => 'Northumberland, UK', 'ar' => 'نورثمبرلاند، المملكة المتحدة', 'type' => 'string', 'group' => 'identity'],
+        ['key' => 'site.disciplines', 'value' => 'Portrait — Editorial — Archive', 'ar' => 'بورتريه — تحريري — أرشيف', 'type' => 'string', 'group' => 'identity'],
 
         // --- attribution ------------------------------------------------
         ['key' => 'attribution.name', 'value' => 'A. Marsden', 'type' => 'string', 'group' => 'attribution'],
-        ['key' => 'attribution.role', 'value' => 'Photographer & Printer', 'type' => 'string', 'group' => 'attribution'],
-        ['key' => 'attribution.city', 'value' => 'Newcastle', 'type' => 'string', 'group' => 'attribution'],
+        ['key' => 'attribution.role', 'value' => 'Photographer & Printer', 'ar' => 'مصوّر وطابع', 'type' => 'string', 'group' => 'attribution'],
+        ['key' => 'attribution.city', 'value' => 'Newcastle', 'ar' => 'نيوكاسل', 'type' => 'string', 'group' => 'attribution'],
 
         // --- navigation -------------------------------------------------
-        ['key' => 'nav.work', 'value' => 'Work', 'type' => 'string', 'group' => 'navigation'],
-        ['key' => 'nav.archive', 'value' => 'Archive', 'type' => 'string', 'group' => 'navigation'],
-        ['key' => 'nav.about', 'value' => 'About', 'type' => 'string', 'group' => 'navigation'],
-        ['key' => 'nav.journal', 'value' => 'Journal', 'type' => 'string', 'group' => 'navigation'],
-        ['key' => 'nav.services', 'value' => 'Services', 'type' => 'string', 'group' => 'navigation'],
-        ['key' => 'nav.contact', 'value' => 'Contact', 'type' => 'string', 'group' => 'navigation'],
-        ['key' => 'nav.privacy', 'value' => 'Privacy', 'type' => 'string', 'group' => 'navigation'],
-        ['key' => 'nav.terms', 'value' => 'Terms', 'type' => 'string', 'group' => 'navigation'],
+        ['key' => 'nav.work', 'value' => 'Work', 'ar' => 'الأعمال', 'type' => 'string', 'group' => 'navigation'],
+        ['key' => 'nav.archive', 'value' => 'Archive', 'ar' => 'الأرشيف', 'type' => 'string', 'group' => 'navigation'],
+        ['key' => 'nav.about', 'value' => 'About', 'ar' => 'نبذة', 'type' => 'string', 'group' => 'navigation'],
+        ['key' => 'nav.journal', 'value' => 'Journal', 'ar' => 'المجلة', 'type' => 'string', 'group' => 'navigation'],
+        ['key' => 'nav.services', 'value' => 'Services', 'ar' => 'الخدمات', 'type' => 'string', 'group' => 'navigation'],
+        ['key' => 'nav.contact', 'value' => 'Contact', 'ar' => 'تواصل', 'type' => 'string', 'group' => 'navigation'],
+        ['key' => 'nav.privacy', 'value' => 'Privacy', 'ar' => 'الخصوصية', 'type' => 'string', 'group' => 'navigation'],
+        ['key' => 'nav.terms', 'value' => 'Terms', 'ar' => 'الشروط', 'type' => 'string', 'group' => 'navigation'],
 
         /*
          * --- the hero's stage rail -------------------------------------
@@ -67,12 +72,12 @@ final class SiteCopy
          * in full; fix is the archive, where an image is made permanent;
          * print is the closing invitation to commission one.
          */
-        ['key' => 'stage.1.label', 'value' => 'Expose', 'type' => 'string', 'group' => 'hero'],
-        ['key' => 'stage.2.label', 'value' => 'Develop', 'type' => 'string', 'group' => 'hero'],
-        ['key' => 'stage.3.label', 'value' => 'Fix', 'type' => 'string', 'group' => 'hero'],
-        ['key' => 'stage.4.label', 'value' => 'Print', 'type' => 'string', 'group' => 'hero'],
+        ['key' => 'stage.1.label', 'value' => 'Expose', 'ar' => 'تعريض', 'type' => 'string', 'group' => 'hero'],
+        ['key' => 'stage.2.label', 'value' => 'Develop', 'ar' => 'تحميض', 'type' => 'string', 'group' => 'hero'],
+        ['key' => 'stage.3.label', 'value' => 'Fix', 'ar' => 'تثبيت', 'type' => 'string', 'group' => 'hero'],
+        ['key' => 'stage.4.label', 'value' => 'Print', 'ar' => 'طباعة', 'type' => 'string', 'group' => 'hero'],
 
-        ['key' => 'hero.sequence_label', 'value' => 'Featured Frame', 'type' => 'string', 'group' => 'hero'],
+        ['key' => 'hero.sequence_label', 'value' => 'Featured Frame', 'ar' => 'الإطار المختار', 'type' => 'string', 'group' => 'hero'],
 
         /*
          * The metadata rail's field names. These read as structure rather than
@@ -80,11 +85,11 @@ final class SiteCopy
          * then "Work" in the rail collided with "Work" in the navigation and
          * made the point for itself. A word a reader sees is copy.
          */
-        ['key' => 'rail.year', 'value' => 'Year', 'type' => 'string', 'group' => 'hero'],
-        ['key' => 'rail.place', 'value' => 'Place', 'type' => 'string', 'group' => 'hero'],
-        ['key' => 'rail.client', 'value' => 'For', 'type' => 'string', 'group' => 'hero'],
-        ['key' => 'rail.work', 'value' => 'Series', 'type' => 'string', 'group' => 'hero'],
-        ['key' => 'marquee.label', 'value' => 'Selected Clients', 'type' => 'string', 'group' => 'hero'],
+        ['key' => 'rail.year', 'value' => 'Year', 'ar' => 'السنة', 'type' => 'string', 'group' => 'hero'],
+        ['key' => 'rail.place', 'value' => 'Place', 'ar' => 'المكان', 'type' => 'string', 'group' => 'hero'],
+        ['key' => 'rail.client', 'value' => 'For', 'ar' => 'لـ', 'type' => 'string', 'group' => 'hero'],
+        ['key' => 'rail.work', 'value' => 'Series', 'ar' => 'المتتالية', 'type' => 'string', 'group' => 'hero'],
+        ['key' => 'marquee.label', 'value' => 'Selected Clients', 'ar' => 'عملاء مختارون', 'type' => 'string', 'group' => 'hero'],
 
         /*
          * --- the closing call to action ---------------------------------
@@ -93,15 +98,15 @@ final class SiteCopy
          * whole site leads here, so it is the last string that should have
          * been beyond the client's reach.
          */
-        ['key' => 'closing.title', 'value' => 'The diary is open for next year.', 'type' => 'string', 'group' => 'contact'],
-        ['key' => 'closing.cta', 'value' => 'Start a conversation', 'type' => 'string', 'group' => 'contact'],
+        ['key' => 'closing.title', 'value' => 'The diary is open for next year.', 'ar' => 'المفكّرة مفتوحة للعام القادم.', 'type' => 'string', 'group' => 'contact'],
+        ['key' => 'closing.cta', 'value' => 'Start a conversation', 'ar' => 'ابدأ محادثة', 'type' => 'string', 'group' => 'contact'],
 
         // --- the contact page ----------------------------------------------
-        ['key' => 'contact.heading', 'value' => 'Tell me what you are making', 'type' => 'string', 'group' => 'contact'],
-        ['key' => 'contact.standfirst', 'value' => 'Commissions, editorial work and prints. There is no form field for the thing that matters, so use the last box for that — what the pictures are for, and who is going to see them.', 'type' => 'text', 'group' => 'contact'],
-        ['key' => 'contact.response_note', 'value' => 'Every enquiry is read by one person and answered within two working days.', 'type' => 'text', 'group' => 'contact'],
-        ['key' => 'contact.consent', 'value' => 'I am happy for my details to be kept so this enquiry can be answered.', 'type' => 'text', 'group' => 'contact'],
-        ['key' => 'contact.consent_detail', 'value' => 'Your message is stored in this studio\'s own admin and emailed to the studio. It is not passed to anyone else, never used for marketing, and deleted on request.', 'type' => 'text', 'group' => 'contact'],
+        ['key' => 'contact.heading', 'value' => 'Tell me what you are making', 'ar' => 'أخبرني بما تصنعه', 'type' => 'string', 'group' => 'contact'],
+        ['key' => 'contact.standfirst', 'value' => 'Commissions, editorial work and prints. There is no form field for the thing that matters, so use the last box for that — what the pictures are for, and who is going to see them.', 'ar' => 'تكليفات، وأعمال تحريرية، ومطبوعات. لا يوجد حقل في النموذج للأمر الذي يهم فعلًا، فاستخدم الخانة الأخيرة له — لماذا هذه الصور، ومن سيراها.', 'type' => 'text', 'group' => 'contact'],
+        ['key' => 'contact.response_note', 'value' => 'Every enquiry is read by one person and answered within two working days.', 'ar' => 'كل طلب يقرأه شخص واحد، ويُجاب عليه في غضون يومي عمل.', 'type' => 'text', 'group' => 'contact'],
+        ['key' => 'contact.consent', 'value' => 'I am happy for my details to be kept so this enquiry can be answered.', 'ar' => 'أوافق على حفظ بياناتي ليتمكّن الاستوديو من الرد على هذا الطلب.', 'type' => 'text', 'group' => 'contact'],
+        ['key' => 'contact.consent_detail', 'value' => 'Your message is stored in this studio\'s own admin and emailed to the studio. It is not passed to anyone else, never used for marketing, and deleted on request.', 'ar' => 'تُحفَظ رسالتك في لوحة الاستوديو نفسها وتُرسَل إليه بالبريد. لا تُعطى لأي جهة أخرى، ولا تُستخدم للتسويق أبدًا، وتُحذَف عند الطلب.', 'type' => 'text', 'group' => 'contact'],
         ['key' => 'contact.recipient', 'value' => 'studio@example.com', 'type' => 'string', 'group' => 'contact'],
 
         /*
@@ -109,45 +114,45 @@ final class SiteCopy
          * Both strings are the studio's voice at the moment somebody decides
          * whether to write anything at all, so neither belongs in a template.
          */
-        ['key' => 'contact.message_label', 'value' => 'What are you making?', 'type' => 'string', 'group' => 'contact'],
-        ['key' => 'contact.message_hint', 'value' => 'The part that gets read first. What the pictures are for, who will see them, and roughly when. Everything underneath is optional.', 'type' => 'text', 'group' => 'contact'],
-        ['key' => 'contact.submit', 'value' => 'Send this', 'type' => 'string', 'group' => 'contact'],
-        ['key' => 'contact.acknowledgement_note', 'value' => 'A copy of this is on its way to', 'type' => 'string', 'group' => 'contact'],
-        ['key' => 'contact.confirmation_heading', 'value' => 'It arrived', 'type' => 'string', 'group' => 'contact'],
-        ['key' => 'contact.confirmation_body', 'value' => 'Thank you — that is with the studio now. You will get a reply from a person, not an autoresponder, within two working days.', 'type' => 'text', 'group' => 'contact'],
+        ['key' => 'contact.message_label', 'value' => 'What are you making?', 'ar' => 'ما الذي تصنعه؟', 'type' => 'string', 'group' => 'contact'],
+        ['key' => 'contact.message_hint', 'value' => 'The part that gets read first. What the pictures are for, who will see them, and roughly when. Everything underneath is optional.', 'ar' => 'هذا هو الجزء الذي يُقرأ أولًا. لماذا هذه الصور، ومن سيراها، ومتى تقريبًا. وكل ما تحته اختياري.', 'type' => 'text', 'group' => 'contact'],
+        ['key' => 'contact.submit', 'value' => 'Send this', 'ar' => 'أرسِل', 'type' => 'string', 'group' => 'contact'],
+        ['key' => 'contact.acknowledgement_note', 'value' => 'A copy of this is on its way to', 'ar' => 'نسخة من هذا في طريقها إلى', 'type' => 'string', 'group' => 'contact'],
+        ['key' => 'contact.confirmation_heading', 'value' => 'It arrived', 'ar' => 'وصلت', 'type' => 'string', 'group' => 'contact'],
+        ['key' => 'contact.confirmation_body', 'value' => 'Thank you — that is with the studio now. You will get a reply from a person, not an autoresponder, within two working days.', 'ar' => 'شكرًا لك — الرسالة عند الاستوديو الآن. سيردّ عليك شخص، لا ردٌّ آلي، في غضون يومي عمل.', 'type' => 'text', 'group' => 'contact'],
 
         // --- services ---------------------------------------------------------
-        ['key' => 'services.heading', 'value' => 'What the studio does', 'type' => 'string', 'group' => 'services'],
-        ['key' => 'services.standfirst', 'value' => 'How this studio works, and roughly what each way costs. Every job is quoted properly once there is a brief — these are the starting points, not the answer.', 'type' => 'text', 'group' => 'services'],
-        ['key' => 'services.price_prefix', 'value' => 'From', 'type' => 'string', 'group' => 'services'],
-        ['key' => 'services.cta', 'value' => 'Talk about a commission', 'type' => 'string', 'group' => 'services'],
-        ['key' => 'services.gallery_heading', 'value' => 'From this kind of work', 'type' => 'string', 'group' => 'services'],
-        ['key' => 'services.empty_line', 'value' => 'Nothing listed here yet.', 'type' => 'string', 'group' => 'services'],
-        ['key' => 'services.empty_note', 'value' => 'The studio takes commissions whether or not they appear on this page. Write and describe the work.', 'type' => 'text', 'group' => 'services'],
-        ['key' => 'services.home_heading', 'value' => 'Working together', 'type' => 'string', 'group' => 'services'],
-        ['key' => 'services.home_cta', 'value' => 'Everything the studio does', 'type' => 'string', 'group' => 'services'],
+        ['key' => 'services.heading', 'value' => 'What the studio does', 'ar' => 'ما يقوم به الاستوديو', 'type' => 'string', 'group' => 'services'],
+        ['key' => 'services.standfirst', 'value' => 'How this studio works, and roughly what each way costs. Every job is quoted properly once there is a brief — these are the starting points, not the answer.', 'ar' => 'كيف يعمل هذا الاستوديو، وكم يكلّف كل مسار تقريبًا. كل عمل يُسعَّر بدقة بعد وضوح المطلوب — وهذه نقاط البداية، لا الجواب النهائي.', 'type' => 'text', 'group' => 'services'],
+        ['key' => 'services.price_prefix', 'value' => 'From', 'ar' => 'يبدأ من', 'type' => 'string', 'group' => 'services'],
+        ['key' => 'services.cta', 'value' => 'Talk about a commission', 'ar' => 'تحدّث عن تكليف', 'type' => 'string', 'group' => 'services'],
+        ['key' => 'services.gallery_heading', 'value' => 'From this kind of work', 'ar' => 'من هذا النوع من العمل', 'type' => 'string', 'group' => 'services'],
+        ['key' => 'services.empty_line', 'value' => 'Nothing listed here yet.', 'ar' => 'لا شيء مدرج هنا بعد.', 'type' => 'string', 'group' => 'services'],
+        ['key' => 'services.empty_note', 'value' => 'The studio takes commissions whether or not they appear on this page. Write and describe the work.', 'ar' => 'يقبل الاستوديو التكليفات سواء ظهرت في هذه الصفحة أو لا. اكتب لنا واشرح العمل.', 'type' => 'text', 'group' => 'services'],
+        ['key' => 'services.home_heading', 'value' => 'Working together', 'ar' => 'العمل معًا', 'type' => 'string', 'group' => 'services'],
+        ['key' => 'services.home_cta', 'value' => 'Everything the studio does', 'ar' => 'كل ما يقدّمه الاستوديو', 'type' => 'string', 'group' => 'services'],
 
         // --- the journal -----------------------------------------------------
-        ['key' => 'journal.heading', 'value' => 'Notes from the darkroom', 'type' => 'string', 'group' => 'journal'],
-        ['key' => 'journal.standfirst', 'value' => 'Writing about how the work gets made: process, equipment that earns its place, and the occasional argument about printing.', 'type' => 'text', 'group' => 'journal'],
-        ['key' => 'journal.empty_note', 'value' => 'Pieces appear here when there is something worth saying.', 'type' => 'text', 'group' => 'journal'],
-        ['key' => 'journal.tags_label', 'value' => 'Filed under', 'type' => 'string', 'group' => 'journal'],
-        ['key' => 'journal.back_label', 'value' => 'All writing', 'type' => 'string', 'group' => 'journal'],
-        ['key' => 'journal.home_heading', 'value' => 'From the journal', 'type' => 'string', 'group' => 'journal'],
-        ['key' => 'journal.home_cta', 'value' => 'Everything written', 'type' => 'string', 'group' => 'journal'],
+        ['key' => 'journal.heading', 'value' => 'Notes from the darkroom', 'ar' => 'ملاحظات من غرفة التحميض', 'type' => 'string', 'group' => 'journal'],
+        ['key' => 'journal.standfirst', 'value' => 'Writing about how the work gets made: process, equipment that earns its place, and the occasional argument about printing.', 'ar' => 'كتابة عن كيفية صناعة العمل: المسار، والعدسات التي تستحق مكانها، ونقاش عابر حول الطباعة.', 'type' => 'text', 'group' => 'journal'],
+        ['key' => 'journal.empty_note', 'value' => 'Pieces appear here when there is something worth saying.', 'ar' => 'تظهر المقالات هنا عندما يكون هناك ما يستحق أن يُقال.', 'type' => 'text', 'group' => 'journal'],
+        ['key' => 'journal.tags_label', 'value' => 'Filed under', 'ar' => 'مُصنَّف تحت', 'type' => 'string', 'group' => 'journal'],
+        ['key' => 'journal.back_label', 'value' => 'All writing', 'ar' => 'كل الكتابات', 'type' => 'string', 'group' => 'journal'],
+        ['key' => 'journal.home_heading', 'value' => 'From the journal', 'ar' => 'من المجلة', 'type' => 'string', 'group' => 'journal'],
+        ['key' => 'journal.home_cta', 'value' => 'Everything written', 'ar' => 'كل ما كُتب', 'type' => 'string', 'group' => 'journal'],
 
         // --- the about page ------------------------------------------------
-        ['key' => 'about.heading', 'value' => 'Available dark', 'type' => 'string', 'group' => 'about'],
-        ['key' => 'about.biography', 'value' => "I photograph people and places on commission, mostly in the north of England, mostly in whatever light is already there.\n\nI trained as a printer before I trained as a photographer, which is the wrong way round and has been useful ever since: it is hard to overexpose a negative when you have spent three years trying to rescue somebody else's.\n\nWork has appeared in Aperture Quarterly and The Gentlewoman, and in the archives of two harbour trusts who wanted a record rather than a brochure.", 'type' => 'text', 'group' => 'about'],
-        ['key' => 'about.approach_heading', 'value' => 'How the work is made', 'type' => 'string', 'group' => 'about'],
-        ['key' => 'about.approach', 'value' => "Available light, one camera, no assistant unless the job genuinely needs one.\n\nI shoot slowly and edit hard. A commission usually produces between two hundred and four hundred frames and delivers between twelve and thirty, because the edit is the work and handing over a folder of everything is handing over the part nobody wanted.\n\nEverything is printed before it is approved. A picture that only works on a screen is not finished.", 'type' => 'text', 'group' => 'about'],
-        ['key' => 'about.clients_heading', 'value' => 'Selected clients', 'type' => 'string', 'group' => 'about'],
-        ['key' => 'about.studio_label', 'value' => 'Studio', 'type' => 'string', 'group' => 'about'],
-        ['key' => 'about.cta', 'value' => 'Start a conversation', 'type' => 'string', 'group' => 'about'],
+        ['key' => 'about.heading', 'value' => 'Available dark', 'ar' => 'الضوء المتاح', 'type' => 'string', 'group' => 'about'],
+        ['key' => 'about.biography', 'value' => "I photograph people and places on commission, mostly in the north of England, mostly in whatever light is already there.\n\nI trained as a printer before I trained as a photographer, which is the wrong way round and has been useful ever since: it is hard to overexpose a negative when you have spent three years trying to rescue somebody else's.\n\nWork has appeared in Aperture Quarterly and The Gentlewoman, and in the archives of two harbour trusts who wanted a record rather than a brochure.", 'ar' => 'أصوّر الناس والأماكن بالتكليف، في شمال إنجلترا غالبًا، وفي الضوء الموجود أصلًا غالبًا.\n\nتدرّبت على الطباعة قبل أن أتدرّب على التصوير، وهو ترتيب مقلوب أفادني منذ ذلك الحين: يصعب أن تُفرِط في تعريض فيلم بعد ثلاث سنوات من محاولة إنقاذ أفلام الآخرين.\n\nنُشرت أعمالي في Aperture Quarterly و The Gentlewoman، وفي أرشيف هيئتَي ميناء أرادتا سجلًا لا كتيّبًا ترويجيًا.', 'type' => 'text', 'group' => 'about'],
+        ['key' => 'about.approach_heading', 'value' => 'How the work is made', 'ar' => 'كيف يُصنع العمل', 'type' => 'string', 'group' => 'about'],
+        ['key' => 'about.approach', 'value' => "Available light, one camera, no assistant unless the job genuinely needs one.\n\nI shoot slowly and edit hard. A commission usually produces between two hundred and four hundred frames and delivers between twelve and thirty, because the edit is the work and handing over a folder of everything is handing over the part nobody wanted.\n\nEverything is printed before it is approved. A picture that only works on a screen is not finished.", 'ar' => 'ضوء متاح، كاميرا واحدة، ولا مساعد إلا إذا كان العمل يحتاجه فعلًا.\n\nأصوّر على مهل وأنتقي بقسوة. التكليف الواحد ينتج بين مئتين وأربعمئة إطار، ويُسلَّم منه بين اثني عشر وثلاثين، لأن الانتقاء هو العمل، وتسليم مجلد بكل شيء هو تسليم الجزء الذي لم يرده أحد.\n\nكل صورة تُطبع قبل أن تُعتمد. الصورة التي تنجح على الشاشة وحدها لم تكتمل بعد.', 'type' => 'text', 'group' => 'about'],
+        ['key' => 'about.clients_heading', 'value' => 'Selected clients', 'ar' => 'عملاء مختارون', 'type' => 'string', 'group' => 'about'],
+        ['key' => 'about.studio_label', 'value' => 'Studio', 'ar' => 'الاستوديو', 'type' => 'string', 'group' => 'about'],
+        ['key' => 'about.cta', 'value' => 'Start a conversation', 'ar' => 'ابدأ محادثة', 'type' => 'string', 'group' => 'about'],
         ['key' => 'about.portrait_media_id', 'value' => null, 'type' => 'string', 'group' => 'about'],
 
         // --- seo ----------------------------------------------------------
-        ['key' => 'seo.description', 'value' => 'Photography portfolio, archive and journal.', 'type' => 'text', 'group' => 'seo'],
+        ['key' => 'seo.description', 'value' => 'Photography portfolio, archive and journal.', 'ar' => 'معرض أعمال وأرشيف ومجلة في التصوير الفوتوغرافي.', 'type' => 'text', 'group' => 'seo'],
 
         /*
          * ═══════════════════════════════════════════════════════════════════
