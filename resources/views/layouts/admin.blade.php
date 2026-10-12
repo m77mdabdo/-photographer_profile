@@ -26,7 +26,7 @@
     @livewireStyles
 </head>
 <body class="admin">
-    <a class="skip-link" href="#main">Skip to content</a>
+    <a class="skip-link" href="#main">{{ __('studio.a11y.skip') }}</a>
 
     <header class="admin-topbar">
         <div class="admin-topbar__left">

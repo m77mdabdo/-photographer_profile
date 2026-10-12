@@ -104,7 +104,7 @@
     <div class="vignette" aria-hidden="true"></div>
 
     {{-- First focusable element on the page, visible only once focused. --}}
-    <a class="skip-link" href="#main">Skip to content</a>
+    <a class="skip-link" href="#main">{{ __('studio.a11y.skip') }}</a>
 
     <header class="site-header">
         <a class="site-header__mark" href="{{ route('home') }}">{{ config('seo.site_name') }}</a>

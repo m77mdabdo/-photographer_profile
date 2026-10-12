@@ -961,6 +961,26 @@
     background-color: var(--accent);
 }
 
+/*
+ * The standfirst on a front-door page.
+ *
+ * The four Fortify pages other than login each open with one sentence
+ * explaining what the page wants — "enter your email and we will send a
+ * link". They had no class because they were rendered by the admin layout
+ * and borrowed .auth__lede from the admin's own stylesheet; now that they
+ * are on the front door's layout they need the front door's one.
+ *
+ * Measure is capped: these sentences are short, and a 60ch line of a
+ * one-line explanation reads as a paragraph that has lost its way.
+ */
+.auth-card__lede {
+    margin: 0;
+    max-inline-size: 36ch;
+    font-size: var(--fs-small);
+    line-height: var(--lh-body);
+    color: var(--text-secondary);
+}
+
 .auth-card__aside,
 .auth-card__note {
     margin: 0;

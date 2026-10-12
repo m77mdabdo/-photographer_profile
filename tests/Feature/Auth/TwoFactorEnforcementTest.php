@@ -213,11 +213,19 @@ class TwoFactorEnforcementTest extends TestCase
         $previousServer = $_SERVER['AUTH_REQUIRE_TWO_FACTOR'] ?? null;
 
         try {
+            /*
+             * All three places Dotenv and phpunit.xml can put a value.
+             * Unsetting only $_ENV left phpunit's own <env> entry visible
+             * through getenv(), so the "absent" case read whatever the suite
+             * had pinned instead of nothing.
+             */
             if ($value === null) {
                 unset($_ENV['AUTH_REQUIRE_TWO_FACTOR'], $_SERVER['AUTH_REQUIRE_TWO_FACTOR']);
+                putenv('AUTH_REQUIRE_TWO_FACTOR');
             } else {
                 $_ENV['AUTH_REQUIRE_TWO_FACTOR'] = $value;
                 $_SERVER['AUTH_REQUIRE_TWO_FACTOR'] = $value;
+                putenv('AUTH_REQUIRE_TWO_FACTOR='.$value);
             }
 
             /*
@@ -230,9 +238,11 @@ class TwoFactorEnforcementTest extends TestCase
             return $config['require_two_factor'];
         } finally {
             unset($_ENV['AUTH_REQUIRE_TWO_FACTOR'], $_SERVER['AUTH_REQUIRE_TWO_FACTOR']);
+            putenv('AUTH_REQUIRE_TWO_FACTOR');
 
             if ($previous !== null) {
                 $_ENV['AUTH_REQUIRE_TWO_FACTOR'] = $previous;
+                putenv('AUTH_REQUIRE_TWO_FACTOR='.$previous);
             }
 
             if ($previousServer !== null) {

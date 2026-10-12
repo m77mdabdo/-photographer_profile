@@ -30,7 +30,7 @@
     @vite(['resources/css/admin.css'])
 </head>
 <body class="auth-shell">
-    <a class="skip-link" href="#auth-main">{{ __('Skip to content') }}</a>
+    <a class="skip-link" href="#auth-main">{{ __('studio.a11y.skip') }}</a>
 
     <div class="auth-split">
         {{--

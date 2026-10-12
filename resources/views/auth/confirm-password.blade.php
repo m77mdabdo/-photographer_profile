@@ -1,10 +1,10 @@
-<x-layouts::admin title="Confirm your password">
-    <section class="auth">
-        <h1 class="auth__title">Confirm your password</h1>
+{{-- See forgot-password.blade.php: this was on the admin layout too. --}}
+<x-layouts::auth :title="__('studio.auth.confirm_heading')">
+    <div class="auth-card">
+        <h1 class="auth-card__title">{{ __('studio.auth.confirm_heading') }}</h1>
+        <span class="auth-card__rule"></span>
 
-        <p class="auth__lede">
-            This is a sensitive area. Please confirm your password to continue.
-        </p>
+        <p class="auth-card__lede">{{ __('studio.auth.confirm_lede') }}</p>
 
         <x-auth-errors />
 
@@ -12,12 +12,15 @@
             @csrf
 
             <div class="field">
-                <label for="password">Password</label>
+                <label for="password">{{ __('studio.auth.password') }}</label>
                 <input id="password" name="password" type="password"
-                       autocomplete="current-password" required autofocus>
+                       autocomplete="current-password" required autofocus dir="ltr">
             </div>
 
-            <button type="submit" class="auth-submit">Confirm</button>
+            <button type="submit" class="auth-submit">
+                {{ __('studio.auth.confirm_submit') }}
+                <span class="auth-submit__rule" aria-hidden="true"></span>
+            </button>
         </form>
-    </section>
-</x-layouts::admin>
+    </div>
+</x-layouts::auth>

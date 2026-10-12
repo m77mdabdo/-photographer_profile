@@ -19,6 +19,23 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+
+        <!--
+            PINNED, BECAUSE THE SUITE MUST NOT DEPEND ON A DEVELOPER'S .env.
+
+            Task 31b made two-factor enforcement an environment decision and
+            the client promptly set AUTH_REQUIRE_TWO_FACTOR=false in their own
+            .env — which is exactly what it is for. The suite inherited it, and
+            four tests that assert an admin without a second factor is refused
+            went green-to-red on a file that is not in version control.
+
+            That was a defect in 31b: a test whose result depends on an
+            untracked local file is not a test. Pinned to the SECURE value, so
+            the suite proves the production behaviour; the tests that need
+            enforcement off set config('auth.require_two_factor') themselves
+            and say so.
+        -->
+        <env name="AUTH_REQUIRE_TWO_FACTOR" value="true"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

@@ -18,21 +18,21 @@
             @csrf
 
             <div class="field">
-                <label for="email">{{ __('Email address') }}</label>
+                <label for="email">{{ __('studio.auth.email') }}</label>
                 <input id="email" name="email" type="email" value="{{ old('email') }}"
                        autocomplete="username" required autofocus
                        dir="ltr" spellcheck="false">
             </div>
 
             <div class="field">
-                <label for="password">{{ __('Password') }}</label>
+                <label for="password">{{ __('studio.auth.password') }}</label>
                 <input id="password" name="password" type="password"
                        autocomplete="current-password" required dir="ltr">
             </div>
 
             <div class="field field--inline">
                 <input id="remember" name="remember" type="checkbox">
-                <label for="remember">{{ __('Stay signed in on this device') }}</label>
+                <label for="remember">{{ __('studio.auth.remember') }}</label>
             </div>
 
             <button type="submit" class="auth-submit">
@@ -44,7 +44,7 @@
         </form>
 
         <p class="auth-card__aside">
-            <a href="{{ route('password.request') }}">{{ __('Forgotten your password?') }}</a>
+            <a href="{{ route('password.request') }}">{{ __('studio.auth.forgot') }}</a>
         </p>
 
         {{--

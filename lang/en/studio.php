@@ -99,6 +99,56 @@ return [
         'article' => 'Journal',
     ],
 
+    /*
+     * THE FRONT DOOR, IN BOTH LANGUAGES.
+     *
+     * Fortify owns login, the password reset, the two-factor challenge and the
+     * password confirmation. Those four pages SURVIVE the step-10 deletion of
+     * the custom admin, so they are part of the shipped product rather than
+     * scaffolding — and four of the five shipped with their English typed
+     * directly into the markup while the layout set dir="rtl" from the
+     * visitor's cookie. See docs/decisions/0004-direction-and-content.md.
+     */
+    /*
+     * Strings that belong to no one screen.
+     *
+     * The skip link is in all three layouts and was typed in English in two of
+     * them and passed through __() with no translation in the third — so an
+     * Arabic visitor's first tab stop was an English sentence, on every page
+     * of the site.
+     */
+    'a11y' => [
+        'skip' => 'Skip to content',
+    ],
+    'auth' => [
+        'email' => 'Email address',
+        'password' => 'Password',
+        'remember' => 'Stay signed in on this device',
+        'forgot' => 'Forgotten your password?',
+        'back' => 'Back to sign in',
+
+        'reset_heading' => 'Reset your password',
+        'reset_lede' => 'Enter your email address and we will send a link to set a new password.',
+        'reset_send' => 'Send the link',
+
+        'choose_heading' => 'Choose a new password',
+        'choose_new' => 'New password',
+        'choose_confirm' => 'Confirm the new password',
+        'choose_save' => 'Save the new password',
+
+        'confirm_heading' => 'Confirm your password',
+        'confirm_lede' => 'This area needs your password again before you continue.',
+        'confirm_submit' => 'Continue',
+
+        'challenge_heading' => 'Confirm it is you',
+        'challenge_lede' => 'Open your authenticator app and enter the six-digit code it shows.',
+        'challenge_code' => 'Authentication code',
+        'challenge_recovery' => 'Recovery code',
+        'challenge_recovery_hint' => 'Use this only if you cannot reach your authenticator app.',
+        'challenge_use_recovery' => 'Use a recovery code instead',
+        'challenge_use_code' => 'Use an authentication code instead',
+        'challenge_submit' => 'Confirm',
+    ],
     'login' => [
         'heading' => 'Sign in',
         'intro' => 'This is the studio side of the website.',
