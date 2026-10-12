@@ -144,6 +144,96 @@ class SettingsPageTest extends TestCase
         }
     }
 
+    /**
+     * ───────────────────────────────────────────────────────────────────────
+     * PART 2c — A PICTURE IS CHOSEN FROM THE LIBRARY, NEVER TYPED.
+     *
+     * Three settings hold a media id: the About portrait, the default share
+     * image and the favicon. All three rendered as 500-character text boxes,
+     * so an owner could type `42`, a file path, or nothing, and the only
+     * feedback was a share card that failed to render in somebody else's
+     * timeline a week later.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public function test_every_media_setting_is_a_picker_not_a_text_box(): void
+    {
+        $mediaKeys = \App\Models\Setting::query()
+            ->where('key', 'like', '%_media_id')
+            ->pluck('key');
+
+        $this->assertGreaterThanOrEqual(3, $mediaKeys->count(), 'the media settings have gone missing');
+
+        $schema = SettingsPage::class;
+        $component = Livewire::test($schema);
+
+        $fields = [];
+
+        $walk = function (array $components) use (&$walk, &$fields): void {
+            foreach ($components as $child) {
+                if ($child instanceof \Filament\Forms\Components\Field
+                    || $child instanceof \Filament\Forms\Components\Placeholder) {
+                    $fields[$child->getName()] = $child;
+                }
+
+                $walk($child->getDefaultChildComponents());
+            }
+        };
+
+        $walk($component->instance()->form(
+            \Filament\Schemas\Schema::make($component->instance())
+        )->getComponents());
+
+        foreach ($mediaKeys as $key) {
+            $token = SettingsPage::token($key);
+
+            $default = $fields['values.'.$token.'.'.Locale::DEFAULT] ?? null;
+
+            $this->assertInstanceOf(
+                \Filament\Forms\Components\Select::class,
+                $default,
+                "$key is not a media picker — it is a ".($default === null ? 'missing field' : $default::class)
+            );
+
+            /*
+             * And the second locale offers no second picker: a studio does not
+             * have an Arabic favicon, and offering the choice invites somebody
+             * to make the two locales disagree about the studio's own face.
+             */
+            $arabic = $fields['values.'.$token.'.ar'] ?? null;
+
+            $this->assertInstanceOf(
+                \Filament\Forms\Components\Placeholder::class,
+                $arabic,
+                "$key offers a per-locale picture"
+            );
+        }
+    }
+
+    /** Only processed images are offered, so no page can show a pending one. */
+    public function test_the_favicon_picker_offers_only_ready_images(): void
+    {
+        $ready = \App\Models\Media::factory()->create(['status' => \App\Enums\MediaStatus::Ready]);
+        $pending = \App\Models\Media::factory()->create(['status' => \App\Enums\MediaStatus::Pending]);
+
+        $options = \App\Filament\Support\MediaField::make('x', 'x')->getOptions();
+
+        $this->assertArrayHasKey($ready->getKey(), $options);
+        $this->assertArrayNotHasKey($pending->getKey(), $options);
+    }
+
+    /** An unset site image renders no markup rather than a broken one. */
+    public function test_an_unset_favicon_renders_no_icon_link(): void
+    {
+        \App\Support\Settings::set('seo.favicon_media_id', null);
+        \App\Support\Settings::flush();
+
+        $this->assertNull(\App\Support\SiteImages::faviconLink());
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('rel="icon"', $html);
+    }
+
     /** A save flushes the cache, or the site keeps serving the old value. */
     public function test_a_save_flushes_the_settings_cache(): void
     {

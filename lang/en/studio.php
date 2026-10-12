@@ -283,6 +283,8 @@ return [
         ],
         'save' => 'Save settings',
         'saved' => 'Settings saved.',
+        'not_translatable' => 'One picture for both languages.',
+        'media_hint' => 'Chosen from the media library. Only images the queue has finished processing are offered.',
     ],
 
     'redirects' => [

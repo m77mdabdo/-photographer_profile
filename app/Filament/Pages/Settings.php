@@ -5,15 +5,18 @@ declare(strict_types=1);
 namespace App\Filament\Pages;
 
 use App\Models\Setting;
+use App\Filament\Support\MediaField;
 use App\Support\Locale;
 use App\Support\SettingGroups;
 use App\Support\Settings as SettingsStore;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -150,11 +153,7 @@ class Settings extends Page
                 foreach ($rows as $setting) {
                     $path = 'values.'.static::token($setting->key).'.'.$locale;
 
-                    $fields[] = $setting->type === 'text'
-                        ? Textarea::make($path)->label($setting->key)->rows(3)
-                            ->extraInputAttributes($this->attributesFor($locale))
-                        : TextInput::make($path)->label($setting->key)->maxLength(500)
-                            ->extraInputAttributes($this->attributesFor($locale));
+                    $fields[] = $this->fieldFor($setting, $path, $locale);
                 }
 
                 $tabs[] = Tab::make(Locale::native($locale))->schema($fields);
@@ -168,6 +167,49 @@ class Settings extends Page
         }
 
         return $schema->components($sections)->statePath('');
+    }
+
+    /**
+     * The right control for one setting.
+     *
+     * ───────────────────────────────────────────────────────────────────────
+     * A PICTURE IS NEVER A PATH TYPED INTO A FIELD.
+     *
+     * Three settings hold a media id — the About portrait, the default share
+     * image and the favicon — and every one of them rendered as a 500-character
+     * text box. An owner could type `42`, or `/storage/media/thing.jpg`, or
+     * nothing at all, and the only feedback was a share card that failed to
+     * render in somebody else's timeline a week later.
+     *
+     * Any key ending in `_media_id` gets the library picker instead: it offers
+     * only images the queue has finished processing, searchable by filename and
+     * alt text, and it stores an id that either resolves to a real picture or
+     * resolves to nothing.
+     *
+     * A media id is NOT TRANSLATABLE, and the second locale's tab says so
+     * rather than offering a second picker. A studio does not have an Arabic
+     * favicon; offering the choice would invite somebody to make the two
+     * locales disagree about the studio's own face.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    private function fieldFor(Setting $setting, string $path, string $locale): Component
+    {
+        if (str_ends_with($setting->key, '_media_id')) {
+            if ($locale !== Locale::DEFAULT) {
+                return Placeholder::make($path)
+                    ->label($setting->key)
+                    ->content(__('studio.settings.not_translatable'));
+            }
+
+            return MediaField::make($path, $setting->key)
+                ->helperText(__('studio.settings.media_hint'));
+        }
+
+        return $setting->type === 'text'
+            ? Textarea::make($path)->label($setting->key)->rows(3)
+                ->extraInputAttributes($this->attributesFor($locale))
+            : TextInput::make($path)->label($setting->key)->maxLength(500)
+                ->extraInputAttributes($this->attributesFor($locale));
     }
 
     /** @return array<string, string> */
