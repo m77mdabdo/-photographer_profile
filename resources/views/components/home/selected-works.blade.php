@@ -12,7 +12,7 @@
     <section class="works" data-motion="reveal" aria-labelledby="works-title">
         <header class="works__header">
             <h2 class="works__title" id="works-title">{{ \App\Support\SiteCopy::get('home.selected_heading') }}</h2>
-            <p class="works__count">{{ count($layout) }} {{ Str::plural('set', count($layout)) }}</p>
+            <p class="works__count">{{ \App\Support\PagerUnits::label('set', count($layout)) }}</p>
         </header>
 
         {{--

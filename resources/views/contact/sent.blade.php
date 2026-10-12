@@ -57,8 +57,11 @@
                 @endif
 
                 <p class="receipt__stamp">
-                    {{ \App\Support\SiteCopy::get('contact.sent_at_label') }} {{ $inquiry->created_at?->isoFormat('D MMMM Y') }}
-                    at {{ $inquiry->created_at?->format('H:i') }}
+                    {{-- longWithTime already carries the time and the
+                         script's own comma, so the loose English "at" that
+                         used to join them is gone with it. --}}
+                    {{ \App\Support\SiteCopy::get('contact.sent_at_label') }}
+                    {{ \App\Support\Dates::longWithTime($inquiry->created_at) }}
                 </p>
             </div>
         @endif

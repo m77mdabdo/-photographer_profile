@@ -41,7 +41,7 @@
     <input type="hidden" name="return_to" value="{{ request()->getPathInfo() }}">
 
     <fieldset class="locale-switch__set">
-        <legend class="sr-only">{{ __('Language') }}</legend>
+        <legend class="sr-only">{{ __('studio.controls.language') }}</legend>
 
         @foreach (Locale::codes() as $code)
             <button type="submit"
@@ -58,7 +58,7 @@
                     screen reader in either language reads something meaningful
                     without the visible control carrying two labels.
                 --}}
-                <span class="sr-only">({{ Locale::name($code) }}@if ($code === $current), {{ __('current') }}@endif)</span>
+                <span class="sr-only">({{ Locale::translatedName($code) }}@if ($code === $current), {{ __('studio.controls.current') }}@endif)</span>
             </button>
         @endforeach
     </fieldset>

@@ -117,6 +117,34 @@ return [
      * Arabic visitor's first tab stop was an English sentence, on every page
      * of the site.
      */
+    /*
+     * The two switchers at the foot of every page.
+     *
+     * Theme::label() returned 'System'/'Light'/'Dark' as PHP literals, and the
+     * locale switcher called __('Language') and __('current') with no ar file
+     * behind them — so the last two controls on an Arabic page were in
+     * English, on every page of the site.
+     */
+    'controls' => [
+        'language' => 'Language',
+        'current' => 'current',
+        'theme_system' => 'System',
+        'theme_light' => 'Light',
+        'theme_dark' => 'Dark',
+    ],
+
+    /*
+     * Each language's name IN THE READER'S LANGUAGE, for the sr-only span.
+     *
+     * The switcher shows "العربية" visually — a language must be findable by
+     * somebody who reads only that language. The announced name was
+     * Locale::name(), which is always the ENGLISH name, so an Arabic screen
+     * reader said "Arabic" in English. These are the same names translated.
+     */
+    'language_name' => [
+        'en' => 'English',
+        'ar' => 'Arabic',
+    ],
     'a11y' => [
         'skip' => 'Skip to content',
     ],

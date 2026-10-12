@@ -23,6 +23,11 @@ namespace App\Support;
  * The keys are written out for the same reason as SocialLinks: a key built by
  * interpolation cannot be grepped, so nothing could prove the settings rows
  * were read by anything.
+ *
+ * Four units, because four views counted things with Str::plural(): the work
+ * index ("12 series"), the journal index ("8 pieces"), the archive ("96
+ * frames") and the home page's selected works ("3 sets"). All four were
+ * English nouns inflected by English rules, printed on Arabic pages.
  * ───────────────────────────────────────────────────────────────────────────
  */
 final class PagerUnits
@@ -31,6 +36,8 @@ final class PagerUnits
     private const UNITS = [
         'frame' => ['shared.unit_frame_one', 'shared.unit_frame'],
         'series' => ['shared.unit_series_one', 'shared.unit_series'],
+        'piece' => ['shared.unit_piece_one', 'shared.unit_piece'],
+        'set' => ['shared.unit_set_one', 'shared.unit_set'],
     ];
 
     /** "7 frames", or "إطار واحد". */

@@ -26,7 +26,7 @@
                     aria-pressed="{{ $current === $option ? 'true' : 'false' }}">
                 {{ $option->label() }}
                 @if ($current === $option)
-                    <span class="sr-only">(current)</span>
+                    <span class="sr-only">({{ __('studio.controls.current') }})</span>
                 @endif
             </button>
         @endforeach

@@ -140,10 +140,27 @@ final class Locale
         return self::LOCALES[$code]['native'] ?? $code;
     }
 
-    /** The English name, for an aria-label a screen reader reads in context. */
+    /** The English name. Used where English is what is wanted — hreflang, logs. */
     public static function name(string $code): string
     {
         return self::LOCALES[$code]['name'] ?? $code;
+    }
+
+    /**
+     * The language's name IN THE READER'S LANGUAGE.
+     *
+     * The locale switcher announces each option to assistive technology, and
+     * it was announcing name() — always the English name — so an Arabic
+     * screen reader said "Arabic" in English. The visible label stays
+     * native(), because a language must be findable by somebody who reads
+     * only that language; the announced one follows the page.
+     */
+    public static function translatedName(string $code): string
+    {
+        $key = "studio.language_name.{$code}";
+        $name = __($key);
+
+        return $name === $key ? self::name($code) : $name;
     }
 
     /**

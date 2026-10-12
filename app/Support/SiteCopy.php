@@ -271,6 +271,10 @@ final class SiteCopy
         ['key' => 'shared.unit_frame_one', 'value' => ':count frame', 'ar' => 'إطار واحد', 'type' => 'string', 'group' => 'shared'],
         ['key' => 'shared.unit_series', 'value' => ':count series', 'ar' => ':count متتاليات', 'type' => 'string', 'group' => 'shared'],
         ['key' => 'shared.unit_series_one', 'value' => ':count series', 'ar' => 'متتالية واحدة', 'type' => 'string', 'group' => 'shared'],
+        ['key' => 'shared.unit_piece', 'value' => ':count pieces', 'ar' => ':count مقالات', 'type' => 'string', 'group' => 'shared'],
+        ['key' => 'shared.unit_piece_one', 'value' => ':count piece', 'ar' => 'مقالة واحدة', 'type' => 'string', 'group' => 'shared'],
+        ['key' => 'shared.unit_set', 'value' => ':count sets', 'ar' => ':count مجموعات', 'type' => 'string', 'group' => 'shared'],
+        ['key' => 'shared.unit_set_one', 'value' => ':count set', 'ar' => 'مجموعة واحدة', 'type' => 'string', 'group' => 'shared'],
         ['key' => 'shared.pagination_label', 'value' => 'Pagination', 'ar' => 'التصفّح', 'type' => 'string', 'group' => 'shared'],
 
         // --- the error pages -------------------------------------------------
@@ -317,7 +321,7 @@ final class SiteCopy
         ['key' => 'contact.field_project_type', 'value' => 'Kind of work', 'ar' => 'نوع العمل', 'type' => 'string', 'group' => 'contact_form'],
         ['key' => 'contact.field_project_type_hint', 'value' => 'Portrait, editorial, archive, something else.', 'ar' => 'بورتريه، تحريري، أرشيف، أو شيء آخر.', 'type' => 'string', 'group' => 'contact_form'],
         ['key' => 'contact.field_date', 'value' => 'Date', 'ar' => 'التاريخ', 'type' => 'string', 'group' => 'contact_form'],
-        ['key' => 'contact.field_date_hint', 'value' => 'In whatever form you have it — “14 May”, “late spring”, “the week of the 3rd”.', 'ar' => 'بأي صيغة لديك — «١٤ مايو»، «أواخر الربيع»، «أسبوع الثالث».', 'type' => 'string', 'group' => 'contact_form'],
+        ['key' => 'contact.field_date_hint', 'value' => 'In whatever form you have it — “14 May”, “late spring”, “the week of the 3rd”.', 'ar' => 'بأي صيغة لديك — «14 مايو»، «أواخر الربيع»، «أسبوع الثالث».', 'type' => 'string', 'group' => 'contact_form'],
         ['key' => 'contact.field_location', 'value' => 'Where', 'ar' => 'المكان', 'type' => 'string', 'group' => 'contact_form'],
         ['key' => 'contact.field_budget', 'value' => 'Budget', 'ar' => 'الميزانية', 'type' => 'string', 'group' => 'contact_form'],
         ['key' => 'contact.field_budget_hint', 'value' => 'A range is fine. It decides what is possible, not whether you get a reply.', 'ar' => 'النطاق التقريبي يكفي. هو يحدّد ما هو ممكن، لا ما إذا كنت ستتلقّى ردًا.', 'type' => 'string', 'group' => 'contact_form'],

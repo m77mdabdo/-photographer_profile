@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Support\Locale;
+use App\Support\Settings;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
@@ -77,6 +78,30 @@ class SetLocale
         $locale = Locale::supports($locale) ? $locale : Locale::DEFAULT;
 
         App::setLocale($locale);
+
+        /*
+         * ─────────────────────────────────────────────────────────────────
+         * RE-OVERLAY THE CONFIG, NOW THAT THE LOCALE IS KNOWN.
+         *
+         * Settings::overlayConfig() lays the settings table over config so
+         * that config('seo.site_name') and config('seo.default_description')
+         * carry the studio's own words. It runs in AppServiceProvider::boot(),
+         * which is BEFORE any middleware — so it read the settings in the
+         * DEFAULT locale and froze the English there for the rest of the
+         * request.
+         *
+         * The consequence was not subtle: the header wordmark, the hero
+         * wordmark, og:site_name and — worst — every Arabic page's <title> and
+         * meta description were English. An Arabic page was telling search
+         * engines it was an English page about an English-named studio.
+         *
+         * Called again here, after the locale is settled, so the overlay
+         * reflects the page actually being rendered. It is one cached map and
+         * a handful of config() writes, so the cost is nil; the boot-time call
+         * stays because console commands and queued jobs have no middleware.
+         * ─────────────────────────────────────────────────────────────────
+         */
+        Settings::overlayConfig();
 
         /*
          * Exposed to views as well as to the app. The layout reads

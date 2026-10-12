@@ -35,7 +35,7 @@
                 @endif
 
                 <time datetime="{{ $article->published_at?->toDateString() }}">
-                    {{ $article->published_at?->format('j F Y') }}
+                    {{ \App\Support\Dates::long($article->published_at) }}
                 </time>
 
                 <span aria-hidden="true">·</span>

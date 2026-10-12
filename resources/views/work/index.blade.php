@@ -12,7 +12,7 @@
             @endif
 
             <p class="work-index__count">
-                {{ $projects->total() }} {{ Str::plural('series', $projects->total()) }}
+                {{ \App\Support\PagerUnits::label('series', $projects->total()) }}
             </p>
         </header>
 

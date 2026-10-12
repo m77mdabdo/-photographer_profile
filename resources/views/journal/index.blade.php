@@ -13,7 +13,7 @@
             @endif
 
             <p class="journal__count">
-                {{ $articles->total() }} {{ Str::plural('piece', $articles->total()) }}
+                {{ \App\Support\PagerUnits::label('piece', $articles->total()) }}
             </p>
         </header>
 
@@ -79,7 +79,7 @@
                             <div class="entry__body">
                                 <p class="entry__meta">
                                     <time datetime="{{ $article->published_at?->toDateString() }}">
-                                        {{ $article->published_at?->format('j F Y') }}
+                                        {{ \App\Support\Dates::long($article->published_at) }}
                                     </time>
                                     @if ($article->category)
                                         <span aria-hidden="true">·</span>

@@ -24,7 +24,7 @@
             </h1>
 
             <p class="sheet-page__count">
-                {{ $frames->total() }} {{ Str::plural('frame', $frames->total()) }}
+                {{ \App\Support\PagerUnits::label('frame', $frames->total()) }}
                 @if ($frames->hasPages())
                     <span class="sheet-page__roll">{{ \App\Support\SiteCopy::line('archive.roll_position', ['current' => $frames->currentPage(), 'total' => $frames->lastPage()]) }}</span>
                 @endif

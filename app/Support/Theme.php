@@ -22,12 +22,24 @@ enum Theme: string
     /** Two years: a display preference is not something to ask about again. */
     public const COOKIE_DAYS = 730;
 
+    /**
+     * The visible label, translated.
+     *
+     * These were PHP literals, so the theme switch at the foot of every page
+     * read "System Light Dark" in English on an Arabic site. A label a visitor
+     * reads is copy, wherever it happens to be written.
+     *
+     * In lang rather than in settings, deliberately: an owner renaming "Dark"
+     * is renaming a browser concept, not something about their studio — and
+     * the three must stay parallel with each other, which a settings page
+     * cannot enforce.
+     */
     public function label(): string
     {
         return match ($this) {
-            self::System => 'System',
-            self::Light => 'Light',
-            self::Dark => 'Dark',
+            self::System => __('studio.controls.theme_system'),
+            self::Light => __('studio.controls.theme_light'),
+            self::Dark => __('studio.controls.theme_dark'),
         };
     }
 

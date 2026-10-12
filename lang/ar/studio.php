@@ -94,6 +94,18 @@ return [
         'article' => 'مجلة',
     ],
 
+    'controls' => [
+        'language' => 'اللغة',
+        'current' => 'الحالية',
+        'theme_system' => 'النظام',
+        'theme_light' => 'فاتح',
+        'theme_dark' => 'داكن',
+    ],
+
+    'language_name' => [
+        'en' => 'الإنجليزية',
+        'ar' => 'العربية',
+    ],
     'a11y' => [
         'skip' => 'تجاوَز إلى المحتوى',
     ],
