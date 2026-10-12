@@ -27,7 +27,18 @@ class SeoResolver
 
         $title = $this->resolveTitle($page, $siteName);
         $description = $page->description ?? (string) config('seo.default_description');
-        $image = $page->ogImage ?? config('seo.default_og_image');
+        /*
+         * THE SITE-WIDE SHARE IMAGE IS THE OWNER'S CHOICE.
+         *
+         * config('seo.default_og_image') was hardcoded null, so every page
+         * without an image of its own — the contact page, the about page, a
+         * flat page, every error page — shared as a bare text card. The owner
+         * had no way to set one.
+         *
+         * A page's own image still wins: a project shares its cover, not the
+         * studio's default.
+         */
+        $image = $page->ogImage ?? \App\Support\SiteImages::openGraph();
 
         return new SeoData(
             title: $title,

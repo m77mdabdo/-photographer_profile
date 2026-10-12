@@ -17,16 +17,16 @@
 <x-layouts::public :seo="$seo">
     <section class="sheet-page" aria-labelledby="archive-title">
         <header class="sheet-page__header">
-            <p class="sheet-page__eyebrow">{{ \App\Support\Settings::get('nav.archive', 'Archive') }}</p>
+            <p class="sheet-page__eyebrow">{{ \App\Support\SiteCopy::get('nav.archive') }}</p>
 
             <h1 class="sheet-page__title" id="archive-title">
-                {{ \App\Support\Settings::get('archive.heading', 'Every frame that made it out') }}
+                {{ \App\Support\SiteCopy::get('archive.heading') }}
             </h1>
 
             <p class="sheet-page__count">
                 {{ $frames->total() }} {{ Str::plural('frame', $frames->total()) }}
                 @if ($frames->hasPages())
-                    <span class="sheet-page__roll">roll {{ $frames->currentPage() }} of {{ $frames->lastPage() }}</span>
+                    <span class="sheet-page__roll">{{ \App\Support\SiteCopy::line('archive.roll_position', ['current' => $frames->currentPage(), 'total' => $frames->lastPage()]) }}</span>
                 @endif
             </p>
         </header>
@@ -36,14 +36,14 @@
             JavaScript. Each control is an anchor to a complete address, so
             every combination is bookmarkable and works with scripting off.
         --}}
-        <nav class="sheet-filter" aria-label="Filter the archive">
+        <nav class="sheet-filter" aria-label="{{ \App\Support\SiteCopy::get('archive.filter_label') }}">
             <div class="sheet-filter__group">
-                <span class="sheet-filter__legend" id="filter-category">Series</span>
+                <span class="sheet-filter__legend" id="filter-category">{{ \App\Support\SiteCopy::get('archive.series_label') }}</span>
                 <ul class="sheet-filter__options" role="list" aria-labelledby="filter-category">
                     <li>
                         <a href="{{ route('archive.index', array_filter(['year' => $year])) }}"
                            @class(['sheet-filter__option', 'is-current' => $category === null])
-                           @if ($category === null) aria-current="true" @endif>All</a>
+                           @if ($category === null) aria-current="true" @endif>{{ \App\Support\SiteCopy::get('archive.filter_all') }}</a>
                     </li>
                     @foreach ($categories as $option)
                         <li>
@@ -57,12 +57,12 @@
 
             @if ($years !== [])
                 <div class="sheet-filter__group">
-                    <span class="sheet-filter__legend" id="filter-year">Year</span>
+                    <span class="sheet-filter__legend" id="filter-year">{{ \App\Support\SiteCopy::get('archive.year_label') }}</span>
                     <ul class="sheet-filter__options" role="list" aria-labelledby="filter-year">
                         <li>
                             <a href="{{ route('archive.index', array_filter(['category' => $category?->slug])) }}"
                                @class(['sheet-filter__option', 'is-current' => $year === null])
-                               @if ($year === null) aria-current="true" @endif>All</a>
+                               @if ($year === null) aria-current="true" @endif>{{ \App\Support\SiteCopy::get('archive.filter_all') }}</a>
                         </li>
                         @foreach ($years as $option)
                             <li>
@@ -78,9 +78,9 @@
 
         @if ($frames->isEmpty())
             <div class="work-empty">
-                <p class="work-empty__line">No frames under that filter.</p>
-                <p class="work-empty__note">The archive only holds pictures that reached a published page.</p>
-                <a class="work-empty__back" href="{{ route('archive.index') }}">See the whole sheet</a>
+                <p class="work-empty__line">{{ \App\Support\SiteCopy::get('archive.empty') }}</p>
+                <p class="work-empty__note">{{ \App\Support\SiteCopy::get('archive.empty_note') }}</p>
+                <a class="work-empty__back" href="{{ route('archive.index') }}">{{ \App\Support\SiteCopy::get('archive.see_sheet') }}</a>
             </div>
         @else
             {{--
@@ -147,7 +147,7 @@
                 @endforeach
             </ol>
 
-            {{ $frames->links('pagination.editorial', ['unit' => 'frame', 'ariaLabel' => 'Archive rolls']) }}
+            {{ $frames->links('pagination.editorial', ['unit' => 'frame', 'ariaLabelKey' => 'shared.pagination_label']) }}
         @endif
     </section>
 </x-layouts::public>

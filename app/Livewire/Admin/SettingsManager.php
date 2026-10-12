@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Admin;
 
 use App\Models\Setting;
+use App\Support\SettingGroups;
 use App\Support\Settings;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -44,13 +45,30 @@ class SettingsManager extends Component
      *
      * @var array<string, string>
      */
-    public const GROUP_TITLES = [
-        'identity' => 'Identity',
-        'attribution' => 'Attribution',
-        'navigation' => 'Navigation labels',
-        'hero' => 'Hero',
-        'seo' => 'Search & sharing',
-    ];
+    /**
+     * Delegated, not duplicated.
+     *
+     * This was the only copy of the group titles and the Filament page
+     * imported it from here — a dependency pointing from the new admin into
+     * the one that gets deleted. It also listed five of the nine groups that
+     * existed, so four sections were titled by headline() on a raw key.
+     *
+     * App\Support\SettingGroups owns it now, grouped by where a setting
+     * appears on the site. Kept as a constant-shaped accessor so this
+     * component's own Blade view needs no change before it is deleted.
+     *
+     * @return array<string, string>
+     */
+    public static function groupTitles(): array
+    {
+        $titles = [];
+
+        foreach (SettingGroups::order() as $group) {
+            $titles[$group] = SettingGroups::title($group);
+        }
+
+        return $titles;
+    }
 
     public function mount(): void
     {

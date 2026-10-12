@@ -19,8 +19,17 @@
                 nobody edits a standfirst when they add one.
             --}}
             @if ($services->isNotEmpty())
+                {{--
+                    One line, placeholders and all, rather than a number
+                    glued to Str::plural() and an English preposition.
+                    Arabic does not form plurals that way and "of working"
+                    was not translatable at all.
+                --}}
                 <p class="offer__count">
-                    {{ $services->count() }} {{ Str::plural('way', $services->count()) }} of working
+                    {{ \App\Support\SiteCopy::line(
+                        $services->count() === 1 ? 'services.count_one' : 'services.count',
+                        ['count' => $services->count()],
+                    ) }}
                 </p>
             @endif
         </header>

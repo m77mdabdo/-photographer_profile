@@ -31,13 +31,11 @@
         Settings::get('attribution.city'),
     ]));
 
-    $stages = [];
-
-    foreach (range(1, 4) as $index) {
-        if ($label = Settings::get("stage.{$index}.label")) {
-            $stages[] = ['number' => str_pad((string) $index, 2, '0', STR_PAD_LEFT), 'label' => $label];
-        }
-    }
+    /*
+     * See App\Support\HeroStages: the keys are literal so they can be proven
+     * read, and an empty stage is dropped rather than numbered blankly.
+     */
+    $stages = \App\Support\HeroStages::all();
 
     $place = array_values(array_filter([
         Settings::get('site.location'),

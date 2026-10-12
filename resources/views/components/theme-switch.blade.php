@@ -16,7 +16,7 @@
     <input type="hidden" name="return_to" value="{{ Request::getRequestUri() }}">
 
     <fieldset class="theme-switch__set">
-        <legend class="sr-only">Colour scheme</legend>
+        <legend class="sr-only">{{ \App\Support\SiteCopy::get('shared.theme_label') }}</legend>
 
         @foreach (\App\Support\Theme::cases() as $option)
             <button type="submit"

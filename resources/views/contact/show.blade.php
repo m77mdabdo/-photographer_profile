@@ -20,23 +20,37 @@
      * has not been replied to yet. The column and the admin field remain, so
      * the studio can record it themselves after a conversation.
      */
+    /*
+     * EVERY LABEL AND HINT COMES FROM THE PANEL.
+     *
+     * This array held ten labels, four hints and two legends as literals —
+     * the most-read copy on the site after the hero, on the form a client
+     * fills in to hire the studio, and the owner could not change a word.
+     *
+     * The STRUCTURE stays here: which field, what input type, whether it is
+     * required, which autocomplete token. Those are not copy, and a `type`
+     * an owner could edit is a text box that stops accepting email
+     * addresses. See the report's "kept uneditable" list.
+     */
+    $copy = static fn (string $key): string => \App\Support\SiteCopy::get($key);
+
     $groups = [
         'about-you' => [
-            'legend' => 'About you',
+            'legend' => $copy('contact.legend_about'),
             'fields' => [
-                'name' => ['label' => 'Your name', 'type' => 'text', 'required' => true, 'autocomplete' => 'name'],
-                'email' => ['label' => 'Email', 'type' => 'email', 'required' => true, 'autocomplete' => 'email'],
-                'phone' => ['label' => 'Phone', 'type' => 'tel', 'required' => false, 'autocomplete' => 'tel', 'hint' => 'Only if you would rather talk than type.'],
-                'company' => ['label' => 'Company or publication', 'type' => 'text', 'required' => false, 'autocomplete' => 'organization'],
+                'name' => ['label' => $copy('contact.field_name'), 'type' => 'text', 'required' => true, 'autocomplete' => 'name'],
+                'email' => ['label' => $copy('contact.field_email'), 'type' => 'email', 'required' => true, 'autocomplete' => 'email'],
+                'phone' => ['label' => $copy('contact.field_phone'), 'type' => 'tel', 'required' => false, 'autocomplete' => 'tel', 'hint' => $copy('contact.field_phone_hint')],
+                'company' => ['label' => $copy('contact.field_company'), 'type' => 'text', 'required' => false, 'autocomplete' => 'organization'],
             ],
         ],
         'the-job' => [
-            'legend' => 'If you know it yet',
+            'legend' => $copy('contact.legend_job'),
             'fields' => [
-                'project_type' => ['label' => 'Kind of work', 'type' => 'text', 'required' => false, 'hint' => 'Portrait, editorial, archive, something else.'],
-                'shoot_date_text' => ['label' => 'Date', 'type' => 'text', 'required' => false, 'hint' => 'In whatever form you have it — “14 May”, “late spring”, “the week of the 3rd”.'],
-                'location' => ['label' => 'Where', 'type' => 'text', 'required' => false],
-                'budget_range' => ['label' => 'Budget', 'type' => 'text', 'required' => false, 'hint' => 'A range is fine. It decides what is possible, not whether you get a reply.'],
+                'project_type' => ['label' => $copy('contact.field_project_type'), 'type' => 'text', 'required' => false, 'hint' => $copy('contact.field_project_type_hint')],
+                'shoot_date_text' => ['label' => $copy('contact.field_date'), 'type' => 'text', 'required' => false, 'hint' => $copy('contact.field_date_hint')],
+                'location' => ['label' => $copy('contact.field_location'), 'type' => 'text', 'required' => false],
+                'budget_range' => ['label' => $copy('contact.field_budget'), 'type' => 'text', 'required' => false, 'hint' => $copy('contact.field_budget_hint')],
             ],
         ],
     ];
@@ -106,7 +120,7 @@
                 turning a real person into a false positive.
             --}}
             <div class="visually-gone" aria-hidden="true">
-                <label for="field-{{ SpamGuard::HONEYPOT }}">Do not fill this in</label>
+                <label for="field-{{ SpamGuard::HONEYPOT }}">{{ \App\Support\SiteCopy::get('contact.honeypot_label') }}</label>
                 <input type="text"
                        id="field-{{ SpamGuard::HONEYPOT }}"
                        name="{{ SpamGuard::HONEYPOT }}"
@@ -122,7 +136,7 @@
             <div @class(['field', 'field--brief', 'field--invalid' => $errors->has('message')])>
                 <label class="field__label field__label--lead" for="field-message">
                     {{ Settings::get('contact.message_label') }}
-                    <span class="field__required">required</span>
+                    <span class="field__required">{{ \App\Support\SiteCopy::get('contact.required_marker') }}</span>
                 </label>
 
                 <p class="field__hint" id="hint-message">
@@ -161,9 +175,9 @@
                                 <label class="field__label" for="field-{{ $name }}">
                                     {{ $field['label'] }}
                                     @if ($field['required'])
-                                        <span class="field__required">required</span>
+                                        <span class="field__required">{{ \App\Support\SiteCopy::get('contact.required_marker') }}</span>
                                     @else
-                                        <span class="field__optional">optional</span>
+                                        <span class="field__optional">{{ \App\Support\SiteCopy::get('contact.optional_marker') }}</span>
                                     @endif
                                 </label>
 

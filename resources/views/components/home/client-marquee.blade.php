@@ -22,7 +22,7 @@
             mono label naming what the moving row is. Its text comes from the
             settings table like every other string on the page.
         --}}
-        <h2 class="marquee__label" id="clients-heading">{{ \App\Support\Settings::get('marquee.label', 'Clients') }}</h2>
+        <h2 class="marquee__label" id="clients-heading">{{ \App\Support\SiteCopy::get('marquee.label') }}</h2>
 
         <div class="marquee__viewport">
             <ul class="marquee__track" role="list">

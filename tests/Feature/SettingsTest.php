@@ -180,10 +180,20 @@ class SettingsTest extends TestCase
     {
         $owner = User::factory()->create(['role' => UserRole::Owner]);
 
+        /*
+         * The section headings come from App\Support\SettingGroups, which
+         * Task 32 made the single registry for both admins and regrouped BY
+         * WHERE A SETTING APPEARS rather than by key prefix — so "Identity"
+         * is now "The studio" and "Navigation labels" is "Menu labels".
+         *
+         * Asserted through the registry rather than against the new strings:
+         * the guarantee is that every group a setting belongs to is titled,
+         * not that it is titled with one particular sentence.
+         */
         Livewire::actingAs($owner)
             ->test(SettingsManager::class)
-            ->assertSee('Identity')
-            ->assertSee('Navigation labels')
+            ->assertSee(\App\Support\SettingGroups::title('identity'))
+            ->assertSee(\App\Support\SettingGroups::title('navigation'))
             ->assertSee('site.name')
             ->set('values.'.Setting::query()->where('key', 'site.statement')->value('id'), 'A new sentence about the work.')
             ->call('save')

@@ -20,8 +20,8 @@
     @if (! $hero && $selected->isEmpty() && $archive->isEmpty())
         {{-- Nothing published yet: say so plainly rather than showing a shell. --}}
         <section class="nothing-yet">
-            <h2>Nothing published yet</h2>
-            <p>Work appears here once a project is published.</p>
+            <h2>{{ \App\Support\SiteCopy::get('home.empty_heading') }}</h2>
+            <p>{{ \App\Support\SiteCopy::get('home.empty_note') }}</p>
         </section>
     @endif
 </x-layouts::public>

@@ -9,7 +9,7 @@
         @endif
 
         <div class="story__inner">
-            <p class="story__eyebrow">At length</p>
+            <p class="story__eyebrow">{{ \App\Support\SiteCopy::get('home.featured_label') }}</p>
             <h2 class="story__title" id="story-title">{{ $project->title }}</h2>
 
             @if ($project->excerpt)
@@ -17,7 +17,7 @@
             @endif
 
             <a class="story__link" href="{{ route('projects.show', $project) }}">
-                Read the story
+                {{ \App\Support\SiteCopy::get('home.featured_cta') }}
                 <span class="story__link-rule" aria-hidden="true"></span>
             </a>
         </div>

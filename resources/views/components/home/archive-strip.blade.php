@@ -2,8 +2,8 @@
 @if ($media->isNotEmpty())
     <section class="sheet" aria-labelledby="sheet-title">
         <header class="sheet__header">
-            <h2 class="sheet__title" id="sheet-title">Loose frames</h2>
-            <p class="sheet__note">Unfiled, most recent first</p>
+            <h2 class="sheet__title" id="sheet-title">{{ \App\Support\SiteCopy::get('home.archive_heading') }}</h2>
+            <p class="sheet__note">{{ \App\Support\SiteCopy::get('home.archive_note') }}</p>
         </header>
 
         {{--

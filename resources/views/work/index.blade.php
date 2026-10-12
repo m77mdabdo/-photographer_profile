@@ -1,10 +1,10 @@
 <x-layouts::public :seo="$seo">
     <section class="work-index" aria-labelledby="work-title">
         <header class="work-index__header">
-            <p class="work-index__eyebrow">{{ \App\Support\Settings::get('nav.work', 'Work') }}</p>
+            <p class="work-index__eyebrow">{{ \App\Support\SiteCopy::get('nav.work') }}</p>
 
             <h1 class="work-index__title" id="work-title">
-                {{ $category?->name ?? \App\Support\Settings::get('work.heading', 'Work, in series') }}
+                {{ $category?->name ?? \App\Support\SiteCopy::get('work.heading') }}
             </h1>
 
             @if ($category?->description)
@@ -22,11 +22,11 @@
             into, so there is nothing here for JavaScript to do.
         --}}
         @if ($categories->isNotEmpty())
-            <nav class="work-filter" aria-label="Filter by category">
+            <nav class="work-filter" aria-label="{{ \App\Support\SiteCopy::get('work.filter_label') }}">
                 <a href="{{ route('work.index') }}"
                    @class(['work-filter__option', 'is-current' => $category === null])
                    @if ($category === null) aria-current="page" @endif>
-                    All<span class="work-filter__count">{{ $projects->total() }}</span>
+                    {{ \App\Support\SiteCopy::get('work.filter_all') }}<span class="work-filter__count">{{ $projects->total() }}</span>
                 </a>
 
                 @foreach ($categories as $option)
@@ -47,16 +47,16 @@
             <div class="work-empty">
                 <p class="work-empty__line">
                     @if ($category !== null)
-                        Nothing published under {{ $category->name }} yet.
+                        {{ \App\Support\SiteCopy::line('work.empty_filtered', ['category' => $category->name]) }}
                     @else
-                        Nothing published yet.
+                        {{ \App\Support\SiteCopy::get('work.empty') }}
                     @endif
                 </p>
                 <p class="work-empty__note">
-                    Work appears here as it is finished and printed.
+                    {{ \App\Support\SiteCopy::get('work.empty_note') }}
                 </p>
                 @if ($category !== null)
-                    <a class="work-empty__back" href="{{ route('work.index') }}">See all work</a>
+                    <a class="work-empty__back" href="{{ route('work.index') }}">{{ \App\Support\SiteCopy::get('work.see_all') }}</a>
                 @endif
             </div>
         @else
@@ -105,7 +105,7 @@
                 @endforeach
             </ol>
 
-            {{ $projects->links('pagination.editorial', ['unit' => 'series', 'ariaLabel' => 'Work pages']) }}
+            {{ $projects->links('pagination.editorial', ['unit' => 'series', 'ariaLabelKey' => 'shared.pagination_label']) }}
         @endif
     </section>
 </x-layouts::public>

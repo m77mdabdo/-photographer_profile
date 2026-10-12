@@ -5,7 +5,7 @@
     carousel script, and nothing hidden if JavaScript never arrives.
 --}}
 <figure class="block block--gallery-strip">
-    <ul class="block__strip" role="list" tabindex="0" aria-label="Image gallery, scrollable">
+    <ul class="block__strip" role="list" tabindex="0" aria-label="{{ \App\Support\SiteCopy::get('shared.gallery_label') }}">
         @foreach ($media as $i => $image)
             <li class="block__strip-item">
                 <x-picture :media="$image" sizes="(max-width: 700px) 80vw, 480px" img-class="block__image"

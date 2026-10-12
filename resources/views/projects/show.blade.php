@@ -1,7 +1,7 @@
 <x-layouts::public :seo="$seo" :structured-data="$structuredData ?? null">
     @if ($preview)
         <p class="preview-banner" role="status">
-            Preview of an unpublished project. This link expires and is not indexed.
+            {{ \App\Support\SiteCopy::get('project.preview_warning') }}
         </p>
     @endif
 
@@ -15,16 +15,16 @@
 
             <dl class="project__facts">
                 @if ($project->year)
-                    <dt>Year</dt><dd>{{ $project->year }}</dd>
+                    <dt>{{ \App\Support\SiteCopy::get('project.year_label') }}</dt><dd>{{ $project->year }}</dd>
                 @endif
                 @if ($project->client)
-                    <dt>Client</dt><dd>{{ $project->client }}</dd>
+                    <dt>{{ \App\Support\SiteCopy::get('project.client_label') }}</dt><dd>{{ $project->client }}</dd>
                 @endif
                 @if ($project->location)
-                    <dt>Location</dt><dd>{{ $project->location }}</dd>
+                    <dt>{{ \App\Support\SiteCopy::get('project.location_label') }}</dt><dd>{{ $project->location }}</dd>
                 @endif
                 @if ($project->categories->isNotEmpty())
-                    <dt>Categories</dt>
+                    <dt>{{ \App\Support\SiteCopy::get('project.categories_label') }}</dt>
                     <dd>{{ $project->categories->pluck('name')->implode(', ') }}</dd>
                 @endif
             </dl>
@@ -55,7 +55,7 @@
 
         @if ($project->credits->isNotEmpty() && ! $project->blocks->contains(fn ($b) => $b->type === \App\Enums\BlockType::Credits))
             <section class="project__credits">
-                <h2>Credits</h2>
+                <h2>{{ \App\Support\SiteCopy::get('project.credits_label') }}</h2>
                 <dl>
                     @foreach ($project->credits as $credit)
                         <dt>{{ $credit->role }}</dt>

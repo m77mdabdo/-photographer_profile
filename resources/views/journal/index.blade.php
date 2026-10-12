@@ -24,11 +24,11 @@
             reasoning as the work index, and the same markup.
         --}}
         @if ($categories->isNotEmpty())
-            <nav class="work-filter" aria-label="Filter by subject">
+            <nav class="work-filter" aria-label="{{ \App\Support\SiteCopy::get('journal.filter_label') }}">
                 <a href="{{ route('journal.index') }}"
                    @class(['work-filter__option', 'is-current' => $category === null])
                    @if ($category === null) aria-current="page" @endif>
-                    All
+                    {{ \App\Support\SiteCopy::get('journal.filter_all') }}
                 </a>
 
                 @foreach ($categories as $option)
@@ -46,15 +46,15 @@
             <div class="work-empty">
                 <p class="work-empty__line">
                     @if ($category !== null)
-                        Nothing written under {{ $category->name }} yet.
+                        {{ \App\Support\SiteCopy::line('journal.empty_filtered', ['category' => $category->name]) }}
                     @else
-                        Nothing written here yet.
+                        {{ \App\Support\SiteCopy::get('journal.empty') }}
                     @endif
                 </p>
-                <p class="work-empty__note">{{ Settings::get('journal.empty_note') }}</p>
+                <p class="work-empty__note">{{ \App\Support\SiteCopy::get('journal.empty_note') }}</p>
 
                 @if ($category !== null)
-                    <a class="work-empty__back" href="{{ route('journal.index') }}">Read everything</a>
+                    <a class="work-empty__back" href="{{ route('journal.index') }}">{{ \App\Support\SiteCopy::get('journal.read_everything') }}</a>
                 @endif
             </div>
         @else
@@ -86,7 +86,7 @@
                                         {{ $article->category->name }}
                                     @endif
                                     <span aria-hidden="true">·</span>
-                                    {{ $article->readingMinutes() }} min
+                                    {{ $article->readingMinutes() }} {{ \App\Support\SiteCopy::get('shared.read_time_unit') }}
                                 </p>
 
                                 <h2 class="entry__title">

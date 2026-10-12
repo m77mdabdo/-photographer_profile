@@ -93,6 +93,21 @@
         the hero photograph is painted and eligible for LCP before a byte of
         GSAP is executed.
     --}}
+    {{--
+        THE FAVICON, WHICH THIS SITE DID NOT HAVE.
+
+        public/favicon.ico is Laravel's 0-byte placeholder and no icon link
+        existed in any layout, so every browser tab showed a generic page
+        icon. Chosen from the media library — see App\Support\SiteImages —
+        and omitted entirely when unset rather than pointing at the empty
+        file, because a 0-byte icon is a broken image where no icon is just
+        the browser's default.
+    --}}
+    @if ($favicon = \App\Support\SiteImages::faviconLink())
+        <link rel="icon" type="{{ $favicon['type'] }}" href="{{ $favicon['url'] }}">
+        <link rel="apple-touch-icon" href="{{ $favicon['url'] }}">
+    @endif
+
     @vite(['resources/css/public.css', 'resources/js/public.js'])
 </head>
 <body>
@@ -109,7 +124,7 @@
     <header class="site-header">
         <a class="site-header__mark" href="{{ route('home') }}">{{ config('seo.site_name') }}</a>
 
-        <nav class="site-nav" aria-label="Primary">
+        <nav class="site-nav" aria-label="{{ \App\Support\SiteCopy::get('footer.nav_label') }}">
             {{--
                 Labels from the settings table, destinations still placeholder:
                 the real routes land in a later task. The key is the address the
@@ -182,19 +197,51 @@
             @endforeach
         </div>
 
-        <div class="site-footer__group">
-            <ul role="list" class="site-footer__social">
-                <li><a href="#">Instagram</a></li>
-                <li><a href="#">Bluesky</a></li>
-            </ul>
-        </div>
+        {{--
+            THE SOCIAL LINKS, OWNED BY THE OWNER.
+
+            These were two <a href="#"> elements naming Instagram and Bluesky —
+            which decided, in a Blade template, which two networks this studio
+            uses for ever, and pointed both of them at nothing.
+
+            Three slots, each a label and a URL. A slot renders only when it has
+            BOTH: a label with no address is a link that goes nowhere, and an
+            address with no label is a link nobody can read. A studio that uses
+            none gets no list rather than an empty one — hence the @if around
+            the <ul> as well as around each item.
+        --}}
+        @php($social = \App\Support\SocialLinks::all())
+
+        @if ($social !== [])
+            <div class="site-footer__group">
+                <ul role="list" class="site-footer__social">
+                    @foreach ($social as $link)
+                        <li>
+                            <a href="{{ $link['url'] }}" rel="me noopener">{{ $link['label'] }}</a>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
         <div class="site-footer__group">
             <x-theme-switch :current="$theme" />
         </div>
 
         <p class="site-footer__copyright">
-            &copy; {{ now()->year }} {{ config('seo.site_name') }}
+            {{--
+                The symbol and the year are structural; the sentence is not.
+
+                The year needs no localising helper: this site uses WESTERN
+                numerals in both locales — see docs/decisions/0005-numerals.md —
+                so now()->year is already correct in Arabic. A
+                Numerals::year() wrapper would return its argument unchanged,
+                which is a pattern with one implementation and therefore not an
+                abstraction.
+            --}}
+            &copy; {{ now()->year }}
+            {{ \App\Support\Settings::get('site.name', config('seo.site_name')) }}
+            {{ \App\Support\SiteCopy::get('footer.copyright') }}
         </p>
     </footer>
 </body>

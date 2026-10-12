@@ -12,7 +12,7 @@
         @foreach ($groups as $group => $settings)
             <section class="settings-group">
                 <h2 class="settings-group__title">
-                    {{ \App\Livewire\Admin\SettingsManager::GROUP_TITLES[$group] ?? ucfirst($group) }}
+                    {{ \App\Support\SettingGroups::title($group) }}
                 </h2>
 
                 <div class="settings-group__fields">

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
-use App\Livewire\Admin\SettingsManager;
 use App\Models\Setting;
 use App\Support\Locale;
+use App\Support\SettingGroups;
 use App\Support\Settings as SettingsStore;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -125,7 +125,23 @@ class Settings extends Page
 
         $sections = [];
 
-        foreach ($settings as $group => $rows) {
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * ORDERED BY WHERE IT APPEARS ON THE SITE, NOT BY DATABASE KEY.
+         *
+         * orderBy('group') is alphabetical, which put "about" first and
+         * "seo" last and interleaved the home page's sections with the
+         * footer's. An owner looking for the line above the contact form was
+         * reading an alphabetical list of nouns.
+         *
+         * SettingGroups::sorted() returns them in the order a visitor meets
+         * the site, and sorts anything it has not been told about to the end
+         * rather than hiding it — a setting nobody can find is worse than one
+         * in the wrong section.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        foreach (SettingGroups::sorted($settings->keys()) as $group) {
+            $rows = $settings[$group];
             $tabs = [];
 
             foreach (Locale::codes() as $locale) {
@@ -144,9 +160,10 @@ class Settings extends Page
                 $tabs[] = Tab::make(Locale::native($locale))->schema($fields);
             }
 
-            $sections[] = Section::make(SettingsManager::GROUP_TITLES[$group] ?? str($group)->headline()->toString())
+            $sections[] = Section::make(SettingGroups::title($group))
+                ->description(SettingGroups::description($group))
                 ->collapsible()
-                ->collapsed($group !== 'identity')
+                ->collapsed($group !== SettingGroups::default())
                 ->schema([Tabs::make($group.'-locales')->tabs($tabs)]);
         }
 

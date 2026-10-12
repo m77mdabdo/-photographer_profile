@@ -17,7 +17,7 @@
 
             @if ($page->updated_at)
                 <p class="document__updated">
-                    Last updated
+                    {{ \App\Support\SiteCopy::get('shared.last_updated') }}
                     <time datetime="{{ $page->updated_at->toDateString() }}">{{ $page->updated_at->format('j F Y') }}</time>
                 </p>
             @endif

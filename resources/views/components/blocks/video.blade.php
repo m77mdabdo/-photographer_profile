@@ -15,7 +15,7 @@
             @endif
             <span class="block__facade-label">
                 <span class="block__facade-icon" aria-hidden="true">▶</span>
-                Watch the video
+                {{ \App\Support\SiteCopy::get('shared.video_cta') }}
                 <span class="block__facade-host">{{ parse_url($url, PHP_URL_HOST) }}</span>
             </span>
         </a>

@@ -57,13 +57,13 @@
                 @endif
 
                 <p class="receipt__stamp">
-                    Sent {{ $inquiry->created_at?->format('j F Y') }}
+                    {{ \App\Support\SiteCopy::get('contact.sent_at_label') }} {{ $inquiry->created_at?->isoFormat('D MMMM Y') }}
                     at {{ $inquiry->created_at?->format('H:i') }}
                 </p>
             </div>
         @endif
 
-        <nav class="enquiry__onward" aria-label="Where to go next">
+        <nav class="enquiry__onward" aria-label="{{ \App\Support\SiteCopy::get('shared.next_label') }}">
             <a class="enquiry__onward-link" href="{{ route('work.index') }}">
                 {{ Settings::get('nav.work') }}
                 <span class="enquiry__submit-rule" aria-hidden="true"></span>

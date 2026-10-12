@@ -39,7 +39,7 @@
                 </time>
 
                 <span aria-hidden="true">·</span>
-                {{ $article->readingMinutes() }} min
+                {{ $article->readingMinutes() }} {{ \App\Support\SiteCopy::get('shared.read_time_unit') }}
             </p>
         </header>
 
@@ -83,7 +83,7 @@
             </footer>
         @endif
 
-        <nav class="piece__onward" aria-label="Where to go next">
+        <nav class="piece__onward" aria-label="{{ \App\Support\SiteCopy::get('shared.next_label') }}">
             <a class="enquiry__onward-link" href="{{ route('journal.index') }}">
                 {{ Settings::get('journal.back_label') }}
                 <span class="enquiry__submit-rule" aria-hidden="true"></span>
