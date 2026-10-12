@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Dashboard;
+use App\Filament\Support\InitialsAvatar;
 use App\Filament\Widgets\MediaPipeline;
 use App\Filament\Widgets\RecentEnquiries;
 use App\Filament\Widgets\RecentlyEdited;
@@ -18,7 +19,6 @@ use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationGroup;
-use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -152,6 +152,14 @@ class StudioPanelProvider extends PanelProvider
 
             ->brandName(fn (): string => (string) (Settings::get('site.name') ?: config('app.name')))
 
+            /*
+             * The initials, drawn locally. Filament's default posts the
+             * editor's name to ui-avatars.com on every page — see
+             * InitialsAvatar, and see the ->font() comment above, which had
+             * already decided this question in the other direction.
+             */
+            ->defaultAvatarProvider(InitialsAvatar::class)
+
             ->darkMode(true)
             ->maxContentWidth(Width::Full)
 
@@ -167,16 +175,66 @@ class StudioPanelProvider extends PanelProvider
             ])
 
             /*
-             * Resources are discovered but there are none yet — this task
-             * builds the shell. The directory is declared so the first
-             * Resource needs no provider change.
+             * DISCOVERED, NOT LISTED.
+             *
+             * Twelve resources and two pages, found by scanning the
+             * directories. The alternative is a list in this file that has to
+             * be kept in step with the filesystem, and the sidebar built from
+             * it — which is exactly the arrangement B5 dismantled, where a
+             * navigation item and the thing it opened were two separate
+             * declarations and could disagree.
              */
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
 
             ->navigationGroups($this->navigationGroups())
-            ->navigationItems($this->plannedModules())
+
+            /*
+             * ───────────────────────────────────────────────────────────────
+             * NO ->navigationItems(). THE "OLD PANEL" TIER IS EMPTY.
+             *
+             * Task 30b hung twelve hand-written NavigationItems here: ten
+             * pointing at /admin and two marked "planned", which was the
+             * honest shape of a panel with no resources in it. B5 replaced
+             * every one with a discovered Resource or Page, so the labels and
+             * the destinations are now the same declaration and cannot drift.
+             *
+             * Galleries was the twelfth and does not return: it has no model,
+             * no table and no design, and a disabled item for a feature nobody
+             * has specified is a promise this project has not made.
+             *
+             * The old admin is still reachable at /admin and every one of its
+             * components still works. It is deleted at step 10, not here —
+             * nothing in this panel links to it any more.
+             * ───────────────────────────────────────────────────────────────
+             */
+
+            /*
+             * ───────────────────────────────────────────────────────────────
+             * A MISSING POLICY METHOD MUST NOT BE AN UNSPOKEN YES.
+             *
+             * filament/filament/src/helpers.php::get_authorization_response()
+             * returns Response::allow() when the model has no policy, or when
+             * the policy exists but lacks the method being asked for. It does
+             * not fall through to the Gate. Measured on this application:
+             *
+             *     Gate::allows('viewAny', Tag::class)   false
+             *     TagResource::canViewAny()             true
+             *
+             * for the same Editor, because Tag had no policy. ADR 0002's
+             * thirty bulk methods were written on the belief that a missing
+             * method DENIES; it does the opposite, which means the thirty were
+             * guarding the wrong failure and three models — Tag,
+             * ArticleCategory and User — were wide open to any Editor.
+             *
+             * Strict mode makes both cases throw a LogicException naming the
+             * model and the ability. A gap is now a crash in development
+             * rather than a silent permission in production, which is the only
+             * version of this that can be relied on.
+             * ───────────────────────────────────────────────────────────────
+             */
+            ->strictAuthorization()
 
             ->middleware([
                 EncryptCookies::class,
@@ -259,86 +317,4 @@ class StudioPanelProvider extends PanelProvider
         ];
     }
 
-    /**
-     * THE TWELVE MODULES, IN TWO TIERS.
-     *
-     * B4: nothing is hidden because it has not been moved yet. A navigation
-     * that silently omits what is unbuilt tells an owner the product is
-     * smaller than it is and tells a developer nothing — so the whole
-     * structure is visible from the first day and fills in.
-     *
-     * The two tiers are different states and look different:
-     *
-     *   OLD PANEL — the module works today, in the admin this one replaces.
-     *               The item is a live link and says where it goes. An owner
-     *               can do the job; it is the address that is temporary.
-     *
-     *   PLANNED   — nothing exists anywhere. The item is visible, disabled,
-     *               and says so. It is a promise, not a broken link.
-     *
-     * Each tier loses its badge as the matching Resource lands in task 31.
-     *
-     * @return list<NavigationItem>
-     */
-    private function plannedModules(): array
-    {
-        /** [key, group, icon, route or null] */
-        $modules = [
-            ['projects', 'group_work', 'heroicon-o-photo', 'admin.projects.index'],
-            ['media', 'group_work', 'heroicon-o-rectangle-stack', 'admin.media.index'],
-            ['categories', 'group_work', 'heroicon-o-tag', 'admin.categories.index'],
-            ['galleries', 'group_work', 'heroicon-o-squares-2x2', null],
-
-            ['journal', 'group_writing', 'heroicon-o-pencil-square', 'admin.articles.index'],
-            ['pages', 'group_writing', 'heroicon-o-document-text', 'admin.pages.index'],
-
-            ['services', 'group_studio', 'heroicon-o-briefcase', 'admin.services.index'],
-            ['clients', 'group_studio', 'heroicon-o-identification', 'admin.clients.index'],
-
-            ['enquiries', 'group_people', 'heroicon-o-envelope', 'admin.inquiries.index'],
-            ['users', 'group_people', 'heroicon-o-users', null],
-
-            ['settings', 'group_system', 'heroicon-o-cog-6-tooth', 'admin.settings.index'],
-            ['redirects', 'group_system', 'heroicon-o-arrow-path-rounded-square', 'admin.redirects.index'],
-        ];
-
-        $items = [];
-
-        /*
-         * EVERY LOOKUP IS DEFERRED, and Route::has is the reason.
-         *
-         * panel() runs when the provider registers — before the router has
-         * loaded a single route file. Asking Route::has() there returns false
-         * for every route that exists, so all twelve modules rendered as
-         * "planned" and none of them linked anywhere. The same trap as the
-         * locale labels, which froze at boot for the same reason.
-         *
-         * Closures are evaluated at render, by which time the routes are
-         * registered and the locale is known.
-         */
-        foreach ($modules as [$key, $group, $icon, $route]) {
-            $exists = static fn (): bool => $route !== null && Route::has($route);
-
-            $items[] = NavigationItem::make(fn (): string => __('studio.nav.'.$key))
-                ->group(fn (): string => __('studio.nav.'.$group))
-                ->icon($icon)
-                ->url(fn (): string => $exists() ? route($route) : '#')
-                ->badge(
-                    fn (): string => __($exists() ? 'studio.nav.in_old_panel' : 'studio.nav.planned'),
-                    color: 'gray',
-                )
-                /*
-                 * A planned item must not be reachable by mouse OR keyboard.
-                 * aria-disabled alone still takes focus and still follows the
-                 * href, so tabindex carries the rest and the theme's cursor
-                 * rule says so visually.
-                 */
-                ->extraAttributes(fn (): array => $exists() ? [] : [
-                    'aria-disabled' => 'true',
-                    'tabindex' => '-1',
-                ]);
-        }
-
-        return $items;
-    }
 }

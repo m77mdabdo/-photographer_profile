@@ -84,6 +84,18 @@ class Service extends Model
      */
     protected static function booted(): void
     {
+        /*
+         * See Project::booted(). ServiceForm syncs the cover AND the gallery
+         * together in its own method; SyncServiceCoverMedia touches the cover
+         * role only, so a save from the panel — which has no gallery field —
+         * cannot release gallery images it cannot see.
+         */
+        static::saved(function (self $record): void {
+            if ($record->wasChanged(['cover_media_id']) || $record->wasRecentlyCreated) {
+                app(\App\Actions\Services\SyncServiceCoverMedia::class)($record);
+            }
+        });
+
         static::saving(function (self $service): void {
             if ($service->isDirty('description')) {
                 $service->description_html = RichText::toHtml($service->description);

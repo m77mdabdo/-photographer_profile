@@ -13,7 +13,7 @@
             <ul class="studio-list" role="list">
                 @foreach ($enquiries as $enquiry)
                     <li @class(['studio-list__item', 'studio-list__item--unread' => $enquiry->status === \App\Enums\InquiryStatus::New])>
-                        <a class="studio-list__link" href="{{ route('admin.inquiries.show', $enquiry) }}">
+                        <a class="studio-list__link" href="{{ route('filament.studio.resources.enquiries.view', ['record' => $enquiry->getKey()]) }}">
                             {{ $enquiry->name }}
                             @if ($enquiry->status === \App\Enums\InquiryStatus::New)
                                 <span class="studio-badge">{{ __('studio.enquiries.unread') }}</span>

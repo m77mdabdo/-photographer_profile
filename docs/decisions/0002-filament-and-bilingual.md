@@ -284,6 +284,42 @@ or hidden** until those three methods are added to each of the ten policies.
 Thirty small methods. Cheap, but it will present as "bulk delete doesn't work"
 and waste an afternoon if nobody wrote it down. It is now written down.
 
+> ### Correction, Task 31 — the paragraph above is wrong in the dangerous direction
+>
+> The measurement was right and the conclusion was wrong, because the thing
+> measured was `Gate::allows()` and the thing Filament calls is not.
+>
+> `filament/filament/src/helpers.php::get_authorization_response()` returns
+> `Response::allow()` when the model has no policy, **or when the policy exists
+> but lacks the method being asked for**. It does not fall through to the Gate.
+> Measured on this application before the panel was made strict:
+>
+> ```
+> Gate::allows('viewAny', Tag::class)      false
+> TagResource::canViewAny()                true
+> ClientPolicy has no view()
+> Gate::allows('view', $client)            false
+> ClientResource::can('view')              true
+> ```
+>
+> So a missing method is an **unspoken yes**, not a refusal. Two consequences
+> this ADR missed:
+>
+> 1. **The count of ten was wrong.** `Tag`, `ArticleCategory` and `User` have
+>    resources in the panel and had **no policy at all**, so they were editable
+>    and deletable by any Editor. Three policies were written in Task 31, taking
+>    the total to thirteen.
+> 2. **The thirty methods were guarding the wrong failure.** They are still
+>    worth having — a policy that answers is better than one that is guessed at
+>    — but what actually closes the hole is `->strictAuthorization()` on the
+>    panel, which turns a missing policy or method into a `LogicException`
+>    naming the model and the ability. A gap is now a crash in development
+>    rather than a permission in production.
+>
+> The old sentence stands above, unedited, because a decision record that
+> quietly rewrites its own measurements is worth less than one that shows where
+> it was wrong.
+
 ---
 
 ## Bilingual architecture

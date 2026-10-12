@@ -167,6 +167,31 @@ class Project extends Model
      */
     protected static function booted(): void
     {
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * THE USAGE ROWS ARE THE MODEL'S JOB, NOT A FORM'S.
+         *
+         * MediaPolicy refuses to delete an image that something still shows,
+         * and it counts media_usages — not foreign keys. So cover_media_id
+         * alone protects nothing: the row has to exist.
+         *
+         * The action has always existed; ProjectForm::save() called it by
+         * hand, which made the protection a property of ONE Livewire
+         * component. Task 31 added a second screen that sets the same column,
+         * and a third (a seeder, a console command, a future API) is always
+         * one commit away. Calling it here means every save is covered;
+         * ProjectForm's own call stays, because firstOrCreate makes the second
+         * run a no-op and because the custom admin is not edited until step 10.
+         *
+         * Guarded on wasChanged so an ordinary edit does not re-run it.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        static::saved(function (self $record): void {
+            if ($record->wasChanged(['cover_media_id', 'hero_media_id']) || $record->wasRecentlyCreated) {
+                app(\App\Actions\Projects\SyncProjectMedia::class)($record);
+            }
+        });
+
         static::forceDeleting(function (self $project): void {
             $project->blocks()->get()->each->delete();
             $project->mediaUsages()->delete();

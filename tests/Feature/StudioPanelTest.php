@@ -24,11 +24,16 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * Step 6: the Filament panel's shell.
+ * The Filament panel's shell: the door, the chrome and the dashboard.
  *
- * No resources exist yet. What is asserted here is that the door is locked to
- * the right people, that the bulk abilities Filament will ask for all answer,
- * and that the public bundle did not move when a framework this size arrived.
+ * What is asserted here is that the door is locked to the right people, that
+ * the bulk abilities Filament asks for all answer, that the panel's own
+ * furniture renders in both languages, and that the public bundle did not move
+ * when a framework this size arrived.
+ *
+ * The resources themselves are covered in tests/Feature/Studio/ — one file per
+ * guarantee rather than one file per feature, because the guarantees are what
+ * cross all twelve of them.
  */
 class StudioPanelTest extends TestCase
 {
@@ -445,10 +450,16 @@ class StudioPanelTest extends TestCase
     }
 
     /**
-     * THE NAVIGATION IS GROUPED, AND NOTHING IS HIDDEN.
+     * THE NAVIGATION IS GROUPED, AND EVERY ITEM OPENS A REAL PANEL SCREEN.
      *
-     * Twelve modules in five groups, each marked with the tier it is in, so
-     * the structure is readable before it is complete.
+     * Rewritten at B5. Task 30b hung twelve hand-written NavigationItems off
+     * the groups, ten of them pointing at /admin and two marked "planned" —
+     * which was the honest shape of a panel with no resources in it. Every one
+     * is now a discovered Resource or Page, so the labels and the destinations
+     * cannot drift apart: there is no second list to keep in step.
+     *
+     * The assertion that matters is the last one. "No sidebar link leaves the
+     * panel" is what B5 actually promised.
      */
     public function test_the_navigation_is_grouped_and_complete(): void
     {
@@ -459,11 +470,11 @@ class StudioPanelTest extends TestCase
             $this->assertStringContainsString($group, $html, "the '$group' group should appear");
         }
 
-        // All twelve modules.
+        // The thirteen modules: twelve resources and the settings page.
         foreach ([
-            'Projects', 'Media', 'Categories', 'Galleries',
-            'Journal', 'Pages',
-            'Services', 'Clients',
+            'Projects', 'Media', 'Categories', 'Tags',
+            'Journal', 'Journal categories',
+            'Pages', 'Services', 'Clients',
             'Enquiries', 'Users',
             'Site settings', 'Redirects',
         ] as $label) {
@@ -471,23 +482,54 @@ class StudioPanelTest extends TestCase
         }
 
         /*
-         * Two tiers, counted. Ten modules work in the old panel; Galleries and
-         * Users exist nowhere, so they are visible, disabled and say so.
+         * THE OLD PANEL TIER IS EMPTY. Not "smaller" — empty. Every sidebar
+         * href is inside /studio, so nothing in the navigation sends an editor
+         * back to /admin.
          */
-        $this->assertSame(10, substr_count($html, 'old panel'), 'ten modules should link to the old panel');
-        $this->assertSame(2, substr_count($html, 'planned'), 'two modules are planned only');
+        preg_match_all('#<a\s+href="([^"]+)"[^>]*class="fi-sidebar-item-btn"#s', $html, $matches);
 
-        // A planned item is not reachable by mouse or keyboard.
-        $this->assertStringContainsString('aria-disabled="true"', $html);
-        $this->assertStringContainsString('tabindex="-1"', $html);
+        $this->assertNotEmpty($matches[1], 'no sidebar links were found, so this proves nothing');
+
+        foreach (array_unique($matches[1]) as $href) {
+            $this->assertStringNotContainsString(
+                '/admin',
+                $href,
+                "the sidebar still links out to the old panel: $href"
+            );
+        }
+
+        // And nothing is disabled, because nothing is a placeholder any more.
+        $this->assertStringNotContainsString('aria-disabled="true"', $html);
     }
 
-    /** The groups come from the lang files, in both locales. */
+    /**
+     * The groups and the module labels come from the lang files, in both
+     * locales.
+     *
+     * ───────────────────────────────────────────────────────────────────────
+     * forgetScopedInstances() IS NOT TEST HYGIENE, IT IS WHAT A REQUEST DOES.
+     *
+     * Filament registers its NavigationManager with $app->scoped(), so the
+     * navigation is built once per container lifetime. A web request and an
+     * Octane request each get a fresh scope, so a browser is served the right
+     * language — but a TEST process serves many requests from one container,
+     * and whichever locale rendered first froze the sidebar for the rest of
+     * the run. The first version of this test passed only because English ran
+     * first; asking for Arabic first turned every English assertion Arabic.
+     *
+     * Forgetting the scoped instances between the two renders reproduces the
+     * request boundary that production has and the test process does not. It
+     * is also the proof that the labels themselves are locale-aware: with the
+     * reset, the same code answers in both languages.
+     * ───────────────────────────────────────────────────────────────────────
+     */
     public function test_the_navigation_groups_are_translated(): void
     {
         $user = $this->admin();
 
         $english = $this->actingAs($user)->get(self::PANEL)->assertOk()->getContent();
+
+        $this->app->forgetScopedInstances();
 
         $this->assertStringContainsString('The work', $english);
         $this->assertStringContainsString('People &amp; messages', $english);
@@ -502,9 +544,18 @@ class StudioPanelTest extends TestCase
             $this->assertStringContainsString($group, $arabic, "the Arabic group '$group' should render");
         }
 
-        // And the module labels, not only the groups.
-        $this->assertStringContainsString('المشاريع', $arabic);
-        $this->assertStringContainsString('التصنيفات', $arabic);
+        /*
+         * And the module labels, not only the groups — including the two added
+         * at B5, which had no key at all until the sidebar started reading
+         * them from the resources and printed `studio.nav.tags` on screen.
+         */
+        foreach (['المشاريع', 'التصنيفات', 'الوسوم', 'تصنيفات المجلة', 'الطلبات'] as $label) {
+            $this->assertStringContainsString($label, $arabic, "the Arabic label '$label' should render");
+        }
+
+        // No untranslated key leaked through as its own name.
+        $this->assertStringNotContainsString('studio.nav.', $arabic);
+        $this->assertStringNotContainsString('studio.nav.', $english);
     }
 
     /** The active item is marked, so the panel says where you are. */
@@ -603,16 +654,25 @@ class StudioPanelTest extends TestCase
 
         $html = $this->actingAs($this->admin())->get(self::PANEL)->assertOk()->getContent();
 
-        preg_match_all('#href="(http://localhost/admin[^"]*)"#', $html, $matches);
+        /*
+         * B5 — the widgets pointed at /admin while the panel had no resources
+         * to point at. They now link into /studio, and every link is resolved
+         * rather than merely present.
+         */
+        preg_match_all('#href="(http://localhost/studio[^"]*)"#', $html, $matches);
 
-        $this->assertNotEmpty($matches[1], 'the dashboard should link into the admin');
+        $this->assertNotEmpty($matches[1], 'the dashboard should link into the panel');
+
+        foreach (array_unique($matches[1]) as $url) {
+            $this->assertStringNotContainsString('/admin', $url);
+        }
 
         foreach (array_unique($matches[1]) as $url) {
             $path = (string) parse_url($url, PHP_URL_PATH);
 
             $this->actingAs($this->admin())
                 ->get($path)
-                ->assertOk("$path is linked from the dashboard but does not resolve");
+                ->assertOk("$path is linked from the dashboard but does not resolve ($url)");
         }
     }
 
@@ -621,14 +681,19 @@ class StudioPanelTest extends TestCase
     {
         $html = $this->actingAs($this->admin())->get(self::PANEL)->assertOk()->getContent();
 
+        /*
+         * Filament's table filters live in a query array, so the deep link is
+         * tableFilters[status][value]=… rather than ?status=… — a different
+         * spelling of the same promise: a count opens the rows it counted.
+         */
         foreach ([
-            'admin/inquiries?status=new',
-            'admin/projects?status=draft',
-            'admin/articles?status=draft',
-            'admin/projects?status=published',
+            'studio/enquiries?tableFilters[status][value]=new',
+            'studio/projects?tableFilters[status][value]=draft',
+            'studio/articles?tableFilters[status][value]=draft',
+            'studio/projects?tableFilters[status][value]=published',
         ] as $expected) {
             $this->assertStringContainsString(
-                str_replace('&', '&amp;', $expected),
+                str_replace(['&', '[', ']'], ['&amp;', '%5B', '%5D'], $expected),
                 $html,
                 "the dashboard should deep-link to $expected"
             );
@@ -661,6 +726,6 @@ class StudioPanelTest extends TestCase
             ->assertSee('The media pipeline')
             ->assertSee('coast-0412.arw')
             ->assertSee('Unsupported colour profile.')
-            ->assertSee('admin/media?status=failed', escape: false);
+            ->assertSee('studio/media?tableFilters%5Bstatus%5D%5Bvalue%5D=failed', escape: false);
     }
 }

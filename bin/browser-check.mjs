@@ -177,6 +177,51 @@ const ADMIN_PAGES = [
   { label: 'studio sign-in', path: '/login', admin: true, guest: true },
   { label: 'studio dashboard', path: '/studio', admin: true },
 
+  /*
+   * TASK 31 — EVERY RESOURCE, BECAUSE THE PANEL'S SCREENS ARE WHERE THE WORK
+   * HAPPENS NOW.
+   *
+   * The dashboard alone was enough while the panel was a shell. It is not any
+   * more: a list view with a broken column, a form whose Arabic tab does not
+   * mirror, or a container Alpine never faded in are all invisible to the test
+   * suite — the blank dashboard of Task 30 proved exactly that. Each list and
+   * each create form is checked at every viewport, in both registers, in both
+   * languages.
+   *
+   * The edit forms are DISCOVERED from their lists rather than addressed by id,
+   * because the ids depend on the seed and a hardcoded /studio/projects/1/edit
+   * is a test that passes until somebody reseeds.
+   */
+  { label: 'studio projects', path: '/studio/projects', admin: true },
+  {
+    label: 'studio project edit',
+    admin: true,
+    discover: { from: '/studio/projects', selector: 'a[href*="/studio/projects/"][href$="/edit"]' },
+  },
+  { label: 'studio project create', path: '/studio/projects/create', admin: true },
+  { label: 'studio media', path: '/studio/media', admin: true },
+  { label: 'studio categories', path: '/studio/categories', admin: true },
+  { label: 'studio tags', path: '/studio/tags', admin: true },
+  { label: 'studio journal', path: '/studio/articles', admin: true },
+  {
+    label: 'studio journal edit',
+    admin: true,
+    discover: { from: '/studio/articles', selector: 'a[href*="/studio/articles/"][href$="/edit"]' },
+  },
+  { label: 'studio journal categories', path: '/studio/article-categories', admin: true },
+  { label: 'studio pages', path: '/studio/pages', admin: true },
+  { label: 'studio services', path: '/studio/services', admin: true },
+  { label: 'studio clients', path: '/studio/clients', admin: true },
+  { label: 'studio enquiries', path: '/studio/enquiries', admin: true },
+  {
+    label: 'studio enquiry',
+    admin: true,
+    discover: { from: '/studio/enquiries', selector: 'a[href*="/studio/enquiries/"]' },
+  },
+  { label: 'studio redirects', path: '/studio/redirects', admin: true },
+  { label: 'studio users', path: '/studio/users', admin: true },
+  { label: 'studio settings', path: '/studio/settings', admin: true },
+
   { label: 'admin dashboard', path: '/admin', admin: true },
   { label: 'admin media library', path: '/admin/media', admin: true },
   {

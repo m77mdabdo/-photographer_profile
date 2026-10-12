@@ -53,7 +53,14 @@ class RecentlyEdited extends Widget
                 'kind' => __('studio.kind.project'),
                 'status' => $p->status->label(),
                 'at' => $p->updated_at,
-                'url' => route('admin.projects.edit', $p),
+                /*
+                 * THE KEY, NOT THE MODEL. These models bind by slug on the
+                 * public site, so passing the model puts the slug in the URL —
+                 * and the panel addresses records by id, because a slug is
+                 * editable and now per-locale. Handing route() a model gave
+                 * /studio/projects/modi-error-cumque/edit, which 404s.
+                 */
+                'url' => route('filament.studio.resources.projects.edit', ['record' => $p->getKey()]),
             ]);
 
         $articles = Article::query()
@@ -65,7 +72,7 @@ class RecentlyEdited extends Widget
                 'kind' => __('studio.kind.article'),
                 'status' => $a->status->label(),
                 'at' => $a->updated_at,
-                'url' => route('admin.articles.edit', $a),
+                'url' => route('filament.studio.resources.articles.edit', ['record' => $a->getKey()]),
             ]);
 
         /** @var Collection<int, array<string, mixed>> $rows */
@@ -76,8 +83,8 @@ class RecentlyEdited extends Widget
 
         return [
             'rows' => $rows,
-            'allUrl' => \Illuminate\Support\Facades\Route::has('admin.projects.index')
-                ? route('admin.projects.index')
+            'allUrl' => \Illuminate\Support\Facades\Route::has('filament.studio.resources.projects.index')
+                ? route('filament.studio.resources.projects.index')
                 : null,
         ];
     }

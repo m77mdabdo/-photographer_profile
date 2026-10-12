@@ -53,7 +53,19 @@ class MediaPolicy
             return Response::deny('You do not have permission to delete media.');
         }
 
-        $usages = $media->usages()->count();
+        /*
+         * THE LOADED COUNT WHEN THERE IS ONE.
+         *
+         * This policy runs for every row of a list view, so counting with a
+         * query here is an N+1 that no amount of reading the table definition
+         * reveals — the resource's getEloquentQuery() withCount()s it, and
+         * this reads that attribute instead. Falls back to the query when the
+         * record was loaded without it, because a policy must be correct
+         * wherever it is called from, not only from the panel.
+         */
+        $usages = array_key_exists('usages_count', $media->getAttributes())
+            ? (int) $media->getAttribute('usages_count')
+            : $media->usages()->count();
 
         if ($usages > 0) {
             return Response::deny(sprintf(
@@ -87,14 +99,28 @@ class MediaPolicy
     // ---------------- Bulk abilities -------------------------------------
 
     /*
-     * FILAMENT CALLS deleteAny, forceDeleteAny AND restoreAny FOR BULK ACTIONS,
-     * and a policy method that does not exist DENIES.
+     * FILAMENT CALLS deleteAny, forceDeleteAny AND restoreAny FOR BULK ACTIONS.
      *
-     * That fails closed, which is the safe direction — and it is also silent:
-     * the bulk action is simply hidden, and the first anybody knows is an
-     * editor saying "bulk delete doesn't work". ADR 0002 found all ten
-     * policies missing all three. They are declared here, before the first
-     * Resource, so no Resource can ship with a quietly disabled action.
+     * ───────────────────────────────────────────────────────────────────────
+     * CORRECTED IN TASK 31. This comment used to say that a missing policy
+     * method DENIES, and that declaring the thirty was therefore closing a
+     * silent gap in the SAFE direction. That was wrong, and wrong in the
+     * dangerous direction.
+     *
+     * filament/filament/src/helpers.php::get_authorization_response() returns
+     * Response::allow() when the model has no policy, or when the policy
+     * exists but lacks the method asked for. It does not consult the Gate.
+     * Measured on this application before the panel was made strict:
+     *
+     *     Gate::allows('viewAny', Tag::class)   false
+     *     TagResource::canViewAny()             true
+     *
+     * So a resource with a bulk delete and no deleteAny() would have ALLOWED
+     * it to any Editor. The thirty methods are still right to exist — they
+     * are the difference between an answer and a guess — but what actually
+     * closes the gap is the panel's ->strictAuthorization(), which turns a
+     * missing policy or method into a LogicException. See StudioPanelProvider.
+     * ───────────────────────────────────────────────────────────────────────
      */
 
     /**

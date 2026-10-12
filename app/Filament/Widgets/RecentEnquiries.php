@@ -49,8 +49,8 @@ class RecentEnquiries extends Widget
                 ->latest('created_at')
                 ->limit(5)
                 ->get(['id', 'name', 'email', 'message', 'status', 'created_at']),
-            'indexUrl' => \Illuminate\Support\Facades\Route::has('admin.inquiries.index')
-                ? route('admin.inquiries.index')
+            'indexUrl' => \Illuminate\Support\Facades\Route::has('filament.studio.resources.enquiries.index')
+                ? route('filament.studio.resources.enquiries.index')
                 : null,
         ];
     }

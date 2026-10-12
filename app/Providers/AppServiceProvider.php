@@ -15,10 +15,15 @@ use App\Models\Inquiry;
 use App\Models\Media;
 use App\Models\Project;
 use App\Models\Setting;
+use App\Models\Tag;
+use App\Models\User;
 use App\Policies\ArticlePolicy;
 use App\Policies\CategoryPolicy;
 use App\Policies\PagePolicy;
+use App\Policies\ArticleCategoryPolicy;
 use App\Policies\RedirectPolicy;
+use App\Policies\TagPolicy;
+use App\Policies\UserPolicy;
 use App\Policies\ServicePolicy;
 use App\Policies\ClientPolicy;
 use App\Policies\InquiryPolicy;
@@ -128,6 +133,19 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Service::class, ServicePolicy::class);
         Gate::policy(Page::class, PagePolicy::class);
         Gate::policy(Redirect::class, RedirectPolicy::class);
+
+        /*
+         * THE THREE THAT WERE MISSING, FOUND IN TASK 31.
+         *
+         * ADR 0002 counted ten policies and never asked whether that was all
+         * the models the panel exposes. Tag, ArticleCategory and User had
+         * none — and because Filament ALLOWS when no policy exists, their
+         * resources answered canViewAny() with true for an Editor while
+         * Gate::allows() answered false for the same user. See TagPolicy.
+         */
+        Gate::policy(Tag::class, TagPolicy::class);
+        Gate::policy(ArticleCategory::class, ArticleCategoryPolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
 
         /*
          * SITEMAP INVALIDATION.

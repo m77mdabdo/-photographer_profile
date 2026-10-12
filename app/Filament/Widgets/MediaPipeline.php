@@ -96,9 +96,9 @@ class MediaPipeline extends Widget
              * C1/C4 — the link lands on the FAILED images, not on the library.
              * "Three failed" is only useful if the next click is the three.
              */
-            'failedUrl' => $this->link('admin.media.index', ['status' => MediaStatus::Failed->value]),
-            'processingUrl' => $this->link('admin.media.index', ['status' => MediaStatus::Processing->value]),
-            'mediaUrl' => $this->link('admin.media.index'),
+            'failedUrl' => $this->link('filament.studio.resources.media.index', ['tableFilters[status][value]' => MediaStatus::Failed->value]),
+            'processingUrl' => $this->link('filament.studio.resources.media.index', ['tableFilters[status][value]' => MediaStatus::Processing->value]),
+            'mediaUrl' => $this->link('filament.studio.resources.media.index'),
         ];
     }
 }

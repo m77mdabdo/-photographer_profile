@@ -88,6 +88,19 @@ class Article extends Model
      */
     protected static function booted(): void
     {
+        /*
+         * See Project::booted(). SyncArticleMedia already existed and
+         * ArticleForm already called it — moving the call here does not add
+         * the rule, it makes it true of the SECOND screen that can now set
+         * featured_media_id. ArticleForm's own call stays: it is idempotent
+         * (firstOrCreate), and the custom admin is not touched until step 10.
+         */
+        static::saved(function (self $record): void {
+            if ($record->wasChanged(['featured_media_id']) || $record->wasRecentlyCreated) {
+                app(\App\Actions\Articles\SyncArticleMedia::class)($record);
+            }
+        });
+
         static::saving(function (self $article): void {
             if ($article->isDirty('body')) {
                 $article->body_html = RichText::toHtml($article->body);

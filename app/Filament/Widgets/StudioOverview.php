@@ -75,22 +75,22 @@ class StudioOverview extends StatsOverviewWidget
             Stat::make(__('studio.stats.enquiries'), (string) $unread)
                 ->description(__('studio.stats.enquiries_hint'))
                 ->color($unread > 0 ? 'danger' : 'gray')
-                ->url($this->link('admin.inquiries.index', ['status' => InquiryStatus::New->value])),
+                ->url($this->link('filament.studio.resources.enquiries.index', ['tableFilters[status][value]' => InquiryStatus::New->value])),
 
             Stat::make(__('studio.stats.drafts'), (string) $drafts)
                 ->description(__('studio.stats.drafts_hint'))
                 ->color($drafts > 0 ? 'warning' : 'gray')
-                ->url($this->link('admin.projects.index', ['status' => PublishStatus::Draft->value])),
+                ->url($this->link('filament.studio.resources.projects.index', ['tableFilters[status][value]' => PublishStatus::Draft->value])),
 
             Stat::make(__('studio.stats.article_drafts'), (string) $articleDrafts)
                 ->description(__('studio.stats.article_drafts_hint'))
                 ->color($articleDrafts > 0 ? 'warning' : 'gray')
-                ->url($this->link('admin.articles.index', ['status' => PublishStatus::Draft->value])),
+                ->url($this->link('filament.studio.resources.articles.index', ['tableFilters[status][value]' => PublishStatus::Draft->value])),
 
             Stat::make(__('studio.stats.published'), (string) $published)
                 ->description(__('studio.stats.published_hint'))
                 ->color('primary')
-                ->url($this->link('admin.projects.index', ['status' => PublishStatus::Published->value])),
+                ->url($this->link('filament.studio.resources.projects.index', ['tableFilters[status][value]' => PublishStatus::Published->value])),
         ];
     }
 
