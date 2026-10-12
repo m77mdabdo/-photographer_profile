@@ -114,4 +114,53 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Mandatory Two-Factor Authentication
+    |--------------------------------------------------------------------------
+    |
+    | Whether an admin must carry a CONFIRMED second factor to reach /admin or
+    | /studio. True is the only value this project ships: the client asked to
+    | sign in with a password alone during development, so it became an
+    | environment decision rather than a deletion.
+    |
+    | THE DEFAULT IS ENFORCEMENT, AND THE CAST IS WHY.
+    |
+    | env() returns whatever is in the file, and the obvious casts are both
+    | wrong in the dangerous direction:
+    |
+    |   (bool) env(...)          AUTH_REQUIRE_TWO_FACTOR=flase reads as TRUE,
+    |                            which is luck rather than design
+    |   filter_var alone         AUTH_REQUIRE_TWO_FACTOR= (an operator who
+    |                            blanked the value rather than deleting the
+    |                            line) reads as FALSE — env() returns '' for a
+    |                            key that exists with no value, and
+    |                            FILTER_VALIDATE_BOOLEAN calls '' false
+    |
+    | So a blank is treated as absent first, and then FILTER_VALIDATE_BOOLEAN
+    | with FILTER_NULL_ON_FAILURE recognises only the real spellings of false
+    | ("false", "0", "off", "no") and returns null for anything it does not
+    | understand. `?: true` sends every unrecognised value to enforcement.
+    |
+    | So the ONLY way to switch this off is to spell it correctly on purpose.
+    | And if that happens in production, AppServiceProvider::boot() refuses to
+    | start the application — see App\Support\TwoFactorEnforcement.
+    |
+    */
+
+    'require_two_factor' => (static function (): bool {
+        $value = env('AUTH_REQUIRE_TWO_FACTOR', true);
+
+        /*
+         * A key with no value is an absent key, not a false one — and that
+         * includes whitespace, because FILTER_VALIDATE_BOOLEAN reads ' ' as
+         * false rather than as unrecognised.
+         */
+        if ($value === null || (is_string($value) && trim($value) === '')) {
+            return true;
+        }
+
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true;
+    })(),
+
 ];

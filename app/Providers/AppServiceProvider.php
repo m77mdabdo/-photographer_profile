@@ -34,6 +34,7 @@ use App\Routing\LocaleUrlGenerator;
 use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Facades\Blade;
 use App\Support\Settings;
+use App\Support\TwoFactorEnforcement;
 use App\Support\Sitemap;
 use App\Support\Theme;
 use Illuminate\Support\Facades\Gate;
@@ -97,6 +98,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        /*
+         * FIRST, BEFORE ANYTHING ELSE IS WIRED.
+         *
+         * A production application with mandatory two-factor switched off does
+         * not start. See TwoFactorEnforcement::assertSafeForEnvironment() for
+         * why it throws rather than warns.
+         */
+        TwoFactorEnforcement::assertSafeForEnvironment();
+
         /*
          * Layouts live in resources/views/layouts rather than under
          * resources/views/components, so the path is registered explicitly.
