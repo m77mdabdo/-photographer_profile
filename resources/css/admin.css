@@ -23,6 +23,21 @@
  * templates they are.
  */
 
+/*
+ * THE REAL TYPEFACES, which this bundle has never had.
+ *
+ * tokens.css names Archivo, Inter Tight and JetBrains Mono in --font-display,
+ * --font-text and --font-mono — but the @font-face rules that make those names
+ * mean anything live in fonts.css, which only the public bundle imported. The
+ * admin has therefore been rendering in 'Archivo Fallback' (Arial Narrow) the
+ * whole time, and nobody noticed because a working surface in Arial looks
+ * ordinary rather than wrong.
+ *
+ * It became visible the moment the sign-in page set a heading in the display
+ * face and it came out as Helvetica. Found by screenshotting the deliverable
+ * rather than by reading the CSS.
+ */
+@import './fonts.css';
 @import './tokens.css';
 @import './base.css';
 @import './components/auth.css';

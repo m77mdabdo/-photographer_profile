@@ -83,4 +83,59 @@ class MediaPolicy
     {
         return $this->isAdmin($user);
     }
+
+    // ---------------- Bulk abilities -------------------------------------
+
+    /*
+     * FILAMENT CALLS deleteAny, forceDeleteAny AND restoreAny FOR BULK ACTIONS,
+     * and a policy method that does not exist DENIES.
+     *
+     * That fails closed, which is the safe direction — and it is also silent:
+     * the bulk action is simply hidden, and the first anybody knows is an
+     * editor saying "bulk delete doesn't work". ADR 0002 found all ten
+     * policies missing all three. They are declared here, before the first
+     * Resource, so no Resource can ship with a quietly disabled action.
+     */
+
+    /**
+     * BULK DELETE OF MEDIA IS REFUSED, and that is the point rather than an
+     * omission.
+     *
+     * The singular rule is CONDITIONAL ON THE RECORD: delete() counts the
+     * image's usages and refuses while a story still shows it. A bulk ability
+     * is asked without a record, so there is no honest unconditional form of
+     * that rule — allowing it would mean the one guarantee standing between an
+     * editor and a published page with a missing frame depends on every future
+     * Resource remembering to call authorizeIndividualRecords('delete').
+     *
+     * "Must remember" is not a guarantee. Media is deleted one at a time,
+     * which is how the custom admin has always done it, and the refusal
+     * carries a reason an editor can act on.
+     */
+    public function deleteAny(User $user): Response
+    {
+        if (! $this->isAdmin($user)) {
+            return Response::deny('You do not have permission to delete media.');
+        }
+
+        return Response::deny(
+            'Media is deleted one image at a time, so each one can be checked '
+            .'for stories still using it.'
+        );
+    }
+
+    /** Permanent destruction of many files at once: the Owner alone. */
+    public function forceDeleteAny(User $user): Response
+    {
+        if ($user->role !== UserRole::Owner) {
+            return Response::deny('Only an Owner can permanently delete media.');
+        }
+
+        return Response::allow();
+    }
+
+    public function restoreAny(User $user): bool
+    {
+        return $this->isAdmin($user);
+    }
 }

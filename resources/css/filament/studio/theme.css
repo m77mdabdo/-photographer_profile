@@ -1,0 +1,290 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * THE STUDIO PANEL'S THEME.
+ *
+ * Filament compiles its own Tailwind build, separate from the public site's
+ * and separate from the custom admin's. That separation is the whole reason
+ * the public bundle can be byte-identical before and after installing a
+ * framework this size — there are now THREE independent stylesheets and none
+ * of them can reach the others.
+ *
+ * WHAT THIS FILE DOES, AND WHAT IT DELIBERATELY DOES NOT
+ *
+ * It imports the site's real design tokens and the real self-hosted typefaces,
+ * then maps Filament's own variables onto them. It does NOT restyle Filament's
+ * components one by one: a panel rebuilt button by button stops receiving
+ * upstream fixes and starts being a fork. The goal is that Filament's
+ * components are rendered in this studio's materials, not that they are
+ * replaced.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+
+/*
+ * THE REAL TYPEFACES, self-hosted, already on disk.
+ *
+ * fonts.css declares @font-face for Archivo, Inter Tight and JetBrains Mono
+ * with the same unicode-range splits and the same size-adjust fallbacks the
+ * public site uses. Importing it rather than restating it means the panel can
+ * never drift onto a different cut of the same family — and costs nothing,
+ * because the browser has usually already fetched them from the public site.
+ */
+@import '../../fonts.css';
+@import '../../tokens.css';
+
+@theme {
+    /*
+     * Filament's type scale, pointed at our families.
+     *
+     * The display face is used for headings only. Filament sets body copy in
+     * its own stack at 14px; Inter Tight at that size is what the public
+     * site's captions use, so the panel reads as the same document family
+     * without anything being resized.
+     */
+    --font-sans: 'Inter Tight', 'Inter Fallback', system-ui, sans-serif;
+    --font-serif: 'Archivo', 'Archivo Fallback', Arial, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Mono Fallback', ui-monospace, Menlo, monospace;
+}
+
+/*
+ * ── THE TWO REGISTERS ──────────────────────────────────────────────────────
+ *
+ * The public site is dark by default with a light register underneath, both
+ * driven by semantic aliases that tokens.css reassigns wholesale. Filament
+ * has the same arrangement under different names, so the mapping is a
+ * translation table rather than a redesign.
+ *
+ * Mapped on :root AND on .dark, because Filament toggles a class while
+ * tokens.css answers prefers-color-scheme — two mechanisms for one question,
+ * and this is where they are reconciled.
+ */
+:root,
+.fi-body {
+    --studio-bg: var(--bg);
+    --studio-surface: var(--bg-elevated);
+    --studio-text: var(--text-primary);
+    --studio-muted: var(--text-secondary);
+    --studio-line: var(--border);
+    --studio-accent: var(--accent);
+    --studio-on-accent: var(--on-accent);
+}
+
+/* ── Chrome ───────────────────────────────────────────────────────────── */
+
+.fi-body {
+    background-color: var(--studio-bg);
+    color: var(--studio-text);
+    font-family: var(--font-sans);
+}
+
+.fi-sidebar,
+.fi-topbar > nav {
+    background-color: var(--studio-surface);
+    border-color: var(--studio-line);
+}
+
+/*
+ * The brand, set in the display face at the size the public header uses.
+ * This is the single loudest signal that the panel belongs to this studio
+ * rather than to Filament, and it costs three declarations.
+ */
+.fi-logo {
+    font-family: var(--font-serif);
+    font-variation-settings: 'wght' 700;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    color: var(--studio-text);
+}
+
+/*
+ * Section headings and page titles in the display face. Filament sets these
+ * in its sans; the difference between a stock panel and a designed one is
+ * largely that headings and body are not the same face.
+ */
+.fi-header-heading,
+.fi-section-header-heading,
+.fi-modal-heading {
+    font-family: var(--font-serif);
+    font-variation-settings: 'wght' 700;
+    letter-spacing: -0.015em;
+}
+
+/*
+ * Numbers in the mono, everywhere. The public site sets every figure — EXIF,
+ * dates, dimensions, the archive counts — in JetBrains Mono, and a dashboard
+ * whose statistics are in the body face reads as a different product.
+ */
+.fi-wi-stats-overview-stat-value,
+.studio-pipeline__count,
+.fi-ta-text-item-label time,
+.studio-list__meta time {
+    font-family: var(--font-mono);
+    font-variation-settings: 'wght' 500;
+    font-feature-settings: 'tnum' 1;
+}
+
+/* ── Surfaces ─────────────────────────────────────────────────────────── */
+
+/*
+ * HARD EDGES, NOT ROUNDED CARDS.
+ *
+ * The public site has no rounded corners anywhere: the plate, the frames, the
+ * rules and the archive cells are all hard-edged, and that is the most
+ * recognisable thing about it after the typography. Filament's default is a
+ * 0.75rem radius on every surface, which is the single detail that makes an
+ * admin look like every other admin.
+ */
+.fi-section,
+.fi-wi-stats-overview-stat,
+.fi-modal-window,
+.fi-dropdown-panel,
+.fi-input-wrp {
+    border-radius: 0;
+    border-color: var(--studio-line);
+    background-color: var(--studio-surface);
+}
+
+.fi-btn {
+    border-radius: 0;
+    font-variation-settings: 'wght' 550;
+    letter-spacing: 0.01em;
+}
+
+/*
+ * The accent rule under a primary action, drawn the way the public site draws
+ * every rule: a hairline in the accent, full width, no shadow.
+ */
+.fi-btn-color-primary {
+    background-color: var(--studio-accent);
+    color: var(--studio-on-accent);
+    box-shadow: none;
+}
+
+/* ── The dashboard's own furniture ────────────────────────────────────── */
+
+.studio-pipeline {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1px;
+    background-color: var(--studio-line);
+    border: 1px solid var(--studio-line);
+}
+
+.studio-pipeline__cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.875rem 1rem;
+    background-color: var(--studio-surface);
+}
+
+.studio-pipeline__count {
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--studio-muted);
+}
+
+.studio-pipeline__cell--active .studio-pipeline__count { color: var(--studio-text); }
+.studio-pipeline__count[data-tone='danger'] { color: var(--danger-text); }
+
+.studio-pipeline__label {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--studio-muted);
+}
+
+.studio-failures {
+    margin-top: 0.875rem;
+    display: grid;
+    gap: 0.5rem;
+}
+
+.studio-failures__item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+}
+
+.studio-failures__name { font-family: var(--font-mono); color: var(--studio-text); }
+.studio-failures__reason { color: var(--danger-text); }
+
+.studio-list { display: grid; gap: 0.875rem; }
+
+.studio-list__item {
+    display: grid;
+    gap: 0.25rem;
+    padding-bottom: 0.875rem;
+    border-bottom: 1px solid var(--studio-line);
+}
+
+.studio-list__item:last-child { border-bottom: 0; padding-bottom: 0; }
+
+.studio-list__link {
+    font-family: var(--font-serif);
+    font-variation-settings: 'wght' 650;
+    font-size: 1rem;
+    color: var(--studio-text);
+    text-decoration: none;
+}
+
+.studio-list__link:hover { color: var(--studio-accent); }
+
+.studio-list__meta,
+.studio-list__excerpt {
+    font-size: 0.8125rem;
+    color: var(--studio-muted);
+}
+
+.studio-list__meta {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.studio-list__item--unread .studio-list__link { color: var(--studio-accent); }
+
+.studio-badge,
+.studio-badge--unread {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.1rem 0.4rem;
+    border: 1px solid currentColor;
+    color: var(--studio-accent);
+}
+
+.studio-empty {
+    font-size: 0.875rem;
+    color: var(--studio-muted);
+}
+
+/* ── RTL ──────────────────────────────────────────────────────────────── */
+
+/*
+ * Filament handles its own direction from <html dir>, which SetLocale already
+ * writes. These are the few places OUR furniture used a physical property.
+ * Logical properties throughout, so there is no second RTL stylesheet to keep
+ * in sync — the lesson from the public site's honeypot, which parked itself
+ * off the left edge and made the Arabic contact page 11,439px wide.
+ */
+[dir='rtl'] .studio-list__meta,
+[dir='rtl'] .studio-failures__item {
+    flex-direction: row;
+}
+
+[dir='rtl'] .fi-logo {
+    /* The display face has no Arabic coverage; the brand falls back to the
+       text face rather than to whatever the OS supplies. See ADR 0003. */
+    font-family: var(--font-sans);
+    letter-spacing: normal;
+    text-transform: none;
+}

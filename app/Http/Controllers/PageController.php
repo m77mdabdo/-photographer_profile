@@ -43,6 +43,10 @@ class PageController extends Controller
 
         // Infrastructure.
         'storage', 'up', '_dev', 'theme', 'locale',
+
+        // The Filament panel. Same trap as the locale prefixes: a short
+        // lowercase segment the wildcard would happily take for a page slug.
+        'studio',
     ];
 
     /**
@@ -54,7 +58,7 @@ class PageController extends Controller
     public const SLUG_PATTERN = '^(?!'
         .'ar$|en$|work$|journal$|services$|archive$|about$|contact$'
         .'|admin$|login$|logout$|register$'
-        .'|storage$|up$|_dev$|theme$|locale$'
+        .'|storage$|up$|_dev$|theme$|locale$|studio$'
         .'|sitemap.*|robots\.txt$'
         .')[a-z0-9-]+$';
 

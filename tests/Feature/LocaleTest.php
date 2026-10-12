@@ -435,8 +435,22 @@ class LocaleTest extends TestCase
          * which for this path is "ar" rather than "admin" — so the guard that
          * stops a redirect row intercepting an editor silently stopped
          * covering anything behind a locale prefix.
+         *
+         * ASSERTED AS "THE ROW DID NOT FIRE", not as a 404. /ar/admin is now a
+         * real route — the door that stores a language preference and sends an
+         * editor to the panel's one address — so the status is a 302. What
+         * must remain true is that it goes to the ADMIN, never to the
+         * redirect row's destination.
          */
-        $this->get('/ar/admin/projects')->assertNotFound();
+        $response = $this->get('/ar/admin/projects');
+
+        $this->assertNotSame(
+            url('/work'),
+            $response->headers->get('location'),
+            'a redirect row must never be able to intercept an admin path'
+        );
+
+        $response->assertRedirect('/admin/projects');
     }
 
     // ----------------------------------------------------------------- 10

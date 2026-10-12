@@ -10,10 +10,33 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
+    /**
+     * May this user open a Filament panel at all?
+     *
+     * ───────────────────────────────────────────────────────────────────────
+     * FILAMENT ASKS THIS BEFORE ANY MIDDLEWARE OF OURS RUNS, and without it
+     * the panel 403s every user outside the local environment — which is
+     * exactly what it did the first time, in the test suite, with a correctly
+     * provisioned Owner.
+     *
+     * The answer is the UserRole enum, the same gate EnsureUserIsAdmin
+     * applies, so there is one definition of "may use the admin" rather than
+     * two that can drift. The middleware still runs and still matters: this
+     * says who may see a panel, EnsureTwoFactorEnabled says under what
+     * conditions, and the throttle says how often.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return in_array($this->role, [UserRole::Owner, UserRole::Editor], true);
+    }
+
     /** @use HasFactory<UserFactory> */
     use HasFactory;
     use Notifiable;

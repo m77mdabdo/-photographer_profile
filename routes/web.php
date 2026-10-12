@@ -187,6 +187,38 @@ Route::get('/'.Locale::DEFAULT.'/{rest?}', function (?string $rest = null) {
 })->where('rest', '.*')->name('locale.default-alias');
 
 /*
+ * /ar/studio AND /ar/admin ARE DOORS, NOT ADDRESSES.
+ *
+ * Filament gives a panel exactly one path, and the admin surfaces are noindex
+ * with no canonical to protect — so rather than a second copy of the panel at
+ * a prefixed URL, the prefixed URL stores the language preference and sends
+ * the editor to the one real address. SetLocale then renders it RTL from the
+ * cookie, at /studio, for as long as the preference lasts.
+ *
+ * 302, not 301: this sets a preference and the destination depends on who is
+ * asking, which is the same reasoning the bare root uses.
+ */
+Route::get('/{locale}/{surface}/{rest?}', function (string $locale, string $surface, ?string $rest = null) {
+    return redirect()
+        ->to('/'.$surface.($rest !== null && $rest !== '' ? '/'.ltrim($rest, '/') : ''), 302)
+        ->withCookie(cookie(
+            name: Locale::COOKIE,
+            value: $locale,
+            minutes: Locale::COOKIE_DAYS * 24 * 60,
+            path: '/',
+            domain: null,
+            secure: request()->isSecure(),
+            httpOnly: false,
+            raw: false,
+            sameSite: 'lax',
+        ));
+})
+    ->where('locale', implode('|', Locale::codes()))
+    ->where('surface', 'studio|admin')
+    ->where('rest', '.*')
+    ->name('locale.private-surface');
+
+/*
  * The locale switcher's endpoint. A POST, like the theme, because it writes a
  * preference — and a preference must be a choice, not a side effect of
  * following a link. See LocaleController.

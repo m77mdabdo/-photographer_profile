@@ -812,3 +812,245 @@
 
 /* Flex items default to min-width:auto, so each filter needs its own floor. */
 .filters .field { min-width: 0; flex: 1 1 12rem; }
+
+/* ---------------- The sign-in page -------------------------------------- */
+
+/*
+ * THE FRONT DOOR, composed rather than centred.
+ *
+ * The rest of this file styles a working surface. This part styles the one
+ * admin page that is also a first impression, so it borrows the public site's
+ * conventions: both registers, the display face, hard edges, a hairline accent
+ * rule, and a two-panel composition that collapses rather than reflows.
+ *
+ * Everything here is logical-property only, so the Arabic panel mirrors with
+ * no second stylesheet. That is the lesson from the public honeypot, which
+ * used `left: -9999px` and made the Arabic contact page 11,439px wide.
+ */
+
+.auth-shell {
+    min-height: 100dvh;
+    margin: 0;
+    background-color: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-text);
+}
+
+.auth-split {
+    min-height: 100dvh;
+    display: grid;
+    /*
+     * One column by default — a phone gets the form and nothing competing
+     * with it. The identity panel is not hidden on small screens, it is
+     * stacked above, because the studio's name is the reassurance that this
+     * is the right address.
+     */
+    grid-template-columns: 1fr;
+}
+
+.auth-split__identity {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: var(--sp-4);
+    padding: var(--sp-6) var(--gutter);
+    border-block-end: var(--rule-hair) solid var(--border);
+}
+
+.auth-split__form {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: var(--sp-7) var(--gutter);
+}
+
+@media (min-width: 900px) {
+    .auth-split {
+        /* The identity panel takes the narrower column: the form is the
+           thing being used, the name is the thing being recognised. */
+        grid-template-columns: 4fr 5fr;
+    }
+
+    .auth-split__identity {
+        justify-content: center;
+        padding-inline: var(--sp-8);
+        border-block-end: 0;
+        border-inline-end: var(--rule-hair) solid var(--border);
+    }
+
+    .auth-split__form {
+        align-items: center;
+        padding-inline: var(--sp-8);
+    }
+}
+
+/* ---- The identity panel ---- */
+
+.auth-brand {
+    margin: 0;
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-display);
+    /* Large, but not the hero's size: this is a door, not a cover. */
+    font-size: clamp(2rem, 7vw, 4.5rem);
+    line-height: 0.95;
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.auth-brand__rule {
+    display: block;
+    inline-size: 4rem;
+    block-size: var(--rule-hair);
+    background-color: var(--accent);
+}
+
+.auth-brand__note {
+    margin: 0;
+    max-width: 32ch;
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+/*
+ * ARABIC HAS NO CONDENSED DISPLAY FACE AND IS UNICASE.
+ *
+ * Both of the brand's Latin devices — heavy condensed capitals and wide
+ * tracking — are Latin-only, and tracking actively breaks a cursive script.
+ * ADR 0003 records the whole argument; this is the one place in the admin
+ * that has to act on it today.
+ */
+[lang='ar'] .auth-brand,
+[lang='ar'] .auth-brand__note {
+    font-family: var(--font-text);
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+/* ---- The card ---- */
+
+.auth-card {
+    inline-size: 100%;
+    max-inline-size: 26rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-5);
+}
+
+.auth-card__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-display);
+    font-size: var(--fs-h2);
+    line-height: 1.05;
+    letter-spacing: var(--tracking-tight);
+}
+
+[lang='ar'] .auth-card__title {
+    font-family: var(--font-text);
+    letter-spacing: normal;
+}
+
+.auth-card__rule {
+    display: block;
+    inline-size: 2.5rem;
+    block-size: var(--rule-hair);
+    background-color: var(--accent);
+}
+
+.auth-card__aside,
+.auth-card__note {
+    margin: 0;
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+.auth-card__note {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    padding-block-start: var(--sp-4);
+    border-block-start: var(--rule-hair) solid var(--border);
+}
+
+[lang='ar'] .auth-card__note {
+    font-family: var(--font-text);
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+/* ---- The action ---- */
+
+/*
+ * The submit carries the same drawn rule the public site puts under a primary
+ * link — scaled in from the leading edge on hover and focus, never hover
+ * alone.
+ */
+.auth-submit {
+    position: relative;
+    align-self: flex-start;
+    padding: var(--sp-3) var(--sp-5);
+    border: var(--rule-hair) solid var(--text-primary);
+    background: transparent;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: var(--fs-small);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.auth-submit__rule {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    block-size: 2px;
+    background-color: var(--accent);
+    transform: scaleX(0);
+    transform-origin: inline-start center;
+    transition: transform var(--dur-base) var(--ease-editorial);
+}
+
+.auth-submit:hover .auth-submit__rule,
+.auth-submit:focus-visible .auth-submit__rule {
+    transform: scaleX(1);
+}
+
+[lang='ar'] .auth-submit {
+    font-family: var(--font-text);
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+/*
+ * THE INLINE LABEL IS A SENTENCE, NOT A FIELD NAME.
+ *
+ * `.field label` is uppercase with wide tracking, which is right for "EMAIL
+ * ADDRESS" sitting above its input and wrong for "Stay signed in on this
+ * device" sitting beside a checkbox: tracked capitals made it long enough to
+ * wrap onto two lines next to a 13px box, and the row read as a layout fault.
+ *
+ * Sentence case, normal tracking, and the checkbox pinned to the first line
+ * rather than vertically centred against a wrapped label.
+ */
+.field--inline {
+    align-items: baseline;
+}
+
+.field--inline label {
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--text-primary);
+}
+
+.field--inline input[type='checkbox'] {
+    /* The control keeps its own size whatever the label does. */
+    flex: none;
+    inline-size: 1rem;
+    block-size: 1rem;
+    accent-color: var(--accent);
+}

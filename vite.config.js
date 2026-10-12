@@ -34,6 +34,19 @@ export default defineConfig({
                  * the test suite rather than watched by hand.
                  */
                 'resources/js/public.js',
+
+                /*
+                 * THE PANEL'S THEME IS A FOURTH, SEPARATE ENTRY.
+                 *
+                 * Filament compiles its own Tailwind build from this file.
+                 * Listing it here — rather than importing it from any existing
+                 * entry — is what keeps the public bundle byte-identical after
+                 * installing a framework of this size: three stylesheets that
+                 * share tokens.css and fonts.css by @import, and share nothing
+                 * else. Task 1's bundle-separation guarantee now has a third
+                 * party in it and still holds.
+                 */
+                'resources/css/filament/studio/theme.css',
             ],
             refresh: true,
         }),

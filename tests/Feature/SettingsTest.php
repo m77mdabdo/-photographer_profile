@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Support\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -230,9 +231,27 @@ class SettingsTest extends TestCase
         $this->assertStringNotContainsString('public function create', $source);
         $this->assertStringNotContainsString('public function delete', $source);
 
-        $policy = (string) file_get_contents(app_path('Policies/SettingPolicy.php'));
+        /*
+         * ASSERTED AS BEHAVIOUR, NOT AS AN ABSENT STRING.
+         *
+         * This used to grep SettingPolicy for "function delete" and require it
+         * to be missing. Missing meant denied, because Laravel's Gate refuses
+         * an ability a registered policy does not define — but it also meant
+         * the refusal was invisible, and it broke the moment the policy gained
+         * `deleteAny` for Filament, whose name contains the same substring.
+         *
+         * Declared and denying is strictly better than absent: a reader can
+         * see the rule, an editor gets a sentence rather than a hidden button,
+         * and the test now checks the thing it always meant.
+         */
+        $owner = User::factory()->create(['role' => UserRole::Owner]);
+        $setting = Setting::query()->first();
 
-        $this->assertStringNotContainsString('function create', $policy);
-        $this->assertStringNotContainsString('function delete', $policy);
+        foreach (['create', 'delete', 'deleteAny', 'forceDeleteAny', 'restoreAny'] as $ability) {
+            $this->assertFalse(
+                Gate::forUser($owner)->allows($ability, $setting ?? Setting::class),
+                "an Owner must not be able to $ability a setting"
+            );
+        }
     }
 }

@@ -162,6 +162,21 @@ const PUBLIC_PAGES = [
  * exists to close.
  */
 const ADMIN_PAGES = [
+  /*
+   * THE FILAMENT PANEL.
+   *
+   * `admin: true` keeps it off the locale prefix — it has one address, and
+   * its language comes from the editor's stored preference rather than from
+   * the URL (see SetLocale). The --locale=ar run still checks it, because the
+   * harness sets the cookie before signing in, so the Arabic matrix exercises
+   * an RTL panel at the same path.
+   *
+   * The sign-in page is checked SIGNED OUT, which is the only state anybody
+   * ever sees it in, and is the reason it needs `guest: true`.
+   */
+  { label: 'studio sign-in', path: '/login', admin: true, guest: true },
+  { label: 'studio dashboard', path: '/studio', admin: true },
+
   { label: 'admin dashboard', path: '/admin', admin: true },
   { label: 'admin media library', path: '/admin/media', admin: true },
   {
@@ -369,6 +384,40 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir) {
     }
   }
 
+  // --- 0b. the page actually painted something ------------------------------
+  /*
+   * A BLANK PAGE THAT PASSES EVERY OTHER CHECK.
+   *
+   * The Filament dashboard shipped correct markup, put every widget in the
+   * DOM, returned them from innerText with real measured widths, computed
+   * sensible colours, logged no console error and failed no request — and
+   * rendered nothing at all, because Alpine never booted and Filament's main
+   * container stayed at `opacity: 0`.
+   *
+   * Every check in this file passed. The page was empty. So this asks the
+   * only question that would have caught it: is there a container holding
+   * most of the page's text that nobody can see?
+   */
+  const invisibleContainers = []
+
+  for (const el of document.querySelectorAll('div, main, section, body')) {
+    const text = (el.innerText || '').trim()
+
+    if (text.length < 120) continue
+
+    const style = getComputedStyle(el)
+
+    if (parseFloat(style.opacity) === 0 || style.visibility === 'hidden') {
+      invisibleContainers.push(
+        `${el.tagName.toLowerCase()}.${String(el.className).split(' ').filter(Boolean)[0] || ''}`
+      )
+    }
+  }
+
+  if (invisibleContainers.length) {
+    problems.push(`content is in the DOM but invisible: ${[...new Set(invisibleContainers)].slice(0, 3).join(', ')}`)
+  }
+
   // --- 1. every image actually decoded -------------------------------------
   /*
    * naturalWidth is 0 for a broken image whatever its src says, and it is the
@@ -563,13 +612,36 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir) {
   }
 
   // --- 5. the fonts actually applied ---------------------------------------
-  // Declared is not applied. document.fonts.check asks whether the face is
-  // loaded and usable at that size, which is the question.
+  /*
+   * A FACE IS CHECKED WHERE IT IS ASKED FOR, NOT EVERYWHERE.
+   *
+   * This asked whether all three families were loaded on every page, which
+   * was right while only the public bundle declared them — the public pages
+   * use all three. The admin bundle gained the real typefaces too, and its
+   * pages legitimately do not all use the mono: a dashboard with no times,
+   * codes or dimensions on it never requests JetBrains Mono, so the browser
+   * never loads it, and the check reported a healthy page as broken on eight
+   * viewports.
+   *
+   * The question worth asking is the one it was written for: when something
+   * on this page asks for a face, does that face actually arrive? A declared
+   * family nobody uses is waste, not a defect, and is not this check's job.
+   */
   const families = ['Archivo', 'JetBrains Mono', 'Inter Tight']
-  const missing = families.filter((f) => !document.fonts.check(`16px "${f}"`))
+  const requested = new Set()
+
+  for (const el of document.querySelectorAll('*')) {
+    const stack = getComputedStyle(el).fontFamily
+
+    for (const family of families) {
+      if (stack.includes(family)) requested.add(family)
+    }
+  }
+
+  const missing = [...requested].filter((f) => !document.fonts.check(`16px "${f}"`))
 
   if (missing.length) {
-    problems.push(`fonts declared but not applied: ${missing.join(', ')}`)
+    problems.push(`fonts requested but not applied: ${missing.join(', ')}`)
   }
 
   // And the wordmark is actually rendering in the display face, not a fallback.
@@ -714,10 +786,33 @@ async function run() {
         skipped.push(...(await resolveAdminPaths(page)))
       }
 
+      /*
+       * THE ADMIN SURFACES TAKE THEIR LANGUAGE FROM A COOKIE, not from the
+       * URL — Filament gives a panel one path, and these pages are noindex
+       * with no canonical to protect, so SetLocale lets the stored preference
+       * decide. Pinning it here is what makes --locale=ar actually exercise an
+       * RTL panel rather than an English one at an Arabic-looking address.
+       */
+      if (LOCALE !== 'en') {
+        await browser.setCookie({
+          name: 'locale',
+          value: LOCALE,
+          url: BASE,
+          path: '/',
+        })
+      }
+
       await page.close()
     }
 
     const PAGES = [...PUBLIC_PAGES, ...adminPages.filter((t) => t.path)]
+
+    /*
+     * The session-less context, shared by every guest target in the run and
+     * closed once at the end. See the comment at its first use.
+     */
+    let guestContext = null
+    let guestPage = null
 
     for (const theme of THEMES) {
       for (const viewport of VIEWPORTS) {
@@ -730,6 +825,58 @@ async function run() {
 
         for (const target of PAGES) {
           if (args.only && !target.path.startsWith(args.only)) continue
+
+          /*
+           * A GUEST PAGE NEEDS A PAGE WITH NO SESSION.
+           *
+           * The harness signs in once and reuses the browser, so every page
+           * after that is authenticated. The sign-in screen is the one page
+           * nobody ever sees in that state — checking it while logged in
+           * would check a redirect, and report the login page as passing
+           * without ever having rendered it.
+           *
+           * ONE CONTEXT PER VIEWPORT, created on first use and reused.
+           * Creating one per target meant eight contexts per run, and Chrome
+           * dropped the connection partway through the Arabic matrix twice:
+           *
+           *     ConnectionClosedError: Connection closed.
+           *       at CdpBrowser.createBrowserContext
+           *
+           * One is all that is needed — the session-less state does not have
+           * to be fresh per page, only separate from the signed-in one.
+           */
+          let activePage = page
+
+          if (target.guest) {
+            /*
+             * RECREATED IF IT HAS GONE. Reusing one page across the whole
+             * matrix saved the context churn that was dropping Chrome's
+             * connection, and introduced the opposite failure:
+             *
+             *     TargetCloseError: Protocol error
+             *       (Emulation.setTouchEmulationEnabled): Session closed.
+             *
+             * Something between viewports closes it. Rather than guess what,
+             * the handle is checked before use — the only state that matters
+             * is "a usable session-less page", not "the same one as before".
+             */
+            if (!guestPage || guestPage.isClosed()) {
+              guestContext = await browser.createBrowserContext()
+              guestPage = await guestContext.newPage()
+
+              if (LOCALE !== 'en') {
+                await guestContext.setCookie({ name: 'locale', value: LOCALE, url: BASE, path: '/' })
+              }
+            }
+
+            activePage = guestPage
+
+            await activePage.setViewport({ width: viewport.width, height: viewport.height })
+            await activePage.emulateMediaFeatures([
+              { name: 'prefers-color-scheme', value: theme.scheme },
+              ...(REDUCED ? [{ name: 'prefers-reduced-motion', value: 'reduce' }] : []),
+            ])
+          }
 
           const consoleErrors = []
           const failedRequests = []
@@ -756,9 +903,9 @@ async function run() {
             }
           }
 
-          page.on('console', onConsole)
-          page.on('requestfailed', onFailed)
-          page.on('response', onResponse)
+          activePage.on('console', onConsole)
+          activePage.on('requestfailed', onFailed)
+          activePage.on('response', onResponse)
 
           let problems = []
           let stats = { images: 0, loaded: 0 }
@@ -771,7 +918,7 @@ async function run() {
              */
             const requestPath = target.admin ? target.path : localised(target.path)
 
-            const response = await page.goto(BASE + requestPath, {
+            const response = await activePage.goto(BASE + requestPath, {
               waitUntil: 'networkidle2',
               timeout: 30000,
             })
@@ -782,16 +929,16 @@ async function run() {
 
             if (status !== expected) {
               if (target.optional && status === 404) {
-                page.off('console', onConsole)
-                page.off('requestfailed', onFailed)
-                page.off('response', onResponse)
+                activePage.off('console', onConsole)
+                activePage.off('requestfailed', onFailed)
+                activePage.off('response', onResponse)
                 continue
               }
               problems.push(`HTTP ${status}, expected ${expected}`)
             }
 
             // Fonts are async; wait for them before asking whether they applied.
-            await page.evaluate(() => document.fonts.ready)
+            await activePage.evaluate(() => document.fonts.ready)
 
             /*
              * Scroll the whole page, the way a reader does, so every lazy image
@@ -799,7 +946,7 @@ async function run() {
              * the harness can only judge the images above the fold, which is
              * most of a long story left unchecked.
              */
-            await page.evaluate(async () => {
+            await activePage.evaluate(async () => {
               const step = window.innerHeight
               const end = document.documentElement.scrollHeight
 
@@ -828,7 +975,7 @@ async function run() {
              * a plain wait just burns its timeout. Flipping loading to eager
              * asks for all of them deterministically.
              */
-            await page.evaluate(() => {
+            await activePage.evaluate(() => {
               for (const img of document.querySelectorAll('img[loading="lazy"]')) {
                 img.loading = 'eager'
               }
@@ -857,18 +1004,18 @@ async function run() {
             )
             .catch(() => {})
 
-          const audit = await page.evaluate(inPageAudit, target.admin === true, REDUCED, EXPECTED_DIR)
+          const audit = await activePage.evaluate(inPageAudit, target.admin === true, REDUCED, EXPECTED_DIR)
             problems = problems.concat(audit.problems)
             stats = audit
 
             // --- 6. referenced stylesheets and fonts return 200 --------------
-            const assets = await page.evaluate(() =>
+            const assets = await activePage.evaluate(() =>
               [...document.querySelectorAll('link[rel="stylesheet"], link[rel="preload"][as="font"]')]
                 .map((l) => l.href)
             )
 
             for (const href of assets) {
-              const res = await page.evaluate(async (u) => {
+              const res = await activePage.evaluate(async (u) => {
                 try {
                   const r = await fetch(u, { method: 'GET' })
                   return { ok: r.ok, status: r.status }
@@ -883,9 +1030,9 @@ async function run() {
             problems.push(`navigation failed: ${e.message}`)
           }
 
-          page.off('console', onConsole)
-          page.off('requestfailed', onFailed)
-          page.off('response', onResponse)
+          activePage.off('console', onConsole)
+          activePage.off('requestfailed', onFailed)
+          activePage.off('response', onResponse)
 
           for (const err of consoleErrors) problems.push(`console error: ${err}`)
           for (const req of failedRequests) problems.push(`request failed: ${req}`)
@@ -900,10 +1047,18 @@ async function run() {
             images: `${stats.loaded}/${stats.images}`,
             problems,
           })
+
         }
 
         await page.close()
       }
+    }
+
+    // The shared session-less context, closed once the whole matrix is done.
+    if (guestContext) {
+      await guestContext.close()
+      guestContext = null
+      guestPage = null
     }
 
   } finally {

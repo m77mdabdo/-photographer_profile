@@ -87,6 +87,32 @@ class SetLocale
         View::share('localeDirection', Locale::direction($locale));
 
         /*
+         * ─────────────────────────────────────────────────────────────────
+         * THE ADMIN SURFACES FOLLOW THE EDITOR'S STORED PREFERENCE.
+         *
+         * Negotiation is confined to one public address because a public page
+         * that varies by header cannot be canonical and cannot be crawled
+         * predictably. NONE of that applies behind a login: /studio, /admin
+         * and the auth pages are noindex, they have one address each, and no
+         * crawler will ever see them.
+         *
+         * So for those paths the stored preference simply decides, with no
+         * redirect and no second URL. An Arabic editor gets an Arabic panel
+         * at the same address an English one uses, which is the only
+         * arrangement that works for a panel Filament gives a single path.
+         * ─────────────────────────────────────────────────────────────────
+         */
+        if ($this->isPrivateSurface($request)) {
+            $preferred = $this->preferred($request);
+
+            App::setLocale($preferred);
+            View::share('locale', $preferred);
+            View::share('localeDirection', Locale::direction($preferred));
+
+            return $next($request);
+        }
+
+        /*
          * The one negotiating address. Only the root, only for the default
          * locale's route group, and only when the visitor would prefer
          * something else.
@@ -100,6 +126,25 @@ class SetLocale
         }
 
         return $next($request);
+    }
+
+    /**
+     * Paths behind a login, which have one address each and are never indexed.
+     *
+     * @var list<string>
+     */
+    private const PRIVATE_PREFIXES = [
+        'studio', 'admin', 'login', 'logout', 'register',
+        'forgot-password', 'reset-password', 'two-factor-challenge', 'user',
+    ];
+
+    private function isPrivateSurface(Request $request): bool
+    {
+        [, $bare] = Locale::split($request->getPathInfo());
+
+        $first = explode('/', ltrim($bare, '/'))[0] ?? '';
+
+        return in_array($first, self::PRIVATE_PREFIXES, true);
     }
 
     /**

@@ -1,7 +1,17 @@
 @props(['seo' => null, 'title' => 'Admin'])
 <!DOCTYPE html>
 {{-- The admin is always dark: it is a working surface, not a page of work. --}}
-<html lang="{{ str_replace('_', '-', config('seo.locale')) }}" dir="ltr" data-theme="dark">
+{{--
+    lang and dir follow the active locale, server-rendered.
+
+    This was `dir="ltr"` and a hardcoded config value from before the site had
+    a second language. The admin is still always dark — it is a working
+    surface, not a page of work — but direction is not a preference, and an
+    Arabic editor working in a left-to-right admin is reading backwards.
+--}}
+<html lang="{{ \App\Support\Locale::html() }}"
+      dir="{{ \App\Support\Locale::direction() }}"
+      data-theme="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
