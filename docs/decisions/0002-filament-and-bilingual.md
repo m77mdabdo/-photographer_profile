@@ -5,6 +5,27 @@
 **Supersedes:** parts of [0001](0001-livewire-for-admin.md) — the admin half, not the public half
 **Spike commit:** `31d750b`
 
+> ## ⚠ CORRECTION — read before section C3
+>
+> **Section C3 of this document contained a security claim that was false in
+> the dangerous direction**, and it stood here for four tasks. It said that a
+> missing policy method *denies* and therefore "fails closed". In Filament it
+> **allows**.
+>
+> `Filament\...\helpers.php::get_authorization_response()` returns
+> `Response::allow()` when a model has no policy, or when the policy exists but
+> lacks the ability being asked for, and it never consults the Gate. Three
+> models — `Tag`, `ArticleCategory` and `User` — had no policy at all and were
+> therefore editable and deletable by any Editor.
+>
+> Fixed in Task 31: three policies written, `->strictAuthorization()` enabled
+> on the panel so a gap raises a `LogicException` instead of granting
+> permission, and `ResourceGovernanceTest` added so no resource can be
+> reachable without an explicit policy decision. The full account is in the
+> correction block inside C3; the original wrong paragraph is left in place
+> because a decision record that quietly rewrites its own measurements is worth
+> less than one that shows where it was wrong.
+
 ## Decision
 
 Two decisions, taken together by the client:
@@ -268,21 +289,28 @@ Our ten policies define `viewAny`, `view`, `create`, `update`, `delete`,
 them defines `deleteAny`, `forceDeleteAny` or `restoreAny`** — the three bulk
 abilities.
 
-Verified empirically against `ProjectPolicy` as the owner user:
+Verified empirically against `ProjectPolicy` as the owner user — **through
+`Gate::allows()`, which is not what Filament calls.** That is the whole error:
+the measurement is accurate and measures the wrong thing.
 
 ```
-viewAny          defined  -> ALLOW
-reorder          defined  -> ALLOW
-deleteAny        MISSING  -> deny
-forceDeleteAny   MISSING  -> deny
-restoreAny       MISSING  -> deny
+                          Gate::allows()      Resource::can()  ← what Filament uses
+viewAny          defined  ALLOW               ALLOW
+reorder          defined  ALLOW               ALLOW
+deleteAny        MISSING  deny                ALLOW   ← measured in Task 31
+forceDeleteAny   MISSING  deny                ALLOW
+restoreAny       MISSING  deny                ALLOW
 ```
 
-A missing method on a registered policy **denies**. That fails closed, which is
+> **⚠ THE PARAGRAPH BELOW IS WRONG.** It is kept verbatim because it was
+> acted on, and because what it got wrong is more instructive than a silent
+> edit. The correction follows it immediately. Do not quote it.
+
+~~A missing method on a registered policy **denies**. That fails closed, which is
 the safe direction — but it means **every Filament bulk action will be refused
 or hidden** until those three methods are added to each of the ten policies.
 Thirty small methods. Cheap, but it will present as "bulk delete doesn't work"
-and waste an afternoon if nobody wrote it down. It is now written down.
+and waste an afternoon if nobody wrote it down. It is now written down.~~
 
 > ### Correction, Task 31 — the paragraph above is wrong in the dangerous direction
 >
@@ -316,9 +344,15 @@ and waste an afternoon if nobody wrote it down. It is now written down.
 >    naming the model and the ability. A gap is now a crash in development
 >    rather than a permission in production.
 >
-> The old sentence stands above, unedited, because a decision record that
-> quietly rewrites its own measurements is worth less than one that shows where
-> it was wrong.
+> 3. **Nothing now relies on anybody remembering this.**
+>    `tests/Feature/Studio/ResourceGovernanceTest.php` asserts that every
+>    resource Filament has discovered reaches an explicit policy decision for
+>    every ability it can be asked for, and that the panel is in strict mode.
+>    A resource added next year is covered the moment it is discovered.
+>
+> The old sentence stands above, struck through rather than deleted, because a
+> decision record that quietly rewrites its own measurements is worth less than
+> one that shows where it was wrong.
 
 ---
 

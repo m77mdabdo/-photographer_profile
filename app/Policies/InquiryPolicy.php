@@ -30,6 +30,25 @@ class InquiryPolicy
      * Changing status and adding notes is the daily work of answering
      * enquiries, so an Editor does it.
      */
+    /**
+     * ───────────────────────────────────────────────────────────────────────
+     * NOBODY CREATES AN ENQUIRY FROM THE PANEL.
+     *
+     * An enquiry is a message a client sent through the contact form. A row
+     * typed by the studio would be a fabricated record of something somebody
+     * said — with a consent timestamp and an origin hash attached to it — and
+     * there is no legitimate reason to want one.
+     *
+     * Refused explicitly rather than omitted. Under the panel's strict
+     * authorization an absent method is a LogicException, and under Filament's
+     * default it was an unspoken yes; neither is an answer.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public function create(User $user): Response
+    {
+        return Response::deny('Enquiries arrive from the contact form. They are not written here.');
+    }
+
     public function update(User $user, Inquiry $inquiry): bool
     {
         return $this->isAdmin($user);

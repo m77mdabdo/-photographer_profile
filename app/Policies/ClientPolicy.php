@@ -21,6 +21,15 @@ class ClientPolicy
         return $this->isAdmin($user);
     }
 
+    /**
+     * A client is a name and a logo on a wall. Anybody who may see the list
+     * may see a row of it; there is no per-record secret here.
+     */
+    public function view(User $user, Client $client): bool
+    {
+        return $this->isAdmin($user);
+    }
+
     public function create(User $user): bool
     {
         return $this->isAdmin($user);
@@ -34,6 +43,31 @@ class ClientPolicy
     public function delete(User $user, Client $client): bool
     {
         return $this->isAdmin($user);
+    }
+
+    /**
+     * ───────────────────────────────────────────────────────────────────────
+     * CLIENTS DO NOT SOFT-DELETE, AND THESE TWO SAY SO IN THE ONLY PLACE
+     * ANYTHING WILL ASK.
+     *
+     * The model has no SoftDeletes trait, so there is no trashed state to
+     * restore from and no second step to force. Leaving the methods out looked
+     * like the honest expression of that — and under the panel's strict
+     * authorization it is a LogicException the first time Filament asks, which
+     * it does whenever a table with a restore action is built.
+     *
+     * Refused with a reason rather than allowed: a bulk restore that silently
+     * did nothing would be worse than one that explains itself.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public function restore(User $user, Client $client): Response
+    {
+        return Response::deny('Clients are deleted outright, so there is nothing to restore.');
+    }
+
+    public function forceDelete(User $user, Client $client): Response
+    {
+        return Response::deny('Clients are deleted outright; there is no second step.');
     }
 
     public function reorder(User $user): bool

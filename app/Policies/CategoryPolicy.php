@@ -71,6 +71,15 @@ class CategoryPolicy
         return Response::allow();
     }
 
+    /**
+     * Category soft-deletes, so restoring is a real action and needs a real
+     * answer — strict mode throws on a missing method rather than guessing.
+     */
+    public function restore(User $user, Category $category): bool
+    {
+        return $this->isAdmin($user);
+    }
+
     public function forceDelete(User $user, Category $category): Response
     {
         if ($user->role !== UserRole::Owner) {
