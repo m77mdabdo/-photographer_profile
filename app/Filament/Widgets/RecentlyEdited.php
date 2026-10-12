@@ -74,6 +74,11 @@ class RecentlyEdited extends Widget
             ->take(6)
             ->values();
 
-        return ['rows' => $rows];
+        return [
+            'rows' => $rows,
+            'allUrl' => \Illuminate\Support\Facades\Route::has('admin.projects.index')
+                ? route('admin.projects.index')
+                : null,
+        ];
     }
 }

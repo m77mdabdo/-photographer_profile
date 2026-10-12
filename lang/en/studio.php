@@ -31,6 +31,7 @@ return [
     ],
 
     'media' => [
+        'open_failed' => 'Open the failed images',
         'heading' => 'The media pipeline',
         'description' => 'Images still being processed, and any that failed.',
         'pending' => 'queued',
@@ -41,12 +42,15 @@ return [
     ],
 
     'recent' => [
+        'open_all' => 'All projects',
+        'empty_hint' => 'Projects and journal entries you edit will collect here, newest first.',
         'heading' => 'Recently edited',
         'description' => 'Pick up where the studio left off.',
         'empty' => 'Nothing has been edited yet.',
     ],
 
     'enquiries' => [
+        'empty_hint' => 'Messages from the contact form arrive here. Share the site to start the conversation.',
         'heading' => 'Recent enquiries',
         'description' => 'Unread first, then newest.',
         'empty' => 'No enquiries yet.',
@@ -65,20 +69,31 @@ return [
         'note' => 'Two-factor authentication is required.',
     ],
 
+
     'nav' => [
-        'work' => 'The work',
-        'words' => 'Words',
-        'studio' => 'The studio',
-        'settings' => 'Settings',
-        'not_moved' => 'not moved yet',
+        // The five groups, named for what the owner is doing.
+        'group_work' => 'The work',
+        'group_writing' => 'Writing',
+        'group_studio' => 'The studio',
+        'group_people' => 'People & messages',
+        'group_system' => 'System',
+
         'projects' => 'Projects',
         'media' => 'Media',
+        'categories' => 'Categories',
+        'galleries' => 'Galleries',
         'journal' => 'Journal',
         'pages' => 'Pages',
         'services' => 'Services',
-        'enquiries' => 'Enquiries',
         'clients' => 'Clients',
-        'site_settings' => 'Site settings',
+        'enquiries' => 'Enquiries',
+        'users' => 'Users',
+        'settings' => 'Site settings',
         'redirects' => 'Redirects',
+
+        // Two tiers: a module that works in the old panel, and one that does
+        // not exist anywhere yet.
+        'in_old_panel' => 'old panel',
+        'planned' => 'planned',
     ],
 ];

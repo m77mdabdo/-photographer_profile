@@ -444,17 +444,80 @@ class StudioPanelTest extends TestCase
         $this->assertStringContainsString('auth-brand', $html);
     }
 
-    /** The planned-but-unbuilt modules are shown, disabled, not hidden. */
-    public function test_the_navigation_shows_the_modules_not_yet_moved(): void
+    /**
+     * THE NAVIGATION IS GROUPED, AND NOTHING IS HIDDEN.
+     *
+     * Twelve modules in five groups, each marked with the tier it is in, so
+     * the structure is readable before it is complete.
+     */
+    public function test_the_navigation_is_grouped_and_complete(): void
     {
         $html = $this->actingAs($this->admin())->get(self::PANEL)->assertOk()->getContent();
 
-        foreach (['Projects', 'Media', 'Journal', 'Services', 'Enquiries', 'Site settings'] as $label) {
+        // The five groups.
+        foreach (['The work', 'Writing', 'The studio', 'People &amp; messages', 'System'] as $group) {
+            $this->assertStringContainsString($group, $html, "the '$group' group should appear");
+        }
+
+        // All twelve modules.
+        foreach ([
+            'Projects', 'Media', 'Categories', 'Galleries',
+            'Journal', 'Pages',
+            'Services', 'Clients',
+            'Enquiries', 'Users',
+            'Site settings', 'Redirects',
+        ] as $label) {
             $this->assertStringContainsString($label, $html, "$label should appear in the navigation");
         }
 
-        // Each one is marked, so nobody mistakes the shell for the product.
-        $this->assertSame(9, substr_count($html, 'not moved yet'));
+        /*
+         * Two tiers, counted. Ten modules work in the old panel; Galleries and
+         * Users exist nowhere, so they are visible, disabled and say so.
+         */
+        $this->assertSame(10, substr_count($html, 'old panel'), 'ten modules should link to the old panel');
+        $this->assertSame(2, substr_count($html, 'planned'), 'two modules are planned only');
+
+        // A planned item is not reachable by mouse or keyboard.
+        $this->assertStringContainsString('aria-disabled="true"', $html);
+        $this->assertStringContainsString('tabindex="-1"', $html);
+    }
+
+    /** The groups come from the lang files, in both locales. */
+    public function test_the_navigation_groups_are_translated(): void
+    {
+        $user = $this->admin();
+
+        $english = $this->actingAs($user)->get(self::PANEL)->assertOk()->getContent();
+
+        $this->assertStringContainsString('The work', $english);
+        $this->assertStringContainsString('People &amp; messages', $english);
+
+        $arabic = $this->actingAs($user)
+            ->withUnencryptedCookie(Locale::COOKIE, 'ar')
+            ->get(self::PANEL)
+            ->assertOk()
+            ->getContent();
+
+        foreach (['الأعمال', 'الكتابة', 'الاستوديو', 'الأشخاص والرسائل', 'النظام'] as $group) {
+            $this->assertStringContainsString($group, $arabic, "the Arabic group '$group' should render");
+        }
+
+        // And the module labels, not only the groups.
+        $this->assertStringContainsString('المشاريع', $arabic);
+        $this->assertStringContainsString('التصنيفات', $arabic);
+    }
+
+    /** The active item is marked, so the panel says where you are. */
+    public function test_the_active_item_is_marked(): void
+    {
+        $html = $this->actingAs($this->admin())->get(self::PANEL)->assertOk()->getContent();
+
+        /*
+         * Filament writes the state as a class; the theme turns it into an
+         * accent bar on the leading edge. Asserting the class is asserting the
+         * hook the styling hangs on — the styling itself is the harness's job.
+         */
+        $this->assertStringContainsString('fi-sidebar-item fi-active', $html);
     }
 
     // ----------------------------------------------------------------- 6
@@ -474,5 +537,130 @@ class StudioPanelTest extends TestCase
         ] as $path) {
             $this->actingAs($user)->get($path)->assertOk("$path should still work");
         }
+    }
+
+    // ----------------------------------------------------------------- 30b
+
+    /**
+     * E1 — THE DUPLICATED SENTENCE IS GONE AND CANNOT RECUR.
+     *
+     * The two-factor page printed one sentence twice — the layout renders
+     * session('status') for every page and the page rendered it again — under
+     * a heading that said the same thing a third way.
+     *
+     * Asserted as "no sentence appears twice", not as "that sentence is
+     * absent", so the same mistake in different words is caught too.
+     */
+    public function test_no_sentence_is_printed_twice_on_the_two_factor_page(): void
+    {
+        $user = $this->admin(confirmed: false);
+
+        $html = $this->actingAs($user)
+            ->followingRedirects()
+            ->get(self::PANEL)
+            ->assertOk()
+            ->getContent();
+
+        $body = preg_replace('#<(script|style|svg)[^>]*>.*?</\1>#si', ' ', substr($html, (int) strpos($html, '<body')));
+        $text = trim((string) preg_replace('/\s+/', ' ', strip_tags((string) $body)));
+
+        $sentences = [];
+
+        foreach (preg_split('/(?<=[.!?])\s+/', $text) as $sentence) {
+            $sentence = trim($sentence);
+
+            if (mb_strlen($sentence) < 20) {
+                continue;
+            }
+
+            $sentences[$sentence] = ($sentences[$sentence] ?? 0) + 1;
+        }
+
+        $repeated = array_keys(array_filter($sentences, static fn (int $n): bool => $n > 1));
+
+        $this->assertSame([], $repeated, 'a sentence is printed more than once: '.implode(' | ', $repeated));
+    }
+
+    /** The layout owns session('status'); a page must not render it again. */
+    public function test_only_the_layout_renders_the_status_flash(): void
+    {
+        $page = (string) file_get_contents(resource_path('views/admin/two-factor-setup.blade.php'));
+
+        $this->assertStringNotContainsString("session('status')", $page);
+
+        $layout = (string) file_get_contents(resource_path('views/layouts/admin.blade.php'));
+
+        $this->assertStringContainsString("session('status')", $layout, 'the layout is the single owner');
+    }
+
+    /**
+     * E4 — every widget link is a real route, not a placeholder.
+     */
+    public function test_every_dashboard_link_is_a_real_route(): void
+    {
+        Inquiry::factory()->create();
+        Project::factory()->published()->create();
+
+        $html = $this->actingAs($this->admin())->get(self::PANEL)->assertOk()->getContent();
+
+        preg_match_all('#href="(http://localhost/admin[^"]*)"#', $html, $matches);
+
+        $this->assertNotEmpty($matches[1], 'the dashboard should link into the admin');
+
+        foreach (array_unique($matches[1]) as $url) {
+            $path = (string) parse_url($url, PHP_URL_PATH);
+
+            $this->actingAs($this->admin())
+                ->get($path)
+                ->assertOk("$path is linked from the dashboard but does not resolve");
+        }
+    }
+
+    /** The stats carry their filter, so a count opens the thing it counted. */
+    public function test_the_stats_link_with_their_filter_applied(): void
+    {
+        $html = $this->actingAs($this->admin())->get(self::PANEL)->assertOk()->getContent();
+
+        foreach ([
+            'admin/inquiries?status=new',
+            'admin/projects?status=draft',
+            'admin/articles?status=draft',
+            'admin/projects?status=published',
+        ] as $expected) {
+            $this->assertStringContainsString(
+                str_replace('&', '&amp;', $expected),
+                $html,
+                "the dashboard should deep-link to $expected"
+            );
+        }
+    }
+
+    /**
+     * E6 — the pipeline appears on a real failure, names the reason, and
+     * links to the failed images; and hides itself when nothing is wrong.
+     */
+    public function test_the_pipeline_appears_on_failure_and_hides_when_idle(): void
+    {
+        $this->actingAs($this->admin());
+
+        // Idle: absent.
+        $this->assertFalse(MediaPipeline::canView());
+        $this->get(self::PANEL)->assertOk()->assertDontSee('The media pipeline');
+
+        // Broken: present, with the reason and a link to the failures.
+        Media::factory()->create([
+            'status' => MediaStatus::Failed,
+            'original_filename' => 'coast-0412.arw',
+            'failure_reason' => 'Unsupported colour profile.',
+        ]);
+
+        $this->assertTrue(MediaPipeline::canView());
+
+        $this->get(self::PANEL)
+            ->assertOk()
+            ->assertSee('The media pipeline')
+            ->assertSee('coast-0412.arw')
+            ->assertSee('Unsupported colour profile.')
+            ->assertSee('admin/media?status=failed', escape: false);
     }
 }

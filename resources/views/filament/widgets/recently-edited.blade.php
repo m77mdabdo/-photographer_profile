@@ -5,8 +5,15 @@
         icon="heroicon-o-clock">
 
         @if ($rows->isEmpty())
-            {{-- An empty state that reads as a beginning, not a fault. --}}
-            <p class="studio-empty">{{ __('studio.recent.empty') }}</p>
+            {{--
+                C3 — an empty state says what will appear here and what to do
+                meanwhile. "Nothing has been edited yet" alone tells a new
+                owner the panel works and nothing else.
+            --}}
+            <p class="studio-empty">
+                {{ __('studio.recent.empty') }}
+                <span class="studio-empty__hint">{{ __('studio.recent.empty_hint') }}</span>
+            </p>
         @else
             <ul class="studio-list" role="list">
                 @foreach ($rows as $row)
@@ -14,15 +21,21 @@
                         <a class="studio-list__link" href="{{ $row['url'] }}">{{ $row['label'] }}</a>
 
                         <span class="studio-list__meta">
-                            <span class="studio-list__kind">{{ $row['kind'] }}</span>
+                            <span>{{ $row['kind'] }}</span>
                             <span aria-hidden="true">·</span>
-                            <span class="studio-list__status">{{ $row['status'] }}</span>
+                            <span>{{ $row['status'] }}</span>
                             <span aria-hidden="true">·</span>
                             <time datetime="{{ $row['at']?->toIso8601String() }}">{{ $row['at']?->diffForHumans() }}</time>
                         </span>
                     </li>
                 @endforeach
             </ul>
+        @endif
+
+        @if ($allUrl)
+            <x-slot name="footerActions">
+                <a class="studio-more" href="{{ $allUrl }}">{{ __('studio.recent.open_all') }}</a>
+            </x-slot>
         @endif
     </x-filament::section>
 </x-filament-widgets::widget>

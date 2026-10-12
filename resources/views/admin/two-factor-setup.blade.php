@@ -1,13 +1,21 @@
 <x-layouts::admin title="Two-factor authentication">
     <h1 class="admin-heading">Two-factor authentication required</h1>
 
-    @if (session('status'))
-        <p class="auth-status" role="status" aria-live="polite">{{ session('status') }}</p>
-    @endif
+    {{--
+        NO FLASH BLOCK HERE, DELIBERATELY.
 
+        The layout renders the status flash for every page, so a second copy on
+        this page printed the same sentence twice, directly under a heading
+        that said the same thing a third way — three statements of one fact,
+        one of them word-for-word repeated.
+
+        The layout is the single owner of that flash. A page that wants to say
+        something extra says something else. A test asserts this file does not
+        reach for it again.
+    --}}
     <p class="admin-note">
-        The admin area requires a confirmed second factor. Enrol an authenticator
-        app, then confirm a code to finish.
+        Enrol an authenticator app, then confirm a code to finish. You will be
+        asked for a code from it each time you sign in.
     </p>
 
     {{-- Fortify supplies these endpoints; the markup is ours. --}}

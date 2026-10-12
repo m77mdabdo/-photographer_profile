@@ -40,7 +40,14 @@ class MediaPipeline extends Widget
      */
     protected static bool $isLazy = false;
 
-    protected static ?int $sort = 2;
+    /*
+     * C2 — FIRST WHEN IT APPEARS, because it is the only widget that reports
+     * something BROKEN. A failed encode means a published page is showing a
+     * missing frame right now, and nothing else on this dashboard is an
+     * emergency. It is absent the rest of the time, so the position costs
+     * nothing on a healthy day.
+     */
+    protected static ?int $sort = 1;
 
     protected int | string | array $columnSpan = 'full';
 
@@ -55,6 +62,16 @@ class MediaPipeline extends Widget
         return Media::query()
             ->whereIn('status', [MediaStatus::Pending, MediaStatus::Processing, MediaStatus::Failed])
             ->exists();
+    }
+
+    /**
+     * A filtered link to the media library, or null if it does not exist yet.
+     *
+     * @param  array<string, string>  $filters
+     */
+    private function link(string $route, array $filters = []): ?string
+    {
+        return \Illuminate\Support\Facades\Route::has($route) ? route($route, $filters) : null;
     }
 
     /** @return array<string, mixed> */
@@ -75,7 +92,13 @@ class MediaPipeline extends Widget
                 ->latest('updated_at')
                 ->limit(5)
                 ->get(['id', 'original_filename', 'failure_reason']),
-            'mediaUrl' => route('admin.media.index'),
+            /*
+             * C1/C4 — the link lands on the FAILED images, not on the library.
+             * "Three failed" is only useful if the next click is the three.
+             */
+            'failedUrl' => $this->link('admin.media.index', ['status' => MediaStatus::Failed->value]),
+            'processingUrl' => $this->link('admin.media.index', ['status' => MediaStatus::Processing->value]),
+            'mediaUrl' => $this->link('admin.media.index'),
         ];
     }
 }

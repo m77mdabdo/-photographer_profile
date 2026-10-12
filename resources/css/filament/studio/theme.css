@@ -5,59 +5,81 @@
  * THE STUDIO PANEL'S THEME.
  *
  * Filament compiles its own Tailwind build, separate from the public site's
- * and separate from the custom admin's. That separation is the whole reason
- * the public bundle can be byte-identical before and after installing a
- * framework this size — there are now THREE independent stylesheets and none
- * of them can reach the others.
+ * and separate from the custom admin's. That separation is why the public
+ * bundle stays byte-identical with a framework this size installed: three
+ * stylesheets that share tokens.css and fonts.css by @import and share
+ * nothing else.
  *
- * WHAT THIS FILE DOES, AND WHAT IT DELIBERATELY DOES NOT
+ * ───────────────────────────────────────────────────────────────────────────
+ * THEMED THROUGH TOKENS, NOT THROUGH COMPONENTS.
  *
- * It imports the site's real design tokens and the real self-hosted typefaces,
- * then maps Filament's own variables onto them. It does NOT restyle Filament's
- * components one by one: a panel rebuilt button by button stops receiving
- * upstream fixes and starts being a fork. The goal is that Filament's
- * components are rendered in this studio's materials, not that they are
- * replaced.
- * ═══════════════════════════════════════════════════════════════════════════
+ * Filament 5 is Tailwind 4, so its entire compiled stylesheet is written
+ * against theme tokens — `var(--radius-lg)`, `var(--color-gray-700)`,
+ * `var(--font-sans)`. Redefining a token in the @theme block below changes
+ * every one of its usages at once, upstream code included, and keeps
+ * receiving upstream fixes.
+ *
+ * Restyling component by component would have worked and would have been a
+ * fork. The count makes the argument: --radius-lg alone is used 109 times in
+ * the compiled CSS, --radius-xl 38, --radius-md 21, --radius-sm 2. One block
+ * below replaces all 170; a component-by-component pass would have been 170
+ * chances to miss one and a permanent merge conflict with every release.
+ *
+ * What is NOT a token — a handful of states Filament hard-codes, and our own
+ * dashboard furniture — is at the bottom, deliberately short.
+ * ───────────────────────────────────────────────────────────────────────────
  */
 
 /*
- * THE REAL TYPEFACES, self-hosted, already on disk.
- *
- * fonts.css declares @font-face for Archivo, Inter Tight and JetBrains Mono
- * with the same unicode-range splits and the same size-adjust fallbacks the
- * public site uses. Importing it rather than restating it means the panel can
- * never drift onto a different cut of the same family — and costs nothing,
- * because the browser has usually already fetched them from the public site.
+ * The real typefaces and the design tokens, self-hosted, already on disk.
+ * Imported rather than restated so the panel can never drift onto a different
+ * cut of the same family, and so --accent, --bg and the rest mean here exactly
+ * what they mean on the public site.
  */
 @import '../../fonts.css';
 @import '../../tokens.css';
 
 @theme {
+    /* ---- Type ---------------------------------------------------------- */
+
     /*
-     * Filament's type scale, pointed at our families.
-     *
-     * The display face is used for headings only. Filament sets body copy in
-     * its own stack at 14px; Inter Tight at that size is what the public
-     * site's captions use, so the panel reads as the same document family
-     * without anything being resized.
+     * Three roles, the same three files the public site serves. The display
+     * face is for headings; Inter Tight carries body copy at the 14px Filament
+     * sets it in, which is the size the public site's captions use.
      */
     --font-sans: 'Inter Tight', 'Inter Fallback', system-ui, sans-serif;
     --font-serif: 'Archivo', 'Archivo Fallback', Arial, sans-serif;
     --font-mono: 'JetBrains Mono', 'Mono Fallback', ui-monospace, Menlo, monospace;
+
+    /* ---- Geometry ------------------------------------------------------- */
+
+    /*
+     * SQUARE, EVERYWHERE, IN FOUR LINES.
+     *
+     * The public site has no rounded corner anywhere — the plate, the frames,
+     * the rules and the archive cells are all hard-edged, and after the
+     * typography it is the most recognisable thing about it. Filament's
+     * default 0.75rem radius is the single detail that makes every Filament
+     * panel look like every other Filament panel.
+     *
+     * Avatars and toggles keep their own shapes, because those are set with
+     * `border-radius: 9999px` rather than through this scale.
+     */
+    --radius-sm: 0;
+    --radius-md: 0;
+    --radius-lg: 0;
+    --radius-xl: 0;
+    --radius-2xl: 0;
+    --radius-3xl: 0;
 }
 
 /*
  * ── THE TWO REGISTERS ──────────────────────────────────────────────────────
  *
  * The public site is dark by default with a light register underneath, both
- * driven by semantic aliases that tokens.css reassigns wholesale. Filament
- * has the same arrangement under different names, so the mapping is a
- * translation table rather than a redesign.
- *
- * Mapped on :root AND on .dark, because Filament toggles a class while
- * tokens.css answers prefers-color-scheme — two mechanisms for one question,
- * and this is where they are reconciled.
+ * driven by semantic aliases that tokens.css reassigns wholesale. Filament has
+ * the same arrangement under different names, so this is a translation table
+ * rather than a redesign.
  */
 :root,
 .fi-body {
@@ -70,98 +92,169 @@
     --studio-on-accent: var(--on-accent);
 }
 
-/* ── Chrome ───────────────────────────────────────────────────────────── */
+/* ---- Chrome ------------------------------------------------------------ */
 
 .fi-body {
     background-color: var(--studio-bg);
     color: var(--studio-text);
-    font-family: var(--font-sans);
 }
 
 .fi-sidebar,
-.fi-topbar > nav {
+.fi-topbar > nav,
+.fi-topbar {
     background-color: var(--studio-surface);
     border-color: var(--studio-line);
 }
 
 /*
- * The brand, set in the display face at the size the public header uses.
- * This is the single loudest signal that the panel belongs to this studio
- * rather than to Filament, and it costs three declarations.
+ * D2 — THE BRAND, set in the display face at the weight the public header
+ * uses. This is the loudest single signal that the panel belongs to this
+ * studio rather than to Filament, and it costs four declarations.
  */
 .fi-logo {
     font-family: var(--font-serif);
-    font-variation-settings: 'wght' 700;
+    font-variation-settings: 'wght' 800;
     letter-spacing: -0.01em;
     text-transform: uppercase;
     color: var(--studio-text);
 }
 
+/* Arabic has no condensed display face and is unicase — see ADR 0003. */
+[dir='rtl'] .fi-logo,
+[lang='ar'] .fi-logo {
+    font-family: var(--font-sans);
+    font-variation-settings: 'wght' 700;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
 /*
- * Section headings and page titles in the display face. Filament sets these
- * in its sans; the difference between a stock panel and a designed one is
- * largely that headings and body are not the same face.
+ * Page and section headings in the display face. Filament sets these in its
+ * sans; headings and body sharing one face is most of what makes an admin look
+ * undesigned.
  */
 .fi-header-heading,
 .fi-section-header-heading,
-.fi-modal-heading {
+.fi-modal-heading,
+.fi-wi-stats-overview-stat-value {
     font-family: var(--font-serif);
     font-variation-settings: 'wght' 700;
     letter-spacing: -0.015em;
 }
 
+[dir='rtl'] .fi-header-heading,
+[dir='rtl'] .fi-section-header-heading {
+    font-family: var(--font-sans);
+    letter-spacing: normal;
+}
+
 /*
- * Numbers in the mono, everywhere. The public site sets every figure — EXIF,
- * dates, dimensions, the archive counts — in JetBrains Mono, and a dashboard
- * whose statistics are in the body face reads as a different product.
+ * Figures in the mono with tabular numerals, as every figure on the public
+ * site is — EXIF, dates, dimensions, the archive counts.
  */
 .fi-wi-stats-overview-stat-value,
+.studio-stat__value,
 .studio-pipeline__count,
-.fi-ta-text-item-label time,
-.studio-list__meta time {
+.studio-list__meta time,
+.studio-list__meta {
     font-family: var(--font-mono);
-    font-variation-settings: 'wght' 500;
     font-feature-settings: 'tnum' 1;
 }
 
-/* ── Surfaces ─────────────────────────────────────────────────────────── */
+/* ---- B2: where you are ------------------------------------------------- */
 
 /*
- * HARD EDGES, NOT ROUNDED CARDS.
+ * THE ACTIVE ITEM, UNMISTAKABLE.
  *
- * The public site has no rounded corners anywhere: the plate, the frames, the
- * rules and the archive cells are all hard-edged, and that is the most
- * recognisable thing about it after the typography. Filament's default is a
- * 0.75rem radius on every surface, which is the single detail that makes an
- * admin look like every other admin.
+ * Filament marks it with a tinted pill, which at this palette's contrast is
+ * nearly invisible — the client's "nothing says where you are". The public
+ * site marks a current nav item with a rule in the accent, so the panel does
+ * the same: a solid bar on the LEADING edge (logical, so it mirrors in
+ * Arabic), the label in full strength, the icon in the accent.
  */
-.fi-section,
-.fi-wi-stats-overview-stat,
-.fi-modal-window,
-.fi-dropdown-panel,
-.fi-input-wrp {
-    border-radius: 0;
-    border-color: var(--studio-line);
-    background-color: var(--studio-surface);
+.fi-sidebar-item.fi-active > a,
+.fi-sidebar-item.fi-active > button {
+    position: relative;
+    background-color: color-mix(in srgb, var(--studio-accent) 12%, transparent);
+    color: var(--studio-text);
 }
 
-.fi-btn {
-    border-radius: 0;
-    font-variation-settings: 'wght' 550;
-    letter-spacing: 0.01em;
+.fi-sidebar-item.fi-active > a::before,
+.fi-sidebar-item.fi-active > button::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: 3px;
+    background-color: var(--studio-accent);
+}
+
+.fi-sidebar-item.fi-active .fi-sidebar-item-label {
+    font-variation-settings: 'wght' 600;
 }
 
 /*
- * The accent rule under a primary action, drawn the way the public site draws
- * every rule: a hairline in the accent, full width, no shadow.
+ * The group headings: small, mono, tracked — the same voice the public site
+ * labels a section with.
  */
-.fi-btn-color-primary {
-    background-color: var(--studio-accent);
-    color: var(--studio-on-accent);
-    box-shadow: none;
+.fi-sidebar-group-label {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--studio-muted);
 }
 
-/* ── The dashboard's own furniture ────────────────────────────────────── */
+[dir='rtl'] .fi-sidebar-group-label {
+    font-family: var(--font-sans);
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+/*
+ * A disabled module reads as a promise, not as a broken link: the label is
+ * quietened and the cursor says so, but it stays legible so the structure is
+ * readable before it is complete.
+ */
+.fi-sidebar-item a[aria-disabled='true'] {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* ---- C5: density ------------------------------------------------------- */
+
+/*
+ * AN ADMIN IS A WORKING SURFACE, NOT AN EDITORIAL PAGE.
+ *
+ * The public site's generous negative space is the wrong model here: the Task
+ * 30 dashboard put one stat in a card tall enough for three lines and left two
+ * thirds of a 1440px screen empty. Filament's section padding is tuned for
+ * forms, which are sparse by nature; a dashboard is a reading surface and
+ * wants the density of a contact sheet.
+ */
+.fi-section-content {
+    padding: 1rem 1.25rem;
+}
+
+.fi-section-header {
+    padding: 0.875rem 1.25rem;
+}
+
+.fi-wi-stats-overview-stat {
+    padding: 0.875rem 1rem;
+}
+
+.fi-page {
+    gap: 1rem;
+}
+
+/* ---- Our own furniture -------------------------------------------------- */
+
+.studio-stat__value {
+    font-size: 1.75rem;
+    line-height: 1;
+    font-variation-settings: 'wght' 700;
+}
 
 .studio-pipeline {
     display: grid;
@@ -174,13 +267,13 @@
 .studio-pipeline__cell {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    padding: 0.875rem 1rem;
+    gap: 0.2rem;
+    padding: 0.75rem 0.875rem;
     background-color: var(--studio-surface);
 }
 
 .studio-pipeline__count {
-    font-size: 1.5rem;
+    font-size: 1.375rem;
     line-height: 1;
     color: var(--studio-muted);
 }
@@ -190,101 +283,159 @@
 
 .studio-pipeline__label {
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: 0.625rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--studio-muted);
 }
 
 .studio-failures {
-    margin-top: 0.875rem;
+    margin-top: 0.75rem;
     display: grid;
-    gap: 0.5rem;
+    gap: 0.4rem;
 }
 
 .studio-failures__item {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+    align-items: baseline;
     font-size: 0.8125rem;
-}
-
-.studio-failures__name { font-family: var(--font-mono); color: var(--studio-text); }
-.studio-failures__reason { color: var(--danger-text); }
-
-.studio-list { display: grid; gap: 0.875rem; }
-
-.studio-list__item {
-    display: grid;
-    gap: 0.25rem;
-    padding-bottom: 0.875rem;
+    padding-bottom: 0.4rem;
     border-bottom: 1px solid var(--studio-line);
 }
 
-.studio-list__item:last-child { border-bottom: 0; padding-bottom: 0; }
+.studio-failures__item:last-child { border-bottom: 0; padding-bottom: 0; }
+.studio-failures__name { font-family: var(--font-mono); color: var(--studio-text); }
+.studio-failures__reason { color: var(--danger-text); }
+
+.studio-list { display: grid; }
+
+.studio-list__item {
+    display: grid;
+    gap: 0.15rem;
+    padding-block: 0.6rem;
+    border-bottom: 1px solid var(--studio-line);
+}
+
+.studio-list__item:first-child { padding-block-start: 0; }
+.studio-list__item:last-child { border-bottom: 0; padding-block-end: 0; }
 
 .studio-list__link {
     font-family: var(--font-serif);
     font-variation-settings: 'wght' 650;
-    font-size: 1rem;
+    font-size: 0.9375rem;
+    line-height: 1.2;
     color: var(--studio-text);
     text-decoration: none;
 }
 
+[dir='rtl'] .studio-list__link { font-family: var(--font-sans); }
+
 .studio-list__link:hover { color: var(--studio-accent); }
 
-.studio-list__meta,
 .studio-list__excerpt {
     font-size: 0.8125rem;
     color: var(--studio-muted);
 }
 
 .studio-list__meta {
-    font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: 0.625rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
+    color: var(--studio-muted);
     display: flex;
-    gap: 0.4rem;
+    gap: 0.35rem;
     flex-wrap: wrap;
+}
+
+[dir='rtl'] .studio-list__meta {
+    font-family: var(--font-sans);
+    letter-spacing: normal;
+    text-transform: none;
 }
 
 .studio-list__item--unread .studio-list__link { color: var(--studio-accent); }
 
-.studio-badge,
-.studio-badge--unread {
+.studio-badge {
     font-family: var(--font-mono);
-    font-size: 0.625rem;
+    font-size: 0.5625rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    padding: 0.1rem 0.4rem;
+    padding: 0.05rem 0.3rem;
     border: 1px solid currentColor;
     color: var(--studio-accent);
+    vertical-align: 0.1em;
 }
 
+/*
+ * C3 — the empty states. Two lines: what will appear here, and what to do
+ * meanwhile. A single "Nothing yet" tells a new owner the panel is working and
+ * nothing else.
+ */
 .studio-empty {
     font-size: 0.875rem;
     color: var(--studio-muted);
+    margin: 0;
 }
 
-/* ── RTL ──────────────────────────────────────────────────────────────── */
-
-/*
- * Filament handles its own direction from <html dir>, which SetLocale already
- * writes. These are the few places OUR furniture used a physical property.
- * Logical properties throughout, so there is no second RTL stylesheet to keep
- * in sync — the lesson from the public site's honeypot, which parked itself
- * off the left edge and made the Arabic contact page 11,439px wide.
- */
-[dir='rtl'] .studio-list__meta,
-[dir='rtl'] .studio-failures__item {
-    flex-direction: row;
+.studio-empty__hint {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 0.8125rem;
+    color: var(--studio-muted);
+    opacity: 0.8;
 }
 
-[dir='rtl'] .fi-logo {
-    /* The display face has no Arabic coverage; the brand falls back to the
-       text face rather than to whatever the OS supplies. See ADR 0003. */
+/* A section's own footer link, in the mono voice. */
+.studio-more {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--studio-accent);
+    text-decoration: none;
+}
+
+[dir='rtl'] .studio-more {
     font-family: var(--font-sans);
     letter-spacing: normal;
     text-transform: none;
+}
+
+.studio-more:hover { text-decoration: underline; }
+
+/*
+ * C5 — DENSITY ON A PHONE.
+ *
+ * At 390 the four stats filled the entire screen and the owner scrolled past
+ * three numbers to reach the first list. A dashboard whose first screen is one
+ * number is a poster, which is the thing this task exists to stop.
+ *
+ * The page gutter and the stat padding both come down; the type does not,
+ * because a smaller screen is not a reason for smaller numbers.
+ */
+@media (max-width: 48rem) {
+    .fi-main {
+        padding-inline: 0.75rem;
+        padding-block: 1rem;
+    }
+
+    .fi-page { gap: 0.75rem; }
+
+    .fi-wi-stats-overview-stat { padding: 0.625rem 0.75rem; }
+
+    .fi-section-content { padding: 0.75rem 0.875rem; }
+    .fi-section-header { padding: 0.75rem 0.875rem; }
+
+    /*
+     * ONE STAT PER ROW, which is what Filament already does.
+     *
+     * Two across was tried and reverted: overriding grid-template-columns
+     * fights Filament's own column classes, so the cards stopped filling their
+     * track and every label wrapped onto three lines. Four narrow boxes of
+     * wrapped text is less readable than four wide ones, and the scroll it
+     * saved was not worth it. The padding above is where the density came
+     * from; the column count was not the problem.
+     */
 }

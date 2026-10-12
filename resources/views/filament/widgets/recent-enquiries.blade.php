@@ -5,7 +5,10 @@
         icon="heroicon-o-envelope">
 
         @if ($enquiries->isEmpty())
-            <p class="studio-empty">{{ __('studio.enquiries.empty') }}</p>
+            <p class="studio-empty">
+                {{ __('studio.enquiries.empty') }}
+                <span class="studio-empty__hint">{{ __('studio.enquiries.empty_hint') }}</span>
+            </p>
         @else
             <ul class="studio-list" role="list">
                 @foreach ($enquiries as $enquiry)
@@ -13,12 +16,12 @@
                         <a class="studio-list__link" href="{{ route('admin.inquiries.show', $enquiry) }}">
                             {{ $enquiry->name }}
                             @if ($enquiry->status === \App\Enums\InquiryStatus::New)
-                                <span class="studio-badge studio-badge--unread">{{ __('studio.enquiries.unread') }}</span>
+                                <span class="studio-badge">{{ __('studio.enquiries.unread') }}</span>
                             @endif
                         </a>
 
-                        {{-- The first line, so the enquiry can be triaged without opening it. --}}
-                        <span class="studio-list__excerpt">{{ \Illuminate\Support\Str::limit((string) $enquiry->message, 90) }}</span>
+                        {{-- The first line, so it can be triaged without opening it. --}}
+                        <span class="studio-list__excerpt">{{ \Illuminate\Support\Str::limit((string) $enquiry->message, 80) }}</span>
 
                         <span class="studio-list__meta">
                             <time datetime="{{ $enquiry->created_at?->toIso8601String() }}">{{ $enquiry->created_at?->diffForHumans() }}</time>
@@ -28,8 +31,10 @@
             </ul>
         @endif
 
-        <x-slot name="footerActions">
-            <x-filament::link :href="$indexUrl">{{ __('studio.enquiries.open_all') }}</x-filament::link>
-        </x-slot>
+        @if ($indexUrl)
+            <x-slot name="footerActions">
+                <a class="studio-more" href="{{ $indexUrl }}">{{ __('studio.enquiries.open_all') }}</a>
+            </x-slot>
+        @endif
     </x-filament::section>
 </x-filament-widgets::widget>

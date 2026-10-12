@@ -26,6 +26,7 @@ use Filament\Support\Enums\Width;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -229,70 +230,113 @@ class StudioPanelProvider extends PanelProvider
      *
      * @return list<NavigationGroup>
      */
+    /**
+     * FIVE GROUPS, NAMED FOR WHAT THE OWNER IS DOING.
+     *
+     * Eleven items in a flat list is a list, not a structure — you read all of
+     * it every time because nothing tells you which part you are in. Grouped,
+     * the eye goes to one of five short lists.
+     *
+     * Named in the studio's voice rather than after the models underneath:
+     * "The work" rather than "Projects", because somebody opening this is
+     * thinking about their work, not about a database table. "People &
+     * messages" rather than "CRM".
+     *
+     * Closures, not strings: panel() runs at provider registration, before
+     * SetLocale, so a plain __() would freeze the boot locale for the life of
+     * the process and give an Arabic editor an English sidebar.
+     *
+     * @return list<NavigationGroup>
+     */
     private function navigationGroups(): array
     {
         return [
-            /*
-             * CLOSURES, NOT STRINGS, AND THE REASON IS THE BOOT ORDER.
-             *
-             * panel() runs when the provider registers — before any
-             * middleware, so before SetLocale has read the editor's stored
-             * language. A plain __() here resolves once, in whatever locale
-             * the process booted in, and is then frozen for every request
-             * that process serves: an Arabic editor got an RTL panel with an
-             * English sidebar, and the panel's own chrome was translated
-             * around it, which looks like a half-finished translation rather
-             * than a caching bug.
-             *
-             * A closure is evaluated at render, by which time the locale is
-             * known. Filament accepts one everywhere a label is taken.
-             */
-            NavigationGroup::make(fn (): string => __('studio.nav.work')),
-            NavigationGroup::make(fn (): string => __('studio.nav.words')),
-            NavigationGroup::make(fn (): string => __('studio.nav.studio')),
-            NavigationGroup::make(fn (): string => __('studio.nav.settings')),
+            NavigationGroup::make(fn (): string => __('studio.nav.group_work')),
+            NavigationGroup::make(fn (): string => __('studio.nav.group_writing')),
+            NavigationGroup::make(fn (): string => __('studio.nav.group_studio')),
+            NavigationGroup::make(fn (): string => __('studio.nav.group_people')),
+            NavigationGroup::make(fn (): string => __('studio.nav.group_system')),
         ];
     }
 
     /**
-     * THE MODULES THAT DO NOT EXIST YET, SHOWN AS DISABLED.
+     * THE TWELVE MODULES, IN TWO TIERS.
      *
-     * The custom admin does this and it is the right behaviour: a navigation
-     * that silently omits what has not been built yet tells an owner the
-     * product is smaller than it is, and tells a developer nothing at all. A
-     * disabled item with a note says "this is coming, and here is where it
-     * will be" — which is also what makes a half-built panel reviewable.
+     * B4: nothing is hidden because it has not been moved yet. A navigation
+     * that silently omits what is unbuilt tells an owner the product is
+     * smaller than it is and tells a developer nothing — so the whole
+     * structure is visible from the first day and fills in.
      *
-     * Each one points at the custom admin's working version, so the item is
-     * not merely a promise: it is a link to the thing that already works.
+     * The two tiers are different states and look different:
      *
-     * They are removed one at a time as each Resource lands.
+     *   OLD PANEL — the module works today, in the admin this one replaces.
+     *               The item is a live link and says where it goes. An owner
+     *               can do the job; it is the address that is temporary.
+     *
+     *   PLANNED   — nothing exists anywhere. The item is visible, disabled,
+     *               and says so. It is a promise, not a broken link.
+     *
+     * Each tier loses its badge as the matching Resource lands in task 31.
      *
      * @return list<NavigationItem>
      */
     private function plannedModules(): array
     {
-        $planned = [
-            ['projects', 'work', 'heroicon-o-photo', 'admin.projects.index'],
-            ['media', 'work', 'heroicon-o-rectangle-stack', 'admin.media.index'],
-            ['journal', 'words', 'heroicon-o-pencil-square', 'admin.articles.index'],
-            ['pages', 'words', 'heroicon-o-document-text', 'admin.pages.index'],
-            ['services', 'studio', 'heroicon-o-briefcase', 'admin.services.index'],
-            ['enquiries', 'studio', 'heroicon-o-envelope', 'admin.inquiries.index'],
-            ['clients', 'studio', 'heroicon-o-identification', 'admin.clients.index'],
-            ['site_settings', 'settings', 'heroicon-o-cog-6-tooth', 'admin.settings.index'],
-            ['redirects', 'settings', 'heroicon-o-arrow-path-rounded-square', 'admin.redirects.index'],
+        /** [key, group, icon, route or null] */
+        $modules = [
+            ['projects', 'group_work', 'heroicon-o-photo', 'admin.projects.index'],
+            ['media', 'group_work', 'heroicon-o-rectangle-stack', 'admin.media.index'],
+            ['categories', 'group_work', 'heroicon-o-tag', 'admin.categories.index'],
+            ['galleries', 'group_work', 'heroicon-o-squares-2x2', null],
+
+            ['journal', 'group_writing', 'heroicon-o-pencil-square', 'admin.articles.index'],
+            ['pages', 'group_writing', 'heroicon-o-document-text', 'admin.pages.index'],
+
+            ['services', 'group_studio', 'heroicon-o-briefcase', 'admin.services.index'],
+            ['clients', 'group_studio', 'heroicon-o-identification', 'admin.clients.index'],
+
+            ['enquiries', 'group_people', 'heroicon-o-envelope', 'admin.inquiries.index'],
+            ['users', 'group_people', 'heroicon-o-users', null],
+
+            ['settings', 'group_system', 'heroicon-o-cog-6-tooth', 'admin.settings.index'],
+            ['redirects', 'group_system', 'heroicon-o-arrow-path-rounded-square', 'admin.redirects.index'],
         ];
 
         $items = [];
 
-        foreach ($planned as [$label, $group, $icon, $route]) {
-            $items[] = NavigationItem::make(fn (): string => __('studio.nav.'.$label))
+        /*
+         * EVERY LOOKUP IS DEFERRED, and Route::has is the reason.
+         *
+         * panel() runs when the provider registers — before the router has
+         * loaded a single route file. Asking Route::has() there returns false
+         * for every route that exists, so all twelve modules rendered as
+         * "planned" and none of them linked anywhere. The same trap as the
+         * locale labels, which froze at boot for the same reason.
+         *
+         * Closures are evaluated at render, by which time the routes are
+         * registered and the locale is known.
+         */
+        foreach ($modules as [$key, $group, $icon, $route]) {
+            $exists = static fn (): bool => $route !== null && Route::has($route);
+
+            $items[] = NavigationItem::make(fn (): string => __('studio.nav.'.$key))
                 ->group(fn (): string => __('studio.nav.'.$group))
                 ->icon($icon)
-                ->url(fn (): string => \Illuminate\Support\Facades\Route::has($route) ? route($route) : '#')
-                ->badge(fn (): string => __('studio.nav.not_moved'), color: 'gray')
-                ->openUrlInNewTab(false);
+                ->url(fn (): string => $exists() ? route($route) : '#')
+                ->badge(
+                    fn (): string => __($exists() ? 'studio.nav.in_old_panel' : 'studio.nav.planned'),
+                    color: 'gray',
+                )
+                /*
+                 * A planned item must not be reachable by mouse OR keyboard.
+                 * aria-disabled alone still takes focus and still follows the
+                 * href, so tabindex carries the rest and the theme's cursor
+                 * rule says so visually.
+                 */
+                ->extraAttributes(fn (): array => $exists() ? [] : [
+                    'aria-disabled' => 'true',
+                    'tabindex' => '-1',
+                ]);
         }
 
         return $items;

@@ -814,6 +814,41 @@ async function run() {
     let guestContext = null
     let guestPage = null
 
+    /** Build a fresh session-less page and point it at this viewport/theme. */
+    const makeGuestPage = async (viewport, theme) => {
+      guestContext = await browser.createBrowserContext()
+      guestPage = await guestContext.newPage()
+
+      if (LOCALE !== 'en') {
+        await guestContext.setCookie({ name: 'locale', value: LOCALE, url: BASE, path: '/' })
+      }
+
+      return guestPage
+    }
+
+    /** Use the shared guest page, rebuilding it once if its session has died. */
+    const withGuestPage = async (viewport, theme) => {
+      const prepare = async (page) => {
+        await page.setViewport({ width: viewport.width, height: viewport.height })
+        await page.emulateMediaFeatures([
+          { name: 'prefers-color-scheme', value: theme.scheme },
+          ...(REDUCED ? [{ name: 'prefers-reduced-motion', value: 'reduce' }] : []),
+        ])
+
+        return page
+      }
+
+      if (guestPage && !guestPage.isClosed()) {
+        try {
+          return await prepare(guestPage)
+        } catch {
+          // Its session is gone even though the handle says otherwise.
+        }
+      }
+
+      return prepare(await makeGuestPage(viewport, theme))
+    }
+
     for (const theme of THEMES) {
       for (const viewport of VIEWPORTS) {
         const page = await browser.newPage()
@@ -849,33 +884,21 @@ async function run() {
 
           if (target.guest) {
             /*
-             * RECREATED IF IT HAS GONE. Reusing one page across the whole
-             * matrix saved the context churn that was dropping Chrome's
-             * connection, and introduced the opposite failure:
+             * A USABLE SESSION-LESS PAGE, however many attempts that takes.
              *
-             *     TargetCloseError: Protocol error
-             *       (Emulation.setTouchEmulationEnabled): Session closed.
+             * Two failure modes were hit here in turn. Creating a context per
+             * target meant eight per run and Chrome dropped the connection
+             * (ConnectionClosedError at createBrowserContext). Reusing one
+             * produced the opposite (TargetCloseError: Session closed) because
+             * something between viewports closes it, and `isClosed()` is not a
+             * reliable witness when the whole CONTEXT has gone — the page
+             * object still reports open while its session is dead.
              *
-             * Something between viewports closes it. Rather than guess what,
-             * the handle is checked before use — the only state that matters
-             * is "a usable session-less page", not "the same one as before".
+             * So the handle is not trusted at all: it is used, and if using it
+             * throws, it is rebuilt once and used again. The only state that
+             * matters is that the next navigation happens without a session.
              */
-            if (!guestPage || guestPage.isClosed()) {
-              guestContext = await browser.createBrowserContext()
-              guestPage = await guestContext.newPage()
-
-              if (LOCALE !== 'en') {
-                await guestContext.setCookie({ name: 'locale', value: LOCALE, url: BASE, path: '/' })
-              }
-            }
-
-            activePage = guestPage
-
-            await activePage.setViewport({ width: viewport.width, height: viewport.height })
-            await activePage.emulateMediaFeatures([
-              { name: 'prefers-color-scheme', value: theme.scheme },
-              ...(REDUCED ? [{ name: 'prefers-reduced-motion', value: 'reduce' }] : []),
-            ])
+            activePage = await withGuestPage(viewport, theme)
           }
 
           const consoleErrors = []
