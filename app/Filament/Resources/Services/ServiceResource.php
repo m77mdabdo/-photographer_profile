@@ -8,7 +8,7 @@ use App\Filament\Resources\Services\Pages\CreateService;
 use App\Filament\Resources\Services\Pages\EditService;
 use App\Filament\Resources\Services\Pages\ListServices;
 use App\Filament\Support\AddressesRecordsById;
-use App\Filament\Support\MediaField;
+use App\Filament\Forms\Components\MediaPickerField;
 use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\Translatable;
 use App\Models\Service;
@@ -68,7 +68,7 @@ class ServiceResource extends Resource
             Section::make(__('studio.section.imagery'))
                 ->description(__('studio.section.imagery_hint'))
                 ->schema([
-                    MediaField::make('cover_media_id', __('studio.field.cover')),
+                    MediaPickerField::make('cover_media_id')->label(__('studio.field.cover')),
                 ]),
 
             Section::make(__('studio.section.publishing'))

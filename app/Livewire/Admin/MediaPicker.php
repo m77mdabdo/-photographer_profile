@@ -140,6 +140,34 @@ class MediaPicker extends Component
 
         $this->selected[] = $mediaId;
         $this->limitMessage = '';
+
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * THE ANCHOR IS SET HERE, AND IT WAS NOT.
+         *
+         * Task 34 A1 measured it: click one image, shift-click a fourth, and
+         * the selection was TWO images rather than four.
+         *
+         * choose() set the anchor and the grid never calls choose() in multi
+         * mode — the tile's handler is
+         *
+         *     $event.shiftKey ? $wire.extendTo(id) : $wire.toggle(id)
+         *
+         * so a plain click landed here and left anchorId null. The first
+         * shift-click then found no anchor, fell through extendTo()'s guard
+         * to a plain toggle, and set the anchor on its way out. Only the
+         * SECOND shift-click extended anything.
+         *
+         * The bug hid behind that fallback: nothing errored, an image was
+         * selected, and the gesture quietly did a quarter of its job. The
+         * docblock above extendTo() has described shift-range selection as
+         * working since Task 17.
+         *
+         * The last image added is the natural anchor. Removing one does not
+         * move it: deselecting is a correction, not a new starting point.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        $this->anchorId = $mediaId;
     }
 
     /**

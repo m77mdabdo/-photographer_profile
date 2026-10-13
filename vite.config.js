@@ -68,6 +68,7 @@ export default defineConfig({
                  * test suite checks the public hashes either way.
                  */
                 'resources/js/studio/story.js',
+                'resources/js/studio/focal.js',
             ],
             refresh: true,
         }),

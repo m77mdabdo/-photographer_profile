@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Pages;
 
 use App\Models\Setting;
-use App\Filament\Support\MediaField;
+use App\Filament\Forms\Components\MediaPickerField;
 use App\Support\Locale;
 use App\Support\SettingGroups;
 use App\Support\Settings as SettingsStore;
@@ -201,7 +201,8 @@ class Settings extends Page
                     ->content(__('studio.settings.not_translatable'));
             }
 
-            return MediaField::make($path, $setting->key)
+            return MediaPickerField::make($path)
+                ->label($setting->key)
                 ->helperText(__('studio.settings.media_hint'));
         }
 

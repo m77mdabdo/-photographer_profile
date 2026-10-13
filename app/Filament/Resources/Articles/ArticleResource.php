@@ -8,7 +8,7 @@ use App\Filament\Resources\Articles\Pages\CreateArticle;
 use App\Filament\Resources\Articles\Pages\EditArticle;
 use App\Filament\Resources\Articles\Pages\ListArticles;
 use App\Filament\Support\AddressesRecordsById;
-use App\Filament\Support\MediaField;
+use App\Filament\Forms\Components\MediaPickerField;
 use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\Translatable;
 use App\Models\Article;
@@ -69,7 +69,7 @@ class ArticleResource extends Resource
             Section::make(__('studio.section.imagery'))
                 ->description(__('studio.section.imagery_hint'))
                 ->schema([
-                    MediaField::make('featured_media_id', __('studio.field.featured')),
+                    MediaPickerField::make('featured_media_id')->label(__('studio.field.featured')),
                 ]),
 
             Section::make(__('studio.section.filing'))

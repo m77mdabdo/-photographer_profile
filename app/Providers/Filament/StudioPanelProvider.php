@@ -119,6 +119,30 @@ class StudioPanelProvider extends PanelProvider
             PanelsRenderHook::SCRIPTS_BEFORE,
             fn (): string => Blade::render('@livewireScripts'),
         );
+
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * THE MEDIA PICKER, MOUNTED ONCE PER PAGE.
+         *
+         * Task 34 A1. Two things open it and neither can mount it itself:
+         *
+         *   MediaPickerField   a form field, which may appear twice on one
+         *                      form (a project has a cover AND a hero) — so
+         *                      mounting it per field would put two pickers on
+         *                      the page, both listening for `open-picker`,
+         *                      both opening.
+         *   StoryBuilder       mounted as a page, dispatching `open-picker`
+         *                      from its own JavaScript since Task 32.
+         *
+         * One instance, at the end of the body, listening for the event. It
+         * renders nothing until it is opened, so the cost on a page with no
+         * picker on it is one idle Livewire component.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::BODY_END,
+            fn (): string => Blade::render('@livewire(\'admin.media-picker\')'),
+        );
     }
 
     public function panel(Panel $panel): Panel

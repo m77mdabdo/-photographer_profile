@@ -152,6 +152,7 @@ final class ResourceDefaults
         array $translated = [],
         array $lead = [],
         EditAction|false|null $edit = null,
+        ?ForceDeleteAction $forceDelete = null,
     ): array {
         $actions = [
             ...$lead,
@@ -179,7 +180,12 @@ final class ResourceDefaults
                 ->authorizationTooltip()
                 ->authorizationNotification(),
 
-            ForceDeleteAction::make()
+            /*
+             * A resource may harden this one — the media library makes you
+             * type the filename — but it may not move it or drop the
+             * refusal, which is the part that has to be the same everywhere.
+             */
+            ($forceDelete ?? ForceDeleteAction::make())
                 ->authorizationTooltip()
                 ->authorizationNotification(),
         ];

@@ -516,7 +516,34 @@
 .picker__header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:var(--sp-4); }
 .picker__heading { font-size:var(--fs-h3); }
 .picker__grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:var(--sp-4); margin:var(--sp-4) 0; }
-.picker__item { display:block; width:100%; text-align:left; border:1px solid transparent; }
+.picker__item { display:block; width:100%; text-align:start; border:1px solid transparent; }
+
+/*
+ * ───────────────────────────────────────────────────────────────────────────
+ * THE TILES ARE RAGGED ON PURPOSE. CHECKED BEFORE CHANGING IT.
+ *
+ * The grid does not line up: a portrait tile is twice the height of a
+ * landscape one beside it. A square crop was written here to tidy it, and
+ * then measured in the browser — object-fit applied and aspect-ratio did
+ * not, because <x-picture> sets
+ *
+ *     style="aspect-ratio: 2852 / 3565; background-image: url(<lqip>)"
+ *
+ * inline, and an inline style beats a stylesheet. That is the SAME picture
+ * component the public site uses, and the inline ratio is what reserves the
+ * box before the file arrives — the reason this grid does not shift under
+ * the cursor while it loads.
+ *
+ * So the raggedness is the cost of two things worth more than tidy rows: no
+ * layout shift, and a photographer seeing the SHAPE of each frame while
+ * choosing between them. Picking a cover is partly picking a portrait or a
+ * landscape, and a square crop hides exactly that.
+ *
+ * Left alone deliberately. If it is ever tidied, the tile is the thing to
+ * give a fixed height, not the image — fighting the picture component would
+ * cost the placeholder too.
+ * ───────────────────────────────────────────────────────────────────────────
+ */
 .picker__item:hover, .picker__item:focus-visible { border-color:var(--accent); }
 .picker__name { display:block; margin-top:var(--sp-2); font-size:var(--fs-caption); overflow-wrap:anywhere; }
 .picker__footer { margin-top:var(--sp-4); padding-top:var(--sp-4); border-top:1px solid var(--border); }
@@ -565,7 +592,8 @@
 .picker__status { font-size: var(--fs-small); margin: var(--sp-3) 0; }
 .picker__limit { color: var(--danger-text); font-size: var(--fs-caption); }
 .picker__item.is-selected { border-color: var(--accent); }
-.picker__order { position: absolute; margin: var(--sp-2); padding: 0 var(--sp-2); background: var(--accent); color: var(--on-accent); font-size: var(--fs-meta); }
+/* Logical insets: the order badge belongs at the tile's starting corner. */
+.picker__order { position: absolute; inset-block-start: 0; inset-inline-start: 0; margin: var(--sp-2); padding: 0 var(--sp-2); background: var(--accent); color: var(--on-accent); font-size: var(--fs-meta); }
 .picker__item { position: relative; }
 
 /* Builder warnings: distinct causes must look distinct. */

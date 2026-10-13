@@ -35,6 +35,26 @@ export function initFocalPoint() {
         inputX.value = round(x);
         inputY.value = round(y);
 
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * TELL THE PAGE THE VALUE MOVED.
+         *
+         * Assigning .value fires nothing. In the custom admin that was fine —
+         * the form reads the inputs on submit — but the panel's page binds
+         * them, and a binding only learns about a change from an `input`
+         * event. Without this, dragging the handle moved the dot and saved
+         * the OLD coordinates, which is the worst shape of bug: the thing you
+         * did is on screen and not in the database.
+         *
+         * Dispatched on the element and allowed to bubble, so it works for
+         * whatever is listening — Livewire here, nothing in the old admin.
+         * The inputs' own `input` listener below only moves the handle and
+         * never calls apply(), so there is no loop.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        inputX.dispatchEvent(new Event('input', { bubbles: true }));
+        inputY.dispatchEvent(new Event('input', { bubbles: true }));
+
         if (readout) {
             readout.textContent = `Focal point: ${round(x).toFixed(3)}, ${round(y).toFixed(3)}`;
         }

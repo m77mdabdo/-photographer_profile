@@ -144,6 +144,29 @@ class CrudPathsTest extends TestCase
             // A select's value has to be one it offers.
             $field instanceof \Filament\Forms\Components\Select => $this->selectValue($field),
 
+                /*
+                 * ───────────────────────────────────────────────────────────
+                 * A MEDIA FIELD HOLDS AN ID, AND USED TO BE A SELECT.
+                 *
+                 * Task 34 A1 replaced the filename Select with the real
+                 * picker, which is a custom Field — so it stopped matching
+                 * the Select arm above and fell through to the generic string
+                 * marker, and three resources failed with
+                 *
+                 *     Incorrect integer value: 'created9853 cover media id'
+                 *     for column 'cover_media_id'
+                 *
+                 * The application was right and the payload was nonsense,
+                 * which is the only kind of test failure worth fixing in the
+                 * test. A real processed image, because that is the only
+                 * thing the field is ever allowed to hold.
+                 * ───────────────────────────────────────────────────────────
+                 */
+            $field instanceof \App\Filament\Forms\Components\MediaPickerField
+                => \App\Models\Media::factory()->create([
+                    'status' => \App\Enums\MediaStatus::Ready,
+                ])->getKey(),
+
             str_contains($name, 'email') => $marker.'@example.com',
             str_contains($name, 'url') => 'https://example.com/'.$marker,
 
@@ -504,10 +527,86 @@ class CrudPathsTest extends TestCase
 
         $record->delete();
 
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * SOME FORCE DELETES ASK FOR MORE THAN A CLICK.
+         *
+         * Task 34 A6 gave the media library a typed confirmation: destroying
+         * an original asks the Owner to type its filename, because it is the
+         * only irreversible act in the application and a confirmation button
+         * is one stray Enter key.
+         *
+         * This test used to call the action bare and assert the row was gone,
+         * which stopped being true. Rather than special-casing media, it now
+         * asserts the stronger thing for EVERY resource that has such a
+         * guard: the record SURVIVES without the confirmation, and goes with
+         * it. A resource that quietly drops its guard fails here.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        $guarded = $this->forceDeleteConfirmation($resource, $record);
+
+        if ($guarded !== null) {
+            Livewire::test($resource::getPages()['index']->getPage())
+                ->callAction(TestAction::make('forceDelete')->table($record), ['confirmation' => 'not-the-name'])
+                ->assertHasActionErrors(['confirmation']);
+
+            $this->assertDatabaseHas(
+                $record->getTable(),
+                [$record->getKeyName() => $record->getKey()],
+                connection: $record->getConnectionName(),
+            );
+        }
+
         Livewire::test($resource::getPages()['index']->getPage())
-            ->callAction(TestAction::make('forceDelete')->table($record));
+            ->callAction(
+                TestAction::make('forceDelete')->table($record),
+                $guarded === null ? [] : ['confirmation' => $guarded],
+            );
 
         $this->assertDatabaseMissing($record->getTable(), [$record->getKeyName() => $record->getKey()]);
+    }
+
+    /**
+     * The text a resource's force-delete demands, or null if it demands none.
+     *
+     * Read off the ACTION rather than hardcoded, so a guard added to a second
+     * resource is covered without editing this file.
+     *
+     * @param  class-string<Resource>  $resource
+     */
+    private function forceDeleteConfirmation(string $resource, \Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        $table = Livewire::test($resource::getPages()['index']->getPage())->instance()->getTable();
+
+        foreach ($table->getRecordActions() as $action) {
+            if ($action->getName() !== 'forceDelete') {
+                continue;
+            }
+
+            /*
+             * getSchema() takes a container to build into, so the declaration
+             * is read off the protected property instead. Reading it rather
+             * than hardcoding "media" is the point: a guard added to another
+             * resource is covered the day it is written.
+             */
+            $declared = (new \ReflectionProperty($action, 'schema'))->getValue($action);
+
+            if ($declared === null) {
+                return null;
+            }
+
+            $components = is_array($declared) ? $declared : [];
+
+            foreach ($components as $component) {
+                if ($component instanceof \Filament\Forms\Components\Field
+                    && $component->getName() === 'confirmation') {
+                    // Media is the only one so far, and it wants the filename.
+                    return $record->original_filename;
+                }
+            }
+        }
+
+        return null;
     }
 
     // ---------------------------------------------------------------- 5b

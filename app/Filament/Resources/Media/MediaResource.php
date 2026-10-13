@@ -6,12 +6,14 @@ namespace App\Filament\Resources\Media;
 
 use App\Enums\MediaStatus;
 use App\Filament\Resources\Media\Pages\ListMedia;
+use App\Filament\Resources\Media\Pages\ViewMedia;
 use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\AddressesRecordsById;
 use App\Filament\Support\Translatable;
 use App\Models\Media;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ForceDeleteAction;
@@ -300,7 +302,60 @@ class MediaResource extends Resource
              * destructive in slot three, where every other resource had
              * Restore. On the one screen in the panel with hundreds of rows.
              */
-            ->recordActions(ResourceDefaults::rowActionsFor(Media::class, self::TRANSLATED))
+            /*
+             * The detail screen leads the row: it is where the focal point,
+             * the camera data and the renditions are, and it is the reason
+             * the custom admin can be deleted. Edit stays for the words.
+             */
+            ->recordActions(ResourceDefaults::rowActionsFor(
+                Media::class,
+                self::TRANSLATED,
+                /*
+                 * ───────────────────────────────────────────────────────────
+                 * A6 — TYPE THE FILENAME TO DESTROY AN ORIGINAL.
+                 *
+                 * The custom admin has a separate trash SCREEN, and the
+                 * screen is not the capability worth keeping: the trashed
+                 * filter lists the same rows in the same table, with the same
+                 * search, the same columns and the same restore — more, not
+                 * less, than a bespoke page gave.
+                 *
+                 * What the screen did carry, and what a filter does not, is
+                 * this: force-deleting asked the Owner to TYPE THE FILENAME
+                 * first. Filament's default is a confirmation modal with a
+                 * button, and a modal with a button is one stray Enter key
+                 * away from destroying a photograph nobody else has a copy
+                 * of. Soft deletion is reversible and this is not — it is the
+                 * only irreversible act in the library.
+                 *
+                 * So the screen goes and the guard stays, which is the right
+                 * way round.
+                 * ───────────────────────────────────────────────────────────
+                 */
+                forceDelete: ForceDeleteAction::make()
+                    ->modalDescription(fn (Media $record): string => __('studio.media.destroy_warning', [
+                        'name' => $record->original_filename,
+                    ]))
+                    ->schema([
+                        TextInput::make('confirmation')
+                            ->label(__('studio.media.destroy_confirm_label'))
+                            ->required()
+                            ->autocomplete(false)
+                            ->helperText(fn (Media $record): string => $record->original_filename)
+                            ->rule(fn (Media $record): \Closure => function (string $attribute, mixed $value, \Closure $fail) use ($record): void {
+                                if ((string) $value !== $record->original_filename) {
+                                    $fail(__('studio.media.destroy_mismatch'));
+                                }
+                            }),
+                    ]),
+                lead: [
+                    Action::make('inspect')
+                        ->label(__('studio.media.detail'))
+                        ->icon('heroicon-o-magnifying-glass')
+                        ->url(fn (Media $record): string => ViewMedia::getUrl(['record' => $record]))
+                        ->authorize(fn (Media $record): bool => auth()->user()?->can('view', $record) ?? false),
+                ],
+            ))
             ->toolbarActions([
                 BulkActionGroup::make([
                     /*
@@ -355,10 +410,40 @@ class MediaResource extends Resource
             ->withCount('usages');
     }
 
+    /*
+     * ───────────────────────────────────────────────────────────────────────
+     * A NOTE ON THE ROUTE KEY, BECAUSE THE OBVIOUS ASSUMPTION IS WRONG.
+     *
+     * Media::getRouteKeyName() returns 'uuid' — that is what the PUBLIC site
+     * binds on, and the custom admin's detail screen was /legacy/media/{uuid}
+     * for the same reason. Filament does not inherit it. Measured:
+     *
+     *     MediaResource::getRecordRouteKeyName()  id
+     *     Media::getRouteKeyName()                uuid
+     *
+     * So the panel's detail page is /admin/media/{id}, and a first attempt at
+     * this page carried a comment claiming it was keyed by uuid "because the
+     * model says so". It 404'd on every link.
+     *
+     * Overriding getRecordRouteKeyName() to 'uuid' fixes the BINDING and not
+     * the URL: Filament builds the parameter from getKey(), so links came out
+     * as /admin/media/193 while resolution expected a uuid, and the page
+     * 404'd the other way round. Making both agree means overriding Filament's
+     * url generation as well, which is forking a framework seam for a
+     * cosmetic gain.
+     *
+     * Left as the framework default. Part B's redirect from the old address
+     * looks the uuid up and sends the reader to the id, which is a lookup in
+     * one place rather than an override in two.
+     * ───────────────────────────────────────────────────────────────────────
+     */
     public static function getPages(): array
     {
         return [
             'index' => ListMedia::route('/'),
+
+            // Task 34 A2–A5. Keyed by uuid — see getRecordRouteKeyName().
+            'view' => ViewMedia::route('/{record}'),
         ];
     }
 }

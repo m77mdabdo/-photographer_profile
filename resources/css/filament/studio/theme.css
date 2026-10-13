@@ -303,6 +303,183 @@
 }
 
 
+/* ---- A2-A5: the media detail page ---------------------------------------- */
+
+/*
+ * The .focal rules themselves come from auth.css, which this theme imports
+ * for the story builder; these are the page around them. Logical properties
+ * throughout, because this screen is read right-to-left half the time.
+ */
+.studio-media-detail {
+    display: grid;
+    gap: var(--sp-6, 1.5rem);
+}
+
+.studio-media-detail__frame {
+    max-inline-size: 42rem;
+}
+
+.studio-media-detail__heading {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-block-end: var(--sp-2, 0.5rem);
+}
+
+.studio-media-detail__hint,
+.studio-media-detail__empty {
+    font-size: 0.8125rem;
+    opacity: 0.7;
+    margin-block: var(--sp-2, 0.5rem);
+}
+
+/* Two columns where there is room; stacked on a phone. */
+.studio-media-detail__columns {
+    display: grid;
+    gap: var(--sp-6, 1.5rem);
+}
+
+@media (min-width: 48rem) {
+    .studio-media-detail__columns {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.studio-media-detail__facts {
+    display: grid;
+    gap: var(--sp-3, 0.75rem);
+    margin: 0;
+}
+
+.studio-media-detail__facts dt {
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.6;
+}
+
+.studio-media-detail__facts dd {
+    margin: 0;
+}
+
+.studio-media-detail__table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.studio-media-detail__table th,
+.studio-media-detail__table td {
+    text-align: start;
+    padding-block: 0.4rem;
+    padding-inline-end: var(--sp-4, 1rem);
+    border-block-end: 1px solid var(--studio-border, rgb(255 255 255 / 0.08));
+}
+
+.studio-media-detail__table th {
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    font-weight: 500;
+}
+
+/*
+ * Numbers read left-to-right in both languages, so the cells carrying them
+ * are marked dir="ltr" in the markup and get a tabular face here.
+ */
+.studio-media-detail__mono {
+    font-variant-numeric: tabular-nums;
+}
+
+.studio-media-detail__warning {
+    margin-block-start: var(--sp-3, 0.75rem);
+    font-size: 0.8125rem;
+    /* The accent border goes on the side the text starts from. */
+    border-inline-start: 2px solid var(--studio-accent, currentColor);
+    padding-inline-start: var(--sp-3, 0.75rem);
+}
+
+.studio-media-detail__focal-fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2, 0.5rem);
+    margin-block: var(--sp-3, 0.75rem);
+}
+
+.studio-media-detail__focal-fields input {
+    inline-size: 7rem;
+    min-block-size: 2.75rem;
+}
+
+.studio-media-detail__save {
+    min-block-size: 2.75rem;
+}
+
+/* ---- A1: the media picker field ------------------------------------------ */
+
+/*
+ * The field's own surface. The picker MODAL is styled by auth.css, which this
+ * theme imports for the story builder; these are the few rules for what the
+ * form shows between visits to it.
+ *
+ * Logical properties throughout — this form is read right-to-left half the
+ * time, and Task 33 found what physical ones do to an Arabic layout.
+ */
+.studio-media-field {
+    display: grid;
+    gap: var(--sp-3, 0.75rem);
+}
+
+.studio-media-field__chosen {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3, 0.75rem);
+    margin: 0;
+}
+
+.studio-media-field__thumb {
+    inline-size: 4rem;
+    block-size: 4rem;
+    object-fit: cover;
+    /* Square, like everything else in this panel. */
+    border-radius: 0;
+    border: 1px solid var(--studio-border, rgb(255 255 255 / 0.1));
+}
+
+.studio-media-field__meta {
+    display: grid;
+    gap: 0.125rem;
+    min-inline-size: 0;
+}
+
+.studio-media-field__alt {
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.studio-media-field__name,
+.studio-media-field__empty {
+    font-size: 0.8125rem;
+    opacity: 0.7;
+    overflow-wrap: anywhere;
+}
+
+.studio-media-field__empty {
+    margin: 0;
+}
+
+.studio-media-field__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2, 0.5rem);
+}
+
+/* D2 applies here too: these are the buttons a phone has to hit. */
+.studio-media-field__action {
+    min-block-size: 2.75rem;
+}
+
 /* ---- D2: touch targets --------------------------------------------------- */
 
 /*

@@ -10,7 +10,7 @@ use App\Filament\Resources\Projects\Pages\ListProjects;
 use App\Filament\Resources\Projects\Pages\ProjectPreviewRedirect;
 use App\Filament\Resources\Projects\Pages\ProjectStory;
 use App\Filament\Support\AddressesRecordsById;
-use App\Filament\Support\MediaField;
+use App\Filament\Forms\Components\MediaPickerField;
 use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\Translatable;
 use App\Models\Project;
@@ -75,8 +75,8 @@ class ProjectResource extends Resource
                 ->description(__('studio.section.imagery_hint'))
                 ->columns(2)
                 ->schema([
-                    MediaField::make('cover_media_id', __('studio.field.cover')),
-                    MediaField::make('hero_media_id', __('studio.field.hero')),
+                    MediaPickerField::make('cover_media_id')->label(__('studio.field.cover')),
+                    MediaPickerField::make('hero_media_id')->label(__('studio.field.hero')),
                 ]),
 
             Section::make(__('studio.section.filing'))

@@ -188,8 +188,23 @@ class SettingsPageTest extends TestCase
 
             $default = $fields['values.'.$token.'.'.Locale::DEFAULT] ?? null;
 
+            /*
+             * ───────────────────────────────────────────────────────────────
+             * STRENGTHENED IN TASK 34 A1.
+             *
+             * This asserted Select::class, which was the strongest thing
+             * available when it was written: the panel had no picker, and a
+             * searchable list of filenames was at least not a text box where
+             * somebody could type an id.
+             *
+             * The panel now mounts the real picker, so the test can say what
+             * it always meant — this setting is chosen by LOOKING at the
+             * photograph. A Select would now fail here, which is right: it
+             * would be a regression, not a different implementation.
+             * ───────────────────────────────────────────────────────────────
+             */
             $this->assertInstanceOf(
-                \Filament\Forms\Components\Select::class,
+                \App\Filament\Forms\Components\MediaPickerField::class,
                 $default,
                 "$key is not a media picker — it is a ".($default === null ? 'missing field' : $default::class)
             );
