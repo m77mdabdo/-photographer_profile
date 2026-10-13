@@ -6,6 +6,7 @@ namespace App\Filament\Resources\Media;
 
 use App\Enums\MediaStatus;
 use App\Filament\Resources\Media\Pages\ListMedia;
+use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\AddressesRecordsById;
 use App\Filament\Support\Translatable;
 use App\Models\Media;
@@ -25,6 +26,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -37,7 +39,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
  * panel edits rows; this one accepts files from the internet, and the three
  * things standing between the studio and a disaster — content-based type
  * detection, the sha256 dedupe and the megapixel ceiling — all live in
- * StoreUploadedMedia. Filament never writes a file; see UploadMedia.
+ * StoreUploadedMedia. Filament never writes a file — see ListMedia::uploadAction(),
+ * which replaces Filament's storage step rather than configuring it.
  */
 class MediaResource extends Resource
 {
@@ -162,11 +165,64 @@ class MediaResource extends Resource
                     ->square()
                     ->size(44),
 
-                TextColumn::make('original_filename')
-                    ->label(__('studio.media.filename'))
-                    ->searchable()
-                    ->sortable()
-                    ->description(fn (Media $record): ?string => $record->getTranslation('alt', null, fallback: false)),
+                /*
+                 * ───────────────────────────────────────────────────────────
+                 * C3 — WHAT IS IN THE PICTURE, NOT WHAT THE FILE IS CALLED.
+                 *
+                 * This column used to lead with original_filename, which on a
+                 * library seeded from stock photography reads:
+                 *
+                 *     pexels-photo-3184465.jpeg
+                 *     pexels-anna-nekrashevich-6802042.jpeg
+                 *
+                 * Ten rows of that is a list you cannot use. Nobody looking
+                 * for the picture of the bride by the window recognises a
+                 * number, so the thumbnail became the only usable column and
+                 * the text beside it was noise.
+                 *
+                 * The alt text is the human name for the image, it is already
+                 * written for every processed file, and it is the thing an
+                 * owner searches by. So it leads, and the filename drops to
+                 * the description line underneath, where it is still there for
+                 * the one case that needs it — matching a row against a file
+                 * on a card or in an email.
+                 *
+                 * An image with no alt text yet says so, in words, instead of
+                 * showing an empty cell: a missing alt is a job to do, not a
+                 * blank. placeholder() styles it as absent rather than as a
+                 * value.
+                 * ───────────────────────────────────────────────────────────
+                 */
+                Translatable::displayColumn(
+                    'alt',
+                    alsoSearch: ['original_filename', 'caption'],
+                    fallback: false,
+                )
+                    ->label(__('studio.media.pictured'))
+                    /*
+                     * THE PLACEHOLDER CARRIES THE FILENAME, AND IT HAS TO.
+                     *
+                     * TextColumn::toHtml() returns EARLY when the state is
+                     * blank (Filament\Tables\Columns\TextColumn, line 304)
+                     * and renders the placeholder ALONE — the description is
+                     * dropped. So an image with no alt text rendered as four
+                     * words and nothing else: no filename, no way to tell
+                     * which picture the row was about beyond squinting at a
+                     * 44px thumbnail.
+                     *
+                     * Those are precisely the rows somebody is on this screen
+                     * to fix. Found by MediaLabelsTest, which asserted the
+                     * filename was reachable on a row with no alt text and
+                     * was right to.
+                     *
+                     * When there is no alt text the filename IS the only name
+                     * the picture has, so it belongs in the sentence that says
+                     * the alt text is missing.
+                     */
+                    ->placeholder(fn (Media $record): string => __('studio.media.no_alt')
+                        .' — '.$record->original_filename)
+                    ->wrap()
+                    ->description(fn (Media $record): string => $record->original_filename),
 
                 TextColumn::make('status')
                     ->label(__('studio.table.status'))
@@ -205,35 +261,46 @@ class MediaResource extends Resource
                         ->mapWithKeys(fn (MediaStatus $s): array => [$s->value => $s->label()])
                         ->all()),
 
+                /*
+                 * "Used anywhere?" is the question behind most visits to this
+                 * screen: an unused image is either a mistake or a deletion
+                 * waiting to happen, and MediaPolicy refuses to delete the
+                 * ones that are in use. Filtering to them is how you find the
+                 * work you can actually do.
+                 */
+                TernaryFilter::make('unused')
+                    ->label(__('studio.filter.usage'))
+                    ->placeholder(__('studio.filter.all'))
+                    ->trueLabel(__('studio.filter.unused_only'))
+                    ->falseLabel(__('studio.filter.used_only'))
+                    ->queries(
+                        true: fn (Builder $query): Builder => $query->whereDoesntHave('usages'),
+                        false: fn (Builder $query): Builder => $query->whereHas('usages'),
+                        blank: fn (Builder $query): Builder => $query,
+                    ),
+
                 TrashedFilter::make(),
             ])
-            ->recordActions([
-                Translatable::editAction(self::TRANSLATED),
-                RestoreAction::make(),
-
-                /*
-                 * THE REFUSAL IS SHOWN, NOT SWALLOWED.
-                 *
-                 * The usage rule is the POLICY's, not a check repeated here:
-                 * MediaPolicy::delete() counts the usages and returns a
-                 * Response carrying that count. But Filament's DEFAULT for a
-                 * denied action is to HIDE it — the editor would find no
-                 * delete button at all, with no hint that there is a reason,
-                 * and the carefully-worded count would never be read by
-                 * anybody. (Written as a comment claiming Filament surfaced
-                 * the message; the test proved it did not.)
-                 *
-                 * authorizationTooltip() keeps the button on screen and
-                 * disabled, with the reason on hover; authorizationNotification()
-                 * shows the same sentence if it is clicked anyway. The custom
-                 * admin shows the reason inline, which is still better — see
-                 * the report.
-                 */
-                DeleteAction::make()
-                    ->authorizationTooltip()
-                    ->authorizationNotification(),
-                ForceDeleteAction::make(),
-            ])
+            /*
+             * THE REFUSAL IS SHOWN, NOT SWALLOWED — AND IN THE SAME SLOT AS
+             * EVERYWHERE ELSE.
+             *
+             * The usage rule is the POLICY's, not a check repeated here:
+             * MediaPolicy::delete() counts the usages and returns a Response
+             * carrying that count. Filament's DEFAULT for a denied action is
+             * to HIDE it, so the editor would find no delete button at all,
+             * no hint that there is a reason, and the carefully-worded count
+             * would never be read by anybody. (This was once written as a
+             * comment claiming Filament surfaced the message; the test proved
+             * it did not.) rowActionsFor() applies the tooltip and the
+             * notification to every destructive action on every resource, so
+             * that cannot be forgotten on the thirteenth.
+             *
+             * C4: this row used to read Edit, RESTORE, Delete, ForceDelete —
+             * destructive in slot three, where every other resource had
+             * Restore. On the one screen in the panel with hundreds of rows.
+             */
+            ->recordActions(ResourceDefaults::rowActionsFor(Media::class, self::TRANSLATED))
             ->toolbarActions([
                 BulkActionGroup::make([
                     /*

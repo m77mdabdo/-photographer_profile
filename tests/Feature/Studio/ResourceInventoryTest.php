@@ -11,6 +11,7 @@ use App\Support\TranslatableSchema;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -287,6 +288,27 @@ class ResourceInventoryTest extends TestCase
      * The relationship counts in these tables (projects_count, usages_count)
      * are the obvious trap, which is why they go through ->counts() rather
      * than a closure reading $record->usages()->count().
+     *
+     * ─────────────────────────────────────────────────────────────────────
+     * TASK 33 C2 — THIS TEST USED TO PASS WITHOUT TESTING ANYTHING.
+     *
+     * It created rows with factories and compared the counts, which is the
+     * right shape. But ArticleFactory sets neither article_category_id nor
+     * author_id, so every row's relationships were NULL — and a null
+     * belongsTo never issues a query. A dotted relationship column could be
+     * added with no eager load, N+1 ten rows, and this test would still have
+     * been green, because the relationship it would have loaded per row did
+     * not exist in the fixture.
+     *
+     * Verified by removing the ->with(['category', 'author']) from
+     * ArticleResource: the test passed. With the backfill below it fails,
+     * 4 queries against 13.
+     *
+     * So the relationships named by the table's own columns are now
+     * populated before measuring. The list of them is read off the live
+     * table rather than hardcoded, so a dotted column added next year is
+     * covered the day it is written.
+     * ─────────────────────────────────────────────────────────────────────
      */
     public function test_no_list_view_queries_per_row(): void
     {
@@ -295,9 +317,11 @@ class ResourceInventoryTest extends TestCase
             $page = $resource::getPages()['index']->getPage();
 
             $model::factory()->create();
+            $this->populateEveryBelongsTo($model);
             $one = $this->countQueriesRendering($page);
 
             $model::factory()->count(9)->create();
+            $this->populateEveryBelongsTo($model);
             $ten = $this->countQueriesRendering($page);
 
             $this->assertSame(
@@ -312,6 +336,53 @@ class ResourceInventoryTest extends TestCase
             );
 
             $model::query()->forceDelete();
+        }
+    }
+
+
+    /**
+     * Give every row every foreign key the model declares.
+     *
+     * NOT just the relationships a column names. The first version of this
+     * read the dotted columns off the table, which was still too narrow to
+     * catch anything: a closure column reading $record->featured?->alt is the
+     * N+1 Filament cannot see coming — applyEagerLoading() only knows about
+     * relationships named in a column — and with featured_media_id null the
+     * relation returns null without touching the database, so the measurement
+     * came back flat for a page that would issue ten queries in production.
+     *
+     * A row in a real list view has its foreign keys filled. The fixture now
+     * says so. Found by writing exactly that bad column and watching the test
+     * stay green twice.
+     *
+     * @param  class-string<Model>  $model
+     */
+    private function populateEveryBelongsTo(string $model): void
+    {
+        $instance = new $model;
+
+        foreach ((new \ReflectionClass($instance))->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
+            if ($method->getNumberOfRequiredParameters() > 0 || $method->isStatic()) {
+                continue;
+            }
+
+            if (($method->getReturnType()?->getName() ?? null) !== BelongsTo::class) {
+                continue;
+            }
+
+            /** @var BelongsTo $relation */
+            $relation = $instance->{$method->getName()}();
+            $related = $relation->getRelated();
+
+            // A self-referencing key would need a second row; none of these
+            // models has one, and guessing at it would be worse than skipping.
+            if ($related::class === $model) {
+                continue;
+            }
+
+            $model::query()->update([
+                $relation->getForeignKeyName() => $related::factory()->create()->getKey(),
+            ]);
         }
     }
 
@@ -347,10 +418,15 @@ class ResourceInventoryTest extends TestCase
 
         foreach ($this->resources() as $resource) {
             $model = $resource::getModel();
+            $page = $resource::getPages()['index']->getPage();
             $model::factory()->count(10)->create();
 
+            // Same reason as above: a count taken over null relationships is
+            // a count of a page nobody will ever see.
+            $this->populateEveryBelongsTo($model);
+
             $counts[Str::of(class_basename($resource))->remove('Resource')->toString()]
-                = $this->countQueriesRendering($resource::getPages()['index']->getPage());
+                = $this->countQueriesRendering($page);
 
             $model::query()->forceDelete();
         }

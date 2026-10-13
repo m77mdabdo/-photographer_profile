@@ -310,6 +310,35 @@
  * read as sliced in half.
  *
  * "Does not overlap" is not the requirement. "Is visibly separate from" is.
+ *
+ * ───────────────────────────────────────────────────────────────────────────
+ * AND IT HAS TO BE A LOGICAL PROPERTY, OR IT IS ONLY TRUE IN ENGLISH.
+ *
+ * The gap above was first written as padding-left and padding-right. Those
+ * are PHYSICAL: they stay on the same side of the screen whatever the writing
+ * direction. The grid columns do not — `grid-column: 10 / -1` resolves to the
+ * right-hand columns in English and the LEFT-hand ones in Arabic, because the
+ * inline axis flips.
+ *
+ * So in Arabic the padding was applied to the side facing away from the
+ * photograph, and the text abutted the plate at exactly the zero pixels this
+ * comment was written to stop:
+ *
+ *     home: .hero__statement sits 0px from the plate edge   at 1440, 1024
+ *     home: .hero__attribution sits 0px from the plate edge at 1440, 1024
+ *     home: .hero__link sits 0px from the plate edge        at 1440, 1024
+ *     home: .hero__link-rule sits 0px from the plate edge   at 1440, 1024
+ *
+ * The same defect, in the same place, on the home page — fixed once for
+ * English and left standing in Arabic, with a paragraph above it explaining
+ * why it mattered. Found by the Arabic matrix in Task 33 D3; it was never run
+ * against the home page before, because the harness gained --locale after
+ * that check was written.
+ *
+ * padding-inline-start is the correct side in BOTH directions: the gap always
+ * belongs on the edge that faces the picture, and the picture is always on
+ * the inline-start side of these columns whichever way the page runs.
+ * ───────────────────────────────────────────────────────────────────────────
  */
 .hero__voice,
 .hero__aside { --hero-plate-gap: var(--sp-6); }
@@ -317,19 +346,19 @@
 .hero--landscape .hero__voice,
 .hero--landscape .hero__aside {
     grid-column: 10 / -1;
-    padding-left: var(--hero-plate-gap);
+    padding-inline-start: var(--hero-plate-gap);
 }
 
 .hero--portrait .hero__voice,
 .hero--portrait .hero__aside {
     grid-column: 1 / span 5;
-    padding-right: var(--hero-plate-gap);
+    padding-inline-end: var(--hero-plate-gap);
 }
 
 .hero--square .hero__voice,
 .hero--square .hero__aside {
     grid-column: 10 / -1;
-    padding-left: var(--hero-plate-gap);
+    padding-inline-start: var(--hero-plate-gap);
 }
 
 .hero__link {
@@ -732,11 +761,12 @@
     .works__item {
         grid-column: 1;
         margin-top: 0;
-        padding-left: calc((var(--start) - 1) * 0.35rem);
+        /* Logical, so the inset reads the same way in Arabic. */
+        padding-inline-start: calc((var(--start) - 1) * 0.35rem);
     }
 
     /* A feature keeps the full measure. */
-    .works__item--feature { padding-left: 0; }
+    .works__item--feature { padding-inline-start: 0; }
 
     .sheet__grid { grid-template-columns: repeat(4, 1fr); }
 }
@@ -747,7 +777,7 @@
     .story__title { max-width: 12ch; }
     .closing__title { max-width: 13ch; }
 
-    .works__item { padding-left: calc((var(--start) - 1) * 0.2rem); }
+    .works__item { padding-inline-start: calc((var(--start) - 1) * 0.2rem); }
     .sheet__grid { grid-template-columns: repeat(3, 1fr); }
 }
 
@@ -854,7 +884,12 @@
     content: '·';
     color: var(--accent);
     font-family: var(--font-mono);
-    margin-right: var(--sp-7);
+    /*
+     * The space goes AFTER the dot, which is to its left in Arabic. As
+     * margin-right the separator hugged the wrong neighbour and read as
+     * belonging to the name before it rather than between the two.
+     */
+    margin-inline-end: var(--sp-7);
 }
 
 .marquee__item a {
@@ -911,7 +946,7 @@
 
         flex-wrap: wrap;
         gap: var(--sp-3) var(--sp-6);
-        padding-left: 0;
+        padding-inline-start: 0;
     }
 
     /* The duplicate has no purpose once nothing is moving. */

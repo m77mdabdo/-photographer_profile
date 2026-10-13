@@ -100,11 +100,22 @@ class ServiceResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('name')
-                    ->label(__('studio.field.name'))
-                    ->searchable()
-                    ->sortable()
-                    ->weight('semibold'),
+                /*
+                 * The summary is what the service actually promises, so it is
+                 * searched; the list stays one line per service.
+                 */
+                Translatable::displayColumn('name', alsoSearch: ['summary']),
+
+                /*
+                 * The price, because the commonest reason to open this list is
+                 * to check or change one. Formatted by the model, which owns
+                 * the pence-to-pounds rule.
+                 */
+                TextColumn::make('price_from_pence')
+                    ->label(__('studio.field.price_from_short'))
+                    ->state(fn (Service $record): ?string => $record->priceFrom())
+                    ->placeholder(__('studio.services.on_request'))
+                    ->color('gray'),
 
                 ResourceDefaults::statusColumn(),
                 Translatable::statusColumn(self::TRANSLATED),
@@ -114,7 +125,7 @@ class ServiceResource extends Resource
                 ResourceDefaults::statusFilter(),
                 ResourceDefaults::trashedFilter(),
             ])
-            ->recordActions(ResourceDefaults::rowActions(self::TRANSLATED))
+            ->recordActions(ResourceDefaults::rowActionsFor(Service::class, self::TRANSLATED))
             ->toolbarActions([ResourceDefaults::bulkActions()])
             ->defaultSort('sort_order')
 

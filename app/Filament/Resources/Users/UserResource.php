@@ -6,6 +6,7 @@ namespace App\Filament\Resources\Users;
 
 use App\Enums\UserRole;
 use App\Filament\Resources\Users\Pages\ManageUsers;
+use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\AddressesRecordsById;
 use App\Models\User;
 use BackedEnum;
@@ -19,6 +20,8 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Illuminate\Support\Str;
 
 /**
@@ -145,20 +148,40 @@ class UserResource extends Resource
                     ->placeholder(__('studio.users.never'))
                     ->toggleable(),
             ])
-            ->recordActions([
-                EditAction::make()
-                    ->using(fn (User $record, array $data): User => self::write($record, $data)),
+            /*
+             * Two questions get asked of a four-person user list: who can do
+             * what, and who has not finished setting up their second factor.
+             * Both are one click now rather than a read of every row.
+             */
+            ->filters([
+                SelectFilter::make('role')
+                    ->label(__('studio.users.role'))
+                    ->options(fn (): array => collect(UserRole::cases())
+                        ->mapWithKeys(fn (UserRole $r): array => [$r->value => $r->label()])
+                        ->all()),
 
-                /*
-                 * The refusals — not yourself, not the last Owner — are shown
-                 * rather than hidden. Filament's default for a denied action
-                 * is to remove the button, which would leave an Owner unable
-                 * to delete somebody and with no idea why.
-                 */
-                DeleteAction::make()
-                    ->authorizationTooltip()
-                    ->authorizationNotification(),
+                TernaryFilter::make('two_factor_confirmed_at')
+                    ->label(__('studio.users.two_factor'))
+                    ->placeholder(__('studio.filter.all'))
+                    ->trueLabel(__('studio.users.two_factor_on'))
+                    ->falseLabel(__('studio.users.two_factor_off'))
+                    ->nullable(),
             ])
+            /*
+             * Edit carries its own ->using(): a password is hashed and a role
+             * is checked against "not the last Owner" in self::write(), never
+             * mass-assigned. So the canonical row is composed around that one
+             * rather than replacing it.
+             *
+             * The refusals — not yourself, not the last Owner — are shown
+             * rather than hidden, which is now true of every resource because
+             * rowActionsFor() does it rather than each resource remembering.
+             */
+            ->recordActions(ResourceDefaults::rowActionsFor(
+                User::class,
+                edit: EditAction::make()
+                    ->using(fn (User $record, array $data): User => self::write($record, $data)),
+            ))
             ->headerActions([
                 CreateAction::make()
                     ->using(fn (array $data): User => self::add($data)),

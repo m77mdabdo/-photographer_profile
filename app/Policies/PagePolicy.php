@@ -40,9 +40,40 @@ class PagePolicy
         return $this->isAdmin($user);
     }
 
-    public function delete(User $user, Page $page): bool
+    /**
+     * ───────────────────────────────────────────────────────────────────────
+     * A LOCKED PAGE IS REFUSED HERE, NOT ONLY IN THE MODEL.
+     *
+     * Page::booted() has a `deleting` hook returning false for a locked page,
+     * and its comment says a locked page "cannot be deleted through any path
+     * — not the admin, not a seeder, not a stray ->delete()". That claim is
+     * TRUE and the guard works. Verified by execution.
+     *
+     * What it does not do is tell anybody. Returning false from a model event
+     * cancels the delete SILENTLY, and this policy said yes — so the panel
+     * drew an enabled Delete button, the owner clicked it, Filament reported
+     * success, and the page was still there with no explanation. The same
+     * silent-success shape as the guarded columns and the dropped role.
+     *
+     * The model keeps its guard: that is the one that holds for a seeder or a
+     * future feature. This one exists so a person is told.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public function delete(User $user, Page $page): Response
     {
-        return $this->isAdmin($user);
+        if (! $this->isAdmin($user)) {
+            return Response::deny('You do not have permission to delete pages.');
+        }
+
+        if ($page->is_locked) {
+            return Response::deny(
+                'This page is linked from the footer by name — the privacy notice and the '
+                .'terms. Deleting it would leave a 404 where a regulator or a client looks, '
+                .'so it is locked. Unlock it in the database if it genuinely has to go.'
+            );
+        }
+
+        return Response::allow();
     }
 
     public function restore(User $user, Page $page): bool
@@ -50,11 +81,18 @@ class PagePolicy
         return $this->isAdmin($user);
     }
 
-    /** Irreversible, so it is the Owner's call alone. */
+    /** Irreversible, so it is the Owner's call alone — and never for a locked page. */
     public function forceDelete(User $user, Page $page): Response
     {
         if ($user->role !== UserRole::Owner) {
             return Response::deny('Only an Owner can permanently delete a page.');
+        }
+
+        if ($page->is_locked) {
+            return Response::deny(
+                'This page is locked because the footer links to it by name. '
+                .'A permanent delete would be the same 404, with no undo.'
+            );
         }
 
         return Response::allow();

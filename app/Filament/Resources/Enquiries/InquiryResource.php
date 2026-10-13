@@ -7,6 +7,7 @@ namespace App\Filament\Resources\Enquiries;
 use App\Enums\InquiryStatus;
 use App\Filament\Resources\Enquiries\Pages\ListInquiries;
 use App\Filament\Resources\Enquiries\Pages\ViewInquiry;
+use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\AddressesRecordsById;
 use App\Models\Inquiry;
 use BackedEnum;
@@ -23,6 +24,7 @@ use Filament\Schemas\Schema;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -202,7 +204,42 @@ class InquiryResource extends Resource
                     ->weight(fn (Inquiry $record): string => $record->status === InquiryStatus::New ? 'bold' : 'normal')
                     ->description(fn (Inquiry $record): string => \Illuminate\Support\Str::limit((string) $record->message, 70)),
 
-                TextColumn::make('email')->searchable()->toggleable(),
+                TextColumn::make('email')->label(__('studio.users.email'))->searchable()->toggleable(),
+
+                /*
+                 * C2 — THE REST OF WHAT AN ENQUIRY IS SEARCHED BY.
+                 *
+                 * Somebody ringing back three weeks later is remembered by
+                 * their company, their number, where the shoot was, or a
+                 * phrase from what they wrote — rarely by the spelling of
+                 * their name, which is the only thing this box used to match.
+                 *
+                 * Hidden by default and searchable anyway: Filament's search
+                 * skips a column only when isHidden() is true, and the
+                 * column-toggle state is not that (CanBeHidden::isHidden
+                 * ignores it), so these are matched without widening the
+                 * table. Asserted, not assumed — see ListViewSearchTest.
+                 */
+                TextColumn::make('company')
+                    ->label(__('studio.enquiries.company'))
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('phone')
+                    ->label(__('studio.enquiries.phone'))
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('location')
+                    ->label(__('studio.field.location'))
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('message')
+                    ->label(__('studio.enquiries.message'))
+                    ->searchable()
+                    ->limit(60)
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('status')
                     ->label(__('studio.table.status'))
@@ -224,14 +261,47 @@ class InquiryResource extends Resource
                     ->options(fn (): array => collect(InquiryStatus::cases())
                         ->mapWithKeys(fn (InquiryStatus $s): array => [$s->value => $s->label()])->all()),
 
+                /*
+                 * Unread is the only filter that answers "what do I have to
+                 * do": status can be set by hand and drifts, read_at is set
+                 * by the act of opening one.
+                 */
+                TernaryFilter::make('unread')
+                    ->label(__('studio.filter.unread'))
+                    ->placeholder(__('studio.filter.all'))
+                    ->trueLabel(__('studio.filter.unread_only'))
+                    ->falseLabel(__('studio.filter.read_only'))
+                    ->queries(
+                        true: fn (Builder $query): Builder => $query->whereNull('read_at'),
+                        false: fn (Builder $query): Builder => $query->whereNotNull('read_at'),
+                        blank: fn (Builder $query): Builder => $query,
+                    ),
+
+                /*
+                 * Shoot type from the data, so the list cannot offer a type
+                 * nobody has ever enquired about.
+                 */
+                SelectFilter::make('project_type')
+                    ->label(__('studio.enquiries.type'))
+                    ->options(fn (): array => Inquiry::query()
+                        ->whereNotNull('project_type')
+                        ->distinct()
+                        ->orderBy('project_type')
+                        ->pluck('project_type', 'project_type')
+                        ->all()),
+
                 TrashedFilter::make(),
             ])
-            ->recordActions([
-                ViewAction::make(),
-                DeleteAction::make(),
-                RestoreAction::make(),
-                ForceDeleteAction::make(),
-            ])
+            /*
+             * View leads and there is no Edit: an enquiry is a record of what
+             * somebody sent, and editing it would make it a record of what we
+             * remember them sending. The rest of the row is everybody else's.
+             */
+            ->recordActions(ResourceDefaults::rowActionsFor(
+                Inquiry::class,
+                lead: [ViewAction::make()],
+                edit: false,
+            ))
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),

@@ -21,6 +21,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -105,11 +106,37 @@ class ArticleResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('title')
-                    ->label(__('studio.field.title'))
-                    ->searchable()
-                    ->sortable()
-                    ->weight('semibold'),
+                /*
+                 * The excerpt is searched but never shown: it is the one
+                 * place the subject of a piece is written in plain words, so
+                 * a half-remembered phrase finds the article the title does
+                 * not name.
+                 */
+                Translatable::displayColumn('title', alsoSearch: ['excerpt']),
+
+                /*
+                 * Category and author, shown: a journal is read by section
+                 * and, where more than one person writes, by who wrote it.
+                 *
+                 * No eager load is declared for these, and none is needed:
+                 * Filament calls applyEagerLoading() for every column naming
+                 * a relationship (HasRecords, line 51), so a dotted column is
+                 * one query whatever the row count. A ->with() here was
+                 * written first and removed once that was measured rather
+                 * than assumed. What Filament CANNOT see is a closure reading
+                 * a relationship it was never told about — which is what
+                 * ResourceInventoryTest now provokes on purpose.
+                 */
+                TextColumn::make('category.name')
+                    ->label(__('studio.filter.category'))
+                    ->badge()
+                    ->color('gray')
+                    ->placeholder(__('studio.filter.uncategorised'))
+                    ->toggleable(),
+
+                TextColumn::make('author.name')
+                    ->label(__('studio.recent.editor'))
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 ResourceDefaults::statusColumn(),
                 Translatable::statusColumn(self::TRANSLATED),
@@ -117,9 +144,21 @@ class ArticleResource extends Resource
             ])
             ->filters([
                 ResourceDefaults::statusFilter(),
+
+                SelectFilter::make('article_category_id')
+                    ->label(__('studio.filter.category'))
+                    ->relationship('category', 'name')
+                    ->searchable()
+                    ->preload(),
+
+                SelectFilter::make('author_id')
+                    ->label(__('studio.recent.editor'))
+                    ->relationship('author', 'name')
+                    ->preload(),
+
                 ResourceDefaults::trashedFilter(),
             ])
-            ->recordActions(ResourceDefaults::rowActions(self::TRANSLATED))
+            ->recordActions(ResourceDefaults::rowActionsFor(Article::class, self::TRANSLATED))
             ->toolbarActions([ResourceDefaults::bulkActions()])
             ->defaultSort('updated_at', 'desc');
     }

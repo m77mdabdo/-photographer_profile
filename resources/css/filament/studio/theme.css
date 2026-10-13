@@ -208,8 +208,7 @@
  * site is — EXIF, dates, dimensions, the archive counts.
  */
 .fi-wi-stats-overview-stat-value,
-.studio-stat__value,
-.studio-pipeline__count,
+.studio-figure__value,
 .studio-list__meta time,
 .studio-list__meta {
     font-family: var(--font-mono);
@@ -303,66 +302,234 @@
     gap: 1rem;
 }
 
-/* ---- Our own furniture -------------------------------------------------- */
 
-.studio-stat__value {
-    font-size: 1.75rem;
-    line-height: 1;
-    font-variation-settings: 'wght' 700;
+/* ---- D2: touch targets --------------------------------------------------- */
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * EVERY INTERACTIVE THING IS AT LEAST 44px TALL.
+ *
+ * Measured in a real browser at 390px before writing a line of this: 41
+ * elements under 44px, led by the fifteen sidebar items — the most-tapped
+ * controls in the whole panel — and the eight table sort buttons.
+ *
+ * 44px is the figure both Apple and the WCAG 2.2 target-size criterion settle
+ * on, and it is not an accessibility nicety on this product: the person using
+ * it is a photographer checking enquiries on a phone, often one-handed, often
+ * outdoors.
+ *
+ * min-block-size rather than height, so a two-line label grows instead of
+ * overflowing — "Journal categories" wraps at 390 and must still be one
+ * tappable block.
+ *
+ * The skip link is deliberately NOT included: it is visually hidden until
+ * focused, and giving a hidden element a 44px box puts an invisible target in
+ * the corner of every page.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+.fi-sidebar-item-btn,
+.fi-dropdown-list-item,
+.fi-user-menu-trigger,
+.fi-icon-btn,
+.fi-ta-header-cell-sort-btn,
+.fi-ac-link-action,
+.fi-ac-icon-btn-action,
+.fi-pagination-item,
+/*
+ * .fi-btn as well as .fi-pagination-item, because simple pagination renders
+ * its Previous/Next as plain buttons and they measured 36px — the first pass
+ * of this rule listed only .fi-pagination-item and missed them. They are the
+ * control you reach for most on a phone, where a table shows five rows.
+ */
+.fi-btn,
+/*
+ * The wordmark links to the dashboard, and it measured 20px. It is drawn
+ * TWICE — once in the sidebar header, once in the topbar — and only the
+ * topbar copy is on screen at 1440, which is why fixing the sidebar one
+ * alone changed nothing visible.
+ */
+.fi-sidebar-header-logo-ctn > a,
+.fi-topbar-start > a {
+    min-block-size: 2.75rem;
+    display: inline-flex;
+    align-items: center;
 }
 
-.studio-pipeline {
+/* The sidebar item fills its row, so the whole strip is the target. */
+.fi-sidebar-item-btn {
+    display: flex;
+    inline-size: 100%;
+}
+
+/*
+ * An icon button is square as well as tall, or a 44px-high 20px-wide target
+ * is still a miss.
+ */
+.fi-icon-btn,
+.fi-ac-icon-btn-action {
+    min-inline-size: 2.75rem;
+    justify-content: center;
+}
+
+/*
+ * A sort button sits inside a table header cell, which has its own padding.
+ * Stretching the BUTTON rather than padding the cell keeps the header row the
+ * height Filament drew it and makes the whole label tappable.
+ */
+.fi-ta-header-cell-sort-btn {
+    inline-size: 100%;
+    justify-content: flex-start;
+}
+
+[dir='rtl'] .fi-ta-header-cell-sort-btn {
+    justify-content: flex-end;
+}
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * NO HOVER-ONLY AFFORDANCE.
+ *
+ * Filament fades a sort button's arrow in on hover. On a touch screen there
+ * is no hover, so the only signal that a column CAN be sorted never appears —
+ * and on a dashboard whose whole point is "sortable tables", that is the
+ * feature becoming invisible to half the people using it.
+ *
+ * The arrow is permanently visible at reduced contrast and strengthens on
+ * hover and focus, which keeps the hover feedback without making it the only
+ * way to know.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+.fi-ta-header-cell-sort-btn .fi-icon {
+    opacity: 0.45;
+    transition: opacity 120ms ease;
+}
+
+.fi-ta-header-cell-sort-btn:hover .fi-icon,
+.fi-ta-header-cell-sort-btn:focus-visible .fi-icon,
+.fi-ta-header-cell-sort-btn[aria-sort] .fi-icon {
+    opacity: 1;
+}
+
+/* ---- Our own furniture -------------------------------------------------- */
+
+/* ---- B1: the figures band ----------------------------------------------- */
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ONE BAND, FOUR CLUSTERS, NO CARDS.
+ *
+ * Eight figures as eight Filament stat cards either wrap into two ragged rows
+ * at 1440 or squeeze until "Journal drafts" breaks across three lines. One
+ * bordered band with a hairline between clusters reads as a row of facts, and
+ * the clusters give the eye somewhere to pause.
+ *
+ * AT 390 the clusters stack and the figures INSIDE each cluster stay side by
+ * side — four short rows rather than eight tall ones. Nothing is hidden at
+ * any width.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+.studio-figures {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     gap: 1px;
     background-color: var(--studio-line);
     border: 1px solid var(--studio-line);
 }
 
-.studio-pipeline__cell {
+@media (min-width: 48rem) {
+    .studio-figures {
+        /*
+         * Weighted to the content: the pictures cluster holds four figures and
+         * the inbox holds one, so equal columns would leave one cramped and one
+         * mostly empty.
+         */
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 2.4fr);
+    }
+}
+
+.studio-figures__cluster {
+    background-color: var(--studio-surface);
+    padding: var(--studio-space-4, 1rem);
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
-    padding: 0.75rem 0.875rem;
-    background-color: var(--studio-surface);
+    gap: 0.75rem;
 }
 
-.studio-pipeline__count {
-    font-size: 1.375rem;
-    line-height: 1;
-    color: var(--studio-muted);
-}
-
-.studio-pipeline__cell--active .studio-pipeline__count { color: var(--studio-text); }
-.studio-pipeline__count[data-tone='danger'] { color: var(--danger-text); }
-
-.studio-pipeline__label {
+.studio-figures__group {
     font-family: var(--font-mono);
-    font-size: 0.625rem;
+    font-size: 0.6875rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--studio-muted);
+    margin: 0;
 }
 
-.studio-failures {
-    margin-top: 0.75rem;
-    display: grid;
-    gap: 0.4rem;
-}
-
-.studio-failures__item {
+.studio-figures__row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: baseline;
-    font-size: 0.8125rem;
-    padding-bottom: 0.4rem;
-    border-bottom: 1px solid var(--studio-line);
+    gap: 1.25rem 1.75rem;
 }
 
-.studio-failures__item:last-child { border-bottom: 0; padding-bottom: 0; }
-.studio-failures__name { font-family: var(--font-mono); color: var(--studio-text); }
-.studio-failures__reason { color: var(--danger-text); }
+/*
+ * EVERY FIGURE IS A DOOR, so every figure is at least 44px tall and carries
+ * its own focus ring. D2: no hover-only affordance — the underline on the
+ * label is permanent and hover only changes its colour.
+ */
+.studio-figure {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-block-size: 2.75rem;
+    text-decoration: none;
+    color: inherit;
+}
+
+.studio-figure__value {
+    font-size: 1.625rem;
+    line-height: 1.05;
+    font-variation-settings: 'wght' 700;
+    color: var(--studio-text);
+}
+
+.studio-figure__label {
+    font-size: 0.8125rem;
+    line-height: 1.2;
+    color: var(--studio-muted);
+}
+
+.studio-figure--link .studio-figure__label {
+    text-decoration: underline;
+    text-decoration-color: var(--studio-line);
+    text-underline-offset: 0.2em;
+}
+
+.studio-figure--link:hover .studio-figure__label,
+.studio-figure--link:focus-visible .studio-figure__label {
+    color: var(--studio-text);
+    text-decoration-color: currentColor;
+}
+
+.studio-figure--link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+}
+
+/*
+ * URGENT IS THE ACCENT, NOT RED. Red on this surface reads as an error that
+ * has already happened; these are things waiting to be done. The accent is
+ * what the rest of the panel uses to mean "here".
+ */
+.studio-figure--urgent .studio-figure__value {
+    color: var(--accent);
+}
+
+
+/*
+ * The stat-card and pipeline selectors that lived here are gone with their
+ * widgets: StudioOverview's four cards and MediaPipeline's three-cell strip
+ * were replaced in Task 33 by the figures band above and a real Filament
+ * table. Dead CSS outlives the markup it styled unless it is deleted with it.
+ */
 
 .studio-list { display: grid; }
 

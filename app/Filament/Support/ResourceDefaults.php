@@ -6,7 +6,6 @@ namespace App\Filament\Support;
 
 use App\Support\Locale;
 use Closure;
-use Illuminate\Database\Eloquent\Model;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -21,6 +20,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * The pieces every resource repeats, declared once.
@@ -87,23 +88,100 @@ final class ResourceDefaults
     }
 
     /**
-     * Row actions for a soft-deleting model.
+     * ═══════════════════════════════════════════════════════════════════════
+     * C4 — THE SAME THING IN THE SAME PLACE, ON ALL TWELVE RESOURCES.
      *
-     * The translatable columns are REQUIRED, not optional, because a table's
-     * EditAction opens the same form as the edit page and does not run the
-     * page's fill/save hooks — see Translatable::editAction(). Defaulting the
-     * argument to [] would have made the destructive case the easy one to
-     * write.
+     * rowActions() above already fixed the ORDER for the resources that call
+     * it. What it could not fix is the ones that could not call it, because
+     * four of the twelve models do not soft-delete — a Restore button on a
+     * Client is a button for a state that cannot exist — and three more lead
+     * with an action of their own: the story builder on a project, View on an
+     * enquiry, the locale-aware Edit on an image.
      *
+     * So those seven wrote their row out by hand, and drifted, as hand-written
+     * lists do. Measured before this:
+     *
+     *   Media      Edit, RESTORE, Delete, ForceDelete   — delete in slot three
+     *   Enquiries  View, Delete, Restore, ForceDelete   — no refusal shown
+     *   Clients    Edit, Delete                         — no refusal shown
+     *   Redirects  Edit, Delete                         — no refusal shown
+     *   Tags       Edit, Delete, Restore, ForceDelete   — on a model that has
+     *                                                     no trash at all
+     *
+     * Destructive-in-the-middle is the one that matters. A row of icon
+     * buttons is hit by position as much as by reading, and on the media
+     * library — the only screen with hundreds of rows — Delete sat where
+     * Restore sat everywhere else.
+     *
+     * This composes the row instead: the lead actions a resource genuinely
+     * needs, then Edit, then Delete, then the trash pair IF the model has a
+     * trash. Derived from the model, so it cannot be wrong about which.
+     *
+     * The translatable columns are passed in rather than discovered, because
+     * a table's EditAction opens the same form as the edit page and does NOT
+     * run the page's fill/save hooks — see Translatable::editAction(). A
+     * resource that forgets them saves one locale and silently drops the
+     * other, which is why every caller names them.
+     *
+     * WHY $edit IS ITS OWN ARGUMENT AND NOT JUST ANOTHER LEAD ACTION.
+     *
+     * It was a lead action for about ten minutes. Users needs an Edit
+     * carrying ->using(), because a password is hashed and a role is checked
+     * in self::write() rather than mass-assigned — so it passed one in, and
+     * this method then appended the CANONICAL Edit after it. Two actions
+     * called "edit" in one row: Filament kept both, the second won, and
+     * promoting an editor to Owner silently did nothing.
+     *
+     * UsersTest caught it on the first run. The lesson is not "remember not
+     * to do that" — it is that a parameter which can collide with what the
+     * method adds should not exist. Replacing the canonical Edit is now a
+     * different argument from adding an action beside it, and false says
+     * "this record is never edited" out loud, which is true of an enquiry.
+     *
+     * @param  class-string<Model>  $model
      * @param  array<int, string>  $translated
+     * @param  array<int, mixed>  $lead  Actions BEFORE Edit, because they are
+     *         what the screen is for — a project's story builder.
+     * @param  EditAction|false|null  $edit  null for the canonical one, an
+     *         EditAction to replace it, false for a record that is read and
+     *         never edited.
+     * @return array<int, mixed>
      */
-    public static function rowActions(array $translated): array
-    {
+    public static function rowActionsFor(
+        string $model,
+        array $translated = [],
+        array $lead = [],
+        EditAction|false|null $edit = null,
+    ): array {
+        $actions = [
+            ...$lead,
+
+            ...match (true) {
+                $edit === false => [],
+                $edit instanceof EditAction => [$edit],
+                $translated === [] => [EditAction::make()],
+                default => [Translatable::editAction($translated)],
+            },
+
+            DeleteAction::make()
+                ->authorizationTooltip()
+                ->authorizationNotification(),
+        ];
+
+        if (! in_array(SoftDeletes::class, class_uses_recursive($model), true)) {
+            return $actions;
+        }
+
         return [
-            $translated === [] ? EditAction::make() : Translatable::editAction($translated),
-            DeleteAction::make(),
-            RestoreAction::make(),
-            ForceDeleteAction::make(),
+            ...$actions,
+
+            RestoreAction::make()
+                ->authorizationTooltip()
+                ->authorizationNotification(),
+
+            ForceDeleteAction::make()
+                ->authorizationTooltip()
+                ->authorizationNotification(),
         ];
     }
 

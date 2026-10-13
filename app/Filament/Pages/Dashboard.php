@@ -40,17 +40,28 @@ class Dashboard extends BaseDashboard
     }
 
     /**
-     * Two columns at desktop, one on a phone.
+     * ───────────────────────────────────────────────────────────────────────
+     * ONE COLUMN. EVERY WIDGET FULL WIDTH.
      *
-     * Filament's default is a responsive grid that puts stat cards four across
-     * at 1440 and makes each one too narrow to read a long label. Two is the
-     * width at which the recent-work and recent-enquiry lists are legible.
+     * The first version put the two short tables side by side above 1280.
+     * Screenshotting it killed the idea: the widgets that can hide themselves
+     * — the broken encodes and the translation worklist — are also the
+     * full-width ones, so whenever a studio had nothing broken, the enquiries
+     * table sat alone in a two-column grid with half the screen empty beside
+     * it. A layout whose balance depends on something being wrong is not a
+     * layout.
+     *
+     * One column also makes the hierarchy readable as reading order: what is
+     * broken, who is waiting, what is half-done, where was I. A two-column
+     * grid puts items 2 and 3 side by side and asks the eye to decide which
+     * comes first.
+     *
+     * The tables are 3–5 columns of short text, so full width at 1440 is not
+     * wasteful — it is what stops a 4-column table from wrapping its dates.
+     * ───────────────────────────────────────────────────────────────────────
      */
     public function getColumns(): int | array
     {
-        return [
-            'default' => 1,
-            'md' => 2,
-        ];
+        return 1;
     }
 }

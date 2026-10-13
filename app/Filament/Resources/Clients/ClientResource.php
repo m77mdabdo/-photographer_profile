@@ -16,6 +16,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
 /**
@@ -58,16 +59,20 @@ class ClientResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('name')
-                    ->label(__('studio.field.name'))
-                    ->searchable()
-                    ->sortable()
-                    ->weight('semibold'),
+                Translatable::displayColumn('name', alsoSearch: ['url']),
                 TextColumn::make('url')->label('URL')->toggleable()->url(fn ($record) => $record->url, true),
                 Translatable::statusColumn(self::TRANSLATED),
                 ResourceDefaults::updatedColumn(),
             ])
-            ->recordActions([Translatable::editAction(self::TRANSLATED), DeleteAction::make()])
+            /*
+             * The only state a client logo has is whether it is shown, so
+             * that is the only filter worth having.
+             */
+            ->filters([
+                TernaryFilter::make('is_active')
+                    ->label(__('studio.filter.active')),
+            ])
+            ->recordActions(ResourceDefaults::rowActionsFor(Client::class, self::TRANSLATED))
             ->headerActions([Translatable::createAction(self::TRANSLATED)])
             ->defaultSort('sort_order')
 

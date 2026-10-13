@@ -16,6 +16,8 @@ use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Table;
 
 /**
@@ -59,33 +61,63 @@ class TagResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('name')
-                    ->label(__('studio.field.name'))
-                    ->searchable()
-                    ->sortable()
-                    ->weight('semibold'),
+                /*
+                 * Tags have a translatable name and NO generated column —
+                 * TranslatableSchema::INDEXED deliberately omits them — so
+                 * this one sorts and searches through a JSON path instead of
+                 * an index. That is the fallback in displayColumn() doing its
+                 * job: adding a resource must not require a migration.
+                 */
+                Translatable::displayColumn('name'),
+
+                /*
+                 * How many articles carry the tag, so an unused one can be
+                 * recognised and removed. A tag nothing uses is clutter in
+                 * every select field in the panel.
+                 */
+                TextColumn::make('articles_count')
+                    ->counts('articles')
+                    ->label(__('studio.table.used'))
+                    ->badge()
+                    ->color(fn (int $state): string => $state > 0 ? 'primary' : 'gray')
+                    ->sortable(),
 
                 Translatable::statusColumn(self::TRANSLATED),
                 ResourceDefaults::updatedColumn(),
             ])
-            ->recordActions([
-                Translatable::editAction(self::TRANSLATED),
-
-                /*
-                 * TagPolicy::delete() counts the articles still carrying this
-                 * tag and refuses with the number — and a plain DeleteAction
-                 * made Filament HIDE the button, so the owner saw a tag they
-                 * could not delete and no reason anywhere on the page. The
-                 * policy's careful sentence was computed and discarded.
-                 *
-                 * Tooltip on hover, notification on click. Same arrangement as
-                 * Media, Categories, Journal categories and Users.
-                 */
-                DeleteAction::make()
-                    ->authorizationTooltip()
-                    ->authorizationNotification(),
-            ])
+            /*
+             * TagPolicy::delete() counts the articles still carrying this tag
+             * and refuses with the number — and a plain DeleteAction made
+             * Filament HIDE the button, so the owner saw a tag they could not
+             * delete and no reason anywhere on the page. The policy's careful
+             * sentence was computed and discarded.
+             *
+             * rowActionsFor() now applies the tooltip and the notification to
+             * every resource at once, and leaves out Restore and ForceDelete
+             * here because a tag has no deleted_at: this row used to offer
+             * both, for a trash that does not exist.
+             */
+            ->recordActions(ResourceDefaults::rowActionsFor(Tag::class, self::TRANSLATED))
             ->headerActions([Translatable::createAction(self::TRANSLATED)])
+            ->filters([
+                TernaryFilter::make('unused')
+                    ->label(__('studio.filter.unused_tags'))
+                    ->placeholder(__('studio.filter.all'))
+                    ->trueLabel(__('studio.filter.unused_only'))
+                    ->falseLabel(__('studio.filter.used_only'))
+                    ->queries(
+                        true: fn (Builder $query): Builder => $query->whereDoesntHave('articles'),
+                        false: fn (Builder $query): Builder => $query->whereHas('articles'),
+                        blank: fn (Builder $query): Builder => $query,
+                    ),
+            ])
+            /*
+             * Still a plain column name: Filament resolves a string
+             * defaultSort to the COLUMN and calls its applySort
+             * (CanSortRecords::applySortingToTableQuery, line 105), so this
+             * goes through displayColumn()'s locale-aware sort rather than
+             * ordering by the JSON blob. Nothing to repeat here.
+             */
             ->defaultSort('name');
     }
 

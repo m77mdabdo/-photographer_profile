@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Redirects;
 
 use App\Filament\Resources\Redirects\Pages\ManageRedirects;
+use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\AddressesRecordsById;
 use App\Models\Redirect;
 use App\Support\Locale;
@@ -21,6 +22,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Closure;
@@ -193,8 +195,24 @@ class RedirectResource extends Resource
                         'manual' => __('studio.redirects.manual'),
                         'slug_change' => __('studio.redirects.automatic'),
                     ]),
+
+                /*
+                 * A redirect that has been switched off is the one you are
+                 * looking for when a link that used to work has stopped, and
+                 * a 301 behaves differently from a 302 in a way that matters
+                 * when something is wrong. Both filter.
+                 */
+                SelectFilter::make('status_code')
+                    ->label(__('studio.redirects.kind'))
+                    ->options([
+                        '301' => __('studio.redirects.permanent'),
+                        '302' => __('studio.redirects.temporary'),
+                    ]),
+
+                TernaryFilter::make('is_active')
+                    ->label(__('studio.redirects.active')),
             ])
-            ->recordActions([EditAction::make(), DeleteAction::make()])
+            ->recordActions(ResourceDefaults::rowActionsFor(Redirect::class))
             ->headerActions([CreateAction::make()])
             ->defaultSort('created_at', 'desc');
     }

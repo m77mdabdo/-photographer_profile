@@ -64,31 +64,12 @@ class ArticleCategoryResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('name')
-                    ->label(__('studio.field.name'))
-                    ->searchable()
-                    ->sortable()
-                    ->weight('semibold'),
+                Translatable::displayColumn('name'),
                 TextColumn::make('articles_count')->counts('articles')->label(__('studio.table.used'))->badge(),
                 Translatable::statusColumn(self::TRANSLATED),
                 ResourceDefaults::updatedColumn(),
             ])
-            ->recordActions([
-                Translatable::editAction(self::TRANSLATED),
-
-                /*
-                 * The refusal is SHOWN, not hidden. The policy counts what
-                 * still uses this row and returns the count in its message;
-                 * Filament's default for a denied action is to remove the
-                 * button, which leaves the owner with no button and no reason.
-                 */
-                DeleteAction::make()
-                    ->authorizationTooltip()
-                    ->authorizationNotification(),
-
-                RestoreAction::make(),
-                ForceDeleteAction::make(),
-            ])
+            ->recordActions(ResourceDefaults::rowActionsFor(ArticleCategory::class, self::TRANSLATED))
             ->headerActions([Translatable::createAction(self::TRANSLATED)])
             ->defaultSort('sort_order')
 

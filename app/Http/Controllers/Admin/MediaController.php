@@ -92,12 +92,8 @@ class MediaController extends Controller
     {
         $this->authorize('update', $medium);
 
-        $medium->update([
-            'status' => MediaStatus::Pending,
-            'failure_reason' => null,
-        ]);
-
-        ProcessMediaVariants::dispatch($medium)->onQueue(config('media.queue'));
+        // The panel's dashboard does the same thing; see the action.
+        app(\App\Actions\Media\ReprocessMedia::class)($medium);
 
         return back()->with('status', 'Queued for reprocessing.');
     }

@@ -4,88 +4,101 @@ declare(strict_types=1);
 
 namespace App\Filament\Widgets;
 
-use App\Models\Article;
-use App\Models\Project;
-use Filament\Widgets\Widget;
-use Illuminate\Support\Collection;
+use App\Models\RecentlyEditedRecord;
+use App\Support\RecentlyEdited as Finder;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Filament\Widgets\TableWidget;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /**
- * The last six things anybody touched.
+ * What the studio was last working on, across every kind of content.
  *
- * JUSTIFICATION: the most common action on opening an admin is resuming
- * yesterday's work, and the second most common is "who changed that?". Both
- * are answered by one list. Without it the first click is always a search.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * REFERENCE, NOT ACTION — which is why it is last.
  *
- * Projects and articles together, ordered by when they were last saved, not
- * split by type — because the question is "what was I doing", and the answer
- * does not care which table it was in.
+ * Nothing here is wrong and nothing here is waiting. It answers one question,
+ * asked every morning: what was I doing. That makes it the most-used table on
+ * the page and the least urgent, and the layout says so by putting it at the
+ * bottom.
+ *
+ * ONE UNION, LIKE THE UNTRANSLATED LIST. Four models, one query, sortable and
+ * paginated — not four queries merged in PHP and sliced, which cannot sort by
+ * anything the database did not already order.
+ * ═══════════════════════════════════════════════════════════════════════════
  */
-class RecentlyEdited extends Widget
+class RecentlyEdited extends TableWidget
 {
-    protected string $view = 'filament.widgets.recently-edited';
+    protected static ?int $sort = 5;
 
-    /*
-     * NOT LAZY, deliberately.
-     *
-     * Filament defers widgets by default: the page ships a placeholder and
-     * fetches the contents in a second Livewire round trip. That is the right
-     * default for a widget sitting below a heavy table — and the wrong one
-     * here, because on this dashboard the widgets ARE the page. Deferred, the
-     * studio opens the panel to four empty rectangles that fill in a moment
-     * later, every single time.
-     *
-     * The cost of loading eagerly is four indexed counts and two six-row
-     * queries. That is cheaper than the flash.
-     */
-    protected static bool $isLazy = false;
+    protected int | string | array $columnSpan = 'full';
 
-    protected static ?int $sort = 3;
-
-    /** @return array<string, mixed> */
-    protected function getViewData(): array
+    public function table(Table $table): Table
     {
-        $projects = Project::query()
-            ->latest('updated_at')
-            ->limit(6)
-            ->get(['id', 'title', 'slug', 'status', 'updated_at'])
-            ->map(fn (Project $p): array => [
-                'label' => (string) $p->title,
-                'kind' => __('studio.kind.project'),
-                'status' => $p->status->label(),
-                'at' => $p->updated_at,
+        return $table
+            ->heading(__('studio.recent.heading'))
+            ->description(__('studio.recent.description'))
+            ->query(fn (): Builder => RecentlyEditedRecord::query()
+                ->fromSub(Finder::query(), 'recently_edited'))
+            ->columns([
+                TextColumn::make('label')
+                    ->label(__('studio.field.title'))
+                    ->weight('semibold')
+                    ->wrap()
+                    ->searchable()
+                    ->formatStateUsing(fn (?string $state, Model $record): string => $state
+                        ?: __('studio.untranslated.untitled', ['id' => $record->record_id])),
+
                 /*
-                 * THE KEY, NOT THE MODEL. These models bind by slug on the
-                 * public site, so passing the model puts the slug in the URL —
-                 * and the panel addresses records by id, because a slug is
-                 * editable and now per-locale. Handing route() a model gave
-                 * /studio/projects/modi-error-cumque/edit, which 404s.
+                 * D1: at 390 these two stand down so the title, the state and
+                 * when it changed stay on screen without a sideways scroll.
+                 * "Which kind of record" is legible from the title, and "who"
+                 * is a one-person studio most days.
                  */
-                'url' => route('filament.studio.resources.projects.edit', ['record' => $p->getKey()]),
-            ]);
+                TextColumn::make('type')
+                    ->label(__('studio.untranslated.kind'))
+                    ->badge()
+                    ->color('gray')
+                    ->formatStateUsing(fn (string $state): string => __(
+                        'studio.untranslated.type.'.str($state)->classBasename()->lower()->toString()
+                    ))
+                    ->sortable()
+                    ->visibleFrom('md'),
 
-        $articles = Article::query()
-            ->latest('updated_at')
-            ->limit(6)
-            ->get(['id', 'title', 'slug', 'status', 'updated_at'])
-            ->map(fn (Article $a): array => [
-                'label' => (string) $a->title,
-                'kind' => __('studio.kind.article'),
-                'status' => $a->status->label(),
-                'at' => $a->updated_at,
-                'url' => route('filament.studio.resources.articles.edit', ['record' => $a->getKey()]),
-            ]);
+                TextColumn::make('status')
+                    ->label(__('studio.table.status'))
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => $state === null
+                        ? '—'
+                        : (\App\Enums\PublishStatus::tryFrom($state)?->label() ?? $state))
+                    ->color(fn (?string $state): string => $state === \App\Enums\PublishStatus::Published->value
+                        ? 'success'
+                        : 'gray')
+                    ->sortable(),
 
-        /** @var Collection<int, array<string, mixed>> $rows */
-        $rows = $projects->concat($articles)
-            ->sortByDesc('at')
-            ->take(6)
-            ->values();
+                /*
+                 * WHO CHANGED IT. A studio with one person does not need this;
+                 * a studio with an editor does, and "who" is the first
+                 * question when something is not as it was left.
+                 */
+                TextColumn::make('editor')
+                    ->label(__('studio.recent.editor'))
+                    ->placeholder('—')
+                    ->toggleable()
+                    ->visibleFrom('md'),
 
-        return [
-            'rows' => $rows,
-            'allUrl' => \Illuminate\Support\Facades\Route::has('filament.studio.resources.projects.index')
-                ? route('filament.studio.resources.projects.index')
-                : null,
-        ];
+                TextColumn::make('updated_at')
+                    ->label(__('studio.table.updated'))
+                    ->since()
+                    ->sortable(),
+            ])
+            ->defaultSort('updated_at', 'desc')
+            ->recordUrl(fn (Model $record): ?string => Finder::editUrl($record->type, (int) $record->record_id))
+            ->emptyStateHeading(__('studio.recent.empty'))
+            ->emptyStateDescription(__('studio.recent.empty_hint'))
+            ->emptyStateIcon('heroicon-o-clock')
+            ->paginated([5, 10, 25])
+            ->defaultPaginationPageOption(5);
     }
 }

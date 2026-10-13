@@ -13,7 +13,10 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Expression;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Per-locale fields, built once and used by every resource.
@@ -258,6 +261,178 @@ final class Translatable
             })
             ->color(fn (string $state): string => str_contains($state, '✓') ? 'gray' : 'warning')
             ->toggleable();
+    }
+
+    /**
+     * ═══════════════════════════════════════════════════════════════════════
+     * C2 — THE PRIMARY COLUMN OF A TRANSLATED LIST.
+     *
+     * Sorted and searched as the WORDS ON SCREEN, which is not what
+     * ->searchable()->sortable() did. Measured, before any of this was
+     * written, on three projects titled Apple, Mango and Zephyr:
+     *
+     *     locale en, sorted asc by title:  Mango | Apple | Zephyr
+     *     locale ar, sorted asc by title:  ميم | ياء | ألف
+     *
+     * Alphabetical in neither language. `title` is a JSON column, so
+     * `ORDER BY title` orders by the serialised document — by whichever key
+     * json_encode happened to write first, then by the characters of the whole
+     * blob. Click a column header and you get a confidently reordered list
+     * that means nothing. Every title/name column in the panel did this.
+     *
+     * Search was half-broken in the other direction: `WHERE title LIKE '%x%'`
+     * against the JSON matches any locale, which is accidentally useful, but
+     * it also matches key names and escape sequences, and it cannot use an
+     * index.
+     *
+     * WHY THIS IS NOT FIXED FURTHER DOWN
+     *
+     * TranslatableBuilder rewrites a bare translatable column in where() and
+     * friends onto its generated column, and its header argues — correctly —
+     * that a mechanism whose failure mode is silent must be one that cannot be
+     * forgotten. It is bypassed here all the same, because
+     * Filament\Support\apply_search_constraint() ends in
+     *
+     *     $query->whereRaw("{$column} like ? escape '!'", …)
+     *
+     * and whereRaw is not where. applySort has no translatable branch at all.
+     * Overriding orderBy would catch the sort; nothing can catch whereRaw.
+     *
+     * Filament's own seam for this is a TranslatableContentDriver, and it is
+     * deliberately NOT used: the same driver is consulted by CreateAction,
+     * EditAction, ViewAction, Repeater and HasRecords, so registering one puts
+     * it in charge of filling and saving every form in the panel — a job
+     * Translatable::tabs()/fill()/save() and RecordWriter already hold. Two
+     * mechanisms on one data path is the failure this file keeps fixing.
+     *
+     * So it is declared once, here, and each resource spends one line on it.
+     * ═══════════════════════════════════════════════════════════════════════
+     *
+     * @param  list<string>  $alsoSearch  Further attributes the search box should
+     *                                    reach — translatable or not. A
+     *                                    photographer looks for a project by
+     *                                    its client, its location or its year
+     *                                    long before its title.
+     * @param  bool  $fallback  Whether a missing translation shows the default
+     *                          locale's value instead of reading as missing.
+     *                          TRUE for a title or a name, because the public
+     *                          page falls back the same way and the panel
+     *                          should agree with it. FALSE for alt text: a
+     *                          missing alt is a job — it is read aloud and
+     *                          indexed — and showing the English in an Arabic
+     *                          row makes a job look done. The sort follows
+     *                          suit, so without a fallback the unwritten ones
+     *                          group together, which is how you work through
+     *                          them.
+     */
+    public static function displayColumn(
+        string $attribute,
+        array $alsoSearch = [],
+        bool $fallback = true,
+    ): TextColumn {
+        return TextColumn::make($attribute)
+            ->label(static::label($attribute))
+            ->weight('semibold')
+            ->when(
+                ! $fallback,
+                fn (TextColumn $column): TextColumn => $column->state(
+                    fn (Model $record): ?string => $record->getTranslation($attribute, null, fallback: false),
+                ),
+            )
+            ->searchable(query: fn (Builder $query, string $search): Builder => $query->where(
+                function (Builder $inner) use ($attribute, $alsoSearch, $search): void {
+                    foreach ([$attribute, ...$alsoSearch] as $searchable) {
+                        foreach (static::expressions($inner->getModel(), $searchable) as $expression) {
+                            $inner->orWhere($expression, 'like', '%'.$search.'%');
+                        }
+                    }
+                }
+            ))
+            ->sortable(query: fn (Builder $query, string $direction): Builder => $query
+                ->orderBy(static::displayExpression($query->getModel(), $attribute, $fallback), $direction));
+    }
+
+    /**
+     * Every expression a search for one attribute has to cover.
+     *
+     * A translatable attribute is EVERY locale, not just the active one: a
+     * bilingual studio searching "هارودز" expects to find the project whatever
+     * language the panel is in, and the raw-JSON LIKE this replaces did at
+     * least get that part right.
+     *
+     * @return list<string|Expression>
+     */
+    private static function expressions(Model $model, string $attribute): array
+    {
+        if (! method_exists($model, 'isTranslatableAttribute') || ! $model->isTranslatableAttribute($attribute)) {
+            return [$model->qualifyColumn($attribute)];
+        }
+
+        return array_map(
+            fn (string $locale): string|Expression => static::expression($model, $attribute, $locale),
+            Locale::codes(),
+        );
+    }
+
+    /**
+     * What to ORDER BY so the rows come back in the order they are read in.
+     *
+     * COALESCE, because the cell falls back: a project with no Arabic title
+     * shows its English one, and sorting the Arabic list by a NULL would send
+     * every untranslated row to one end regardless of what the reader sees.
+     */
+    private static function displayExpression(
+        Model $model,
+        string $attribute,
+        bool $fallback = true,
+    ): string|Expression {
+        if (! method_exists($model, 'isTranslatableAttribute') || ! $model->isTranslatableAttribute($attribute)) {
+            return $model->qualifyColumn($attribute);
+        }
+
+        $active = static::expression($model, $attribute, Locale::current());
+
+        if (! $fallback || Locale::isDefault()) {
+            return $active;
+        }
+
+        $default = static::expression($model, $attribute, Locale::DEFAULT);
+
+        return new Expression(sprintf(
+            'COALESCE(%s, %s)',
+            static::sql($active),
+            static::sql($default),
+        ));
+    }
+
+    /**
+     * One locale of one translatable attribute, as something a query can use.
+     *
+     * The generated column when there is one — an indexed varchar, which is
+     * what TranslatableSchema::INDEXED exists for and what, until now, nothing
+     * read. Tags have a translatable name and no generated twin, so they take
+     * the JSON path: slower, correct, and no schema change needed to add a
+     * resource.
+     */
+    private static function expression(Model $model, string $attribute, string $locale): string|Expression
+    {
+        if (TranslatableSchema::hasGeneratedColumn($model->getTable(), $attribute)) {
+            return $model->qualifyColumn($model::localeColumn($attribute, $locale));
+        }
+
+        return new Expression(sprintf(
+            "JSON_UNQUOTE(JSON_EXTRACT(%s, '$.\"%s\"'))",
+            $model->qualifyColumn(str_replace('`', '', $attribute)),
+            $locale,
+        ));
+    }
+
+    /** An expression or a column name, as SQL text for wrapping in another. */
+    private static function sql(string|Expression $expression): string
+    {
+        return $expression instanceof Expression
+            ? (string) $expression->getValue(DB::connection()->getQueryGrammar())
+            : '`'.str_replace('.', '`.`', $expression).'`';
     }
 
     /** A sensible default label for an attribute. */

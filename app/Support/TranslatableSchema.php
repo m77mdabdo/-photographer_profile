@@ -91,6 +91,27 @@ final class TranslatableSchema
      *
      * @var array<string, list<string>>
      */
+    /*
+     * ───────────────────────────────────────────────────────────────────────
+     * THESE WERE DEAD FROM THE DAY THEY WERE CREATED UNTIL TASK 33.
+     *
+     * The comment below said admin list views sorted and searched these
+     * columns. They did not: every list view ordered by the JSON document and
+     * searched it with LIKE, while sixteen STORED generated columns and their
+     * sixteen indexes sat unread. Ascending by title returned
+     * "Mango | Apple | Zephyr" — alphabetical in no language — on every
+     * title and name column in the panel.
+     *
+     * Filament\Support\apply_search_constraint() uses whereRaw, which
+     * TranslatableBuilder cannot intercept, and Filament's applySort has no
+     * translatable branch at all; so the rewrite that was supposed to make
+     * this automatic never reached the one caller that mattered.
+     *
+     * Task 33 C2 made it true, in Translatable::displayColumn(), and
+     * GuaranteesTest now asserts a list view's ORDER BY names title_en rather
+     * than title. The claim is load-bearing again instead of decorative.
+     * ───────────────────────────────────────────────────────────────────────
+     */
     private const INDEXED = [
         // Admin list views sort by title/name and search it; the public work
         // and journal indexes order by it as a secondary key.

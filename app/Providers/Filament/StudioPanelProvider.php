@@ -6,10 +6,11 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Dashboard;
 use App\Filament\Support\InitialsAvatar;
-use App\Filament\Widgets\MediaPipeline;
+use App\Filament\Widgets\MediaNeedingAttention;
 use App\Filament\Widgets\RecentEnquiries;
 use App\Filament\Widgets\RecentlyEdited;
-use App\Filament\Widgets\StudioOverview;
+use App\Filament\Widgets\StudioFigures;
+use App\Filament\Widgets\UntranslatedContent;
 use App\Http\Middleware\EnsureTwoFactorEnabled;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\SetLocale;
@@ -183,11 +184,33 @@ class StudioPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
 
+            /*
+             * ───────────────────────────────────────────────────────────────
+             * B4 — THE DASHBOARD'S ORDER IS A HIERARCHY, NOT A LIST.
+             *
+             *   1  StudioFigures           the facts, as one band
+             *   2  MediaNeedingAttention   NEEDS ACTION — and nobody was told
+             *   3  RecentEnquiries         NEEDS ACTION — somebody is waiting
+             *   4  UntranslatedContent     IN PROGRESS — half-published work
+             *   5  RecentlyEdited          REFERENCE   — what was I doing
+             *
+             * Reading order is the studio's morning: what is broken, who is
+             * waiting, what is half-done, where was I. The two that can be
+             * empty — the broken encodes and the translation worklist — hide
+             * themselves when they are, so a healthy site shows a shorter
+             * page rather than a page of panels about nothing.
+             *
+             * The declaration order here is irrelevant; each widget's own
+             * $sort decides. Listed in sort order anyway, because a reader
+             * should not have to open five files to learn the layout.
+             * ───────────────────────────────────────────────────────────────
+             */
             ->widgets([
-                StudioOverview::class,
-                MediaPipeline::class,
-                RecentlyEdited::class,
+                StudioFigures::class,
+                MediaNeedingAttention::class,
                 RecentEnquiries::class,
+                UntranslatedContent::class,
+                RecentlyEdited::class,
             ])
 
             /*
@@ -241,21 +264,29 @@ class StudioPanelProvider extends PanelProvider
 
             /*
              * ───────────────────────────────────────────────────────────────
-             * NO ->navigationItems(). THE "OLD PANEL" TIER IS EMPTY.
+             * ONE HAND-WRITTEN ITEM. THE "PLANNED" TIER IS GONE.
              *
              * Task 30b hung twelve hand-written NavigationItems here: ten
-             * pointing at /admin and two marked "planned", which was the
-             * honest shape of a panel with no resources in it. B5 replaced
-             * every one with a discovered Resource or Page, so the labels and
-             * the destinations are now the same declaration and cannot drift.
+             * duplicating screens of the custom admin and two marked
+             * "planned", which was the honest shape of a panel with no
+             * resources in it. Task 32 B5 replaced every one with a
+             * discovered Resource or Page, so a label and its destination are
+             * now the same declaration and cannot drift. A sidebar entry for
+             * a feature nobody has specified is a promise this project has
+             * not made, so the two planned items do not return.
              *
-             * Galleries was the twelfth and does not return: it has no model,
-             * no table and no design, and a disabled item for a feature nobody
-             * has specified is a promise this project has not made.
+             * The single item above is the exception and is not planned work:
+             * it points at the surviving custom admin, which Task 33 Part A
+             * moved to /legacy. That admin still owns the chunked uploader
+             * and the per-image detail screen, which the panel has no
+             * equivalent of yet, so there has to be a way to reach it. It
+             * opens in a new tab because it is a different application with
+             * its own layout, and it sorts to 99 so it sits last under
+             * "System".
              *
-             * The old admin is still reachable at /admin and every one of its
-             * components still works. It is deleted at step 10, not here —
-             * nothing in this panel links to it any more.
+             * This comment previously said the old admin was at /admin and
+             * that nothing in the panel linked to it. Both stopped being true
+             * in Part A, two lines above where it was written.
              * ───────────────────────────────────────────────────────────────
              */
 
@@ -328,15 +359,6 @@ class StudioPanelProvider extends PanelProvider
             ]);
     }
 
-    /**
-     * The groups the planned modules hang from.
-     *
-     * Named for what the studio calls things, not for the models underneath:
-     * "The work" rather than "Projects", because an owner opening this panel
-     * is thinking about their work, not about a database table.
-     *
-     * @return list<NavigationGroup>
-     */
     /**
      * FIVE GROUPS, NAMED FOR WHAT THE OWNER IS DOING.
      *

@@ -19,6 +19,54 @@ return [
         'subheading' => 'What needs you today.',
     ],
 
+    /*
+     * B1 — the band of figures at the top of the dashboard.
+     */
+    /*
+     * B3 — the untranslated worklist.
+     */
+    'untranslated' => [
+        'heading' => 'Waiting for Arabic',
+        'description' => 'Published in English, not yet in :locale. Most missing first.',
+        'record' => 'Record',
+        'kind' => 'Kind',
+        'missing' => 'Fields missing',
+        'translate' => 'Translate',
+        'untitled' => 'Untitled (#:id)',
+        'type' => [
+            'project' => 'Project',
+            'article' => 'Journal',
+            'service' => 'Service',
+            'page' => 'Page',
+        ],
+    ],
+
+    /*
+     * B2 — media needing attention.
+     */
+    'attention' => [
+        'heading' => 'Pictures needing attention',
+        'description' => 'Encodes that failed or have not finished.',
+        'empty' => 'Every picture has processed.',
+        'empty_hint' => 'Failed or stuck encodes appear here with the reason. Nothing to do.',
+        'reason' => 'What went wrong',
+        'no_reason' => 'No reason recorded',
+        'stuck' => 'Still processing',
+        'retry' => 'Try again',
+        'retried' => 'Queued again.',
+        'retried_body' => ':name is back in the queue.',
+    ],
+    'figures' => [
+        'label' => 'The site at a glance',
+        'inbox' => 'Inbox',
+        'work' => 'The work',
+        'writing' => 'Writing',
+        'pictures' => 'Pictures',
+        'ready' => 'Ready',
+        'processing' => 'Processing',
+        'failed' => 'Failed',
+        'total' => 'In the library',
+    ],
     'stats' => [
         'published' => 'Published work',
         'published_hint' => 'Live on the site',
@@ -31,6 +79,8 @@ return [
     ],
 
     'media' => [
+        'pictured' => 'What is in it',
+        'no_alt' => 'No alt text yet',
         'description_section' => 'What is in the picture',
         'description_hint' => 'Alt text is read aloud and indexed; a caption is shown beside the image.',
         'credit_section' => 'Credit and framing',
@@ -57,6 +107,7 @@ return [
     ],
 
     'recent' => [
+        'editor' => 'Changed by',
         'open_all' => 'All projects',
         'empty_hint' => 'Projects and journal entries you edit will collect here, newest first.',
         'heading' => 'Recently edited',
@@ -239,6 +290,8 @@ return [
     ],
 
     'field' => [
+        'year' => 'Year',
+        'price_from_short' => 'From',
         'published_at' => 'Published at',
         'published_at_hint' => 'Left empty, publishing fills it with now.',
         'slug_hint' => 'The address. Changing it on a published item writes a 301 from the old one.',
@@ -371,6 +424,8 @@ return [
     ],
 
     'users' => [
+        'two_factor_on' => 'Set up',
+        'two_factor_off' => 'Not set up',
         'email' => 'Email',
         'role' => 'Role',
         'two_factor' => '2FA',
@@ -378,5 +433,29 @@ return [
         'never' => 'Never',
         'role_hint' => 'An Owner can manage people and delete permanently. An Editor can do everything else.',
         'last_owner' => 'This is the last Owner. Promote somebody else before changing this.',
+    ],
+
+    'filter' => [
+        'all' => 'All',
+        'featured' => 'Featured',
+        'category' => 'Section',
+        'uncategorised' => 'No section',
+        'active' => 'Shown on the site',
+        'unread' => 'Read',
+        'unread_only' => 'Unread only',
+        'read_only' => 'Read only',
+        'usage' => 'Used anywhere',
+        'used_only' => 'In use',
+        'unused_only' => 'Not used anywhere',
+        'unused_tags' => 'Use',
+    ],
+
+    'pages' => [
+        'locked' => 'Locked',
+        'locked_hint' => 'The footer links to this page by name, so it cannot be deleted.',
+    ],
+
+    'services' => [
+        'on_request' => 'On request',
     ],
 ];

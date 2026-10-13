@@ -7,10 +7,11 @@ namespace Tests\Feature;
 use App\Enums\MediaStatus;
 use App\Enums\PublishStatus;
 use App\Enums\UserRole;
-use App\Filament\Widgets\MediaPipeline;
+use App\Filament\Widgets\MediaNeedingAttention;
 use App\Filament\Widgets\RecentEnquiries;
 use App\Filament\Widgets\RecentlyEdited;
-use App\Filament\Widgets\StudioOverview;
+use App\Filament\Widgets\StudioFigures;
+use App\Filament\Widgets\UntranslatedContent;
 use App\Models\Article;
 use App\Models\Inquiry;
 use App\Models\Media;
@@ -351,9 +352,22 @@ class StudioPanelTest extends TestCase
          * So these names changed for a good reason, once, deliberately. They
          * are pinned again because a hash is still the cheapest proof that a
          * byte did not move.
+         *
+         * REPINNED AGAIN IN TASK 33 D3, CSS ONLY.
+         *
+         * The Arabic matrix found the hero text abutting the photographic
+         * plate at exactly zero pixels at 1440 and 1024 — the clearance in
+         * home.css was written as padding-left/padding-right, which are
+         * physical, while the grid columns that place the text flip on the
+         * inline axis. The fix is padding-inline-start/-end there and in four
+         * other declarations in the same file.
+         *
+         * That is a deliberate change to a PUBLIC stylesheet, so this
+         * assertion failed exactly as designed. The JS hash is untouched,
+         * which is the useful half of the signal: nothing but CSS moved.
          * ───────────────────────────────────────────────────────────────────
          */
-        $this->assertSame('assets/public-BCTah1_2.css', $publicCss, 'the public stylesheet changed');
+        $this->assertSame('assets/public-CR5BLD1H.css', $publicCss, 'the public stylesheet changed');
         $this->assertSame('assets/public-B-FzqxLO.js', $publicJs, 'the public entry changed');
 
         // And the panel's theme is its own entry, not part of either.
@@ -372,25 +386,34 @@ class StudioPanelTest extends TestCase
     // ----------------------------------------------------------------- 7
 
     /** The widgets render on an empty database. */
+    /**
+     * ───────────────────────────────────────────────────────────────────────
+     * REWRITTEN IN TASK 33: THE DASHBOARD IS TABLES NOW.
+     *
+     * StudioOverview (four stat cards) and MediaPipeline (a blade list) are
+     * gone, replaced by a band of figures and four real Filament tables. The
+     * assertions moved to the new widgets rather than being dropped — the
+     * guarantee is the same one: every widget renders on an empty database,
+     * and the two that have nothing to say hide themselves.
+     * ───────────────────────────────────────────────────────────────────────
+     */
     public function test_the_widgets_render_with_an_empty_database(): void
     {
         $this->actingAs($this->admin());
 
-        Livewire::test(StudioOverview::class)->assertOk()->assertSee('Published work');
+        Livewire::test(StudioFigures::class)->assertOk()->assertSee('Published work');
         Livewire::test(RecentlyEdited::class)->assertOk()->assertSee('Nothing has been edited yet');
         Livewire::test(RecentEnquiries::class)->assertOk()->assertSee('No enquiries yet');
 
         /*
-         * The pipeline hides itself when there is nothing to report, which is
-         * most of the time. A panel permanently displaying "0 failed" trains
-         * people to stop reading it.
+         * The two worklists hide themselves when the work is done. A panel
+         * permanently displaying "0 failed" and "nothing to translate" trains
+         * people to stop reading the dashboard.
          */
-        $this->assertFalse(MediaPipeline::canView());
-
-        $this->get(self::PANEL)->assertOk()->assertDontSee('The media pipeline');
+        $this->assertFalse(MediaNeedingAttention::canView());
+        $this->assertFalse(UntranslatedContent::canView());
     }
 
-    /** And on a populated one, with the numbers right. */
     public function test_the_widgets_render_with_a_populated_database(): void
     {
         Project::factory()->count(2)->published()->create();
@@ -404,15 +427,22 @@ class StudioPanelTest extends TestCase
 
         $this->actingAs($this->admin());
 
-        $this->assertTrue(MediaPipeline::canView());
+        $this->assertTrue(MediaNeedingAttention::canView());
 
-        $this->get(self::PANEL)
+        // The figures band carries every number, as one row of facts.
+        Livewire::test(StudioFigures::class)
             ->assertOk()
-            ->assertSee('The media pipeline')
-            // The reason, not merely the count: "failed" alone cannot be acted on.
-            ->assertSee('Could not decode the file.')
-            ->assertSee('Recently edited')
-            ->assertSee('Recent enquiries');
+            ->assertSee('Published work')
+            ->assertSee('Unread enquiries')
+            ->assertSee('Failed');
+
+        // The reason, not merely the count: "failed" alone cannot be acted on.
+        Livewire::test(MediaNeedingAttention::class)
+            ->assertOk()
+            ->assertSee('Could not decode the file.');
+
+        Livewire::test(RecentlyEdited::class)->assertOk()->assertSee('Recently edited');
+        Livewire::test(RecentEnquiries::class)->assertOk()->assertSee('Recent enquiries');
     }
 
     // ----------------------------------------------------------------- 8
@@ -744,28 +774,62 @@ class StudioPanelTest extends TestCase
      * E6 — the pipeline appears on a real failure, names the reason, and
      * links to the failed images; and hides itself when nothing is wrong.
      */
-    public function test_the_pipeline_appears_on_failure_and_hides_when_idle(): void
+    /**
+     * The attention table appears on a real failure, names the reason, and
+     * hides itself when there is nothing wrong.
+     *
+     * Was test_the_pipeline_appears_on_failure_and_hides_when_idle, against a
+     * blade widget that no longer exists. Same guarantee, new widget — plus
+     * the stuck case, which the old one could not express.
+     */
+    public function test_the_attention_table_appears_on_failure_and_hides_when_idle(): void
     {
         $this->actingAs($this->admin());
 
         // Idle: absent.
-        $this->assertFalse(MediaPipeline::canView());
-        $this->get(self::PANEL)->assertOk()->assertDontSee('The media pipeline');
+        $this->assertFalse(MediaNeedingAttention::canView());
 
-        // Broken: present, with the reason and a link to the failures.
+        // Broken: present, with the reason.
         Media::factory()->create([
             'status' => MediaStatus::Failed,
             'original_filename' => 'coast-0412.arw',
             'failure_reason' => 'Unsupported colour profile.',
         ]);
 
-        $this->assertTrue(MediaPipeline::canView());
+        $this->assertTrue(MediaNeedingAttention::canView());
 
-        $this->get(self::PANEL)
+        Livewire::test(MediaNeedingAttention::class)
             ->assertOk()
-            ->assertSee('The media pipeline')
             ->assertSee('coast-0412.arw')
-            ->assertSee('Unsupported colour profile.')
-            ->assertSee('admin/media?tableFilters%5Bstatus%5D%5Bvalue%5D=failed', escape: false);
+            ->assertSee('Unsupported colour profile.');
     }
+
+    /**
+     * A STUCK encode counts too, which the old pipeline widget never noticed.
+     *
+     * A job that died without marking the row Failed leaves it Pending for
+     * ever, which looks healthy and is not.
+     */
+    public function test_a_stuck_encode_is_reported(): void
+    {
+        $this->actingAs($this->admin());
+
+        $fresh = Media::factory()->create(['status' => MediaStatus::Pending]);
+
+        $this->assertFalse(
+            MediaNeedingAttention::canView(),
+            'a picture queued a moment ago is not stuck'
+        );
+
+        $stuck = Media::factory()->create(['status' => MediaStatus::Processing]);
+        $stuck->forceFill(['created_at' => now()->subHours(3)])->save();
+
+        $this->assertTrue(MediaNeedingAttention::canView());
+
+        Livewire::test(MediaNeedingAttention::class)
+            ->assertOk()
+            ->assertSee($stuck->original_filename)
+            ->assertDontSee($fresh->original_filename);
+    }
+
 }

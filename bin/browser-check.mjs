@@ -175,7 +175,7 @@ const ADMIN_PAGES = [
    * ever sees it in, and is the reason it needs `guest: true`.
    */
   { label: 'studio sign-in', path: '/login', admin: true, guest: true },
-  { label: 'studio dashboard', path: '/studio', admin: true },
+  { label: 'studio dashboard', path: '/admin', admin: true },
 
   /*
    * TASK 31 — EVERY RESOURCE, BECAUSE THE PANEL'S SCREENS ARE WHERE THE WORK
@@ -189,16 +189,16 @@ const ADMIN_PAGES = [
    * languages.
    *
    * The edit forms are DISCOVERED from their lists rather than addressed by id,
-   * because the ids depend on the seed and a hardcoded /studio/projects/1/edit
+   * because the ids depend on the seed and a hardcoded /admin/projects/1/edit
    * is a test that passes until somebody reseeds.
    */
-  { label: 'studio projects', path: '/studio/projects', admin: true },
+  { label: 'studio projects', path: '/admin/projects', admin: true },
   {
     label: 'studio project edit',
     admin: true,
-    discover: { from: '/studio/projects', selector: 'a[href*="/studio/projects/"][href$="/edit"]' },
+    discover: { from: '/admin/projects', selector: 'a[href*="/admin/projects/"][href$="/edit"]' },
   },
-  { label: 'studio project create', path: '/studio/projects/create', admin: true },
+  { label: 'studio project create', path: '/admin/projects/create', admin: true },
 
   /*
    * THE STORY BUILDER, INSIDE THE PANEL (Task 32, Part 6 step 1).
@@ -214,35 +214,54 @@ const ADMIN_PAGES = [
   {
     label: 'studio story builder',
     admin: true,
-    discover: { from: '/studio/projects', selector: 'a[href*="/studio/projects/"][href$="/story"]' },
+    discover: { from: '/admin/projects', selector: 'a[href*="/admin/projects/"][href$="/story"]' },
   },
-  { label: 'studio media', path: '/studio/media', admin: true },
-  { label: 'studio categories', path: '/studio/categories', admin: true },
-  { label: 'studio tags', path: '/studio/tags', admin: true },
-  { label: 'studio journal', path: '/studio/articles', admin: true },
+  { label: 'studio media', path: '/admin/media', admin: true },
+  { label: 'studio categories', path: '/admin/categories', admin: true },
+  { label: 'studio tags', path: '/admin/tags', admin: true },
+  { label: 'studio journal', path: '/admin/articles', admin: true },
   {
     label: 'studio journal edit',
     admin: true,
-    discover: { from: '/studio/articles', selector: 'a[href*="/studio/articles/"][href$="/edit"]' },
+    discover: { from: '/admin/articles', selector: 'a[href*="/admin/articles/"][href$="/edit"]' },
   },
-  { label: 'studio journal categories', path: '/studio/article-categories', admin: true },
-  { label: 'studio pages', path: '/studio/pages', admin: true },
-  { label: 'studio services', path: '/studio/services', admin: true },
-  { label: 'studio clients', path: '/studio/clients', admin: true },
-  { label: 'studio enquiries', path: '/studio/enquiries', admin: true },
+  { label: 'studio journal categories', path: '/admin/article-categories', admin: true },
+  { label: 'studio pages', path: '/admin/pages', admin: true },
+  { label: 'studio services', path: '/admin/services', admin: true },
+  { label: 'studio clients', path: '/admin/clients', admin: true },
+  { label: 'studio enquiries', path: '/admin/enquiries', admin: true },
   {
     label: 'studio enquiry',
     admin: true,
-    discover: { from: '/studio/enquiries', selector: 'a[href*="/studio/enquiries/"]' },
+    discover: { from: '/admin/enquiries', selector: 'a[href*="/admin/enquiries/"]' },
   },
-  { label: 'studio redirects', path: '/studio/redirects', admin: true },
-  { label: 'studio users', path: '/studio/users', admin: true },
-  { label: 'studio settings', path: '/studio/settings', admin: true },
+  { label: 'studio redirects', path: '/admin/redirects', admin: true },
+  { label: 'studio users', path: '/admin/users', admin: true },
+  { label: 'studio settings', path: '/admin/settings', admin: true },
 
-  { label: 'admin dashboard', path: '/admin', admin: true },
-  { label: 'admin media library', path: '/admin/media', admin: true },
+  /*
+   * ───────────────────────────────────────────────────────────────────────
+   * THE CUSTOM ADMIN, AT /legacy — WHERE TASK 33 PART A PUT IT.
+   *
+   * These eighteen targets still said /admin after Part A swapped the two
+   * addresses, which meant they were pointing at the FILAMENT PANEL. Most of
+   * them passed, because the panel has a screen at the same path and the
+   * harness only asked for HTTP 200 and a clean console — so sixteen rows
+   * were checking the panel twice under a legacy label while the custom
+   * admin, which is still the only place the chunked uploader and the
+   * per-image detail screen exist, went unchecked at every viewport.
+   *
+   * Two of them did not pass, and that is the only reason this was found:
+   * /admin/media/trash and /admin/inquiries have no panel equivalent at
+   * those paths, so they 404'd in all eight columns.
+   *
+   * A label that no longer names what it checks is worse than a missing row.
+   * ───────────────────────────────────────────────────────────────────────
+   */
+  { label: 'legacy dashboard', path: '/legacy', admin: true },
+  { label: 'legacy media library', path: '/legacy/media', admin: true },
   {
-    label: 'admin media detail',
+    label: 'legacy media detail',
     admin: true,
     /*
      * :not([href$="/trash"]) — without it this matched the "Trash" link in the
@@ -250,43 +269,43 @@ const ADMIN_PAGES = [
      * of them as the media detail. A discovery selector that silently matches
      * the wrong page is worse than one that finds nothing.
      */
-    discover: { from: '/admin/media', selector: 'a[href*="/admin/media/"]:not([href$="/trash"])' },
+    discover: { from: '/legacy/media', selector: 'a[href*="/legacy/media/"]:not([href$="/trash"])' },
   },
-  { label: 'admin media trash', path: '/admin/media/trash', admin: true },
-  { label: 'admin projects', path: '/admin/projects', admin: true },
+  { label: 'legacy media trash', path: '/legacy/media/trash', admin: true },
+  { label: 'legacy projects', path: '/legacy/projects', admin: true },
   {
-    label: 'admin project editor',
+    label: 'legacy project editor',
     admin: true,
-    discover: { from: '/admin/projects', selector: 'a[href*="/edit"]' },
+    discover: { from: '/legacy/projects', selector: 'a[href*="/edit"]' },
   },
   {
-    label: 'admin story builder',
+    label: 'legacy story builder',
     admin: true,
-    discover: { from: '/admin/projects', selector: 'a[href*="/story"]' },
+    discover: { from: '/legacy/projects', selector: 'a[href*="/story"]' },
   },
-  { label: 'admin journal', path: '/admin/articles', admin: true },
-  { label: 'admin services', path: '/admin/services', admin: true },
+  { label: 'legacy journal', path: '/legacy/articles', admin: true },
+  { label: 'legacy services', path: '/legacy/services', admin: true },
   {
-    label: 'admin service editor',
+    label: 'legacy service editor',
     admin: true,
-    discover: { from: '/admin/services', selector: 'a[href*="/edit"]' },
+    discover: { from: '/legacy/services', selector: 'a[href*="/edit"]' },
   },
-  { label: 'admin pages', path: '/admin/pages', admin: true },
-  { label: 'admin redirects', path: '/admin/redirects', admin: true },
+  { label: 'legacy pages', path: '/legacy/pages', admin: true },
+  { label: 'legacy redirects', path: '/legacy/redirects', admin: true },
   {
-    label: 'admin article editor',
+    label: 'legacy article editor',
     admin: true,
-    discover: { from: '/admin/articles', selector: 'a[href*="/edit"]' },
+    discover: { from: '/legacy/articles', selector: 'a[href*="/edit"]' },
   },
-  { label: 'admin inquiries', path: '/admin/inquiries', admin: true },
+  { label: 'legacy inquiries', path: '/legacy/inquiries', admin: true },
   {
-    label: 'admin inquiry detail',
+    label: 'legacy inquiry detail',
     admin: true,
-    discover: { from: '/admin/inquiries', selector: 'a[href*="/admin/inquiries/"]' },
+    discover: { from: '/legacy/inquiries', selector: 'a[href*="/legacy/inquiries/"]' },
   },
-  { label: 'admin categories', path: '/admin/categories', admin: true },
-  { label: 'admin clients', path: '/admin/clients', admin: true },
-  { label: 'admin settings', path: '/admin/settings', admin: true },
+  { label: 'legacy categories', path: '/legacy/categories', admin: true },
+  { label: 'legacy clients', path: '/legacy/clients', admin: true },
+  { label: 'legacy settings', path: '/legacy/settings', admin: true },
 ]
 
 // ---------------------------------------------------------------------------
@@ -763,7 +782,15 @@ async function resolveAdminPaths(page) {
      * "no rows" when /admin/projects had nine of them and simply never linked
      * to the page, which is the defect this run actually found.
      */
-    const rows = await page.evaluate(() => document.querySelectorAll('.project-row, .category-row').length)
+    /*
+     * .fi-ta-row as well: .project-row and .category-row are the CUSTOM
+     * admin's classes, and this diagnostic has been reporting "no rows"
+     * against Filament tables full of them since the panel took over. A
+     * wrong explanation of a failure costs more than no explanation.
+     */
+    const rows = await page.evaluate(
+      () => document.querySelectorAll('.fi-ta-row, .project-row, .category-row').length,
+    )
 
     notes.push(rows === 0
       ? `${target.label}: nothing to open — ${from} has no rows`
@@ -774,10 +801,39 @@ async function resolveAdminPaths(page) {
 }
 
 async function run() {
+  /*
+   * ───────────────────────────────────────────────────────────────────────────
+   * THE LAST THREE FLAGS ARE ABOUT CHROME SURVIVING THE RUN.
+   *
+   * A full matrix is 448 page loads against a library of 183 images, and on
+   * two runs out of three Chrome died partway through — once in page.close(),
+   * once in createBrowserContext() — taking the whole report with it, because
+   * the matrix is printed at the end:
+   *
+   *     ConnectionClosedError: Connection closed.
+   *
+   * --disable-dev-shm-usage puts shared memory in /tmp instead of the small
+   * default /dev/shm, which is the usual cause of exactly this crash under
+   * image load. --disable-extensions removes one more moving part from a
+   * process tree that only has to render pages.
+   *
+   * --no-zygote was tried here and REMOVED: it is a Linux-shaped flag and on
+   * macOS it made createBrowserContext() fail outright rather than
+   * intermittently, which is a worse failure wearing the same message.
+   *
+   * This is a harness that reports nothing at all when it falls over, so its
+   * own stability is part of what it measures.
+   * ───────────────────────────────────────────────────────────────────────────
+   */
   const browser = await launch({
     executablePath: chromePath(),
     headless: true,
-    args: ['--hide-scrollbars', '--disable-gpu'],
+    args: [
+      '--hide-scrollbars',
+      '--disable-gpu',
+      '--disable-dev-shm-usage',
+      '--disable-extensions',
+    ],
   })
 
   const results = []
@@ -796,6 +852,14 @@ async function run() {
   if (!args['public-only']) {
     try {
       artisan('admin:disposable')
+
+      /*
+       * The rows some screens need in order to exist. Without this the
+       * enquiries list renders its empty state, the enquiry DETAIL page
+       * cannot be discovered at all, and — before D3 made an unreachable
+       * target a failure — that was a footnote rather than a gap.
+       */
+      artisan('harness:fixtures')
       credentials = JSON.parse(readFileSync(CREDENTIALS_PATH, 'utf8'))
     } catch (e) {
       loginProblem = `could not create a disposable admin: ${e.message}`
@@ -876,6 +940,28 @@ async function run() {
     let guestContext = null
     let guestPage = null
 
+    /*
+     * ───────────────────────────────────────────────────────────────────────
+     * A LOST BROWSER MUST NOT TAKE THE REPORT WITH IT.
+     *
+     * Three runs out of four on this machine ended in
+     *
+     *     ConnectionClosedError: Connection closed.
+     *       at CdpPage.close (…/puppeteer-core/lib/esm/puppeteer/cdp/Page.js)
+     *
+     * — thrown in TEARDOWN, after the checks had already run. The exception
+     * escaped run(), the catch at the bottom of this file printed the stack,
+     * and 448 measured results were discarded. Twice that was an entire
+     * twelve-minute matrix thrown away because a page would not close.
+     *
+     * The matrix is the product. So the browser dying is now recorded as a
+     * fact about the run rather than an exception: the loops stop, what was
+     * measured is printed, and the run FAILS — a truncated matrix must never
+     * read as a pass, which is the same rule as an unreachable target.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    let browserLost = null
+
     /** Build a fresh session-less page and point it at this viewport/theme. */
     const makeGuestPage = async (viewport, theme) => {
       guestContext = await browser.createBrowserContext()
@@ -912,7 +998,11 @@ async function run() {
     }
 
     for (const theme of THEMES) {
+      if (browserLost) break
+
       for (const viewport of VIEWPORTS) {
+        if (browserLost) break
+
         const page = await browser.newPage()
         await page.setViewport({ width: viewport.width, height: viewport.height })
         await page.emulateMediaFeatures([
@@ -921,6 +1011,8 @@ async function run() {
         ])
 
         for (const target of PAGES) {
+          if (browserLost) break
+
           if (args.only && !target.path.startsWith(args.only)) continue
 
           /*
@@ -1135,24 +1227,47 @@ async function run() {
 
         }
 
-        await page.close()
+        try {
+          await page.close()
+        } catch (e) {
+          browserLost = `the browser was lost while closing a page: ${e.message}`
+        }
       }
     }
 
     // The shared session-less context, closed once the whole matrix is done.
     if (guestContext) {
-      await guestContext.close()
+      try {
+        await guestContext.close()
+      } catch (e) {
+        browserLost ??= `the browser was lost while closing the guest context: ${e.message}`
+      }
+
       guestContext = null
       guestPage = null
     }
 
+    if (browserLost) {
+      skipped.push(browserLost)
+    }
+
   } finally {
-    await browser.close()
+    /*
+     * If the browser is already gone this throws the same
+     * ConnectionClosedError, which would discard the report in the one place
+     * nothing can catch it.
+     */
+    try {
+      await browser.close()
+    } catch (e) {
+      // Nothing to do: the process we were asking to stop has stopped.
+    }
 
     // Always. A crashed run must not leave an admin account behind.
     if (credentials) {
       try {
         artisan('admin:disposable', '--delete')
+        artisan('harness:fixtures', '--delete')
       } catch (e) {
         skipped.push(`disposable admin cleanup failed: ${e.message}`)
       }
@@ -1233,7 +1348,28 @@ function report(results, failures, skipped = [], crawlerFiles = []) {
   const total = results.length
   process.stdout.write(`\n${total - failures}/${total} checks passed\n`)
 
-  process.exit(failures ? 1 : 0)
+  /*
+   * ───────────────────────────────────────────────────────────────────────
+   * A PAGE THAT COULD NOT BE REACCHED IS A FAILURE, NOT A FOOTNOTE.
+   *
+   * This file's own header says "a matrix that hides a page is exactly the
+   * kind of quiet gap this harness exists to close" — and then printed
+   * unresolved targets under NOT CHECKED and exited 0. Task 33 Part A moved
+   * the panel from /studio to /admin; every discovery selector here still
+   * looked for an href containing /studio/, matched nothing, and four
+   * screens — both edit forms, the story builder and an enquiry — dropped
+   * out of the run while it reported success.
+   *
+   * Four pages' worth of coverage, lost to a string, reported as a pass.
+   * ───────────────────────────────────────────────────────────────────────
+   */
+  if (skipped.length) {
+    process.stdout.write(
+      `\n${skipped.length} target(s) could not be reached, so the matrix above is incomplete.\n`,
+    )
+  }
+
+  process.exit(failures || skipped.length ? 1 : 0)
 }
 
 run().catch((e) => {

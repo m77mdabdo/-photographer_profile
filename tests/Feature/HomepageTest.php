@@ -915,15 +915,46 @@ class HomepageTest extends TestCase
             'no clearance is declared between the text column and the plate'
         );
 
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * REWRITTEN IN TASK 33 D3. IT USED TO ASSERT THE DEFECT.
+         *
+         * This loop required padding-left for landscape and square and
+         * padding-right for portrait — the PHYSICAL properties, named
+         * literally. Those are the sides that face the picture in English and
+         * the sides that face AWAY from it in Arabic, because the grid
+         * columns flip on the inline axis and physical padding does not.
+         *
+         * So the Arabic home page put the clearance on the wrong edge and the
+         * hero text abutted a hard photographic edge at exactly zero pixels —
+         * the thing the comment in home.css was written to prevent — while
+         * this test confirmed everything was correct.
+         *
+         * The assertion is now the one that was meant all along: the gap is on
+         * the side facing the picture WHICHEVER WAY THE PAGE RUNS. That can
+         * only be said with a logical property, so a physical one on these
+         * selectors is now a failure rather than a requirement.
+         * ───────────────────────────────────────────────────────────────────
+         */
         foreach ([
-            'landscape' => 'padding-left',
-            'square' => 'padding-left',
-            'portrait' => 'padding-right',
+            'landscape' => 'padding-inline-start',
+            'square' => 'padding-inline-start',
+            'portrait' => 'padding-inline-end',
         ] as $name => $side) {
             $this->assertMatchesRegularExpression(
                 '/\.hero--'.$name.' \.hero__aside \{[^}]*'.$side.': var\(--hero-plate-gap\)/s',
                 $css,
-                "{$name}: the text column has no clearance from the plate"
+                "{$name}: the text column has no clearance from the plate on the inline axis"
+            );
+        }
+
+        foreach (['landscape', 'square', 'portrait'] as $name) {
+            preg_match('/\.hero--'.$name.' \.hero__voice,\s*\.hero--'.$name.' \.hero__aside \{([^}]*)\}/s', $css, $rule);
+
+            $this->assertDoesNotMatchRegularExpression(
+                '/padding-(left|right):/',
+                $rule[1] ?? '',
+                "{$name}: the clearance is physical, so it is on the wrong side in Arabic"
             );
         }
     }

@@ -19,6 +19,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -84,11 +85,38 @@ class PageResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('title')
-                    ->label(__('studio.field.title'))
-                    ->searchable()
-                    ->sortable()
-                    ->weight('semibold'),
+                /*
+                 * A flat page is known by its address as much as its title —
+                 * "the privacy one" is /privacy. Searching the slug finds it
+                 * either way round.
+                 */
+                Translatable::displayColumn('title', alsoSearch: ['slug']),
+
+                /*
+                 * WHY THE LOCK IS ON SCREEN.
+                 *
+                 * PagePolicy refuses to delete the privacy notice and the
+                 * terms, because the footer links to them by name and a 404
+                 * where a regulator looks is the kind of mistake you find out
+                 * about late. Task 33 Part 0 made that refusal explain itself
+                 * rather than hiding the button. This column is the other
+                 * half: the reason is visible BEFORE you try, instead of
+                 * being a disabled control you have to hover to understand.
+                 */
+                IconColumn::make('is_locked')
+                    ->label(__('studio.pages.locked'))
+                    ->boolean()
+                    ->trueIcon('heroicon-o-lock-closed')
+                    ->falseIcon('heroicon-o-lock-open')
+                    ->trueColor('warning')
+                    ->falseColor('gray')
+                    ->tooltip(fn (bool $state): ?string => $state ? __('studio.pages.locked_hint') : null),
+
+                TextColumn::make('slug')
+                    ->label(__('studio.field.slug'))
+                    ->prefix('/')
+                    ->color('gray')
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 ResourceDefaults::statusColumn(),
                 Translatable::statusColumn(self::TRANSLATED),
@@ -98,7 +126,7 @@ class PageResource extends Resource
                 ResourceDefaults::statusFilter(),
                 ResourceDefaults::trashedFilter(),
             ])
-            ->recordActions(ResourceDefaults::rowActions(self::TRANSLATED))
+            ->recordActions(ResourceDefaults::rowActionsFor(Page::class, self::TRANSLATED))
             ->toolbarActions([ResourceDefaults::bulkActions()])
             ->defaultSort('updated_at', 'desc');
     }

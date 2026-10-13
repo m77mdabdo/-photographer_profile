@@ -25,6 +25,8 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -123,11 +125,36 @@ class ProjectResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('title')
-                    ->label(__('studio.field.title'))
-                    ->searchable()
+                /*
+                 * C2 — WHAT AN OWNER TYPES INTO THE SEARCH BOX.
+                 *
+                 * Not the title. A photographer looks for "the Harrods job",
+                 * "that Provence shoot", "the 2024 ones". Measured before
+                 * this line was written: searching the client, the location
+                 * or the year each returned nothing, because only the title
+                 * was searchable. All four now reach the right rows, in both
+                 * languages — see Translatable::displayColumn().
+                 */
+                Translatable::displayColumn('title', alsoSearch: ['client', 'location', 'year']),
+
+                /*
+                 * The three searchable fields are also columns, hidden until
+                 * asked for. Showing them by default would make the list a
+                 * spreadsheet; leaving them out entirely would mean a search
+                 * that matches on a value you cannot then see.
+                 */
+                TextColumn::make('client')
+                    ->label(__('studio.field.client'))
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('location')
+                    ->label(__('studio.field.location'))
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('year')
+                    ->label(__('studio.field.year'))
                     ->sortable()
-                    ->weight('semibold'),
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 ResourceDefaults::statusColumn(),
                 Translatable::statusColumn(self::TRANSLATED),
@@ -135,25 +162,45 @@ class ProjectResource extends Resource
             ])
             ->filters([
                 ResourceDefaults::statusFilter(),
+
+                /*
+                 * Year as a filter rather than a free-text field: the values
+                 * come from the data, so the list cannot offer a year with
+                 * nothing in it, and there is nothing to mistype.
+                 */
+                SelectFilter::make('year')
+                    ->label(__('studio.field.year'))
+                    ->options(fn (): array => Project::query()
+                        ->whereNotNull('year')
+                        ->distinct()
+                        ->orderByDesc('year')
+                        ->pluck('year', 'year')
+                        ->all()),
+
+                TernaryFilter::make('is_featured')
+                    ->label(__('studio.filter.featured')),
+
                 ResourceDefaults::trashedFilter(),
             ])
-            ->recordActions([
-                /*
-                 * 6.1c — THE STORY, FIRST IN THE ROW.
-                 *
-                 * Before Edit, deliberately: arranging the pictures is what a
-                 * photographer opens a project to do, and the details form is
-                 * the occasional visit. A link rather than a modal, because
-                 * the builder needs the whole viewport.
-                 */
-                Action::make('story')
-                    ->label(__('studio.story.action'))
-                    ->icon('heroicon-o-queue-list')
-                    ->url(fn (Project $record): string => ProjectStory::getUrl(['record' => $record]))
-                    ->authorize(fn (Project $record): bool => auth()->user()?->can('update', $record) ?? false),
-
-                ...ResourceDefaults::rowActions(self::TRANSLATED),
-            ])
+            /*
+             * 6.1c — THE STORY, FIRST IN THE ROW.
+             *
+             * Before Edit, deliberately: arranging the pictures is what a
+             * photographer opens a project to do, and the details form is the
+             * occasional visit. A link rather than a modal, because the
+             * builder needs the whole viewport.
+             */
+            ->recordActions(ResourceDefaults::rowActionsFor(
+                Project::class,
+                self::TRANSLATED,
+                lead: [
+                    Action::make('story')
+                        ->label(__('studio.story.action'))
+                        ->icon('heroicon-o-queue-list')
+                        ->url(fn (Project $record): string => ProjectStory::getUrl(['record' => $record]))
+                        ->authorize(fn (Project $record): bool => auth()->user()?->can('update', $record) ?? false),
+                ],
+            ))
             ->toolbarActions([ResourceDefaults::bulkActions()])
             ->defaultSort('updated_at', 'desc');
     }
