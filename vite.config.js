@@ -47,6 +47,27 @@ export default defineConfig({
                  * party in it and still holds.
                  */
                 'resources/css/filament/studio/theme.css',
+
+                /*
+                 * THE STORY BUILDER'S JS, AS A FIFTH ENTRY.
+                 *
+                 * Task 32 Part 6 mounts the custom admin's StoryBuilder inside
+                 * the panel. Its behaviour is 993 lines that already exist and
+                 * are already imported by admin.js, so the panel needs a way
+                 * IN to the same module without:
+                 *
+                 *   · importing admin.js, which also boots the sidebar, the
+                 *     uploader and the focal-point control, none of which have
+                 *     markup to bind to in the panel
+                 *   · touching public.js, which is byte-for-byte pinned
+                 *
+                 * An entry of its own gives a chunk the story page loads with
+                 * @vite and nothing else loads at all. Vite hoists nothing
+                 * into the public bundle, because story-builder.js is imported
+                 * only by admin.js and by this — never by public.js — and the
+                 * test suite checks the public hashes either way.
+                 */
+                'resources/js/studio/story.js',
             ],
             refresh: true,
         }),

@@ -353,7 +353,7 @@ class StudioPanelTest extends TestCase
          * byte did not move.
          * ───────────────────────────────────────────────────────────────────
          */
-        $this->assertSame('assets/public-BSwDTaSc.css', $publicCss, 'the public stylesheet changed');
+        $this->assertSame('assets/public-BCTah1_2.css', $publicCss, 'the public stylesheet changed');
         $this->assertSame('assets/public-B-FzqxLO.js', $publicJs, 'the public entry changed');
 
         // And the panel's theme is its own entry, not part of either.

@@ -272,6 +272,21 @@ return [
         'details' => 'Details',
     ],
 
+    /*
+     * The story builder, mounted in the panel (Task 32, Part 6 step 1).
+     *
+     * `scope_*` is the two-save-buttons answer: this page saves the STORY and
+     * nothing else, and says so rather than leaving an owner to discover it.
+     */
+    'story' => [
+        'title' => 'The story',
+        'subheading' => 'Arrange the pictures and the words. Drag to reorder, or use the arrow keys.',
+        'action' => 'Story',
+        'scope_heading' => 'This page saves the story on its own.',
+        'scope_body' => 'The blocks below are saved by the button at the end of the story — not by the project’s own Save. The title, the cover and the publishing dates are on the project’s details page.',
+        'back_to_details' => 'Back to the project’s details',
+        'blocks' => 'blocks',
+    ],
     'settings' => [
         'group' => [
             'identity' => 'The studio',

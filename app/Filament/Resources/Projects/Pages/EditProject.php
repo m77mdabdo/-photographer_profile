@@ -7,6 +7,7 @@ namespace App\Filament\Resources\Projects\Pages;
 use App\Filament\Resources\Projects\ProjectResource;
 use App\Filament\Support\RecordWriter;
 use App\Filament\Support\Translatable;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
@@ -16,9 +17,25 @@ class EditProject extends EditRecord
 {
     protected static string $resource = ProjectResource::class;
 
+    /**
+     * 6.1c — the story is reachable from here as well as from the row.
+     *
+     * An owner who has opened a project to fix its title should not have to
+     * go back to the list to arrange its pictures. First in the group, for
+     * the same reason it is first in the row.
+     */
     protected function getHeaderActions(): array
     {
-        return [DeleteAction::make(), RestoreAction::make(), ForceDeleteAction::make()];
+        return [
+            Action::make('story')
+                ->label(__('studio.story.action'))
+                ->icon('heroicon-o-queue-list')
+                ->url(fn (): string => ProjectStory::getUrl(['record' => $this->getRecord()])),
+
+            DeleteAction::make(),
+            RestoreAction::make(),
+            ForceDeleteAction::make(),
+        ];
     }
 
     /**

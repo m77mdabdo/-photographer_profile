@@ -7,6 +7,7 @@ namespace App\Filament\Resources\Projects;
 use App\Filament\Resources\Projects\Pages\CreateProject;
 use App\Filament\Resources\Projects\Pages\EditProject;
 use App\Filament\Resources\Projects\Pages\ListProjects;
+use App\Filament\Resources\Projects\Pages\ProjectStory;
 use App\Filament\Support\AddressesRecordsById;
 use App\Filament\Support\MediaField;
 use App\Filament\Support\ResourceDefaults;
@@ -14,6 +15,7 @@ use App\Filament\Support\Translatable;
 use App\Models\Project;
 use BackedEnum;
 use Filament\Forms\Components\TextInput;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -134,7 +136,23 @@ class ProjectResource extends Resource
                 ResourceDefaults::statusFilter(),
                 ResourceDefaults::trashedFilter(),
             ])
-            ->recordActions(ResourceDefaults::rowActions(self::TRANSLATED))
+            ->recordActions([
+                /*
+                 * 6.1c — THE STORY, FIRST IN THE ROW.
+                 *
+                 * Before Edit, deliberately: arranging the pictures is what a
+                 * photographer opens a project to do, and the details form is
+                 * the occasional visit. A link rather than a modal, because
+                 * the builder needs the whole viewport.
+                 */
+                Action::make('story')
+                    ->label(__('studio.story.action'))
+                    ->icon('heroicon-o-queue-list')
+                    ->url(fn (Project $record): string => ProjectStory::getUrl(['record' => $record]))
+                    ->authorize(fn (Project $record): bool => auth()->user()?->can('update', $record) ?? false),
+
+                ...ResourceDefaults::rowActions(self::TRANSLATED),
+            ])
             ->toolbarActions([ResourceDefaults::bulkActions()])
             ->defaultSort('updated_at', 'desc');
     }
@@ -150,6 +168,17 @@ class ProjectResource extends Resource
             'index' => ListProjects::route('/'),
             'create' => CreateProject::route('/create'),
             'edit' => EditProject::route('/{record}/edit'),
+
+            /*
+             * THE STORY, ON ITS OWN PAGE.
+             *
+             * Not a tab on the edit page and not a section of its form: the
+             * builder owns the whole viewport, has its own save, and writes
+             * project_blocks rather than the project's own columns. See
+             * ProjectStory for why the component is mounted rather than
+             * rewritten as a Builder field.
+             */
+            'story' => ProjectStory::route('/{record}/story'),
         ];
     }
 }

@@ -40,6 +40,36 @@
 @source '../views/**/*.blade.php';
 @source '../js/**/*.js';
 
+/*
+ * ───────────────────────────────────────────────────────────────────────────
+ * AND NOT THE ADMIN'S VIEWS, WHICH THE GLOB ABOVE REACHES.
+ *
+ * `../views/**` was written when every view in the tree was a public one.
+ * It now also covers views/admin, views/livewire, views/auth, views/filament
+ * and views/dev — so a Tailwind utility typed in a PANEL template put a rule
+ * in the PUBLIC stylesheet.
+ *
+ * Measured: adding one Filament page view with `rounded-none border
+ * border-gray-200 p-4 text-sm` to the panel grew public.css by 530 bytes of
+ * CSS no public page can use. Caught by the pinned hash in StudioPanelTest,
+ * twice in one task — the first time from automatic source detection, this
+ * time from the glob itself.
+ *
+ * Excluded rather than re-enumerated: listing the public directories by name
+ * would be a list to maintain, and the day somebody adds views/studio it
+ * would silently stop being scanned, which is the failure that is hard to
+ * see. A new ADMIN directory added to this exclusion list, by contrast,
+ * fails loudly — its utilities simply do not work.
+ * ───────────────────────────────────────────────────────────────────────────
+ */
+@source not '../views/admin/**/*.blade.php';
+@source not '../views/livewire/**/*.blade.php';
+@source not '../views/auth/**/*.blade.php';
+@source not '../views/filament/**/*.blade.php';
+@source not '../views/dev/**/*.blade.php';
+@source not '../js/admin/**/*.js';
+@source not '../js/studio/**/*.js';
+
 @import './fonts.css';
 @import './tokens.css';
 @import './base.css';
