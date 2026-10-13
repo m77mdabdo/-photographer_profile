@@ -46,7 +46,7 @@
     --}}
     @livewire(
         \App\Livewire\Admin\StoryBuilder::class,
-        ['project' => $this->getRecord()],
+        ['project' => $this->getRecord(), 'embedded' => true],
         key('story-builder-'.$this->getRecord()->getKey())
     )
 

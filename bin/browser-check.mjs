@@ -199,6 +199,23 @@ const ADMIN_PAGES = [
     discover: { from: '/studio/projects', selector: 'a[href*="/studio/projects/"][href$="/edit"]' },
   },
   { label: 'studio project create', path: '/studio/projects/create', admin: true },
+
+  /*
+   * THE STORY BUILDER, INSIDE THE PANEL (Task 32, Part 6 step 1).
+   *
+   * The one panel screen whose content is rendered by JAVASCRIPT rather than
+   * by Blade: the cards are built in the browser from [data-block-template].
+   * So this is the one screen a test suite genuinely cannot check — a
+   * server-rendered assertion sees a count and a template and no story at all.
+   *
+   * Discovered from the projects list so it lands on a project that exists,
+   * rather than on a hardcoded id that depends on the seed.
+   */
+  {
+    label: 'studio story builder',
+    admin: true,
+    discover: { from: '/studio/projects', selector: 'a[href*="/studio/projects/"][href$="/story"]' },
+  },
   { label: 'studio media', path: '/studio/media', admin: true },
   { label: 'studio categories', path: '/studio/categories', admin: true },
   { label: 'studio tags', path: '/studio/tags', admin: true },

@@ -25,9 +25,34 @@
         </p>
     </div>
 
-    <p class="breadcrumb">
-        <a href="{{ route('admin.projects.edit', $project) }}">← {{ $project->title }}</a>
-    </p>
+    {{--
+        THE WAY BACK, TO WHICHEVER ADMIN IS HOSTING THIS.
+
+        This component is rendered in two places: its own route in the custom
+        admin, and a Filament page in the panel (Task 32, Part 6 step 1). The
+        link was hardcoded to admin.projects.edit, so inside the PANEL it sent
+        the owner out to the other admin — and after step 10 it would have
+        been a 404 on the most-used screen there is.
+
+        Hidden rather than relinked in the panel, because Filament renders its
+        own breadcrumb ("Projects › The story") immediately above this one and
+        the page's notice already carries a link to the project's details. Two
+        ways back, six lines apart, is clutter rather than help.
+
+        $embedded is set by the Filament page at mount; the custom admin's
+        route does not set it and gets the link it has always had. A PROPERTY
+        rather than a route check, because a Livewire update is a POST to
+        Livewire's own endpoint and a route check flips to false there — the
+        breadcrumb reappeared the first time anything re-rendered.
+
+        The @unless goes with the old admin at step 10, leaving the breadcrumb
+        Filament draws.
+    --}}
+    @unless ($embedded)
+        <p class="breadcrumb">
+            <a href="{{ route('admin.projects.edit', $project) }}">← {{ $project->title }}</a>
+        </p>
+    @endunless
 
     <header class="module-header">
         <h1 class="admin-heading">Story</h1>
@@ -35,7 +60,18 @@
 
         <span class="badge" data-dirty-badge role="status" aria-live="polite" hidden>Unsaved changes</span>
 
-        <a href="{{ route('admin.projects.preview', $project) }}" class="admin-link" target="_blank" rel="noopener">Preview</a>
+        {{--
+            PREVIEW, POINTED AT WHICHEVER ADMIN IS HOSTING THIS.
+
+            Hardcoded to admin.projects.preview, so inside the panel this was
+            a link OUT to the other admin — and a 404 after step 10. Both
+            routes produce the same temporarily signed public URL; see
+            App\Support\ProjectPreview, which is the one implementation.
+        --}}
+        <a href="{{ $embedded
+                    ? \App\Filament\Resources\Projects\ProjectResource::getUrl('preview', ['record' => $project])
+                    : route('admin.projects.preview', $project) }}"
+           class="admin-link" target="_blank" rel="noopener">{{ __('studio.story.preview') }}</a>
 
         {{-- Visible undo: a keyboard-only affordance is not discoverable. --}}
         <span class="undo-group">

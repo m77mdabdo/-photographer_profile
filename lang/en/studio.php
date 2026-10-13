@@ -282,6 +282,7 @@ return [
         'title' => 'The story',
         'subheading' => 'Arrange the pictures and the words. Drag to reorder, or use the arrow keys.',
         'action' => 'Story',
+        'preview' => 'Preview',
         'scope_heading' => 'This page saves the story on its own.',
         'scope_body' => 'The blocks below are saved by the button at the end of the story — not by the project’s own Save. The title, the cover and the publishing dates are on the project’s details page.',
         'back_to_details' => 'Back to the project’s details',

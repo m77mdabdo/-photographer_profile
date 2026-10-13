@@ -121,8 +121,34 @@ class StoryBuilder extends Component
         $this->dispatch('story-reloaded');
     }
 
-    public function mount(Project $project): void
+    /**
+     * Is this component hosted by the Filament panel rather than by its own
+     * route in the custom admin?
+     *
+     * ───────────────────────────────────────────────────────────────────────
+     * A PROPERTY, NOT request()->routeIs('filament.*').
+     *
+     * The first version asked the ROUTE which admin was hosting it. That is
+     * right on the initial page load and wrong on every Livewire update: an
+     * update is a POST to Livewire's own endpoint, so the check flipped to
+     * false and the custom admin's breadcrumb reappeared the first time
+     * anything re-rendered. Found by screenshotting the page after a save.
+     *
+     * Livewire keeps public properties across requests, so a value set once at
+     * mount is the stable answer. It defaults to false, which is the custom
+     * admin's behaviour — the host that opts out is the one doing something
+     * unusual.
+     *
+     * What it hides is chrome the panel already draws: its own breadcrumb,
+     * and a "back" link beside Filament's. The EDITOR is identical in both.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public bool $embedded = false;
+
+    public function mount(Project $project, bool $embedded = false): void
     {
+        $this->embedded = $embedded;
+
         $this->authorize('update', $project);
 
         /*

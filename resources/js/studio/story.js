@@ -19,15 +19,29 @@
  * So: its own Vite entry, loaded by @vite in the story page's view alone.
  * ───────────────────────────────────────────────────────────────────────────
  *
- * TWO EVENTS, FOR THE SAME REASON THE OLD ADMIN LISTENS TO TWO.
+ * ───────────────────────────────────────────────────────────────────────────
+ * REBINDING AFTER A RE-RENDER, AND THE DEAD EVENT THAT USED TO DO IT.
  *
- * The builder binds itself to the DOM, and Livewire replaces DOM on every
- * re-render — switching the editing locale re-renders every block. The
- * initialiser guards against double-binding with a data attribute, so calling
- * it again is cheap and calling it too few times leaves dead buttons.
+ * The builder binds itself to the DOM once and marks the root with
+ * data-builder-bound. Livewire REPLACES that DOM on a re-render — switching
+ * the editing language re-renders every block — and the flag goes with it, so
+ * the buttons are inert until something binds again.
  *
- * `livewire:navigated` covers Filament's SPA navigation; `livewire:update`
- * covers a re-render in place.
+ * The first version of this file listened for `livewire:update`, copied from
+ * admin.js. That event does not exist. Livewire 4 dispatches exactly six DOM
+ * events — init, initializing, initialized, navigate, navigating, navigated —
+ * and `livewire:update` was a LIVEWIRE 2 name. Measured in a browser: after
+ * clicking the Arabic tab, data-builder-bound came back `undefined` and undo,
+ * drag and save were all dead until a reload.
+ *
+ * (The same dead listener is still in resources/js/admin.js, where it has
+ * been silently doing nothing to initReorder() since the Livewire 3 upgrade.
+ * Reported rather than fixed: that file is deleted at step 10.)
+ *
+ * `morphed` is the real hook — Livewire's own name for "this component's DOM
+ * has just been replaced". Registered inside `livewire:init`, because
+ * Livewire must exist before a hook can be attached to it.
+ * ───────────────────────────────────────────────────────────────────────────
  */
 
 import { initStoryBuilder } from '../admin/story-builder';
@@ -44,5 +58,10 @@ if (document.readyState === 'loading') {
     boot();
 }
 
+// Filament's SPA navigation.
 document.addEventListener('livewire:navigated', boot);
-document.addEventListener('livewire:update', boot);
+
+// A re-render in place: the locale switch, a validation round trip, a save.
+document.addEventListener('livewire:init', () => {
+    window.Livewire.hook('morphed', () => boot());
+});

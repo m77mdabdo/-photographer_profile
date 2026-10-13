@@ -174,6 +174,112 @@ class StoryBuilderInPanelTest extends TestCase
             ->assertForbidden();
     }
 
+    /**
+     * The page does not send the owner out to the other admin.
+     *
+     * The component's own breadcrumb was hardcoded to admin.projects.edit, so
+     * inside the panel it was a link OUT — and after step 10 it would have
+     * been a 404 on the most-used screen there is.
+     */
+    public function test_the_panel_page_links_nowhere_near_the_old_admin(): void
+    {
+        $html = $this->get(ProjectStory::getUrl(['record' => $this->project]))->assertOk()->getContent();
+
+        preg_match_all('#href="([^"]+)"#', $html, $matches);
+
+        $outbound = array_values(array_filter(
+            array_unique($matches[1]),
+            fn (string $href): bool => str_contains($href, '/admin'),
+        ));
+
+        $this->assertSame([], $outbound, 'the story page links into the old admin: '.implode(' ', $outbound));
+
+        // And the way back is still there — Filament's breadcrumb and the notice.
+        $this->assertStringContainsString(
+            \App\Filament\Resources\Projects\ProjectResource::getUrl('edit', ['record' => $this->project]),
+            $html,
+            'there is no way back to the project from the story page'
+        );
+    }
+
+    /**
+     * AND IT STAYS GONE AFTER A RE-RENDER.
+     *
+     * The first version asked request()->routeIs('filament.*'), which is right
+     * on the initial load and false on every Livewire update — so the custom
+     * admin's breadcrumb reappeared the moment anything re-rendered. The
+     * answer is component state, and this is the test that holds it there.
+     */
+    public function test_the_old_admin_chrome_stays_hidden_after_a_re_render(): void
+    {
+        $component = Livewire::test(StoryBuilder::class, [
+            'project' => $this->project,
+            'embedded' => true,
+        ]);
+
+        $component->assertDontSee(route('admin.projects.edit', $this->project));
+
+        // A re-render: switching the editing language redraws every block.
+        $component->call('switchLocale', 'ar')
+            ->assertDontSee(route('admin.projects.edit', $this->project));
+
+        // And a save.
+        $component->call('saveStory', [])
+            ->assertDontSee(route('admin.projects.edit', $this->project));
+    }
+
+    /** The custom admin's own breadcrumb is untouched while it still exists. */
+    public function test_the_old_admin_keeps_its_breadcrumb(): void
+    {
+        $html = $this->get(route('admin.projects.story', $this->project))->assertOk()->getContent();
+
+        $this->assertStringContainsString(
+            route('admin.projects.edit', $this->project),
+            $html,
+            'the custom admin lost its way back to the project'
+        );
+    }
+
+    /**
+     * PREVIEW, which the panel did not have at all.
+     *
+     * The custom admin has had /admin/projects/{p}/preview since the project
+     * was built; without it an owner cannot look at an unpublished story the
+     * way a visitor would. The story page's own Preview link pointed at that
+     * route, so inside the panel it was a link out.
+     */
+    public function test_preview_opens_a_signed_public_url(): void
+    {
+        $url = \App\Filament\Resources\Projects\ProjectResource::getUrl('preview', ['record' => $this->project]);
+
+        $response = $this->get($url);
+
+        $response->assertRedirect();
+
+        $target = (string) $response->headers->get('Location');
+
+        // The PUBLIC route, signed, and addressed by slug — not by the
+        // panel's id, because this link leaves the panel.
+        $this->assertStringContainsString('/work/'.$this->project->slug, $target);
+        $this->assertStringContainsString('signature=', $target);
+        $this->assertStringContainsString('expires=', $target);
+
+        // And it actually opens the unpublished project.
+        $this->get($target)->assertOk();
+    }
+
+    /** An unsigned preview URL is refused, so a forwarded link dies. */
+    public function test_an_unsigned_preview_is_refused(): void
+    {
+        $signed = (string) $this->get(
+            \App\Filament\Resources\Projects\ProjectResource::getUrl('preview', ['record' => $this->project])
+        )->headers->get('Location');
+
+        $unsigned = strtok($signed, '?');
+
+        $this->get($unsigned)->assertForbidden();
+    }
+
     // ----------------------------------------------------------------- 2
 
     /**

@@ -7,6 +7,7 @@ namespace App\Filament\Resources\Projects;
 use App\Filament\Resources\Projects\Pages\CreateProject;
 use App\Filament\Resources\Projects\Pages\EditProject;
 use App\Filament\Resources\Projects\Pages\ListProjects;
+use App\Filament\Resources\Projects\Pages\ProjectPreviewRedirect;
 use App\Filament\Resources\Projects\Pages\ProjectStory;
 use App\Filament\Support\AddressesRecordsById;
 use App\Filament\Support\MediaField;
@@ -179,6 +180,13 @@ class ProjectResource extends Resource
              * rewritten as a Builder field.
              */
             'story' => ProjectStory::route('/{record}/story'),
+
+            /*
+             * A page that only redirects — see ProjectPreviewRedirect. The
+             * signature has to be minted when the link is followed, not when
+             * the list that shows it is drawn.
+             */
+            'preview' => ProjectPreviewRedirect::route('/{record}/preview'),
         ];
     }
 }

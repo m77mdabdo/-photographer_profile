@@ -1,6 +1,29 @@
 @import '../../../../vendor/filament/filament/resources/css/theme.css';
 
 /*
+ * ───────────────────────────────────────────────────────────────────────────
+ * THE PANEL'S OWN TEMPLATES, WHICH NOTHING WAS SCANNING.
+ *
+ * Filament's theme.css opens with `@import 'tailwindcss' source(none)` — it
+ * declares its own sources and deliberately scans nothing else, which is why
+ * this panel's stylesheet does not swell with the public site's classes.
+ *
+ * The cost is that OUR panel templates were not scanned either. The story
+ * page's view used `text-primary-600` for its link and `border-gray-200` for
+ * its notice; neither utility was generated, so the link rendered as body
+ * text. Found by screenshotting the page rather than by reading the CSS —
+ * the same way the blank dashboard was found in Task 30.
+ *
+ * Narrow on purpose: the panel's Blade views and the Filament PHP that builds
+ * its schemas, which is where a class name can also be written. Not
+ * resources/views/** , which would pull the public site's classes into a
+ * stylesheet only the panel loads.
+ * ───────────────────────────────────────────────────────────────────────────
+ */
+@source '../../../views/filament/**/*.blade.php';
+@source '../../../../app/Filament/**/*.php';
+
+/*
  * ═══════════════════════════════════════════════════════════════════════════
  * THE STUDIO PANEL'S THEME.
  *

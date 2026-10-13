@@ -273,13 +273,9 @@ Route::prefix('admin')
                  * Draft preview. The signature is generated on demand below and
                  * expires, so a preview link shared by accident stops working.
                  */
-                Route::get('/{project}/preview', function (\App\Models\Project $project) {
-                    return redirect()->to(\Illuminate\Support\Facades\URL::temporarySignedRoute(
-                        'projects.preview',
-                        now()->addHour(),
-                        ['project' => $project->slug]
-                    ));
-                })->name('preview');
+                Route::get('/{project}/preview', fn (\App\Models\Project $project) => redirect()->to(
+                    \App\Support\ProjectPreview::url($project)
+                ))->name('preview');
             });
 
             /*
