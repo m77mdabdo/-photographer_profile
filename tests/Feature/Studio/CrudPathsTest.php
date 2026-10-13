@@ -1,0 +1,675 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\Studio;
+
+use App\Enums\UserRole;
+use App\Models\User;
+use Filament\Actions\Testing\TestAction;
+use Filament\Facades\Filament;
+use Filament\Resources\Resource;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
+use Tests\TestCase;
+
+/**
+ * ───────────────────────────────────────────────────────────────────────────
+ * PART 5a — EVERY RESOURCE, EVERY PATH, THROUGH THE REAL FORM.
+ *
+ * "A unit test of the model proves nothing about the screen the owner uses" is
+ * the whole point of this file. Task 31 proved it the hard way four times
+ * over: the model saved correctly while the modal wrote nulls over both
+ * locales, the guarded columns were dropped by mass assignment, the role
+ * select was decoration, and every row's Edit LINK was a 404. Not one of
+ * those was visible to a test that called ->save() on a model.
+ *
+ * So each case here mounts the real page, mounts the real action, fills the
+ * real schema, submits it, and then asks the database what happened.
+ *
+ * THE MATRIX IS DERIVED, NOT LISTED. The paths come from the resource's own
+ * table — getRecordActions() and getHeaderActions() — so a resource that
+ * gains or loses an action is covered or excused automatically, and a
+ * resource added next year is included the moment it is discovered.
+ * ───────────────────────────────────────────────────────────────────────────
+ */
+class CrudPathsTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Filament::setCurrentPanel('studio');
+
+        $this->actingAs(User::factory()->create([
+            'role' => UserRole::Owner,
+            'two_factor_secret' => encrypt('secret'),
+            'two_factor_confirmed_at' => now(),
+        ]));
+    }
+
+    /** @return list<class-string<Resource>> */
+    public static function resources(): array
+    {
+        /*
+         * Resolved without booting the app — and without app_path(), which is
+         * not available either: a PHPUnit data provider runs before the
+         * framework exists, so the first version of this returned nothing and
+         * the whole file reported "No tests found" rather than failing.
+         *
+         * The directory IS the list, which is what keeps this matrix derived
+         * rather than written down.
+         */
+        $resources = [];
+        $root = dirname(__DIR__, 3).'/app/Filament/Resources';
+
+        foreach (glob($root.'/*/*Resource.php') as $file) {
+            $class = 'App\\Filament\\Resources\\'
+                .basename(dirname($file)).'\\'
+                .basename($file, '.php');
+
+            $resources[class_basename($class)] = [$class];
+        }
+
+        ksort($resources);
+
+        return $resources;
+    }
+
+    /** The actions the resource's own table offers. */
+    private function tableActions(string $resource): array
+    {
+        $instance = Livewire::test($resource::getPages()['index']->getPage())->instance();
+        $table = $resource::table(\Filament\Tables\Table::make($instance));
+
+        return [
+            'row' => array_map(fn ($a) => $a->getName(), $table->getRecordActions()),
+            'header' => array_map(fn ($a) => $a->getName(), $table->getHeaderActions()),
+        ];
+    }
+
+    /**
+     * A filled form payload for one resource, from its own schema.
+     *
+     * Derived from the fields rather than hand-written per resource, because a
+     * hand-written payload is a second description of the form that goes stale
+     * the moment a field is added — and a stale payload passes by omitting the
+     * new field rather than failing.
+     *
+     * @return array<string, mixed>
+     */
+    private function payload(string $resource, string $marker): array
+    {
+        $data = [];
+
+        foreach ($this->fields($resource) as $field) {
+            $data[$field->getName()] = $this->valueFor($field, $marker);
+        }
+
+        return $data;
+    }
+
+    /**
+     * One field's value, honouring whatever format the field requires.
+     *
+     * Shared with the edit test, which first sent a bare marker string into
+     * whatever text field came first — and so set a redirect's from_path to
+     * "edited1234" and was refused by the rule that a path begins with a
+     * slash. The application was right; the test was writing nonsense.
+     */
+    private function valueFor(\Filament\Forms\Components\Field $field, string $marker): mixed
+    {
+        $name = $field->getName();
+
+        return match (true) {
+            // A slug has a per-locale unique index and must be URL-safe.
+            str_contains($name, 'slug') => $marker.'-'.str_replace('.', '-', $name),
+
+            $field instanceof \Filament\Forms\Components\Toggle => false,
+            $field instanceof \Filament\Forms\Components\Repeater => [],
+
+                /*
+                 * A date picker needs a date. The first version of this sent
+                 * the marker string and four resources failed with "The
+                 * published at field must be a valid date" — the APPLICATION
+                 * being right and the payload being wrong, which is the only
+                 * kind of test failure worth fixing in the test.
+                 */
+            $field instanceof \Filament\Forms\Components\DateTimePicker
+                => now()->subDay()->format('Y-m-d H:i:s'),
+
+            // A select's value has to be one it offers.
+            $field instanceof \Filament\Forms\Components\Select => $this->selectValue($field),
+
+            str_contains($name, 'email') => $marker.'@example.com',
+            str_contains($name, 'url') => 'https://example.com/'.$marker,
+
+                /*
+                 * from_path and to_path must DIFFER — a redirect to itself is
+                 * a loop and RedirectResource refuses it, correctly. The
+                 * generic payload gave both the same value and the refusal
+                 * was the application working.
+                 */
+                str_contains($name, 'path') => '/'.$marker.'-'.str_replace('_', '-', $name),
+                str_contains($name, 'focal') => 0.5,
+                str_contains($name, 'year') => 2026,
+                str_contains($name, 'pence') => 150000,
+            str_contains($name, 'status_code') => 301,
+
+            default => $marker.' '.str_replace(['.', '_'], ' ', $name),
+        };
+    }
+
+    /**
+     * A value a select will accept.
+     *
+     * ───────────────────────────────────────────────────────────────────────
+     * getOptions() THROWS ON AN UNMOUNTED RELATIONSHIP SELECT.
+     *
+     * A Select built with ->relationship() resolves its options through the
+     * schema's container, and a schema inspected outside a mounted form has
+     * none: "Typed property Component::$container must not be accessed before
+     * initialization". Projects and Articles — the two resources with
+     * relationship selects — failed on that rather than on anything about the
+     * form.
+     *
+     * So a relationship select is answered from the DATABASE instead: a real
+     * related record, created here, which also means the relation is actually
+     * exercised rather than left null.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    private function selectValue(\Filament\Forms\Components\Select $field): mixed
+    {
+        $multiple = false;
+
+        try {
+            $multiple = $field->isMultiple();
+        } catch (\Throwable) {
+            // Fall through: treat it as single-valued.
+        }
+
+        try {
+            $options = $field->getOptions();
+        } catch (\Throwable) {
+            $options = [];
+        }
+
+        if ($options === []) {
+            $related = $this->relatedKeyFor($field->getName());
+
+            if ($related === null) {
+                return $multiple ? [] : null;
+            }
+
+            return $multiple ? [$related] : $related;
+        }
+
+        $first = array_key_first($options);
+
+        return $multiple ? [$first] : $first;
+    }
+
+    /** A real id for the relation this field names, or null. */
+    private function relatedKeyFor(string $name): int|string|null
+    {
+        $model = match ($name) {
+            'categories' => \App\Models\Category::class,
+            'tags' => \App\Models\Tag::class,
+            'article_category_id' => \App\Models\ArticleCategory::class,
+            default => null,
+        };
+
+        return $model === null ? null : $model::factory()->create()->getKey();
+    }
+
+    /** @return list<\Filament\Forms\Components\Field> */
+    private function fields(string $resource): array
+    {
+        $pages = $resource::getPages();
+        $page = ($pages['create'] ?? $pages['index'])->getPage();
+
+        $schema = $resource::form(
+            \Filament\Schemas\Schema::make(Livewire::test($page)->instance())
+        );
+
+        $fields = [];
+
+        $walk = function (array $components) use (&$walk, &$fields): void {
+            foreach ($components as $component) {
+                if ($component instanceof \Filament\Forms\Components\Field) {
+                    $fields[] = $component;
+
+                    // A repeater's children belong to the related model.
+                    if ($component instanceof \Filament\Forms\Components\Repeater) {
+                        continue;
+                    }
+                }
+
+                $walk($component->getDefaultChildComponents());
+            }
+        };
+
+        $walk($schema->getComponents());
+
+        return $fields;
+    }
+
+    // ----------------------------------------------------------------- CREATE
+
+    /**
+     * @param  class-string<Resource>  $resource
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    public function test_create(string $resource): void
+    {
+        $model = $resource::getModel();
+        $before = $model::query()->count();
+
+        $pages = $resource::getPages();
+        $actions = $this->tableActions($resource);
+
+        $marker = 'created'.random_int(1000, 9999);
+        $payload = $this->payload($resource, $marker);
+
+        if (isset($pages['create'])) {
+            // A full create PAGE.
+            Livewire::test($pages['create']->getPage())
+                ->fillForm($payload)
+                ->call('create')
+                ->assertHasNoFormErrors();
+        } elseif (in_array('create', $actions['header'], true)) {
+            // A create MODAL on the index.
+            Livewire::test($pages['index']->getPage())
+                ->mountAction(TestAction::make('create')->table())
+                ->fillForm($payload)
+                ->call('callMountedAction')
+                ->assertHasNoFormErrors();
+        } else {
+            /*
+             * Media and Enquiries have no create path AT ALL, deliberately: a
+             * photograph arrives by upload (MediaUploadTest drives that), and
+             * an enquiry is a message a client sent — a row typed by the
+             * studio would be a fabricated record of something somebody said.
+             * InquiryPolicy::create() refuses it in so many words.
+             */
+            $this->assertContains(
+                class_basename($resource),
+                ['MediaResource', 'InquiryResource'],
+                class_basename($resource).' has no create path and is not one of the two that should not'
+            );
+
+            $this->addToAssertionCount(1);
+
+            return;
+        }
+
+        $this->assertSame(
+            $before + 1,
+            $model::query()->count(),
+            class_basename($resource).': the form submitted with no errors and no row appeared'
+        );
+    }
+
+    // ------------------------------------------------------------------- EDIT
+
+    /**
+     * @param  class-string<Resource>  $resource
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    public function test_edit(string $resource): void
+    {
+        $model = $resource::getModel();
+        $record = $this->makeRecord($model);
+
+        $pages = $resource::getPages();
+        $actions = $this->tableActions($resource);
+
+        if (! isset($pages['edit']) && ! in_array('edit', $actions['row'], true)) {
+            // Enquiries are read-only apart from their handling fields, which
+            // the view page owns; EnquiriesTest drives that.
+            $this->assertSame('InquiryResource', class_basename($resource));
+            $this->addToAssertionCount(1);
+
+            return;
+        }
+
+        $editable = $this->editableTextField($resource);
+
+        $this->assertNotNull($editable, class_basename($resource).' has no editable text field to change');
+
+        $field = $editable->getName();
+        $marker = 'edited'.random_int(1000, 9999);
+        $value = $this->valueFor($editable, $marker);
+
+        if (isset($pages['edit'])) {
+            Livewire::test($pages['edit']->getPage(), ['record' => $record->getKey()])
+                ->fillForm([$field => $value])
+                ->call('save')
+                ->assertHasNoFormErrors();
+        } else {
+            Livewire::test($pages['index']->getPage())
+                ->mountAction(TestAction::make('edit')->table($record))
+                ->fillForm([$field => $value])
+                ->call('callMountedAction')
+                ->assertHasNoFormErrors();
+        }
+
+        $record->refresh();
+
+        $column = explode('.', $field)[0];
+
+        $actual = method_exists($record, 'getTranslation') && str_contains($field, '.')
+            ? $record->getTranslation($column, explode('.', $field)[1], fallback: false)
+            : $record->{$column};
+
+        $this->assertSame(
+            $value,
+            $actual,
+            class_basename($resource).": saving $field reported success and changed nothing"
+        );
+    }
+
+    /** The first field we can safely overwrite. */
+    private function editableTextField(string $resource): ?\Filament\Forms\Components\Field
+    {
+        foreach ($this->fields($resource) as $field) {
+            $name = $field->getName();
+
+            if (str_contains($name, 'slug') || str_contains($name, 'email')) {
+                continue;   // uniquely indexed; changed in the validation tests
+            }
+
+            if (! $field instanceof \Filament\Forms\Components\TextInput
+                && ! $field instanceof \Filament\Forms\Components\Textarea) {
+                continue;
+            }
+
+            if ($field->isNumeric()) {
+                continue;
+            }
+
+            return $field;
+        }
+
+        return null;
+    }
+
+    // ----------------------------------------------------------------- DELETE
+
+    /**
+     * @param  class-string<Resource>  $resource
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    public function test_delete(string $resource): void
+    {
+        $model = $resource::getModel();
+        $record = $this->makeRecord($model);
+
+        $actions = $this->tableActions($resource);
+
+        $this->assertContains(
+            'delete',
+            $actions['row'],
+            class_basename($resource).' offers no way to delete a row'
+        );
+
+        Livewire::test($resource::getPages()['index']->getPage())
+            ->callAction(TestAction::make('delete')->table($record));
+
+        $softDeletes = method_exists($record, 'trashed');
+
+        if ($softDeletes) {
+            $this->assertSoftDeleted($record->getTable(), [$record->getKeyName() => $record->getKey()]);
+        } else {
+            $this->assertDatabaseMissing($record->getTable(), [$record->getKeyName() => $record->getKey()]);
+        }
+    }
+
+    // ---------------------------------------------------------------- RESTORE
+
+    /**
+     * EVERY SOFT-DELETING RESOURCE CAN BE RESTORED FROM THE PANEL.
+     *
+     * Category and ArticleCategory failed this when it was written: both
+     * soft-delete, both offered only edit and delete, and getEloquentQuery()
+     * kept the SoftDeletingScope — so a deleted row vanished while
+     * GenerateUniqueSlug went on checking withTrashed(). The owner deleted
+     * "Portraits", could not find it, and could not create "Portraits" again
+     * either. Fixed rather than excused.
+     *
+     * @param  class-string<Resource>  $resource
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    public function test_restore(string $resource): void
+    {
+        $model = $resource::getModel();
+        $record = $this->makeRecord($model);
+
+        if (! method_exists($record, 'trashed')) {
+            $this->assertNotContains(
+                'restore',
+                $this->tableActions($resource)['row'],
+                class_basename($resource).' offers a restore for a model that cannot be trashed'
+            );
+
+            return;
+        }
+
+        $this->assertContains(
+            'restore',
+            $this->tableActions($resource)['row'],
+            class_basename($resource).' soft-deletes but cannot be restored from the panel'
+        );
+
+        $record->delete();
+
+        $this->assertSoftDeleted($record->getTable(), [$record->getKeyName() => $record->getKey()]);
+
+        Livewire::test($resource::getPages()['index']->getPage())
+            ->callAction(TestAction::make('restore')->table($record));
+
+        $this->assertDatabaseHas($record->getTable(), [
+            $record->getKeyName() => $record->getKey(),
+            'deleted_at' => null,
+        ]);
+    }
+
+    // ----------------------------------------------------------- FORCE DELETE
+
+    /**
+     * @param  class-string<Resource>  $resource
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    public function test_force_delete(string $resource): void
+    {
+        $model = $resource::getModel();
+        $record = $this->makeRecord($model);
+
+        if (! in_array('forceDelete', $this->tableActions($resource)['row'], true)) {
+            /*
+             * Clients, Tags, Users and Redirects delete outright — there is no
+             * trashed state to force past. The policies say so in words rather
+             * than by omission; ResourceGovernanceTest holds them to it.
+             */
+            $this->assertFalse(
+                method_exists($record, 'trashed'),
+                class_basename($resource).' soft-deletes but offers no force delete'
+            );
+
+            return;
+        }
+
+        $record->delete();
+
+        Livewire::test($resource::getPages()['index']->getPage())
+            ->callAction(TestAction::make('forceDelete')->table($record));
+
+        $this->assertDatabaseMissing($record->getTable(), [$record->getKeyName() => $record->getKey()]);
+    }
+
+    // ---------------------------------------------------------------- 5b
+
+    /**
+     * ───────────────────────────────────────────────────────────────────────
+     * PART 5b — EVERY TRANSLATABLE MODEL, EVERY PATH, BYTE-IDENTICAL.
+     *
+     * TranslatableSaveTest already covers the two EDITING paths (the page and
+     * the modal) for all nine translatable models. This covers the paths THIS
+     * part added, which the Task 31 matrix did not reach: a RESTORE and a
+     * FORCE-DELETE-adjacent save, and a create followed by an edit, because
+     * each of those runs a different save routine.
+     *
+     * Asserted as byte-identical rather than "still present": a value
+     * re-encoded, re-trimmed, or round-tripped through a different JSON flag
+     * set is a value that changed, and the one thing a translation must never
+     * do is change when somebody edited the other language.
+     * ───────────────────────────────────────────────────────────────────────
+     *
+     * @param  class-string<Resource>  $resource
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    public function test_restoring_does_not_touch_any_translation(string $resource): void
+    {
+        if (! defined($resource.'::TRANSLATED')) {
+            $this->addToAssertionCount(1);
+
+            return;
+        }
+
+        $model = $resource::getModel();
+        $record = $this->makeRecord($model);
+
+        if (! method_exists($record, 'trashed')) {
+            $this->addToAssertionCount(1);
+
+            return;
+        }
+
+        $before = $this->allTranslations($record, $resource::TRANSLATED);
+
+        $record->delete();
+
+        Livewire::test($resource::getPages()['index']->getPage())
+            ->callAction(TestAction::make('restore')->table($record));
+
+        $this->assertSame(
+            $before,
+            $this->allTranslations($record->refresh(), $resource::TRANSLATED),
+            class_basename($resource).': a restore altered a translation'
+        );
+    }
+
+    /**
+     * A create then an edit: the two save routines in sequence.
+     *
+     * @param  class-string<Resource>  $resource
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    public function test_editing_one_locale_after_a_create_leaves_the_other_untouched(string $resource): void
+    {
+        if (! defined($resource.'::TRANSLATED')) {
+            $this->addToAssertionCount(1);
+
+            return;
+        }
+
+        $model = $resource::getModel();
+        $record = $this->makeRecord($model);
+
+        // Both locales of every translatable column, with distinct values.
+        foreach ($resource::TRANSLATED as $i => $column) {
+            foreach (['en', 'ar'] as $locale) {
+                $record->setTranslation(
+                    $column,
+                    $locale,
+                    str_contains($column, 'slug')
+                        ? sprintf('%s-%s-%d-%d', $locale, $column, $i, $record->getKey())
+                        : sprintf('%s value for %s #%d', strtoupper($locale), $column, $record->getKey()),
+                );
+            }
+        }
+
+        $record->save();
+
+        $before = $this->allTranslations($record, $resource::TRANSLATED);
+
+        $editable = $this->editableTextField($resource);
+        $this->assertNotNull($editable);
+
+        $field = $editable->getName();
+        $value = $this->valueFor($editable, 'rewritten'.random_int(1000, 9999));
+
+        $pages = $resource::getPages();
+
+        if (isset($pages['edit'])) {
+            Livewire::test($pages['edit']->getPage(), ['record' => $record->getKey()])
+                ->fillForm([$field => $value])
+                ->call('save')
+                ->assertHasNoFormErrors();
+        } else {
+            Livewire::test($pages['index']->getPage())
+                ->mountAction(TestAction::make('edit')->table($record))
+                ->fillForm([$field => $value])
+                ->call('callMountedAction')
+                ->assertHasNoFormErrors();
+        }
+
+        $after = $this->allTranslations($record->refresh(), $resource::TRANSLATED);
+
+        // The one field changed; nothing else moved by a single byte.
+        $column = explode('.', $field)[0];
+        $locale = str_contains($field, '.') ? explode('.', $field)[1] : 'en';
+
+        foreach ($before as $key => $original) {
+            if ($key === $column.'.'.$locale) {
+                $this->assertSame($value, $after[$key], class_basename($resource).": $field did not save");
+
+                continue;
+            }
+
+            $this->assertSame(
+                $original,
+                $after[$key] ?? null,
+                class_basename($resource).": editing $field altered $key"
+            );
+        }
+    }
+
+    /**
+     * Every locale of every translatable column, flattened.
+     *
+     * @param  array<int, string>  $columns
+     * @return array<string, string|null>
+     */
+    private function allTranslations(Model $record, array $columns): array
+    {
+        $values = [];
+
+        foreach ($columns as $column) {
+            foreach (['en', 'ar'] as $locale) {
+                $values[$column.'.'.$locale] = $record->getTranslation($column, $locale, fallback: false);
+            }
+        }
+
+        return $values;
+    }
+
+    /**
+     * A record of this model that the panel will accept.
+     *
+     * Users get a role, because the factory's default is an Editor and the
+     * Users resource is the Owner's alone — a record the acting user cannot
+     * see is not a test of editing it.
+     */
+    private function makeRecord(string $model): Model
+    {
+        if ($model === User::class) {
+            return User::factory()->create(['role' => UserRole::Editor]);
+        }
+
+        return $model::factory()->create();
+    }
+}

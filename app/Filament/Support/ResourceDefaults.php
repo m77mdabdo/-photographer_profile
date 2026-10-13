@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Support;
 
+use App\Support\Locale;
+use Closure;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -137,11 +140,88 @@ final class ResourceDefaults
      * Renaming a published thing writes a 301 through RedirectsOnSlugChange,
      * so a slug that quietly follows the title would scatter redirects every
      * time somebody fixed a typo. It is editable and it is deliberate.
+     *
+     * ───────────────────────────────────────────────────────────────────────
+     * THE DATABASE ENFORCED THREE RULES THAT THE FORM DID NOT EXPLAIN.
+     *
+     * Task 29 gave every translatable model `slug_en` and `slug_ar` STORED
+     * generated columns, NOT NULL, each with its own unique index. The form
+     * had `maxLength(255)` and nothing else. Measured:
+     *
+     *   a blank slug      SQLSTATE[23000] 1048 Column 'slug_en' cannot be null
+     *   a duplicate slug  SQLSTATE[23000] 1062 Duplicate entry for key
+     *                     'projects_slug_en_unique'
+     *
+     * Both reach the owner as a 500 page. The row is not created, so nothing
+     * is lost — but the person who typed it has no idea which field was
+     * wrong, and a photographer who gets a white error screen for a repeated
+     * address will reasonably conclude the panel is broken.
+     *
+     * So the form now says all three things BEFORE the database has to:
+     * required in every locale, unique per locale, and URL-shaped.
+     *
+     * UNIQUE PER LOCALE, NOT PER MODEL. "salt-line" may exist as the English
+     * slug of one project and the Arabic slug of another; the indexes are
+     * separate and so is this rule. Checking the generated column is checking
+     * exactly what the index checks, which is why the two cannot disagree.
+     *
+     * ARABIC SCRIPT IS ALLOWED. The format rule is
+     * [\p{Ll}\p{N}\p{Arabic}] joined by single hyphens, so "مشروع-الملح" is a
+     * valid slug and "Salt-Line", "salt line", "salt/line" and "salt--line"
+     * are not. Uppercase is refused rather than silently lowercased because
+     * EnsureCanonicalSlug would 301 it and the owner would watch their
+     * address change after saving.
+     * ───────────────────────────────────────────────────────────────────────
+     *
+     * @param  class-string<Model>  $model  the model this slug belongs to
      */
-    public static function slugField(): callable
+    public static function slugField(string $model): callable
     {
-        return fn (string $path) => TextInput::make($path)
-            ->maxLength(255)
-            ->helperText(__('studio.field.slug_hint'));
+        return function (string $path) use ($model): TextInput {
+            $locale = str_contains($path, '.')
+                ? explode('.', $path)[1]
+                : Locale::DEFAULT;
+
+            $table = (new $model)->getTable();
+            $column = 'slug_'.$locale;
+
+            return TextInput::make($path)
+                ->required()
+                ->maxLength(255)
+                ->rule('regex:~^[\p{Ll}\p{N}\p{Arabic}]+(?:-[\p{Ll}\p{N}\p{Arabic}]+)*$~u')
+                ->rule(fn (?Model $record): Closure => function (
+                    string $attribute,
+                    mixed $value,
+                    Closure $fail,
+                ) use ($model, $table, $column, $record): void {
+                    if (! is_string($value) || $value === '') {
+                        return;   // `required` has already said so
+                    }
+
+                    /*
+                     * withTrashed: a soft-deleted row still owns its slug,
+                     * because the index is on the table and not on the
+                     * not-deleted rows. GenerateUniqueSlug has always checked
+                     * it this way; the form now agrees with it.
+                     */
+                    $clash = $model::query()
+                        ->when(
+                            method_exists($model, 'trashed') || method_exists(new $model, 'trashed'),
+                            fn ($query) => $query->withTrashed(),
+                        )
+                        ->where($column, $value)
+                        ->when($record !== null, fn ($query) => $query->whereKeyNot($record->getKey()))
+                        ->exists();
+
+                    if ($clash) {
+                        $fail(__('studio.field.slug_taken'));
+                    }
+                })
+                ->validationMessages([
+                    'required' => __('studio.field.slug_required'),
+                    'regex' => __('studio.field.slug_format'),
+                ])
+                ->helperText(__('studio.field.slug_hint'));
+        };
     }
 }

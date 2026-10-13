@@ -54,7 +54,7 @@ class ServiceResource extends Resource
         return $schema->components([
             Section::make(__('studio.section.content'))->schema([
                 Translatable::tabs([
-                    'slug' => ResourceDefaults::slugField(),
+                    'slug' => ResourceDefaults::slugField(Service::class),
                     'name' => fn (string $p) => TextInput::make($p)->maxLength(255),
                     'summary' => fn (string $p) => Textarea::make($p)->rows(3),
                     'description' => fn (string $p) => Textarea::make($p)->rows(8),

@@ -55,7 +55,7 @@ class ArticleResource extends Resource
         return $schema->components([
             Section::make(__('studio.section.content'))->schema([
                 Translatable::tabs([
-                    'slug' => ResourceDefaults::slugField(),
+                    'slug' => ResourceDefaults::slugField(Article::class),
                     'title' => fn (string $p) => TextInput::make($p)->maxLength(255),
                     'subtitle' => fn (string $p) => TextInput::make($p)->maxLength(255),
                     'excerpt' => fn (string $p) => Textarea::make($p)->rows(3),

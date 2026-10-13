@@ -11,6 +11,8 @@ use App\Filament\Support\Translatable;
 use App\Models\Category;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\RestoreAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
@@ -49,7 +51,7 @@ class CategoryResource extends Resource
     {
         return $schema->components([
             Translatable::tabs([
-                'slug' => ResourceDefaults::slugField(),
+                'slug' => ResourceDefaults::slugField(Category::class),
                 'name' => fn (string $p) => TextInput::make($p)->maxLength(255),
                 'description' => fn (string $p) => Textarea::make($p)->rows(3),
             ]),
@@ -69,9 +71,44 @@ class CategoryResource extends Resource
                 Translatable::statusColumn(self::TRANSLATED),
                 ResourceDefaults::updatedColumn(),
             ])
-            ->recordActions([Translatable::editAction(self::TRANSLATED), DeleteAction::make()])
+            ->recordActions([
+                Translatable::editAction(self::TRANSLATED),
+
+                /*
+                 * The refusal is SHOWN, not hidden. The policy counts what
+                 * still uses this row and returns the count in its message;
+                 * Filament's default for a denied action is to remove the
+                 * button, which leaves the owner with no button and no reason.
+                 */
+                DeleteAction::make()
+                    ->authorizationTooltip()
+                    ->authorizationNotification(),
+
+                RestoreAction::make(),
+                ForceDeleteAction::make(),
+            ])
             ->headerActions([Translatable::createAction(self::TRANSLATED)])
             ->defaultSort('sort_order')
+
+            /*
+             * ───────────────────────────────────────────────────────────────
+             * A TRASHED ROW HAS TO BE REACHABLE, BECAUSE IT STILL HOLDS ITS
+             * SLUG.
+             *
+             * This model soft-deletes, and the table offered only edit and
+             * delete — no trashed filter, no restore, and getEloquentQuery()
+             * left the SoftDeletingScope in place. So a deleted category
+             * vanished from the panel entirely while GenerateUniqueSlug kept
+             * checking withTrashed(): the owner deleted "Portraits", could not
+             * see it anywhere, and could not create "Portraits" again either,
+             * because the invisible row owned the name.
+             *
+             * The old admin has the same gap, so this is not a regression —
+             * but the panel becomes the only entrance at step 10, and a
+             * one-way delete is not something to carry through that door.
+             * ───────────────────────────────────────────────────────────────
+             */
+            ->filters([ResourceDefaults::trashedFilter()])
 
             /*
              * ───────────────────────────────────────────────────────────────
@@ -113,7 +150,9 @@ class CategoryResource extends Resource
      */
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getEloquentQuery()->withCount('projects');
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([\Illuminate\Database\Eloquent\SoftDeletingScope::class])
+            ->withCount('projects');
     }
 
     public static function getPages(): array

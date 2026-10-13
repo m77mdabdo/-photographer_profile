@@ -53,7 +53,7 @@ class PageResource extends Resource
         return $schema->components([
             Section::make(__('studio.section.content'))->schema([
                 Translatable::tabs([
-                    'slug' => ResourceDefaults::slugField(),
+                    'slug' => ResourceDefaults::slugField(Page::class),
                     'title' => fn (string $p) => TextInput::make($p)->maxLength(255),
                     'standfirst' => fn (string $p) => Textarea::make($p)->rows(3),
                     'body' => fn (string $p) => Textarea::make($p)->rows(8),

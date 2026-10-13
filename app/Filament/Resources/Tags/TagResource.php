@@ -49,7 +49,7 @@ class TagResource extends Resource
     {
         return $schema->components([
             Translatable::tabs([
-                'slug' => ResourceDefaults::slugField(),
+                'slug' => ResourceDefaults::slugField(Tag::class),
                 'name' => fn (string $p) => TextInput::make($p)->maxLength(255),
             ]),
         ]);
@@ -68,7 +68,23 @@ class TagResource extends Resource
                 Translatable::statusColumn(self::TRANSLATED),
                 ResourceDefaults::updatedColumn(),
             ])
-            ->recordActions([Translatable::editAction(self::TRANSLATED), DeleteAction::make()])
+            ->recordActions([
+                Translatable::editAction(self::TRANSLATED),
+
+                /*
+                 * TagPolicy::delete() counts the articles still carrying this
+                 * tag and refuses with the number — and a plain DeleteAction
+                 * made Filament HIDE the button, so the owner saw a tag they
+                 * could not delete and no reason anywhere on the page. The
+                 * policy's careful sentence was computed and discarded.
+                 *
+                 * Tooltip on hover, notification on click. Same arrangement as
+                 * Media, Categories, Journal categories and Users.
+                 */
+                DeleteAction::make()
+                    ->authorizationTooltip()
+                    ->authorizationNotification(),
+            ])
             ->headerActions([Translatable::createAction(self::TRANSLATED)])
             ->defaultSort('name');
     }
