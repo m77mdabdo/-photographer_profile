@@ -540,16 +540,13 @@ class StudioPanelTest extends TestCase
 
         /*
          * ───────────────────────────────────────────────────────────────────
-         * EXACTLY ONE LINK OUT, AND IT IS THE DELETION CHECKLIST.
+         * NO LINK OUT AT ALL. THE CHECKLIST IS FINISHED.
          *
-         * Task 33 swapped the addresses: the panel is /admin and the custom
-         * admin is /legacy. So the assertion inverted — it used to be "no
-         * sidebar link contains /admin" and is now "exactly one contains
-         * /legacy".
-         *
-         * One, not none, because six media capabilities still live only in
-         * the custom admin and an owner needs a way to reach them. When this
-         * assertion can be changed to zero, the custom admin can be deleted.
+         * This asserted "exactly one link out, to the media tools", and said
+         * in as many words: "When this assertion can be changed to zero, the
+         * custom admin can be deleted." Task 34 Part A moved the last six
+         * capabilities into the panel and Part B deleted that admin, so the
+         * number is zero and the sidebar is entirely discovered resources.
          * ───────────────────────────────────────────────────────────────────
          */
         preg_match_all('#<a\s+href="([^"]+)"[^>]*class="fi-sidebar-item-btn"#s', $html, $matches);
@@ -562,9 +559,9 @@ class StudioPanelTest extends TestCase
         )));
 
         $this->assertSame(
-            [route('legacy.media.index')],
+            [],
             $outbound,
-            'the sidebar should carry exactly one link out, to the media tools: '.implode(' ', $outbound)
+            'the sidebar should link nowhere but into the panel: '.implode(' ', $outbound)
         );
 
         // And nothing is disabled, because nothing is a placeholder any more.
@@ -701,16 +698,53 @@ class StudioPanelTest extends TestCase
         $this->assertSame([], $repeated, 'a sentence is printed more than once: '.implode(' | ', $repeated));
     }
 
-    /** The layout owns session('status'); a page must not render it again. */
+    /**
+     * The layout owns session('status'); a page must not render it again.
+     *
+     * The layout in question is layouts/auth — the front door's. It was
+     * layouts/admin until Task 34 Part B deleted that admin; the enrolment
+     * page had already moved to the auth layout in Task 33, so the guarantee
+     * simply follows it.
+     */
     public function test_only_the_layout_renders_the_status_flash(): void
     {
         $page = (string) file_get_contents(resource_path('views/auth/two-factor-setup.blade.php'));
 
         $this->assertStringNotContainsString("session('status')", $page);
 
-        $layout = (string) file_get_contents(resource_path('views/layouts/admin.blade.php'));
+        $layout = (string) file_get_contents(resource_path('views/layouts/auth.blade.php'));
 
         $this->assertStringContainsString("session('status')", $layout, 'the layout is the single owner');
+    }
+
+    /**
+     * AND THE OWNER ACTUALLY PRINTS IT.
+     *
+     * Reading the file proves a block exists; it does not prove a user ever
+     * sees the sentence. This renders a real page with a real flash in the
+     * session, which is what had silently stopped working: the enrolment page
+     * moved to a layout with no status block in Task 33, and Fortify's
+     * answers went nowhere for five screens.
+     */
+    public function test_a_flashed_status_reaches_the_page(): void
+    {
+        $user = User::factory()->create([
+            'role' => UserRole::Owner,
+            'two_factor_secret' => null,
+            'two_factor_confirmed_at' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['status' => 'Two-factor authentication confirmed.'])
+            ->get(route('two-factor.setup'))
+            ->assertOk()
+            ->assertSee('Two-factor authentication confirmed.');
+
+        $this->actingAs($user)
+            ->withSession(['error' => 'That code was not right.'])
+            ->get(route('two-factor.setup'))
+            ->assertOk()
+            ->assertSee('That code was not right.');
     }
 
     /**

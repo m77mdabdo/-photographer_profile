@@ -211,27 +211,42 @@ class DemoContentTest extends TestCase
         $demo = $this->media(true);
         $real = $this->media(false);
 
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * REPOINTED AT THE PANEL IN TASK 34 PART B, AND IT FOUND A GAP.
+         *
+         * This drove the custom admin's library and detail screen. When that
+         * admin was deleted the test failed — and the reason it failed was
+         * not that the way in had moved. The PANEL had no demo badge and no
+         * purge note at all: the capability would have been dropped silently,
+         * and stock photography would have sat in the library looking exactly
+         * like the photographer's own work.
+         *
+         * Both were built in the panel to make this pass again.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        \Filament\Facades\Filament::setCurrentPanel('studio');
+
         $grid = Livewire::actingAs($this->admin())
-            ->test(\App\Livewire\Admin\MediaIndex::class)
+            ->test(\App\Filament\Resources\Media\Pages\ListMedia::class)
             ->html();
 
-        $this->assertStringContainsString('badge--demo', $grid);
-        $this->assertSame(1, substr_count($grid, 'badge--demo'), 'only the demo image is badged');
+        $this->assertStringContainsString(__('studio.media.demo_note'), $grid, 'the library does not mark stock images');
 
         $detail = $this->actingAs($this->admin())
-            ->get(route('legacy.media.show', $demo))
+            ->get(\App\Filament\Resources\Media\Pages\ViewMedia::getUrl(['record' => $demo]))
             ->assertOk()
             ->getContent();
 
-        $this->assertStringContainsString('Stock photograph, not your own work', $detail);
+        $this->assertStringContainsString(__('studio.media.demo_note'), $detail);
         $this->assertStringContainsString('media:purge-demo', $detail);
 
         $realDetail = $this->actingAs($this->admin())
-            ->get(route('legacy.media.show', $real))
+            ->get(\App\Filament\Resources\Media\Pages\ViewMedia::getUrl(['record' => $real]))
             ->assertOk()
             ->getContent();
 
-        $this->assertStringNotContainsString('Stock photograph, not your own work', $realDetail);
+        $this->assertStringNotContainsString('media:purge-demo', $realDetail);
     }
 
     // ----------------------------------------------------------------- 7

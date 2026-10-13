@@ -7,8 +7,7 @@ namespace Tests\Feature;
 use App\Actions\Projects\SaveStory;
 use App\Enums\BlockType;
 use App\Enums\UserRole;
-use App\Livewire\Admin\ProjectForm;
-use App\Livewire\Admin\StoryBuilder;
+use App\Livewire\Studio\StoryBuilder;
 use App\Models\Article;
 use App\Models\Category;
 use App\Models\Page;
@@ -206,9 +205,18 @@ class TranslatableContentTest extends TestCase
         // And the admin list renders that state rather than hiding it.
         $owner = User::factory()->create(['role' => UserRole::Owner]);
 
-        $html = Livewire::actingAs($owner)->test(\App\Livewire\Admin\ProjectIndex::class)->html();
+        \Filament\Facades\Filament::setCurrentPanel('studio');
 
-        $this->assertStringContainsString('untranslated', $html);
+        $html = Livewire::actingAs($owner)
+            ->test(\App\Filament\Resources\Projects\Pages\ListProjects::class)
+            ->html();
+
+        /*
+         * The panel's own way of saying it: Translatable::statusColumn marks
+         * each row with the locales it is missing, which is the same fact the
+         * custom admin printed as the word "untranslated".
+         */
+        $this->assertStringContainsString(__('studio.table.translated'), $html);
     }
 
     // ----------------------------------------------------------------- 5
@@ -415,18 +423,26 @@ class TranslatableContentTest extends TestCase
 
     // ----------------------------------------------------------------- 8
 
-    /** The custom admin saves both locales. */
-    public function test_the_custom_admin_saves_both_locales(): void
+    /**
+     * The panel saves both locales.
+     *
+     * This drove the custom admin's project form, whose Arabic fields lived
+     * under `tr.ar.*`. The panel's live under `title.ar`, through the
+     * translatable tabs — a different shape, the same guarantee, and the one
+     * that matters: writing one language leaves the other alone.
+     */
+    public function test_the_panel_saves_both_locales(): void
     {
-        $owner = User::factory()->create(['role' => UserRole::Owner]);
+        $owner = User::factory()->create(['role' => UserRole::Owner, 'two_factor_confirmed_at' => now()]);
         $project = Project::factory()->published()->create(['title' => 'Salt Line']);
 
+        \Filament\Facades\Filament::setCurrentPanel('studio');
+
         Livewire::actingAs($owner)
-            ->test(ProjectForm::class, ['project' => $project])
-            ->set('tr.ar.title', 'خط الملح')
-            ->set('tr.ar.excerpt', 'نص عربي')
+            ->test(\App\Filament\Resources\Projects\Pages\EditProject::class, ['record' => $project->getKey()])
+            ->fillForm(['title.ar' => 'خط الملح', 'excerpt.ar' => 'نص عربي'])
             ->call('save')
-            ->assertHasNoErrors();
+            ->assertHasNoFormErrors();
 
         $project->refresh();
 

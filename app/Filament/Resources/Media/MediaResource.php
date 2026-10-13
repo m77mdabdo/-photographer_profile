@@ -25,6 +25,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -226,6 +227,29 @@ class MediaResource extends Resource
                     ->wrap()
                     ->description(fn (Media $record): string => $record->original_filename),
 
+                /*
+                 * ───────────────────────────────────────────────────────────
+                 * DEMO CONTENT MUST BE UNMISTAKABLE IN THE LIBRARY.
+                 *
+                 * Stock photography seeded so the site has something to show
+                 * before the photographer's own work arrives. It must never
+                 * be mistaken for theirs — not in a portfolio, and not by the
+                 * person deciding what to publish.
+                 *
+                 * The custom admin badged it and the panel did not, which
+                 * DemoContentTest caught the moment that admin was deleted.
+                 * A capability the replacement does not have is a regression
+                 * however old the thing being replaced.
+                 * ───────────────────────────────────────────────────────────
+                 */
+                IconColumn::make('is_demo')
+                    ->label(__('studio.media.demo'))
+                    ->boolean()
+                    ->trueIcon('heroicon-o-beaker')
+                    ->falseIcon('')
+                    ->trueColor('warning')
+                    ->tooltip(fn (bool $state): ?string => $state ? __('studio.media.demo_note') : null),
+
                 TextColumn::make('status')
                     ->label(__('studio.table.status'))
                     ->badge()
@@ -270,6 +294,12 @@ class MediaResource extends Resource
                  * ones that are in use. Filtering to them is how you find the
                  * work you can actually do.
                  */
+                TernaryFilter::make('is_demo')
+                    ->label(__('studio.media.demo'))
+                    ->placeholder(__('studio.filter.all'))
+                    ->trueLabel(__('studio.media.demo_only'))
+                    ->falseLabel(__('studio.media.real_only')),
+
                 TernaryFilter::make('unused')
                     ->label(__('studio.filter.usage'))
                     ->placeholder(__('studio.filter.all'))

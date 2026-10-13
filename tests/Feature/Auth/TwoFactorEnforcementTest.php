@@ -66,42 +66,41 @@ class TwoFactorEnforcementTest extends TestCase
     /**
      * ON: neither panel is reachable without a confirmed factor.
      *
-     * Both stacks, because /admin names the `twofactor` alias and /studio
-     * names the class in its own authMiddleware — two registrations of one
-     * rule, and a change that only reached one of them would be worse than no
-     * change at all.
-     *
-     * TASK 33 SWAPPED THE ADDRESSES. The panel is /admin and the custom admin
-     * is /legacy; /studio is a permanent 301. The two stacks are the same two
-     * stacks, so these assertions moved with them rather than being dropped.
+     * TASK 33 SWAPPED THE ADDRESSES and Task 34 Part B deleted the custom
+     * admin, so there is one stack rather than two. These assertions covered
+     * BOTH while both existed; they now cover the survivor and a deeper page
+     * inside it, so this is still the middleware being tested and not one
+     * route's own guard.
      */
-    public function test_with_enforcement_on_an_admin_without_a_factor_reaches_neither_panel(): void
+    public function test_with_enforcement_on_an_admin_without_a_factor_is_sent_to_enrolment(): void
     {
         config(['auth.require_two_factor' => true]);
 
         $user = $this->adminWithoutTwoFactor();
 
         $this->actingAs($user)->get('/admin')->assertRedirect(route('two-factor.setup'));
-        $this->actingAs($user)->get('/legacy')->assertRedirect(route('two-factor.setup'));
 
-        // And a deeper page in each, so it is the middleware and not one route.
+        // And a deeper page, so it is the middleware and not one route.
         $this->actingAs($user)->get('/admin/projects')->assertRedirect(route('two-factor.setup'));
-        $this->actingAs($user)->get('/legacy/projects')->assertRedirect(route('two-factor.setup'));
+        $this->actingAs($user)->get('/admin/media')->assertRedirect(route('two-factor.setup'));
     }
 
     // ----------------------------------------------------------------- 2
 
-    /** OFF: the same admin reaches both. */
-    public function test_with_enforcement_off_an_admin_without_a_factor_reaches_both_panels(): void
+    /** OFF: the same admin gets in. */
+    public function test_with_enforcement_off_an_admin_without_a_factor_reaches_the_panel(): void
     {
         config(['auth.require_two_factor' => false]);
 
         $user = $this->adminWithoutTwoFactor();
 
         $this->actingAs($user)->get('/admin')->assertOk();
-        $this->actingAs($user)->get('/legacy')->assertRedirect('/legacy/media');
         $this->actingAs($user)->get('/admin/projects')->assertOk();
-        $this->actingAs($user)->get('/legacy/projects')->assertOk();
+        $this->actingAs($user)->get('/admin/media')->assertOk();
+
+        // And the old addresses still translate, without asking for a factor
+        // of their own: the redirect moves you, the panel decides.
+        $this->actingAs($user)->get('/legacy/projects')->assertRedirect('/admin/projects');
     }
 
     /**

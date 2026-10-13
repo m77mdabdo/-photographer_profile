@@ -73,42 +73,124 @@ class AddressesTest extends TestCase
 
     // ----------------------------------------------------------------- A2
 
-    /** The custom admin still works, at /legacy. */
-    public function test_the_custom_admin_still_works_at_legacy(): void
+    /**
+     * ───────────────────────────────────────────────────────────────────────
+     * REWRITTEN IN TASK 34 PART B. IT WAS THE DELETION CHECKLIST.
+     *
+     * This asserted that the custom admin still answered at /legacy, and the
+     * Task 33 report said in as many words that it was a list of what had to
+     * keep working until the panel could replace it. Part A replaced the last
+     * of it; Part B deleted it.
+     *
+     * So the same six addresses are asserted the other way round: each one
+     * now sends the reader, permanently, to the panel screen that does the
+     * job. The client has had these in their history for months and a 404 is
+     * a worse answer than the same work at a new address.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public function test_every_legacy_screen_redirects_to_its_panel_equivalent(): void
     {
         $owner = $this->owner();
 
         foreach ([
-            '/legacy/media',
-            '/legacy/media/trash',
-            '/legacy/projects',
-            '/legacy/articles',
-            '/legacy/services',
-            '/legacy/settings',
-        ] as $path) {
-            $this->actingAs($owner)->get($path)->assertOk("$path should still work");
+            '/legacy' => '/admin/media',
+            '/legacy/media' => '/admin/media',
+            '/legacy/media/trash' => '/admin/media',
+            '/legacy/projects' => '/admin/projects',
+            '/legacy/articles' => '/admin/articles',
+            '/legacy/services' => '/admin/services',
+            '/legacy/settings' => '/admin/settings',
+            '/legacy/pages' => '/admin/pages',
+            '/legacy/clients' => '/admin/clients',
+            '/legacy/categories' => '/admin/categories',
+            '/legacy/redirects' => '/admin/redirects',
+            '/legacy/inquiries' => '/admin/enquiries',
+        ] as $from => $to) {
+            $response = $this->actingAs($owner)->get($from);
+
+            $response->assertStatus(301, "$from should redirect permanently");
+            $this->assertSame($to, parse_url((string) $response->headers->get('Location'), PHP_URL_PATH), "$from went somewhere unexpected");
         }
     }
 
+    /**
+     * A record's old address finds the same record in the panel.
+     *
+     * The two admins key their URLs differently — a project by slug, an image
+     * by uuid, Filament by id — so these are lookups rather than string
+     * rewrites, and a lookup is the kind of thing that rots silently.
+     */
+    public function test_a_legacy_record_address_redirects_to_the_same_record(): void
+    {
+        $owner = $this->owner();
+
+        $project = \App\Models\Project::factory()->create();
+        $media = \App\Models\Media::factory()->create(['status' => \App\Enums\MediaStatus::Ready]);
+
+        $this->actingAs($owner)
+            ->get('/legacy/projects/'.$project->getRouteKey().'/edit')
+            ->assertStatus(301)
+            ->assertRedirect(\App\Filament\Resources\Projects\ProjectResource::getUrl('edit', ['record' => $project]));
+
+        $this->actingAs($owner)
+            ->get('/legacy/media/'.$media->getRouteKey())
+            ->assertStatus(301)
+            ->assertRedirect(\App\Filament\Resources\Media\MediaResource::getUrl('view', ['record' => $media]));
+    }
+
+    /**
+     * The endpoints are gone rather than redirected.
+     *
+     * Nobody bookmarks a POST target, every caller of these was deleted with
+     * the admin, and redirecting one would turn a destructive POST into a GET
+     * of an unrelated screen.
+     */
+    public function test_the_legacy_write_endpoints_are_gone(): void
+    {
+        $owner = $this->owner();
+
+        /*
+         * 405 and not 404, and that is the right answer: /legacy/media exists
+         * as an ADDRESS and does not exist as a POST target. The assertion
+         * that matters is that it neither succeeds nor redirects — a 301 here
+         * would turn a form submission into a GET of the library, which is
+         * what Route::permanentRedirect quietly did before these became
+         * Route::get.
+         */
+        $this->actingAs($owner)->post('/legacy/media')->assertMethodNotAllowed();
+        $this->actingAs($owner)->post('/legacy/media/anything/reprocess')->assertNotFound();
+        $this->actingAs($owner)->delete('/legacy/media/anything')->assertMethodNotAllowed();
+    }
+
     /** Its routes are named for where they are. */
-    public function test_the_legacy_routes_are_named_legacy(): void
+    /**
+     * No route is named for either admin's old shape.
+     *
+     * admin.* was the trap this test was written for in Task 33. legacy.* is
+     * the one Part B could have left behind: the redirects are deliberately
+     * unnamed, because a NAME is an invitation to link to it, and nothing
+     * should link at a redirect.
+     */
+    public function test_no_route_is_named_for_a_deleted_admin(): void
     {
         $stale = [];
 
         foreach (Route::getRoutes() as $route) {
             $name = $route->getName();
 
-            if ($name === null || ! str_starts_with($name, 'admin.')) {
+            if ($name === null) {
                 continue;
             }
 
-            $stale[] = $name;
+            if (str_starts_with($name, 'admin.') || str_starts_with($name, 'legacy.')) {
+                $stale[] = $name;
+            }
         }
 
         $this->assertSame(
             [],
             $stale,
-            "these routes are still named admin.* while living at /legacy, which is a trap:\n  "
+            "these routes are named for an admin that no longer exists:\n  "
             .implode("\n  ", $stale)
         );
     }
@@ -219,14 +301,6 @@ class AddressesTest extends TestCase
     }
 
     /** /legacy lands on a real screen. */
-    public function test_legacy_lands_on_the_media_library(): void
-    {
-        $this->actingAs($this->owner())
-            ->get('/legacy')
-            ->assertRedirect('/legacy/media');
-
-        $this->actingAs($this->owner())->get('/legacy/media')->assertOk();
-    }
 
     /** And the deleted view is really gone. */
     public function test_the_placeholder_view_is_deleted(): void
@@ -236,42 +310,55 @@ class AddressesTest extends TestCase
 
     // ----------------------------------------------------------------- A5
 
-    /** The panel carries exactly one link to the custom admin. */
-    public function test_the_panel_links_to_legacy_once(): void
+    /**
+     * THE PANEL LINKS OUT TO NOTHING.
+     *
+     * Three tests used to live here, asserting that the panel carried exactly
+     * one link to the custom admin, that it was labelled "Media tools" rather
+     * than for the software's history, and that the label was translated.
+     * They were right while that link was the only way to reach the chunked
+     * uploader and the per-image detail screen.
+     *
+     * Part A put both in the panel and Part B deleted the admin, so the
+     * assertion inverts: there is no link out, in either language, and the
+     * sidebar is entirely discovered resources.
+     */
+    public function test_the_panel_links_out_to_no_other_admin(): void
     {
-        $html = $this->actingAs($this->owner())->get('/admin')->assertOk()->getContent();
+        foreach (['en', 'ar'] as $locale) {
+            $html = $this->actingAs($this->owner())
+                ->withUnencryptedCookie(\App\Support\Locale::COOKIE, $locale)
+                ->get('/admin')
+                ->assertOk()
+                ->getContent();
 
-        preg_match_all('#href="([^"]*/legacy[^"]*)"#', $html, $matches);
+            preg_match_all('#href="([^"]*/legacy[^"]*)"#', (string) $html, $matches);
 
-        $this->assertSame(
-            [route('legacy.media.index')],
-            array_values(array_unique($matches[1])),
-            'the panel should carry exactly one link to the custom admin'
-        );
-    }
-
-    /** It is labelled for what is through it, not for the software's history. */
-    public function test_the_link_is_labelled_for_the_tools(): void
-    {
-        $html = $this->actingAs($this->owner())->get('/admin')->assertOk()->getContent();
-
-        $this->assertStringContainsString(__('studio.legacy.label'), $html);
-
-        foreach (['Old admin', 'Legacy admin', 'Deprecated'] as $wrong) {
-            $this->assertStringNotContainsString($wrong, $html, "the link should not be labelled \"$wrong\"");
+            $this->assertSame([], $matches[1], "the panel still links to /legacy in $locale");
         }
     }
 
-    /** And the label is translated, like everything else in the panel. */
-    public function test_the_link_is_translated(): void
+    /** And the admin's own files are really gone, not merely unlinked. */
+    public function test_the_custom_admin_is_deleted_from_disk(): void
     {
-        $html = $this->actingAs($this->owner())
-            ->withUnencryptedCookie(\App\Support\Locale::COOKIE, 'ar')
-            ->get('/admin')
-            ->assertOk()
-            ->getContent();
+        foreach ([
+            'views/admin/dashboard.blade.php',
+            'views/layouts/admin.blade.php',
+            'views/livewire/admin',
+            'css/admin.css',
+            'css/components/auth.css',
+            'js/admin.js',
+            'js/admin',
+        ] as $path) {
+            $this->assertFalse(
+                file_exists(resource_path($path)),
+                "resources/$path survived the deletion"
+            );
+        }
 
-        $this->assertStringContainsString('أدوات الصور', $html);
+        foreach (['Livewire/Admin', 'Http/Controllers/Admin'] as $path) {
+            $this->assertFalse(is_dir(app_path($path)), "app/$path survived the deletion");
+        }
     }
 
     // ----------------------------------------------------------------- misc
@@ -300,8 +387,14 @@ class AddressesTest extends TestCase
         $this->assertMatchesRegularExpression($pattern, 'about-the-studio');
     }
 
-    /** Two-factor setup survived the move, at its own address. */
-    public function test_two_factor_setup_is_outside_both_admins(): void
+    /**
+     * Two-factor setup is at its own address, outside the panel.
+     *
+     * It was outside BOTH admins while there were two; there is one now, and
+     * the reasoning is unchanged — enrolment cannot sit behind the guard that
+     * requires enrolment.
+     */
+    public function test_two_factor_setup_is_outside_the_panel(): void
     {
         $this->assertSame('/two-factor', parse_url(route('two-factor.setup'), PHP_URL_PATH));
 
@@ -317,6 +410,20 @@ class AddressesTest extends TestCase
         config(['auth.require_two_factor' => true]);
 
         $this->actingAs($user)->get('/admin')->assertRedirect(route('two-factor.setup'));
-        $this->actingAs($user)->get('/legacy/media')->assertRedirect(route('two-factor.setup'));
+
+        /*
+         * An old address gets there in two hops rather than one, and that is
+         * the right shape: the redirect translates an ADDRESS and the panel
+         * enforces the guard. Putting the twofactor middleware on the
+         * redirects too would mean two places deciding who may pass, and the
+         * one that drifts is always the copy.
+         */
+        $this->actingAs($user)
+            ->get('/legacy/media')
+            ->assertRedirect('/admin/media');
+
+        $this->actingAs($user)
+            ->get('/admin/media')
+            ->assertRedirect(route('two-factor.setup'));
     }
 }

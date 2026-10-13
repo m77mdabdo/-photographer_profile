@@ -45,8 +45,8 @@
         second one shows the first one's blocks.
     --}}
     @livewire(
-        \App\Livewire\Admin\StoryBuilder::class,
-        ['project' => $this->getRecord(), 'embedded' => true],
+        \App\Livewire\Studio\StoryBuilder::class,
+        ['project' => $this->getRecord()],
         key('story-builder-'.$this->getRecord()->getKey())
     )
 

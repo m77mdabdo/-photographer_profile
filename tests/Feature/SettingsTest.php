@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
-use App\Livewire\Admin\SettingsManager;
+use App\Filament\Pages\Settings as SettingsPage;
+use App\Support\Locale;
 use App\Models\Setting;
 use App\Models\User;
 use App\Support\Settings;
@@ -190,12 +191,28 @@ class SettingsTest extends TestCase
          * the guarantee is that every group a setting belongs to is titled,
          * not that it is titled with one particular sentence.
          */
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * REPOINTED AT THE PANEL IN TASK 34 PART B.
+         *
+         * This drove the custom admin's SettingsManager, which is deleted.
+         * The assertion is unchanged and is NOT covered by SettingsPageTest:
+         * that file is about locales, tokens and pickers, and this is about
+         * every seeded key being reachable by somebody at all.
+         *
+         * The state path differs because the panel's page is translatable —
+         * values.{token}.{locale} rather than values.{id} — which is the
+         * whole reason the token exists.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        \Filament\Facades\Filament::setCurrentPanel('studio');
+
         Livewire::actingAs($owner)
-            ->test(SettingsManager::class)
+            ->test(SettingsPage::class)
             ->assertSee(\App\Support\SettingGroups::title('identity'))
             ->assertSee(\App\Support\SettingGroups::title('navigation'))
             ->assertSee('site.name')
-            ->set('values.'.Setting::query()->where('key', 'site.statement')->value('id'), 'A new sentence about the work.')
+            ->set('values.'.SettingsPage::token('site.statement').'.'.Locale::DEFAULT, 'A new sentence about the work.')
             ->call('save')
             ->assertHasNoErrors();
 
@@ -203,7 +220,7 @@ class SettingsTest extends TestCase
 
         // Every seeded key is on the screen; a key nobody can edit is a key
         // that will drift.
-        $rendered = Livewire::actingAs($owner)->test(SettingsManager::class)->html();
+        $rendered = Livewire::actingAs($owner)->test(SettingsPage::class)->html();
 
         foreach (Setting::query()->pluck('key') as $key) {
             $this->assertStringContainsString($key, $rendered, "{$key} is not editable");
@@ -214,9 +231,11 @@ class SettingsTest extends TestCase
     {
         $owner = User::factory()->create(['role' => UserRole::Owner]);
 
+        \Filament\Facades\Filament::setCurrentPanel('studio');
+
         Livewire::actingAs($owner)
-            ->test(SettingsManager::class)
-            ->set('values.'.Setting::query()->where('key', 'site.location')->value('id'), '   ')
+            ->test(SettingsPage::class)
+            ->set('values.'.SettingsPage::token('site.location').'.'.Locale::DEFAULT, '   ')
             ->call('save')
             ->assertHasNoErrors();
 
@@ -235,8 +254,14 @@ class SettingsTest extends TestCase
          * A key is an address the templates ask for. Creating one produces a
          * row nothing reads; deleting one silently drops a template back to
          * its config fallback, or to nothing at all.
+         *
+         * Read off the PANEL's page since Task 34 Part B deleted the custom
+         * admin's SettingsManager. SettingsPageTest asserts the same rule
+         * through the Filament action list; this is the cruder check that the
+         * page itself offers no method to do it, which is what stops somebody
+         * wiring a button to one.
          */
-        $source = (string) file_get_contents(app_path('Livewire/Admin/SettingsManager.php'));
+        $source = (string) file_get_contents(app_path('Filament/Pages/Settings.php'));
 
         $this->assertStringNotContainsString('public function create', $source);
         $this->assertStringNotContainsString('public function delete', $source);

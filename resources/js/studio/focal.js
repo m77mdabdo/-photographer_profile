@@ -9,7 +9,7 @@
  * registered asset loads on every page of the panel and only this one has an
  * image to point at.
  */
-import { initFocalPoint } from '../admin/focal-point.js';
+import { initFocalPoint } from './focal-point.js';
 
 initFocalPoint();
 

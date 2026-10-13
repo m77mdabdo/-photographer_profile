@@ -3,29 +3,21 @@
 declare(strict_types=1);
 
 use App\Enums\MediaStatus;
-use App\Http\Controllers\Admin\MediaController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\ThemeController;
-use App\Livewire\Admin\ArticleForm;
-use App\Livewire\Admin\ArticleIndex;
-use App\Livewire\Admin\CategoryManager;
-use App\Livewire\Admin\PageManager;
-use App\Livewire\Admin\RedirectManager;
-use App\Livewire\Admin\ServiceForm;
-use App\Livewire\Admin\ServiceIndex;
-use App\Livewire\Admin\ClientManager;
-use App\Livewire\Admin\InquiryDetail;
-use App\Livewire\Admin\InquiryIndex;
-use App\Livewire\Admin\MediaIndex;
-use App\Livewire\Admin\ProjectForm;
-use App\Livewire\Admin\ProjectIndex;
-use App\Livewire\Admin\SettingsManager;
-use App\Livewire\Admin\StoryBuilder;
-use App\Livewire\Admin\MediaTrash;
 use App\Models\Media;
+use App\Filament\Resources\Articles\ArticleResource;
+use App\Filament\Resources\Enquiries\InquiryResource;
+use App\Filament\Resources\Media\MediaResource;
+use App\Filament\Resources\Projects\ProjectResource;
+use App\Filament\Resources\Services\ServiceResource;
+use App\Models\Article;
+use App\Models\Inquiry;
+use App\Models\Project;
+use App\Models\Service;
 use Illuminate\Support\Facades\Blade;
 use App\Http\Middleware\EnsureCanonicalSlug;
 use App\Http\Middleware\SetLocale;
@@ -291,100 +283,92 @@ Route::view('/two-factor', 'auth.two-factor-setup')
 
 /*
  * ═══════════════════════════════════════════════════════════════════════════
- * THE CUSTOM ADMIN, NOW AT /legacy.
+ * THE CUSTOM ADMIN IS GONE. ITS ADDRESSES ARE NOT.
  *
- * /admin belongs to the Filament panel as of Task 33 — it is the address the
- * client types, and they had landed on this admin's placeholder three times.
+ * Task 34 Part B deleted it — 8,463 lines across components, views, layouts,
+ * controllers, stylesheets, JavaScript and its own tests — once all six media
+ * capabilities had landed in the panel with passing tests (Part A).
  *
- * This is NOT dead code and is NOT deleted. Six media capabilities still live
- * only here: the thumbnail picker, the focal-point drag control, the EXIF
- * display, rendition inspection, reprocess, and the trash screen. The standing
- * rule holds — nothing is deleted until its replacement has a passing test —
- * so it keeps a working address until those six move.
+ * WHAT HAPPENS TO /legacy/*, PATH BY PATH.
  *
- * The name prefix moved with the path. Leaving route('admin.*') pointing at
- * /legacy/* would be a trap for whoever reads this next.
+ * Every GET that named a SCREEN redirects, permanently, to the panel screen
+ * that replaced it. The client has had these addresses in their history for
+ * months and a 404 is a worse answer than a redirect to the same work. 301
+ * rather than 302 because this is not coming back.
+ *
+ * Parameterised paths resolve the record first. The two admins key their URLs
+ * differently — the custom admin bound a project by its SLUG and an image by
+ * its UUID, Filament keys both by id — so these cannot be string rewrites.
+ * The lookup happens here, once, which is why MediaResource does not override
+ * Filament's route key to match (see the note there).
+ *
+ * The non-GET endpoints — store, update, destroy, reprocess — are NOT
+ * redirected and are gone. Note the redirects below are Route::get and not
+ * Route::permanentRedirect: that helper registers for EVERY verb, so a POST
+ * to /legacy/media answered 301 instead of 404 and would have bounced a form
+ * submission into a GET of the library. Nobody bookmarks a POST target, every caller of
+ * them was deleted with the admin, and a redirect would turn a destructive
+ * POST into a GET of some unrelated screen. A 404 is the honest answer to a
+ * request for an endpoint that no longer exists.
+ *
+ * /legacy/media/trash has no panel equivalent as a SCREEN: the library's
+ * trashed filter replaced it, which is the same rows in the same table with
+ * the same search. It redirects to the library rather than 404ing, because
+ * somebody arriving there wants deleted images and that is where they are.
  * ═══════════════════════════════════════════════════════════════════════════
  */
 Route::prefix('legacy')
-    ->name('legacy.')
     ->middleware(['auth', 'verified', 'admin', 'throttle:admin'])
     ->group(function () {
-        Route::middleware('twofactor')->group(function () {
-            /*
-             * A REAL SCREEN, NOT A PLACEHOLDER.
-             *
-             * This was a placeholder view telling the reader that the real
-             * admin screens were still to come — which is what the client
-             * kept landing on. The view is deleted; anybody who reaches
-             * /legacy lands on the media library, which is the reason this
-             * admin still exists at all.
-             */
-            Route::redirect('/', '/legacy/media')->name('dashboard');
+        $panel = fn (string $path): string => '/admin'.$path;
 
-            Route::prefix('projects')->name('projects.')->group(function () {
-                Route::get('/', ProjectIndex::class)->name('index');
-                // Literal segments before the wildcard, or "create" is read
-                // as a slug and 404s.
-                Route::get('/create', ProjectForm::class)->name('create');
-                Route::get('/{project}/edit', ProjectForm::class)->name('edit');
-                Route::get('/{project}/story', StoryBuilder::class)->name('story');
+        Route::get('/', fn () => redirect('/admin/media', 301));
+        Route::get('/media', fn () => redirect('/admin/media', 301));
+        Route::get('/media/trash', fn () => redirect('/admin/media', 301));
+        Route::get('/projects', fn () => redirect('/admin/projects', 301));
+        Route::get('/projects/create', fn () => redirect('/admin/projects/create', 301));
+        Route::get('/inquiries', fn () => redirect('/admin/enquiries', 301));
+        Route::get('/articles', fn () => redirect('/admin/articles', 301));
+        Route::get('/articles/create', fn () => redirect('/admin/articles/create', 301));
+        Route::get('/services', fn () => redirect('/admin/services', 301));
+        Route::get('/services/create', fn () => redirect('/admin/services/create', 301));
+        Route::get('/pages', fn () => redirect('/admin/pages', 301));
+        Route::get('/redirects', fn () => redirect('/admin/redirects', 301));
+        Route::get('/settings', fn () => redirect('/admin/settings', 301));
+        Route::get('/categories', fn () => redirect('/admin/categories', 301));
+        Route::get('/clients', fn () => redirect('/admin/clients', 301));
 
-                /*
-                 * Draft preview. The signature is generated on demand below and
-                 * expires, so a preview link shared by accident stops working.
-                 */
-                Route::get('/{project}/preview', fn (\App\Models\Project $project) => redirect()->to(
-                    \App\Support\ProjectPreview::url($project)
-                ))->name('preview');
-            });
+        /*
+         * The record ones. Bound by the model's own route key — slug for a
+         * project, uuid for an image — and sent on to the panel's id-keyed
+         * address.
+         */
+        Route::get('/projects/{project}/edit', fn (Project $project) => redirect()->away(
+            ProjectResource::getUrl('edit', ['record' => $project]), 301
+        ));
 
-            /*
-             * Enquiries. The detail route marks an enquiry read on open, so
-             * it is a GET with a side effect — acceptable because the effect
-             * is idempotent and is the literal meaning of opening it.
-             */
-            Route::get('/inquiries', InquiryIndex::class)->name('inquiries.index');
-            Route::get('/inquiries/{inquiry}', InquiryDetail::class)->name('inquiries.show');
+        Route::get('/projects/{project}/story', fn (Project $project) => redirect()->away(
+            ProjectResource::getUrl('story', ['record' => $project]), 301
+        ));
 
-            /*
-             * The journal. Same shape as projects: literal segments before
-             * the wildcard, or "create" is read as a record key.
-             */
-            Route::prefix('articles')->name('articles.')->group(function () {
-                Route::get('/', ArticleIndex::class)->name('index');
-                Route::get('/create', ArticleForm::class)->name('create');
-                Route::get('/{article}/edit', ArticleForm::class)->name('edit');
-            });
+        Route::get('/projects/{project}/preview', fn (Project $project) => redirect()->away(
+            ProjectResource::getUrl('preview', ['record' => $project]), 301
+        ));
 
-            /*
-             * Services. Same shape as projects and the journal: literal
-             * segments before the wildcard.
-             */
-            Route::prefix('services')->name('services.')->group(function () {
-                Route::get('/', ServiceIndex::class)->name('index');
-                Route::get('/create', ServiceForm::class)->name('create');
-                Route::get('/{service}/edit', ServiceForm::class)->name('edit');
-            });
+        Route::get('/articles/{article}/edit', fn (Article $article) => redirect()->away(
+            ArticleResource::getUrl('edit', ['record' => $article]), 301
+        ));
 
-            Route::get('/pages', PageManager::class)->name('pages.index');
-            Route::get('/redirects', RedirectManager::class)->name('redirects.index');
+        Route::get('/services/{service}/edit', fn (Service $service) => redirect()->away(
+            ServiceResource::getUrl('edit', ['record' => $service]), 301
+        ));
 
-            Route::get('/settings', SettingsManager::class)->name('settings.index');
+        Route::get('/inquiries/{inquiry}', fn (Inquiry $inquiry) => redirect()->away(
+            InquiryResource::getUrl('view', ['record' => $inquiry]), 301
+        ));
 
-            Route::get('/categories', CategoryManager::class)->name('categories.index');
-            Route::get('/clients', ClientManager::class)->name('clients.index');
-
-            Route::prefix('media')->name('media.')->group(function () {
-                // Full-page Livewire component; it owns filters and polling.
-                Route::get('/', MediaIndex::class)->name('index');
-                // Declared before /{medium} so these are not read as ids.
-                Route::get('/trash', MediaTrash::class)->name('trash');
-                Route::post('/', [MediaController::class, 'store'])->name('store');
-                Route::get('/{medium}', [MediaController::class, 'show'])->name('show');
-                Route::patch('/{medium}', [MediaController::class, 'update'])->name('update');
-                Route::delete('/{medium}', [MediaController::class, 'destroy'])->name('destroy');
-                Route::post('/{medium}/reprocess', [MediaController::class, 'reprocess'])->name('reprocess');
-            });
-        });
+        Route::get('/media/{medium}', fn (Media $medium) => redirect()->away(
+            MediaResource::getUrl('view', ['record' => $medium]), 301
+        ));
     });
+

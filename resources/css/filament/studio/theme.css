@@ -64,35 +64,21 @@
 
 /*
  * ───────────────────────────────────────────────────────────────────────────
- * THE CUSTOM ADMIN'S COMPONENT STYLES, FOR THE ONE COMPONENT THIS PANEL
- * HOSTS UNCHANGED.
+ * THE COMPONENT STYLES FOR THE TWO LIVEWIRE COMPONENTS THIS PANEL HOSTS.
  *
- * Part 6 step 1 mounts App\Livewire\Admin\StoryBuilder inside the panel —
- * the real component, with its 993 lines of JavaScript, because a
- * Builder-field rewrite would lose undo, redo, crash recovery, local-state
- * drag, cross-block image drag and keyboard parity. Keeping it unchanged
- * means keeping the classes its Blade view names: .builder, .block-card,
- * .outline__item, .picker__grid and about thirty more.
+ * The story builder and the media picker are real components, not Filament
+ * rewrites — they keep undo, redo, crash recovery, local-state drag,
+ * cross-block image drag, keyboard parity, shift-range selection and ordered
+ * multi-select, none of which a Builder field or a Select has.
  *
- * Imported rather than copied. A second definition of .block-card in a
- * panel-only stylesheet is two things to keep in step, and the one that
- * drifts is always the copy — the project's standing rule is that where both
- * admins need something, one calls the other.
- *
- * WHY THE WHOLE FILE AND NOT AN EXTRACTED SUBSET. The builder borrows the
- * admin's furniture as well as its own selectors — .admin-button, .badge,
- * .breadcrumb, .form-actions, .empty-state — and an extraction would have to
- * guess which of those are "the builder's". Unused selectors are inert, and
- * the measured cost of all of them is 2.6% of a stylesheet this panel already
- * ships. Collisions were checked: every class is prefixed (admin-, auth-,
- * block-, picker__, outline__, story-) except a handful Filament names
- * differently (it uses .fi-badge, not .badge).
- *
- * This import leaves with the old admin at step 10, together with whatever of
- * it the story page still needs by then.
+ * This used to import the custom admin's whole stylesheet, with a note saying
+ * the import would leave with that admin "together with whatever of it the
+ * story page still needs by then". Task 34 Part B is that moment: 1,104 lines
+ * became the 195 these two screens actually name, and the physical properties
+ * among them became logical on the way through. See the file's own header.
  * ───────────────────────────────────────────────────────────────────────────
  */
-@import '../../components/auth.css';
+@import './components.css';
 
 @theme {
     /* ---- Type ---------------------------------------------------------- */

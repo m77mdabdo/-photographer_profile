@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
-use App\Livewire\Admin\PageManager;
-use App\Livewire\Admin\ServiceForm;
+use App\Filament\Resources\Pages\Pages\EditPage;
+use App\Filament\Resources\Services\Pages\CreateService;
+use Filament\Facades\Filament;
 use App\Models\Page;
 use App\Models\Service;
 use App\Models\User;
@@ -111,13 +112,31 @@ class ServicesAndPagesTest extends TestCase
      */
     public function test_a_price_round_trips_through_the_admin_without_a_float(): void
     {
+        /*
+         * Repointed at the panel in Task 34 Part B. The rule is unchanged and
+         * is the reason this test exists: the form takes POUNDS and the
+         * column stores integer PENCE, so 450.50 must land as 45050 and never
+         * as a float that rounds.
+         *
+         * The panel's field is price_from_pence directly, so the conversion
+         * it is asserting now happens in the reader's head rather than in a
+         * form mutator — which is the stronger place for it to be: there is
+         * no second representation to drift.
+         */
+        Filament::setCurrentPanel('studio');
+
         Livewire::actingAs($this->admin())
-            ->test(ServiceForm::class)
-            ->set('name', 'Portrait sittings')
-            ->set('price_from', '450.50')
-            ->set('status', 'published')
-            ->call('save')
-            ->assertHasNoErrors();
+            ->test(CreateService::class)
+            ->fillForm([
+                'name.en' => 'Portrait sittings',
+                'name.ar' => 'جلسات بورتريه',
+                'slug.en' => 'portrait-sittings',
+                'slug.ar' => 'jalsat-burtreh',
+                'price_from_pence' => 45050,
+                'status' => 'published',
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
 
         $service = Service::query()->sole();
 
@@ -161,14 +180,19 @@ class ServicesAndPagesTest extends TestCase
     {
         $this->seed(\Database\Seeders\LegalPagesSeeder::class);
 
+        Filament::setCurrentPanel('studio');
+
+        $record = Page::query()->where('slug', Page::PRIVACY)->sole();
+
         Livewire::actingAs($this->admin())
-            ->test(PageManager::class)
-            ->call('edit', Page::PRIVACY)
-            ->assertSet('title', 'Privacy notice')
-            ->set('title', 'How this studio handles your data')
-            ->set('body', "## A heading\n\nRewritten by the studio's solicitor.")
+            ->test(EditPage::class, ['record' => $record->getKey()])
+            ->assertFormSet(fn (array $state): bool => $state['title']['en'] === 'Privacy notice')
+            ->fillForm([
+                'title.en' => 'How this studio handles your data',
+                'body.en' => "## A heading\n\nRewritten by the studio's solicitor.",
+            ])
             ->call('save')
-            ->assertHasNoErrors();
+            ->assertHasNoFormErrors();
 
         $page = Page::query()->where('slug', Page::PRIVACY)->sole();
 
@@ -193,11 +217,12 @@ class ServicesAndPagesTest extends TestCase
         $this->assertFalse($page->delete());
         $this->assertNotNull(Page::query()->where('slug', Page::PRIVACY)->first());
 
-        // And the admin refuses to move it, even when a slug is submitted.
+        // And the panel refuses to move it, even when a slug is submitted.
+        Filament::setCurrentPanel('studio');
+
         Livewire::actingAs($this->admin())
-            ->test(PageManager::class)
-            ->call('edit', Page::PRIVACY)
-            ->set('slug', 'privacy-policy')
+            ->test(EditPage::class, ['record' => $page->getKey()])
+            ->fillForm(['slug.en' => 'privacy-policy'])
             ->call('save');
 
         $this->assertSame(Page::PRIVACY, $page->fresh()->slug);

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Livewire\Admin;
+namespace App\Livewire\Studio;
 
 use App\Enums\MediaStatus;
 use App\Models\Media;
@@ -327,7 +327,7 @@ class MediaPicker extends Component
 
     public function render(): View
     {
-        return view('livewire.admin.media-picker', [
+        return view('livewire.studio.media-picker', [
             'media' => $this->query()->with('variants')->paginate(24),
             'matchingCount' => $this->query()->count(),
         ]);

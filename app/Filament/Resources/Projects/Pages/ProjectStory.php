@@ -15,7 +15,7 @@ use Filament\Resources\Pages\Concerns\InteractsWithRecord;
  * ═══════════════════════════════════════════════════════════════════════════
  * THE REAL COMPONENT, MOUNTED. NOT A REWRITE.
  *
- * This page renders App\Livewire\Admin\StoryBuilder unchanged — the same PHP
+ * This page renders App\Livewire\Studio\StoryBuilder unchanged — the same PHP
  * class, the same Blade view, the same 993 lines of JavaScript the custom
  * admin has been using since Task 17. Filament 5 runs Livewire 4, so there is
  * nothing to port.

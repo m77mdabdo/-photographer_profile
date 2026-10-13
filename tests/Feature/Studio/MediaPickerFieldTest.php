@@ -7,7 +7,7 @@ namespace Tests\Feature\Studio;
 use App\Enums\MediaStatus;
 use App\Enums\UserRole;
 use App\Filament\Resources\Projects\Pages\EditProject;
-use App\Livewire\Admin\MediaPicker;
+use App\Livewire\Studio\MediaPicker;
 use App\Models\Media;
 use App\Models\Project;
 use App\Models\User;
@@ -166,6 +166,6 @@ class MediaPickerFieldTest extends TestCase
 
         $this->get(EditProject::getUrl(['record' => $project]))
             ->assertOk()
-            ->assertSee('admin.media-picker', escape: false);
+            ->assertSee('studio.media-picker', escape: false);
     }
 }

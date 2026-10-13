@@ -79,6 +79,10 @@ return [
     ],
 
     'media' => [
+        'demo' => 'Stock',
+        'demo_note' => 'Stock photograph, not your own work. Remove every one with',
+        'demo_only' => 'Stock only',
+        'real_only' => 'Your own work only',
         'destroy_warning' => 'Destroying ":name" deletes the original and every rendition from disk. This cannot be undone.',
         'destroy_confirm_label' => 'Type the filename to confirm',
         'destroy_mismatch' => 'That is not the filename. Nothing was deleted.',
@@ -490,5 +494,12 @@ return [
         'choose' => 'Choose an image',
         'replace' => 'Replace',
         'clear' => 'Remove',
+    ],
+
+    'hero_check' => [
+        'title' => 'On the home page',
+        'lede' => 'The hero interlocks the studio name with :name. Here is how it will behave. None of this stops you publishing.',
+        'good' => 'Good:',
+        'worth_knowing' => 'Worth knowing:',
     ],
 ];

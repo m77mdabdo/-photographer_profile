@@ -9,8 +9,8 @@ use App\Enums\MediaStatus;
 use App\Enums\PublishStatus;
 use App\Enums\UserRole;
 use App\Actions\Projects\SyncBlockMedia;
-use App\Livewire\Admin\MediaPicker;
-use App\Livewire\Admin\StoryBuilder;
+use App\Livewire\Studio\MediaPicker;
+use App\Livewire\Studio\StoryBuilder;
 use App\Models\Media;
 use App\Models\MediaUsage;
 use App\Models\Project;
@@ -1165,7 +1165,7 @@ class StoryBuilderTest extends TestCase
     {
         // The storage choice is the whole feature: sessionStorage dies with
         // the tab, which is precisely when a draft is most wanted.
-        $js = file_get_contents(resource_path('js/admin/story-builder.js'));
+        $js = file_get_contents(resource_path('js/studio/story-builder.js'));
 
         $this->assertStringContainsString('window.localStorage.setItem(projectKey()', $js);
         $this->assertStringContainsString('window.localStorage.getItem(projectKey())', $js);
@@ -1233,7 +1233,7 @@ class StoryBuilderTest extends TestCase
 
     public function test_a_network_failure_keeps_state_and_says_so_distinctly(): void
     {
-        $js = file_get_contents(resource_path('js/admin/story-builder.js'));
+        $js = file_get_contents(resource_path('js/studio/story-builder.js'));
 
         // The save is awaited inside a try, so a dropped connection is caught
         // rather than leaving a disabled button and a silent page.

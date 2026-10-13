@@ -21,7 +21,7 @@ use Filament\Forms\Components\Field;
  * comfort regression of the worst kind: a photographer choosing a photograph
  * from a list of filenames.
  *
- * WHAT MOUNTING App\Livewire\Admin\MediaPicker KEEPS, item by item, each of
+ * WHAT MOUNTING App\Livewire\Studio\MediaPicker KEEPS, item by item, each of
  * which a Filament field would have had to reimplement:
  *
  *   thumbnails         the picture, at the size you can recognise it by.

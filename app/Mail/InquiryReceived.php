@@ -48,9 +48,20 @@ class InquiryReceived extends Mailable implements ShouldQueue
         return new Content(
             markdown: 'mail.inquiry-received',
             with: [
-                // Absolute, because a link in an email has no page to resolve
-                // a relative path against — the same reasoning as og:image.
-                'url' => route('legacy.inquiries.show', $this->inquiry),
+                /*
+                 * Absolute, because a link in an email has no page to resolve
+                 * a relative path against — the same reasoning as og:image.
+                 *
+                 * Pointed at the PANEL since Task 34 Part B. It named the
+                 * custom admin's enquiry screen, which no longer exists; the
+                 * redirect at /legacy/inquiries/{id} would have caught it,
+                 * but sending somebody a link that needs a redirect is a link
+                 * that breaks the day the redirect is tidied away.
+                 */
+                'url' => \App\Filament\Resources\Enquiries\InquiryResource::getUrl(
+                    'view',
+                    ['record' => $this->inquiry],
+                ),
             ],
         );
     }

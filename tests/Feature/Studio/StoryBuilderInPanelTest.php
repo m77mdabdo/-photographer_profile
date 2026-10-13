@@ -8,7 +8,7 @@ use App\Enums\BlockType;
 use App\Enums\MediaStatus;
 use App\Enums\UserRole;
 use App\Filament\Resources\Projects\Pages\ProjectStory;
-use App\Livewire\Admin\StoryBuilder;
+use App\Livewire\Studio\StoryBuilder;
 use App\Models\Media;
 use App\Models\Project;
 use App\Models\User;
@@ -220,41 +220,44 @@ class StoryBuilderInPanelTest extends TestCase
     }
 
     /**
-     * AND IT STAYS GONE AFTER A RE-RENDER.
+     * ───────────────────────────────────────────────────────────────────────
+     * REWRITTEN IN TASK 34 PART B.
      *
-     * The first version asked request()->routeIs('filament.*'), which is right
-     * on the initial load and false on every Livewire update — so the custom
-     * admin's breadcrumb reappeared the moment anything re-rendered. The
-     * answer is component state, and this is the test that holds it there.
+     * Two tests lived here. One asserted the custom admin's breadcrumb stayed
+     * HIDDEN inside the panel across re-renders — the $embedded flag existed
+     * for exactly that, after a first attempt using request()->routeIs()
+     * reappeared on every Livewire update. The other asserted the same
+     * breadcrumb was still DRAWN in the custom admin.
+     *
+     * There is one host now. The flag, the branch and the breadcrumb are all
+     * deleted, so the assertion becomes the simpler true thing: the component
+     * draws no navigation of its own, before or after a re-render, and the
+     * panel's breadcrumb is the only one.
+     * ───────────────────────────────────────────────────────────────────────
      */
-    public function test_the_old_admin_chrome_stays_hidden_after_a_re_render(): void
+    public function test_the_builder_draws_no_navigation_of_its_own(): void
     {
         $component = Livewire::test(StoryBuilder::class, [
             'project' => $this->project,
-            'embedded' => true,
         ]);
 
-        $component->assertDontSee(route('legacy.projects.edit', $this->project));
+        $component->assertDontSee('breadcrumb', escape: false);
 
         // A re-render: switching the editing language redraws every block.
         $component->call('switchLocale', 'ar')
-            ->assertDontSee(route('legacy.projects.edit', $this->project));
+            ->assertDontSee('breadcrumb', escape: false);
 
         // And a save.
         $component->call('saveStory', [])
-            ->assertDontSee(route('legacy.projects.edit', $this->project));
+            ->assertDontSee('breadcrumb', escape: false);
     }
 
-    /** The custom admin's own breadcrumb is untouched while it still exists. */
-    public function test_the_old_admin_keeps_its_breadcrumb(): void
+    /** Nothing in it points at the admin that was deleted. */
+    public function test_the_builder_links_at_no_deleted_admin(): void
     {
-        $html = $this->get(route('legacy.projects.story', $this->project))->assertOk()->getContent();
+        $html = Livewire::test(StoryBuilder::class, ['project' => $this->project])->html();
 
-        $this->assertStringContainsString(
-            route('legacy.projects.edit', $this->project),
-            $html,
-            'the custom admin lost its way back to the project'
-        );
+        $this->assertStringNotContainsString('/legacy', $html);
     }
 
     /**

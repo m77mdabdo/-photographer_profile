@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Livewire\Admin;
+namespace App\Livewire\Studio;
 
 use App\Actions\Projects\SaveStory;
 use App\Actions\Projects\ValidateBlock;
@@ -12,7 +12,6 @@ use App\Models\Project;
 use App\Support\Locale;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 /**
@@ -28,7 +27,6 @@ use Livewire\Component;
  * dramatically slower than dragging, which batched. An accessible path that
  * is slower than the mouse path is not an accessible path.
  */
-#[Layout('layouts.admin')]
 class StoryBuilder extends Component
 {
     use AuthorizesRequests;
@@ -121,34 +119,8 @@ class StoryBuilder extends Component
         $this->dispatch('story-reloaded');
     }
 
-    /**
-     * Is this component hosted by the Filament panel rather than by its own
-     * route in the custom admin?
-     *
-     * ───────────────────────────────────────────────────────────────────────
-     * A PROPERTY, NOT request()->routeIs('filament.*').
-     *
-     * The first version asked the ROUTE which admin was hosting it. That is
-     * right on the initial page load and wrong on every Livewire update: an
-     * update is a POST to Livewire's own endpoint, so the check flipped to
-     * false and the custom admin's breadcrumb reappeared the first time
-     * anything re-rendered. Found by screenshotting the page after a save.
-     *
-     * Livewire keeps public properties across requests, so a value set once at
-     * mount is the stable answer. It defaults to false, which is the custom
-     * admin's behaviour — the host that opts out is the one doing something
-     * unusual.
-     *
-     * What it hides is chrome the panel already draws: its own breadcrumb,
-     * and a "back" link beside Filament's. The EDITOR is identical in both.
-     * ───────────────────────────────────────────────────────────────────────
-     */
-    public bool $embedded = false;
-
-    public function mount(Project $project, bool $embedded = false): void
+    public function mount(Project $project): void
     {
-        $this->embedded = $embedded;
-
         $this->authorize('update', $project);
 
         /*
@@ -274,7 +246,7 @@ class StoryBuilder extends Component
     {
         $ids = collect($this->blocks)->flatMap(fn (array $b): array => $b['media'])->unique()->all();
 
-        return view('livewire.admin.story-builder', [
+        return view('livewire.studio.story-builder', [
             'mediaById' => Media::with('variants')->whereIn('id', $ids)->get()->keyBy('id'),
             'types' => collect(BlockType::cases())->groupBy(fn (BlockType $t): string => $t->group()),
             'allTypes' => BlockType::cases(),

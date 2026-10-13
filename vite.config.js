@@ -21,8 +21,16 @@ export default defineConfig({
              */
             input: [
                 'resources/css/public.css',
-                'resources/css/admin.css',
-                'resources/js/admin.js',
+                'resources/css/auth.css',
+
+                /*
+                 * admin.css and admin.js are GONE (Task 34 Part B). They were
+                 * the custom admin's two entries; that admin was deleted once
+                 * the panel had all six of its media capabilities. What the
+                 * panel still uses out of them — the story builder and the
+                 * focal-point control — now lives under resources/js/studio
+                 * and resources/css/filament/studio, as entries of its own.
+                 */
 
                 /*
                  * The public bundle returns, with a purpose.

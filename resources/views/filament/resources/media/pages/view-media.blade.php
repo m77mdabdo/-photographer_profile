@@ -113,6 +113,22 @@
                         </div>
                     @endif
 
+                    @if ($media->is_demo)
+                        {{--
+                            Stock photography, seeded so the site had
+                            something to show. It must never go out as the
+                            photographer's own work, so the row says what it
+                            is and how to be rid of all of it at once.
+                        --}}
+                        <div>
+                            <dt>{{ __('studio.media.demo') }}</dt>
+                            <dd>
+                                {{ __('studio.media.demo_note') }}
+                                <code class="studio-media-detail__mono" dir="ltr">media:purge-demo</code>
+                            </dd>
+                        </div>
+                    @endif
+
                     <div>
                         <dt>{{ __('studio.media.used_in') }}</dt>
                         <dd>{{ trans_choice('studio.media.usage_count', $media->usages()->count()) }}</dd>

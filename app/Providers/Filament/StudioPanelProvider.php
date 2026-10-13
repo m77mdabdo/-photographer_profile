@@ -141,7 +141,7 @@ class StudioPanelProvider extends PanelProvider
          */
         FilamentView::registerRenderHook(
             PanelsRenderHook::BODY_END,
-            fn (): string => Blade::render('@livewire(\'admin.media-picker\')'),
+            fn (): string => Blade::render('@livewire(\'studio.media-picker\')'),
         );
     }
 
@@ -276,41 +276,22 @@ class StudioPanelProvider extends PanelProvider
              * custom admin can be removed with it.
              * ───────────────────────────────────────────────────────────────
              */
-            ->navigationItems([
-                NavigationItem::make('legacy-media-tools')
-                    ->label(fn (): string => __('studio.legacy.label'))
-                    ->icon('heroicon-o-wrench-screwdriver')
-                    ->group(fn (): string => __('studio.nav.group_system'))
-                    ->sort(99)
-                    ->url(fn (): string => route('legacy.media.index'), shouldOpenInNewTab: true)
-                    ->visible(fn (): bool => auth()->user()?->can('viewAny', \App\Models\Media::class) ?? false),
-            ])
 
             /*
              * ───────────────────────────────────────────────────────────────
-             * ONE HAND-WRITTEN ITEM. THE "PLANNED" TIER IS GONE.
+             * NO ->navigationItems(). EVERY ITEM IS A DISCOVERED RESOURCE.
              *
              * Task 30b hung twelve hand-written NavigationItems here: ten
              * duplicating screens of the custom admin and two marked
-             * "planned", which was the honest shape of a panel with no
-             * resources in it. Task 32 B5 replaced every one with a
-             * discovered Resource or Page, so a label and its destination are
-             * now the same declaration and cannot drift. A sidebar entry for
-             * a feature nobody has specified is a promise this project has
-             * not made, so the two planned items do not return.
+             * "planned". Task 32 B5 replaced every one with a discovered
+             * Resource or Page, so a label and its destination are the same
+             * declaration and cannot drift.
              *
-             * The single item above is the exception and is not planned work:
-             * it points at the surviving custom admin, which Task 33 Part A
-             * moved to /legacy. That admin still owns the chunked uploader
-             * and the per-image detail screen, which the panel has no
-             * equivalent of yet, so there has to be a way to reach it. It
-             * opens in a new tab because it is a different application with
-             * its own layout, and it sorts to 99 so it sits last under
-             * "System".
-             *
-             * This comment previously said the old admin was at /admin and
-             * that nothing in the panel linked to it. Both stopped being true
-             * in Part A, two lines above where it was written.
+             * The last one standing was "Media tools", pointing at the custom
+             * admin for the chunked uploader and the per-image detail screen.
+             * Task 34 Part A gave the panel both, Part B deleted that admin,
+             * and the item went with it. There is now nothing in this panel
+             * that links out of it.
              * ───────────────────────────────────────────────────────────────
              */
 

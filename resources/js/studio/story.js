@@ -44,7 +44,7 @@
  * ───────────────────────────────────────────────────────────────────────────
  */
 
-import { initStoryBuilder } from '../admin/story-builder';
+import { initStoryBuilder } from './story-builder';
 
 function boot() {
     initStoryBuilder();

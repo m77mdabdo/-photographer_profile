@@ -76,6 +76,48 @@ class Page extends Model
             return ! $page->is_locked;
         });
 
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * AND ITS ADDRESS CANNOT BE MOVED EITHER.
+         *
+         * The comment above says a locked page cannot be DELETED, "because
+         * the footer links to these by slug and a 404 there is a compliance
+         * problem". Moving the slug produces exactly the same 404 by a
+         * different route, and nothing stopped it.
+         *
+         * The custom admin's page manager refused it by hand. The panel had
+         * no equivalent, so editing the privacy notice's address through
+         * /admin/pages silently broke both footer links — found in Task 34
+         * Part B when ServicesAndPagesTest was repointed at the panel and
+         * this assertion, which had passed for months, started failing.
+         *
+         * Here rather than in a resource, for the reason the deletion guard
+         * is here: a rule enforced in one of two admins is a rule that lasts
+         * until somebody writes a third way in.
+         *
+         * The slug is RESTORED rather than the save being refused: an editor
+         * rewriting the privacy notice's text should not lose the edit
+         * because they also touched a field they are not allowed to change.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        static::updating(function (self $page): void {
+            if (! $page->is_locked || ! $page->isDirty('slug')) {
+                return;
+            }
+
+            /*
+             * Written through setRawAttributes and not `$page->slug = …`.
+             * The slug is a translatable JSON column, so the normal setter
+             * takes a VALUE FOR THE ACTIVE LOCALE and merges it into the map
+             * — handing it the whole original map back produces a map with a
+             * map inside it. The raw attribute is the only way to say "put it
+             * back exactly as it was".
+             */
+            $page->setRawAttributes(array_merge($page->getAttributes(), [
+                'slug' => $page->getRawOriginal('slug'),
+            ]));
+        });
+
         // The footer asks which legal pages are published; that answer is
         // cached, so any write to a page drops it.
         static::saved(fn () => \App\Support\PageLinks::forget());

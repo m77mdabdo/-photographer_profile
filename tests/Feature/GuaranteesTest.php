@@ -180,6 +180,59 @@ class GuaranteesTest extends TestCase
     // ----------------------------------------------------------------- 3
 
     /**
+     * CLAIM — Models/Page.php:69
+     * "A locked page cannot be deleted through any path ... The footer links
+     *  to these by slug and a 404 there is a compliance problem."
+     *
+     * ───────────────────────────────────────────────────────────────────────
+     * TRUE OF DELETION, AND THE REASONING COVERED MORE THAN THE CODE DID.
+     *
+     * That sentence is about the FOOTER LINK, not about deletion: what must
+     * not happen is a 404 where the privacy notice is linked by name.
+     * Deleting the page produces one. So does moving its address, and nothing
+     * stopped that at all.
+     *
+     * The custom admin's page manager refused a slug change by hand. The
+     * panel had no equivalent, so renaming the privacy notice through
+     * /admin/pages moved /privacy and broke both footer links silently —
+     * found in Task 34 Part B, when a test that had driven the old admin was
+     * repointed at the panel and failed for a reason that had nothing to do
+     * with the move.
+     *
+     * The guard is now on the model, where no admin can be written around it.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public function test_a_locked_pages_address_cannot_be_moved_by_any_path(): void
+    {
+        $this->seed(\Database\Seeders\LegalPagesSeeder::class);
+
+        $page = Page::query()->where('slug', Page::PRIVACY)->sole();
+        $this->assertTrue($page->is_locked);
+
+        $arabic = $page->getTranslation('slug', 'ar', fallback: false);
+
+        // 1. Through the model.
+        $page->slug = 'privacy-policy';
+        $page->save();
+        $this->assertSame(Page::PRIVACY, $page->fresh()->slug, 'the model let the address move');
+
+        // 2. Through the other locale, which is a different generated column.
+        $page = $page->fresh();
+        $page->setTranslation('slug', 'ar', 'khususiyya-jadida');
+        $page->save();
+        $this->assertSame(
+            $arabic,
+            $page->fresh()->getTranslation('slug', 'ar', fallback: false),
+            'the Arabic address moved'
+        );
+
+        // 3. And the pages the footer names still resolve.
+        foreach ([Page::PRIVACY, Page::TERMS] as $slug) {
+            $this->get('/'.$slug)->assertOk();
+        }
+    }
+
+    /**
      * ───────────────────────────────────────────────────────────────────────
      * CLAIM — Models/Page.php:70
      * "A locked page cannot be deleted through any path — not the admin, not

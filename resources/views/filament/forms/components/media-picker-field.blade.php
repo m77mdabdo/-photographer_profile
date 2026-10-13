@@ -1,6 +1,6 @@
 {{--
     The field's own surface: what is chosen now, and the ways to change it.
-    The CHOOSING happens in App\Livewire\Admin\MediaPicker, mounted once per
+    The CHOOSING happens in App\Livewire\Studio\MediaPicker, mounted once per
     page by the panel provider.
 --}}
 @php

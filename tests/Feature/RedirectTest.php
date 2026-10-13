@@ -297,12 +297,23 @@ class RedirectTest extends TestCase
         $user = User::factory()->create(['role' => UserRole::Owner]);
         $user->forceFill(['two_factor_confirmed_at' => now()])->save();
 
+        /*
+         * Repointed at the panel in Task 34 Part B. The rule is the one that
+         * matters most in this file: a redirect FROM an admin path could lock
+         * the studio out of its own site, and the rule is enforced by the
+         * request's validation rather than by whichever screen submits it.
+         */
+        \Filament\Facades\Filament::setCurrentPanel('studio');
+
         \Livewire\Livewire::actingAs($user)
-            ->test(\App\Livewire\Admin\RedirectManager::class)
-            ->set('from_path', '/admin/projects')
-            ->set('to_path', '/work')
-            ->call('add')
-            ->assertHasErrors(['from_path']);
+            ->test(\App\Filament\Resources\Redirects\Pages\ManageRedirects::class)
+            ->callAction(\Filament\Actions\Testing\TestAction::make('create')->table(), [
+                'from_path' => '/admin/projects',
+                'to_path' => '/work',
+                'status_code' => 301,
+                'is_active' => true,
+            ])
+            ->assertHasActionErrors(['from_path']);
 
         $this->assertSame(0, Redirect::query()->count());
     }

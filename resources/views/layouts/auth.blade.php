@@ -27,7 +27,7 @@
     {{-- Never indexed, under any circumstances. --}}
     <x-seo :page="\App\Support\SeoData::make(title: $title, robots: 'noindex, nofollow, noarchive')" />
 
-    @vite(['resources/css/admin.css'])
+    @vite(['resources/css/auth.css'])
 </head>
 <body class="auth-shell">
     <a class="skip-link" href="#auth-main">{{ __('studio.a11y.skip') }}</a>
@@ -48,6 +48,40 @@
         </aside>
 
         <main class="auth-split__form" id="auth-main" tabindex="-1">
+            {{--
+                ═══════════════════════════════════════════════════════════════
+                THE STATUS FLASH, WHICH NOTHING HAS RENDERED SINCE TASK 33.
+                
+                Fortify answers in session('status'): "Two-factor
+                authentication confirmed", "We have emailed your password
+                reset link", "Your password has been reset". The custom
+                admin's layout printed it, and two-factor-setup.blade.php
+                carries a comment saying it deliberately does NOT print its
+                own copy because "the layout is the single owner of that
+                flash".
+                
+                Task 33 moved that page from layouts.admin to layouts.auth —
+                and this layout never had the block. So enrolling a second
+                factor, resetting a password and requesting a reset link have
+                all been answering in silence, on the five pages where the
+                reply is the only confirmation there is.
+                
+                Found in Task 34 Part B by the test that asserts the single
+                owner: it had been reading the deleted admin's layout.
+                ═══════════════════════════════════════════════════════════════
+            --}}
+            @if (session('status') || session('error'))
+                <div class="auth-status" role="status" aria-live="polite">
+                    @if (session('status'))
+                        <p>{{ session('status') }}</p>
+                    @endif
+
+                    @if (session('error'))
+                        <p class="auth-status--error">{{ session('error') }}</p>
+                    @endif
+                </div>
+            @endif
+
             {{ $slot }}
         </main>
     </div>

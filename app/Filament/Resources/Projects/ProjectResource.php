@@ -13,15 +13,19 @@ use App\Filament\Support\AddressesRecordsById;
 use App\Filament\Forms\Components\MediaPickerField;
 use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\Translatable;
+use App\Support\HeroSuitability;
+use App\Models\Media;
 use App\Models\Project;
 use BackedEnum;
 use Filament\Forms\Components\TextInput;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -29,6 +33,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ProjectResource extends Resource
@@ -75,8 +80,44 @@ class ProjectResource extends Resource
                 ->description(__('studio.section.imagery_hint'))
                 ->columns(2)
                 ->schema([
-                    MediaPickerField::make('cover_media_id')->label(__('studio.field.cover')),
-                    MediaPickerField::make('hero_media_id')->label(__('studio.field.hero')),
+                    MediaPickerField::make('cover_media_id')
+                        ->label(__('studio.field.cover'))
+                        ->live(),
+
+                    MediaPickerField::make('hero_media_id')
+                        ->label(__('studio.field.hero'))
+                        ->live(),
+
+                    /*
+                     * ───────────────────────────────────────────────────────
+                     * HOW THIS PICTURE WILL BEHAVE ON THE HOME PAGE.
+                     *
+                     * The hero interlocks the studio's name with the chosen
+                     * frame, so a bright or busy picture swallows the
+                     * wordmark. HeroSuitability measures the actual pixels
+                     * and says so in words.
+                     *
+                     * ADVISORY, NEVER BLOCKING. Nothing is disabled and
+                     * nothing is marked invalid: the photographer knows
+                     * things the histogram does not, and a tool that refuses
+                     * their judgement is a tool they work around.
+                     *
+                     * It existed only in the custom admin and the panel had
+                     * no equivalent — found when Part B deleted that admin
+                     * and four HeroSuitabilityTest tests failed. Shown only
+                     * when the project is featured, because a project that
+                     * never reaches the hero is not judged by the hero's
+                     * requirements.
+                     * ───────────────────────────────────────────────────────
+                     */
+                    Placeholder::make('hero_check')
+                        ->label(__('studio.hero_check.title'))
+                        ->columnSpanFull()
+                        ->visible(fn (Get $get): bool => (bool) $get('is_featured')
+                            && filled($get('hero_media_id') ?? $get('cover_media_id')))
+                        ->content(fn (Get $get): HtmlString => self::heroAdvice(
+                            $get('hero_media_id') ?: $get('cover_media_id')
+                        )),
                 ]),
 
             Section::make(__('studio.section.filing'))
@@ -116,9 +157,55 @@ class ProjectResource extends Resource
                 ->schema([
                     ...ResourceDefaults::publishing(),
                     TextInput::make('year')->label('Year')->numeric(),
-                    Toggle::make('is_featured')->label('Featured'),
+                    Toggle::make('is_featured')->label('Featured')->live(),
                 ]),
         ]);
+    }
+
+    /**
+     * The advice for one image, as the panel renders it.
+     *
+     * role="status" and aria-live, because the block APPEARS when the
+     * Featured box is ticked — a panel that materialises in silence is a
+     * panel a screen-reader user never learns about.
+     */
+    private static function heroAdvice(mixed $mediaId): HtmlString
+    {
+        $media = Media::query()->find($mediaId);
+
+        if ($media === null) {
+            return new HtmlString('');
+        }
+
+        $suitability = HeroSuitability::for($media);
+
+        $items = '';
+
+        foreach ($suitability->advice() as $note) {
+            $good = $note['level'] === 'good';
+
+            $items .= sprintf(
+                '<li class="hero-check__note hero-check__note--%s">'
+                .'<span class="hero-check__mark" aria-hidden="true">%s</span>'
+                .'<span class="fi-sr-only">%s</span>'
+                .'<span><strong class="hero-check__note-title">%s</strong> %s</span>'
+                .'</li>',
+                e($note['level']),
+                $good ? '✓' : '!',
+                e($good ? __('studio.hero_check.good') : __('studio.hero_check.worth_knowing')),
+                e($note['title']),
+                e($note['detail']),
+            );
+        }
+
+        return new HtmlString(sprintf(
+            '<div class="hero-check" role="status" aria-live="polite">'
+            .'<p class="hero-check__lede">%s</p>'
+            .'<ul class="hero-check__list" role="list">%s</ul>'
+            .'</div>',
+            e(__('studio.hero_check.lede', ['name' => $media->original_filename])),
+            $items,
+        ));
     }
 
     public static function table(Table $table): Table

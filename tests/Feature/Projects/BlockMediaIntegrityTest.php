@@ -160,9 +160,26 @@ class BlockMediaIntegrityTest extends TestCase
             $response->message()
         );
 
-        $this->actingAs($user)
-            ->delete(route('legacy.media.destroy', $media))
-            ->assertForbidden();
+        /*
+         * And through the panel, which is the only way in now. The refusal is
+         * the POLICY's and this asserts it reaches the surface rather than
+         * being swallowed: a denied action in Filament is hidden by default,
+         * which would leave the editor with no button and no reason.
+         */
+        \Filament\Facades\Filament::setCurrentPanel('studio');
+
+        $action = \Filament\Actions\Testing\TestAction::make('delete')->table($media);
+
+        // Still on screen — a hidden button is a dead end with no reason.
+        \Livewire\Livewire::actingAs($user)
+            ->test(\App\Filament\Resources\Media\Pages\ListMedia::class)
+            ->assertActionVisible($action);
+
+        // And clicking it says the policy's own sentence, counting the uses.
+        \Livewire\Livewire::actingAs($user)
+            ->test(\App\Filament\Resources\Media\Pages\ListMedia::class)
+            ->callAction($action)
+            ->assertNotified((string) $response->message());
 
         $this->assertDatabaseHas('media', ['id' => $media->id, 'deleted_at' => null]);
     }

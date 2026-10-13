@@ -6,7 +6,8 @@ namespace Tests\Feature;
 
 use App\Enums\MediaStatus;
 use App\Enums\UserRole;
-use App\Livewire\Admin\ProjectForm;
+use App\Filament\Resources\Projects\Pages\CreateProject;
+use Filament\Facades\Filament;
 use App\Models\Media;
 use App\Models\Project;
 use App\Models\User;
@@ -187,14 +188,34 @@ class HeroSuitabilityTest extends TestCase
         $suitability = HeroSuitability::for($media);
         $this->assertTrue($suitability->hasWarnings(), 'this fixture must actually be unsuitable');
 
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * REPOINTED AT THE PANEL IN TASK 34 PART B — AND IT FOUND A GAP.
+         *
+         * These four tests drove the custom admin's project form. When that
+         * admin was deleted they failed, and the reason was not that the way
+         * in had moved: the PANEL showed no hero advice at all. The whole
+         * capability would have gone silently, and a photographer would have
+         * put a bright frame behind the wordmark with nothing to warn them.
+         *
+         * It is now a Placeholder in ProjectResource's imagery section, and
+         * these tests hold it there.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        Filament::setCurrentPanel('studio');
+
         Livewire::actingAs($owner)
-            ->test(ProjectForm::class)
-            ->set('title', 'A Difficult Choice')
-            ->set('slug', 'a-difficult-choice')
-            ->set('cover_media_id', $media->id)
-            ->set('is_featured', true)
-            ->call('save')
-            ->assertHasNoErrors();
+            ->test(CreateProject::class)
+            ->fillForm([
+                'title.en' => 'A Difficult Choice',
+                'title.ar' => 'خيار صعب',
+                'slug.en' => 'a-difficult-choice',
+                'slug.ar' => 'khiar-saab',
+                'cover_media_id' => $media->id,
+                'is_featured' => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
 
         $project = Project::query()->where('slug', 'a-difficult-choice')->first();
 
@@ -208,20 +229,30 @@ class HeroSuitabilityTest extends TestCase
         $owner = User::factory()->create(['role' => UserRole::Owner]);
         $media = $this->mediaFrom(ImageFixture::halfAndHalf('#f2efe9', '#e8ded0'));
 
+        Filament::setCurrentPanel('studio');
+
         $component = Livewire::actingAs($owner)
-            ->test(ProjectForm::class)
-            ->set('cover_media_id', $media->id)
-            ->set('is_featured', true);
+            ->test(CreateProject::class)
+            ->fillForm(['cover_media_id' => $media->id, 'is_featured' => true]);
 
         $html = $component->html();
 
-        $this->assertStringContainsString('On the home page', $html);
+        $this->assertStringContainsString(__('studio.hero_check.title'), $html);
         $this->assertStringContainsString('Brighter than the hero suits', $html);
         $this->assertStringContainsString('None of this stops you publishing', $html);
 
-        // No control is turned off and nothing is marked invalid by it.
-        $this->assertDoesNotMatchRegularExpression('/<input[^>]*id="is_featured"[^>]*disabled/', $html);
-        $this->assertDoesNotMatchRegularExpression('/<button[^>]*type="submit"[^>]*disabled/', $html);
+        /*
+         * No control is turned off and nothing is marked invalid by it.
+         *
+         * The pattern requires a REAL boolean attribute — whitespace, then
+         * `disabled`. A looser /disabled/ matched Filament's own
+         * `wire:loading.attr="aria-disabled"` and `wire:loading.class=
+         * "fi-disabled"`, which are how the button behaves WHILE SAVING and
+         * have nothing to do with this advice. A test that cannot tell those
+         * apart would fail on any Filament upgrade and pass on a real
+         * regression that spelled the attribute differently.
+         */
+        $this->assertDoesNotMatchRegularExpression('/<button[^>]*type="submit"[^>]*\sdisabled[\s=>]/', $html);
         $this->assertStringNotContainsString('aria-invalid="true"', $html);
 
         // And the panel is announced when ticking the box brings it into being.
@@ -233,15 +264,16 @@ class HeroSuitabilityTest extends TestCase
         $owner = User::factory()->create(['role' => UserRole::Owner]);
         $media = $this->mediaFrom(ImageFixture::monochrome());
 
+        Filament::setCurrentPanel('studio');
+
         $html = Livewire::actingAs($owner)
-            ->test(ProjectForm::class)
-            ->set('cover_media_id', $media->id)
-            ->set('is_featured', false)
+            ->test(CreateProject::class)
+            ->fillForm(['cover_media_id' => $media->id, 'is_featured' => false])
             ->html();
 
         // A project that never reaches the hero is not judged by the hero's
         // requirements.
-        $this->assertStringNotContainsString('On the home page', $html);
+        $this->assertStringNotContainsString(__('studio.hero_check.title'), $html);
     }
 
     public function test_the_advice_judges_the_hero_image_when_one_is_set(): void
@@ -251,11 +283,15 @@ class HeroSuitabilityTest extends TestCase
         $cover = $this->mediaFrom(ImageFixture::lowKeyWithAccent('#c81e46', 0.06));
         $hero = $this->mediaFrom(ImageFixture::halfAndHalf('#f2efe9', '#e8ded0'));
 
+        Filament::setCurrentPanel('studio');
+
         $html = Livewire::actingAs($owner)
-            ->test(ProjectForm::class)
-            ->set('cover_media_id', $cover->id)
-            ->set('hero_media_id', $hero->id)
-            ->set('is_featured', true)
+            ->test(CreateProject::class)
+            ->fillForm([
+                'cover_media_id' => $cover->id,
+                'hero_media_id' => $hero->id,
+                'is_featured' => true,
+            ])
             ->html();
 
         /*
