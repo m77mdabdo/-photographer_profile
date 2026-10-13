@@ -326,7 +326,34 @@ class StudioPanelTest extends TestCase
          * Vite content-hashes every filename, so a changed byte changes the
          * name. Pinning the names pins the bytes.
          */
-        $this->assertSame('assets/public-DT4MYWgQ.css', $publicCss, 'the public stylesheet changed');
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * REPINNED IN TASK 32 PART 5, AND THE REASON MATTERS MORE THAN THE
+         * NAMES.
+         *
+         * This assertion caught a real leak that nobody would have guessed at.
+         * Tailwind 4's bare `@import "tailwindcss"` turns on AUTOMATIC source
+         * detection — the whole project root, in addition to the explicit
+         * @source globs — so a PHP comment in tests/Feature/SiteCopyTest.php
+         * containing the words "in order to isolate code strings" put
+         * `.isolate` into the PUBLIC stylesheet.
+         *
+         * The public bundle's content therefore depended on the prose in
+         * unrelated PHP files, which makes "the public assets did not move" a
+         * claim that can be falsified by writing a comment. public.css and
+         * admin.css now use `source(none)`, so the globs are the whole truth.
+         *
+         * Dropping automatic detection also removed 2.2 kB of unusable
+         * utilities from the public bundle and 30 kB from the admin's — a 43%
+         * reduction there, all of it utilities matched in files neither
+         * bundle renders.
+         *
+         * So these names changed for a good reason, once, deliberately. They
+         * are pinned again because a hash is still the cheapest proof that a
+         * byte did not move.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        $this->assertSame('assets/public-BSwDTaSc.css', $publicCss, 'the public stylesheet changed');
         $this->assertSame('assets/public-B-FzqxLO.js', $publicJs, 'the public entry changed');
 
         // And the panel's theme is its own entry, not part of either.

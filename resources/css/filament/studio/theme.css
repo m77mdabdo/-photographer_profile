@@ -39,6 +39,38 @@
 @import '../../fonts.css';
 @import '../../tokens.css';
 
+/*
+ * ───────────────────────────────────────────────────────────────────────────
+ * THE CUSTOM ADMIN'S COMPONENT STYLES, FOR THE ONE COMPONENT THIS PANEL
+ * HOSTS UNCHANGED.
+ *
+ * Part 6 step 1 mounts App\Livewire\Admin\StoryBuilder inside the panel —
+ * the real component, with its 993 lines of JavaScript, because a
+ * Builder-field rewrite would lose undo, redo, crash recovery, local-state
+ * drag, cross-block image drag and keyboard parity. Keeping it unchanged
+ * means keeping the classes its Blade view names: .builder, .block-card,
+ * .outline__item, .picker__grid and about thirty more.
+ *
+ * Imported rather than copied. A second definition of .block-card in a
+ * panel-only stylesheet is two things to keep in step, and the one that
+ * drifts is always the copy — the project's standing rule is that where both
+ * admins need something, one calls the other.
+ *
+ * WHY THE WHOLE FILE AND NOT AN EXTRACTED SUBSET. The builder borrows the
+ * admin's furniture as well as its own selectors — .admin-button, .badge,
+ * .breadcrumb, .form-actions, .empty-state — and an extraction would have to
+ * guess which of those are "the builder's". Unused selectors are inert, and
+ * the measured cost of all of them is 2.6% of a stylesheet this panel already
+ * ships. Collisions were checked: every class is prefixed (admin-, auth-,
+ * block-, picker__, outline__, story-) except a handful Filament names
+ * differently (it uses .fi-badge, not .badge).
+ *
+ * This import leaves with the old admin at step 10, together with whatever of
+ * it the story page still needs by then.
+ * ───────────────────────────────────────────────────────────────────────────
+ */
+@import '../../components/auth.css';
+
 @theme {
     /* ---- Type ---------------------------------------------------------- */
 

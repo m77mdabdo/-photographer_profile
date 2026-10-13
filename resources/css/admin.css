@@ -1,6 +1,7 @@
 /* Admin bundle. Deliberately minimal: no base layer, no public components. */
 
-@import 'tailwindcss';
+/* source(none): see resources/css/public.css for the reasoning. */
+@import 'tailwindcss' source(none);
 
 /*
  * Same rule as the public bundle: templates only.

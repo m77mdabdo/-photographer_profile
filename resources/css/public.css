@@ -1,6 +1,31 @@
 /* Public site bundle. Nothing admin-only may be imported here. */
 
-@import 'tailwindcss';
+/*
+ * ───────────────────────────────────────────────────────────────────────────
+ * source(none) — THE SCAN IS THE @source LIST AND NOTHING ELSE.
+ *
+ * Tailwind 4's bare `@import "tailwindcss"` enables AUTOMATIC source
+ * detection: it walks the project root and scans every file it does not
+ * consider ignored, IN ADDITION to the explicit @source globs below. The
+ * comment above has always claimed this bundle is built from templates. It
+ * was not.
+ *
+ * Measured consequence: a PHP comment in tests/Feature/SiteCopyTest.php
+ * containing the words "in order to isolate code strings" put `.isolate`
+ * into the PUBLIC stylesheet — 27 bytes of CSS the public site cannot use,
+ * added by a sentence in a test file, which broke the byte-for-byte
+ * guarantee StudioPanelTest pins.
+ *
+ * It is a small leak and a bad property: it means the public bundle's content
+ * depends on the prose in unrelated PHP, so "the public assets did not move"
+ * could be falsified by writing a comment with the word "container",
+ * "hidden" or "grid" in it.
+ *
+ * source(none) turns automatic detection off. The two globs below are now
+ * the whole truth.
+ * ───────────────────────────────────────────────────────────────────────────
+ */
+@import 'tailwindcss' source(none);
 
 /*
  * Sources are TEMPLATES, never the compiled view cache.
