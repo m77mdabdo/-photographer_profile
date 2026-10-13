@@ -1,5 +1,5 @@
 <div>
-    <p class="breadcrumb"><a href="{{ route('admin.media.index') }}">← All media</a></p>
+    <p class="breadcrumb"><a href="{{ route('legacy.media.index') }}">← All media</a></p>
 
     @if ($message !== '')
         <p class="admin-flash__message" role="status" aria-live="polite">{{ $message }}</p>

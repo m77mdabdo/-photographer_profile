@@ -133,7 +133,7 @@ class StoryBuilderInPanelTest extends TestCase
     {
         $url = ProjectStory::getUrl(['record' => $this->project]);
 
-        $this->assertStringContainsString('/studio/projects/'.$this->project->getKey().'/story', $url);
+        $this->assertStringContainsString('/admin/projects/'.$this->project->getKey().'/story', $url);
 
         $this->get($url)->assertOk();
 
@@ -185,14 +185,31 @@ class StoryBuilderInPanelTest extends TestCase
     {
         $html = $this->get(ProjectStory::getUrl(['record' => $this->project]))->assertOk()->getContent();
 
-        preg_match_all('#href="([^"]+)"#', $html, $matches);
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * THE PAGE'S OWN CONTENT, NOT THE WHOLE DOCUMENT.
+         *
+         * Task 33 swapped the addresses — the custom admin is /legacy and
+         * /admin is this panel — and added ONE sanctioned link out, in the
+         * sidebar's System group, for the six media tools that have not moved.
+         * That link is on every panel page by design, so asserting against
+         * the whole document would be asserting against the sidebar.
+         *
+         * What this test is about is the PAGE: the mounted component's own
+         * breadcrumb and Preview link both pointed at the custom admin, which
+         * inside the panel was a link out and after step 10 a 404.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        $main = preg_match('#<main\b.*?</main>#s', $html, $m) === 1 ? $m[0] : $html;
+
+        preg_match_all('#href="([^"]+)"#', $main, $matches);
 
         $outbound = array_values(array_filter(
             array_unique($matches[1]),
-            fn (string $href): bool => str_contains($href, '/admin'),
+            fn (string $href): bool => str_contains($href, '/legacy'),
         ));
 
-        $this->assertSame([], $outbound, 'the story page links into the old admin: '.implode(' ', $outbound));
+        $this->assertSame([], $outbound, 'the story page links into the custom admin: '.implode(' ', $outbound));
 
         // And the way back is still there — Filament's breadcrumb and the notice.
         $this->assertStringContainsString(
@@ -217,24 +234,24 @@ class StoryBuilderInPanelTest extends TestCase
             'embedded' => true,
         ]);
 
-        $component->assertDontSee(route('admin.projects.edit', $this->project));
+        $component->assertDontSee(route('legacy.projects.edit', $this->project));
 
         // A re-render: switching the editing language redraws every block.
         $component->call('switchLocale', 'ar')
-            ->assertDontSee(route('admin.projects.edit', $this->project));
+            ->assertDontSee(route('legacy.projects.edit', $this->project));
 
         // And a save.
         $component->call('saveStory', [])
-            ->assertDontSee(route('admin.projects.edit', $this->project));
+            ->assertDontSee(route('legacy.projects.edit', $this->project));
     }
 
     /** The custom admin's own breadcrumb is untouched while it still exists. */
     public function test_the_old_admin_keeps_its_breadcrumb(): void
     {
-        $html = $this->get(route('admin.projects.story', $this->project))->assertOk()->getContent();
+        $html = $this->get(route('legacy.projects.story', $this->project))->assertOk()->getContent();
 
         $this->assertStringContainsString(
-            route('admin.projects.edit', $this->project),
+            route('legacy.projects.edit', $this->project),
             $html,
             'the custom admin lost its way back to the project'
         );

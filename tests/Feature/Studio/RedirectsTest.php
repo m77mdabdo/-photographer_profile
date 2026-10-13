@@ -76,11 +76,11 @@ class RedirectsTest extends TestCase
             'no leading slash' => [['from_path' => 'old-name', 'to_path' => '/new'], 'from_path'],
             'away from the old admin' => [['from_path' => '/admin', 'to_path' => '/new'], 'from_path'],
             'away from the old admin, deeper' => [['from_path' => '/admin/projects', 'to_path' => '/new'], 'from_path'],
-            'away from the panel' => [['from_path' => '/studio', 'to_path' => '/new'], 'from_path'],
-            'away from the panel, deeper' => [['from_path' => '/studio/media', 'to_path' => '/new'], 'from_path'],
+            'away from the panel' => [['from_path' => '/admin', 'to_path' => '/new'], 'from_path'],
+            'away from the panel, deeper' => [['from_path' => '/admin/media', 'to_path' => '/new'], 'from_path'],
             'away from livewire' => [['from_path' => '/livewire/update', 'to_path' => '/new'], 'from_path'],
             'into the old admin' => [['from_path' => '/old', 'to_path' => '/admin'], 'to_path'],
-            'into the panel' => [['from_path' => '/old', 'to_path' => '/studio/users'], 'to_path'],
+            'into the panel' => [['from_path' => '/old', 'to_path' => '/admin/users'], 'to_path'],
             'to itself' => [['from_path' => '/same', 'to_path' => '/same'], 'to_path'],
         ];
     }

@@ -214,7 +214,7 @@ class ArticleForm extends Component
 
         session()->flash('status', 'Article saved.');
 
-        $this->redirectRoute('admin.articles.edit', $this->article, navigate: false);
+        $this->redirectRoute('legacy.articles.edit', $this->article, navigate: false);
     }
 
     /**

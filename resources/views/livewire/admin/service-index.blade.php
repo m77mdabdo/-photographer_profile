@@ -2,7 +2,7 @@
     <header class="module-header">
         <h1 class="admin-heading">Services</h1>
         <p class="admin-note">{{ $services->count() }} {{ Str::plural('service', $services->count()) }}</p>
-        <a href="{{ route('admin.services.create') }}" class="admin-button">New service</a>
+        <a href="{{ route('legacy.services.create') }}" class="admin-button">New service</a>
     </header>
 
     @if ($message !== '')
@@ -54,7 +54,7 @@
                     @endif
 
                     <span class="project-row__main">
-                        <a href="{{ route('admin.services.edit', $service) }}" class="project-row__title">
+                        <a href="{{ route('legacy.services.edit', $service) }}" class="project-row__title">
                             {{ $service->name }}
                         </a>
                         <x-admin.translation-state :record="$service" />
@@ -85,7 +85,7 @@
                             {{ $service->status === \App\Enums\PublishStatus::Published ? 'Unpublish' : 'Publish' }}
                         </button>
 
-                        <a href="{{ route('admin.services.edit', $service) }}" class="admin-link">Edit</a>
+                        <a href="{{ route('legacy.services.edit', $service) }}" class="admin-link">Edit</a>
 
                         <button type="button" class="admin-link"
                                 wire:click="delete({{ $service->id }})"

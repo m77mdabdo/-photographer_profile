@@ -55,7 +55,7 @@
                     <span class="admin-topbar__role">{{ auth()->user()->role?->label() }}</span>
                 </span>
 
-                <a href="{{ route('admin.two-factor.setup') }}">Two-factor</a>
+                <a href="{{ route('two-factor.setup') }}">Two-factor</a>
 
                 <form method="POST" action="{{ route('logout') }}" class="admin-topbar__logout">
                     @csrf
@@ -69,72 +69,72 @@
         <nav class="admin-sidebar" id="admin-sidebar" aria-label="Admin sections">
             <ul role="list" class="admin-sidebar__list">
                 <li>
-                    <a href="{{ route('admin.dashboard') }}"
-                       @class(['is-current' => request()->routeIs('admin.dashboard')])
-                       @if (request()->routeIs('admin.dashboard')) aria-current="page" @endif>
+                    <a href="{{ route('legacy.dashboard') }}"
+                       @class(['is-current' => request()->routeIs('legacy.dashboard')])
+                       @if (request()->routeIs('legacy.dashboard')) aria-current="page" @endif>
                         Dashboard
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('admin.media.index') }}"
-                       @class(['is-current' => request()->routeIs('admin.media.*')])
-                       @if (request()->routeIs('admin.media.*')) aria-current="page" @endif>
+                    <a href="{{ route('legacy.media.index') }}"
+                       @class(['is-current' => request()->routeIs('legacy.media.*')])
+                       @if (request()->routeIs('legacy.media.*')) aria-current="page" @endif>
                         Media
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('admin.projects.index') }}"
-                       @class(['is-current' => request()->routeIs('admin.projects.*')])
-                       @if (request()->routeIs('admin.projects.*')) aria-current="page" @endif>
+                    <a href="{{ route('legacy.projects.index') }}"
+                       @class(['is-current' => request()->routeIs('legacy.projects.*')])
+                       @if (request()->routeIs('legacy.projects.*')) aria-current="page" @endif>
                         Projects
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('admin.articles.index') }}"
-                       @class(['is-current' => request()->routeIs('admin.articles.*')])
-                       @if (request()->routeIs('admin.articles.*')) aria-current="page" @endif>
+                    <a href="{{ route('legacy.articles.index') }}"
+                       @class(['is-current' => request()->routeIs('legacy.articles.*')])
+                       @if (request()->routeIs('legacy.articles.*')) aria-current="page" @endif>
                         Journal
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('admin.services.index') }}"
-                       @class(['is-current' => request()->routeIs('admin.services.*')])
-                       @if (request()->routeIs('admin.services.*')) aria-current="page" @endif>
+                    <a href="{{ route('legacy.services.index') }}"
+                       @class(['is-current' => request()->routeIs('legacy.services.*')])
+                       @if (request()->routeIs('legacy.services.*')) aria-current="page" @endif>
                         Services
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('admin.pages.index') }}"
-                       @class(['is-current' => request()->routeIs('admin.pages.*')])
-                       @if (request()->routeIs('admin.pages.*')) aria-current="page" @endif>
+                    <a href="{{ route('legacy.pages.index') }}"
+                       @class(['is-current' => request()->routeIs('legacy.pages.*')])
+                       @if (request()->routeIs('legacy.pages.*')) aria-current="page" @endif>
                         Pages
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('admin.redirects.index') }}"
-                       @class(['is-current' => request()->routeIs('admin.redirects.*')])
-                       @if (request()->routeIs('admin.redirects.*')) aria-current="page" @endif>
+                    <a href="{{ route('legacy.redirects.index') }}"
+                       @class(['is-current' => request()->routeIs('legacy.redirects.*')])
+                       @if (request()->routeIs('legacy.redirects.*')) aria-current="page" @endif>
                         Redirects
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('admin.clients.index') }}"
-                       @class(['is-current' => request()->routeIs('admin.clients.*')])
-                       @if (request()->routeIs('admin.clients.*')) aria-current="page" @endif>
+                    <a href="{{ route('legacy.clients.index') }}"
+                       @class(['is-current' => request()->routeIs('legacy.clients.*')])
+                       @if (request()->routeIs('legacy.clients.*')) aria-current="page" @endif>
                         Clients
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('admin.categories.index') }}"
-                       @class(['is-current' => request()->routeIs('admin.categories.*')])
-                       @if (request()->routeIs('admin.categories.*')) aria-current="page" @endif>
+                    <a href="{{ route('legacy.categories.index') }}"
+                       @class(['is-current' => request()->routeIs('legacy.categories.*')])
+                       @if (request()->routeIs('legacy.categories.*')) aria-current="page" @endif>
                         Categories
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('admin.inquiries.index') }}"
-                       @class(['is-current' => request()->routeIs('admin.inquiries.*')])
-                       @if (request()->routeIs('admin.inquiries.*')) aria-current="page" @endif>
+                    <a href="{{ route('legacy.inquiries.index') }}"
+                       @class(['is-current' => request()->routeIs('legacy.inquiries.*')])
+                       @if (request()->routeIs('legacy.inquiries.*')) aria-current="page" @endif>
                         Enquiries
                         {{--
                             Counted once per admin render. Only genuinely
@@ -148,9 +148,9 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('admin.settings.index') }}"
-                       @class(['is-current' => request()->routeIs('admin.settings.*')])
-                       @if (request()->routeIs('admin.settings.*')) aria-current="page" @endif>
+                    <a href="{{ route('legacy.settings.index') }}"
+                       @class(['is-current' => request()->routeIs('legacy.settings.*')])
+                       @if (request()->routeIs('legacy.settings.*')) aria-current="page" @endif>
                         Settings
                     </a>
                 </li>

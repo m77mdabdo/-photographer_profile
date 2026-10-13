@@ -254,7 +254,7 @@ class ProjectForm extends Component
 
         session()->flash('status', 'Project saved.');
 
-        $this->redirectRoute('admin.projects.edit', $this->project, navigate: false);
+        $this->redirectRoute('legacy.projects.edit', $this->project, navigate: false);
     }
 
     /**

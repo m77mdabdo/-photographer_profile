@@ -219,7 +219,7 @@ class DemoContentTest extends TestCase
         $this->assertSame(1, substr_count($grid, 'badge--demo'), 'only the demo image is badged');
 
         $detail = $this->actingAs($this->admin())
-            ->get(route('admin.media.show', $demo))
+            ->get(route('legacy.media.show', $demo))
             ->assertOk()
             ->getContent();
 
@@ -227,7 +227,7 @@ class DemoContentTest extends TestCase
         $this->assertStringContainsString('media:purge-demo', $detail);
 
         $realDetail = $this->actingAs($this->admin())
-            ->get(route('admin.media.show', $real))
+            ->get(route('legacy.media.show', $real))
             ->assertOk()
             ->getContent();
 

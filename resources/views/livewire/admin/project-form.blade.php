@@ -1,6 +1,6 @@
 {{-- data-dirty drives the beforeunload warning; it clears the moment save succeeds. --}}
 <div data-unsaved-guard data-dirty="{{ $dirty ? '1' : '0' }}">
-    <p class="breadcrumb"><a href="{{ route('admin.projects.index') }}">← All projects</a></p>
+    <p class="breadcrumb"><a href="{{ route('legacy.projects.index') }}">← All projects</a></p>
 
     <header class="module-header">
         <h1 class="admin-heading">{{ $project?->exists ? 'Edit project' : 'New project' }}</h1>
@@ -73,7 +73,7 @@
 
             @if ($allCategories->isEmpty())
                 <p class="admin-note">
-                    No categories yet. <a href="{{ route('admin.categories.index') }}">Create some</a> to group projects.
+                    No categories yet. <a href="{{ route('legacy.categories.index') }}">Create some</a> to group projects.
                 </p>
             @else
                 <ul class="checkbox-list" role="list">
@@ -238,7 +238,7 @@
 
         <div class="form-actions">
             <button type="submit" class="admin-button">Save project</button>
-            <a href="{{ route('admin.projects.index') }}" class="admin-link">Cancel</a>
+            <a href="{{ route('legacy.projects.index') }}" class="admin-link">Cancel</a>
         </div>
     
     {{--

@@ -161,7 +161,7 @@ class BlockMediaIntegrityTest extends TestCase
         );
 
         $this->actingAs($user)
-            ->delete(route('admin.media.destroy', $media))
+            ->delete(route('legacy.media.destroy', $media))
             ->assertForbidden();
 
         $this->assertDatabaseHas('media', ['id' => $media->id, 'deleted_at' => null]);

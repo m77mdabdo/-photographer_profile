@@ -1,5 +1,5 @@
 <x-layouts::admin :title="$medium->original_filename">
-    <p class="breadcrumb"><a href="{{ route('admin.media.index') }}">← All media</a></p>
+    <p class="breadcrumb"><a href="{{ route('legacy.media.index') }}">← All media</a></p>
 
     <div class="detail">
         <div class="detail__preview">
@@ -120,7 +120,7 @@
                 </p>
             @endif
 
-            <form method="POST" action="{{ route('admin.media.update', $medium) }}" class="admin-form">
+            <form method="POST" action="{{ route('legacy.media.update', $medium) }}" class="admin-form">
                 @csrf
                 @method('PATCH')
 
@@ -164,7 +164,7 @@
             </form>
 
             <div class="detail__actions">
-                <form method="POST" action="{{ route('admin.media.reprocess', $medium) }}">
+                <form method="POST" action="{{ route('legacy.media.reprocess', $medium) }}">
                     @csrf
                     <button type="submit" class="admin-button admin-button--quiet">Reprocess renditions</button>
                 </form>
@@ -190,7 +190,7 @@
                                 stay on disk and can be restored.
                             </p>
 
-                            <form method="POST" action="{{ route('admin.media.destroy', $medium) }}">
+                            <form method="POST" action="{{ route('legacy.media.destroy', $medium) }}">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="admin-button admin-button--danger">

@@ -50,7 +50,7 @@
     --}}
     @unless ($embedded)
         <p class="breadcrumb">
-            <a href="{{ route('admin.projects.edit', $project) }}">← {{ $project->title }}</a>
+            <a href="{{ route('legacy.projects.edit', $project) }}">← {{ $project->title }}</a>
         </p>
     @endunless
 
@@ -70,7 +70,7 @@
         --}}
         <a href="{{ $embedded
                     ? \App\Filament\Resources\Projects\ProjectResource::getUrl('preview', ['record' => $project])
-                    : route('admin.projects.preview', $project) }}"
+                    : route('legacy.projects.preview', $project) }}"
            class="admin-link" target="_blank" rel="noopener">{{ __('studio.story.preview') }}</a>
 
         {{-- Visible undo: a keyboard-only affordance is not discoverable. --}}

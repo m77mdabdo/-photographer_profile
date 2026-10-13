@@ -70,7 +70,7 @@ class EnsureTwoFactorEnabled
              * That is what it carries now, and both panels inherit it.
              */
             return redirect()
-                ->route('admin.two-factor.setup')
+                ->route('two-factor.setup')
                 ->with('status', __('You were sent here from :path.', [
                     'path' => $request->path() === '/' ? 'the admin' : '/'.ltrim($request->path(), '/'),
                 ]));

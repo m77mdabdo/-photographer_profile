@@ -197,8 +197,17 @@ class FrontDoorDirectionTest extends TestCase
 
             $copy = array_values(array_filter(
                 array_map('trim', $matches[1]),
-                // A Blade directive is not copy. @csrf sits between two tags.
-                static fn (string $text): bool => $text !== '' && ! str_starts_with($text, '@'),
+                /*
+                 * A Blade directive is not copy, and nor is the leftover of
+                 * one. @csrf sits between two tags; and the `>` in an arrow
+                 * operator looks like a tag boundary, so
+                 * `@if (! auth()->user()->two_factor_secret)` presented
+                 * "two_factor_secret)" as prose. Copy does not contain code
+                 * punctuation — that single rule covers both.
+                 */
+                static fn (string $text): bool => $text !== ''
+                    && ! str_starts_with($text, '@')
+                    && preg_match('/[(){}$]|->|::/', $text) !== 1,
             ));
 
             $this->assertSame(

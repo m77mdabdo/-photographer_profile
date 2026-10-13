@@ -61,7 +61,7 @@ class AdminAccessTest extends TestCase
 
         $this->actingAs($user)
             ->get('/admin')
-            ->assertRedirect(route('admin.two-factor.setup'));
+            ->assertRedirect(route('two-factor.setup'));
     }
 
     public function test_a_user_with_confirmed_two_factor_reaches_the_dashboard(): void

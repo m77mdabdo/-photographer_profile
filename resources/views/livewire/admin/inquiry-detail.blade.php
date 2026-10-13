@@ -2,7 +2,7 @@
     <header class="module-header">
         <h1 class="admin-heading">{{ $inquiry->name }}</h1>
         <p class="admin-note">
-            <a href="{{ route('admin.inquiries.index') }}" class="admin-link">All enquiries</a>
+            <a href="{{ route('legacy.inquiries.index') }}" class="admin-link">All enquiries</a>
         </p>
     </header>
 

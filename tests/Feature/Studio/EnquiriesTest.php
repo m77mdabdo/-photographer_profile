@@ -58,12 +58,12 @@ class EnquiriesTest extends TestCase
         // ("same sender?") that nobody asks by reading it.
         $enquiry = Inquiry::factory()->create(['ip_hash' => hash('sha256', '203.0.113.9')]);
 
-        $html = $this->get('/studio/enquiries')->assertOk()->getContent();
+        $html = $this->get('/admin/enquiries')->assertOk()->getContent();
 
         $this->assertStringNotContainsString($enquiry->ip_hash, $html);
         $this->assertStringNotContainsString('203.0.113.9', $html);
 
-        $detail = $this->get('/studio/enquiries/'.$enquiry->getKey())->assertOk()->getContent();
+        $detail = $this->get('/admin/enquiries/'.$enquiry->getKey())->assertOk()->getContent();
 
         $this->assertStringNotContainsString($enquiry->ip_hash, $detail);
     }
@@ -102,7 +102,7 @@ class EnquiriesTest extends TestCase
             'message' => 'We are planning a two-day shoot in the glen.',
         ]);
 
-        $html = $this->get('/studio/enquiries/'.$enquiry->getKey())->assertOk()->getContent();
+        $html = $this->get('/admin/enquiries/'.$enquiry->getKey())->assertOk()->getContent();
 
         foreach ([
             'Noor Haddad',

@@ -17,16 +17,16 @@ use Tests\TestCase;
  * This exists because 563 passing tests did not notice that the Edit link on
  * every row of four list views was a 404.
  *
- * $recordRouteKeyName = 'id' makes Filament RESOLVE /studio/projects/14/edit.
+ * $recordRouteKeyName = 'id' makes Filament RESOLVE /admin/projects/14/edit.
  * It does not change how Filament GENERATES the URL: Resource::getUrl() hands
  * the model to route(), which serialises it with getRouteKey() — the slug.
- * Every row linked to /studio/projects/rerum-aliquid-tempore/edit and every
+ * Every row linked to /admin/projects/rerum-aliquid-tempore/edit and every
  * one of them 404'd.
  *
  * Nothing in the suite clicked a link. Livewire::test() renders a list and
  * asserts about its state; an href is just a string in the markup. The browser
  * harness caught it, which is the right answer and a slow one — so this is the
- * fast version: render every list page, collect every /studio href, and GET
+ * fast version: render every list page, collect every /admin href, and GET
  * all of them.
  * ───────────────────────────────────────────────────────────────────────────
  */
@@ -67,7 +67,7 @@ class EveryLinkResolvesTest extends TestCase
 
             $html = $this->get($index)->assertOk()->getContent();
 
-            preg_match_all('#href="(http://localhost/studio[^"]*)"#', $html, $matches);
+            preg_match_all('#href="(http://localhost/admin[^"]*)"#', $html, $matches);
 
             foreach (array_unique($matches[1]) as $url) {
                 $path = (string) parse_url($url, PHP_URL_PATH);

@@ -39,28 +39,55 @@ class PageController extends Controller
         'work', 'journal', 'services', 'archive', 'about', 'contact',
 
         // Auth and admin.
-        'admin', 'login', 'logout', 'register',
+        'admin', 'login', 'logout', 'register', 'two-factor',
 
         // Infrastructure.
         'storage', 'up', '_dev', 'theme', 'locale',
 
-        // The Filament panel. Same trap as the locale prefixes: a short
-        // lowercase segment the wildcard would happily take for a page slug.
-        'studio',
+        /*
+         * The panel's former address, which 301s to /admin for ever, and the
+         * custom admin's new one. Same trap as the locale prefixes: short
+         * lowercase segments the flat-page wildcard would happily take for a
+         * page slug — and a page called "studio" would shadow the redirect
+         * that keeps every old bookmark working.
+         */
+        'studio', 'legacy',
     ];
+
+    /**
+     * Paths that are reserved but are not single segments in RESERVED.
+     *
+     * @var list<string>
+     */
+    private const RESERVED_PATTERNS = ['sitemap.*', 'robots\.txt$'];
 
     /**
      * The route constraint: any reserved segment refused, then a slug.
      *
-     * Built from RESERVED rather than written out, so the list and the
-     * pattern cannot drift apart.
+     * ───────────────────────────────────────────────────────────────────────
+     * NOW ACTUALLY BUILT FROM RESERVED, WHICH THE DOCBLOCK ALREADY CLAIMED.
+     *
+     * This was a hand-written const whose comment said "built from RESERVED
+     * rather than written out, so the list and the pattern cannot drift
+     * apart". It was written out, and it had drifted: adding `legacy` and
+     * `two-factor` to RESERVED in Task 33 left the pattern unchanged, so the
+     * flat-page wildcard swallowed /legacy and the custom admin's new address
+     * returned 404.
+     *
+     * A const cannot call implode(), which is presumably why it was written
+     * out in the first place. A static method can, and route files are
+     * executed at boot, so the cost is one implode per boot.
+     * ───────────────────────────────────────────────────────────────────────
      */
-    public const SLUG_PATTERN = '^(?!'
-        .'ar$|en$|work$|journal$|services$|archive$|about$|contact$'
-        .'|admin$|login$|logout$|register$'
-        .'|storage$|up$|_dev$|theme$|locale$|studio$'
-        .'|sitemap.*|robots\.txt$'
-        .')[a-z0-9-]+$';
+    public static function slugPattern(): string
+    {
+        $reserved = array_map(
+            static fn (string $segment): string => preg_quote($segment, '/').'$',
+            self::RESERVED,
+        );
+
+        return '^(?!'.implode('|', [...$reserved, ...self::RESERVED_PATTERNS]).')[a-z0-9-]+$';
+    }
 
     /**
      * A flat editorial page: privacy, terms, whatever the studio adds.

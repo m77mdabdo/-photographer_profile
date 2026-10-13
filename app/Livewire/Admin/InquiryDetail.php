@@ -112,7 +112,7 @@ class InquiryDetail extends Component
 
         session()->flash('status', 'Enquiry moved to the bin. It can be restored.');
 
-        $this->redirectRoute('admin.inquiries.index', navigate: false);
+        $this->redirectRoute('legacy.inquiries.index', navigate: false);
     }
 
     /**
@@ -137,7 +137,7 @@ class InquiryDetail extends Component
 
         session()->flash('status', 'Enquiry permanently erased.');
 
-        $this->redirectRoute('admin.inquiries.index', navigate: false);
+        $this->redirectRoute('legacy.inquiries.index', navigate: false);
     }
 
     public function render(): View

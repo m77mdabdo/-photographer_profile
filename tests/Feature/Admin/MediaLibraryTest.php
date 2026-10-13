@@ -110,12 +110,12 @@ class MediaLibraryTest extends TestCase
     {
         $media = $this->readyMedia();
 
-        $this->get(route('admin.media.index'))->assertRedirect(route('login'));
-        $this->get(route('admin.media.show', $media))->assertRedirect(route('login'));
-        $this->post(route('admin.media.store'))->assertRedirect(route('login'));
-        $this->patch(route('admin.media.update', $media))->assertRedirect(route('login'));
-        $this->delete(route('admin.media.destroy', $media))->assertRedirect(route('login'));
-        $this->post(route('admin.media.reprocess', $media))->assertRedirect(route('login'));
+        $this->get(route('legacy.media.index'))->assertRedirect(route('login'));
+        $this->get(route('legacy.media.show', $media))->assertRedirect(route('login'));
+        $this->post(route('legacy.media.store'))->assertRedirect(route('login'));
+        $this->patch(route('legacy.media.update', $media))->assertRedirect(route('login'));
+        $this->delete(route('legacy.media.destroy', $media))->assertRedirect(route('login'));
+        $this->post(route('legacy.media.reprocess', $media))->assertRedirect(route('login'));
 
         $this->assertDatabaseHas('media', ['id' => $media->id, 'deleted_at' => null]);
     }
@@ -127,7 +127,7 @@ class MediaLibraryTest extends TestCase
         Queue::fake();
 
         $response = $this->actingAs($this->admin())
-            ->post(route('admin.media.store'), [
+            ->post(route('legacy.media.store'), [
                 'files' => [$this->uploadFrom($this->jpegBytes())],
             ]);
 
@@ -154,7 +154,7 @@ class MediaLibraryTest extends TestCase
         $this->temporaryFiles[] = $path;
 
         $response = $this->actingAs($this->admin())
-            ->postJson(route('admin.media.store'), [
+            ->postJson(route('legacy.media.store'), [
                 'files' => [new UploadedFile($path, 'payload.jpg', 'image/jpeg', null, true)],
             ]);
 
@@ -175,7 +175,7 @@ class MediaLibraryTest extends TestCase
         $file = UploadedFile::fake()->create('huge.jpg', 70 * 1024, 'image/jpeg');
 
         $response = $this->actingAs($this->admin())
-            ->postJson(route('admin.media.store'), ['files' => [$file]]);
+            ->postJson(route('legacy.media.store'), ['files' => [$file]]);
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors('files.0');
@@ -192,7 +192,7 @@ class MediaLibraryTest extends TestCase
         $payload = '"><script>alert(1)</script>';
 
         $this->actingAs($this->admin())
-            ->patch(route('admin.media.update', $media), [
+            ->patch(route('legacy.media.update', $media), [
                 'alt' => $payload,
                 'caption' => 'A caption',
                 'credit' => 'Someone',
@@ -210,7 +210,7 @@ class MediaLibraryTest extends TestCase
         $this->assertSame(0.75, $media->focal_y);
 
         $html = $this->actingAs($this->admin())
-            ->get(route('admin.media.show', $media))
+            ->get(route('legacy.media.show', $media))
             ->assertOk()
             ->getContent();
 
@@ -233,7 +233,7 @@ class MediaLibraryTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->delete(route('admin.media.destroy', $media))
+            ->delete(route('legacy.media.destroy', $media))
             ->assertForbidden();
 
         $this->assertDatabaseHas('media', ['id' => $media->id, 'deleted_at' => null]);
@@ -247,8 +247,8 @@ class MediaLibraryTest extends TestCase
         $variantPath = $media->variants->first()->path;
 
         $this->actingAs($this->admin())
-            ->delete(route('admin.media.destroy', $media))
-            ->assertRedirect(route('admin.media.index'));
+            ->delete(route('legacy.media.destroy', $media))
+            ->assertRedirect(route('legacy.media.index'));
 
         $this->assertSoftDeleted('media', ['id' => $media->id]);
 
@@ -276,7 +276,7 @@ class MediaLibraryTest extends TestCase
         $media = $this->readyMedia();
 
         $this->actingAs($this->admin())
-            ->post(route('admin.media.reprocess', $media))
+            ->post(route('legacy.media.reprocess', $media))
             ->assertRedirect();
 
         Queue::assertPushed(

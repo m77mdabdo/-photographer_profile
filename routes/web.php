@@ -242,24 +242,85 @@ Route::get('/robots.txt', RobotsController::class)->name('robots');
 
 
 /*
- * Admin area.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * /studio KEEPS WORKING, PERMANENTLY, AS A 301.
  *
- * Login, password reset and the two-factor challenge are registered by
- * Fortify and live OUTSIDE this group — a visitor must be able to reach them
- * while unauthenticated.
+ * The panel lived at /studio for three tasks. Every bookmark the client made,
+ * every saved password entry, every link in a note to themselves points there.
+ * Moving an admin's address and leaving the old one dead is how somebody
+ * concludes the site is broken.
  *
- * The two-factor setup page is inside the group but deliberately outside the
- * `twofactor` middleware: requiring a confirmed second factor to reach the
- * page where you set up your second factor would be a redirect loop.
+ * 301 rather than 302: this is permanent, and a permanent redirect lets the
+ * browser and the password manager update their own records. The path is
+ * carried across whole, so /studio/projects/14/story lands on
+ * /admin/projects/14/story rather than on the dashboard — a redirect that
+ * drops the destination is only half a redirect.
+ *
+ * The query string comes too, because the dashboard's deep links carry
+ * tableFilters[...] and arriving without them shows an unfiltered list that
+ * looks like the wrong page.
+ *
+ * Registered BEFORE the flat-page wildcard, like every other reserved path.
+ * ═══════════════════════════════════════════════════════════════════════════
  */
-Route::prefix('admin')
-    ->name('admin.')
+Route::get('/studio/{path?}', function (?string $path = null) {
+    $target = '/admin'.($path !== null && $path !== '' ? '/'.$path : '');
+    $query = request()->getQueryString();
+
+    return redirect($query !== null ? $target.'?'.$query : $target, 301);
+})->where('path', '.*')->name('studio.moved');
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * TWO-FACTOR SETUP: ITS OWN ADDRESS, OUTSIDE BOTH ADMINS.
+ *
+ * This page SURVIVES the deletion of the custom admin — Fortify owns
+ * enrolment, and an owner must be able to reach it. It used to live inside the
+ * custom admin's group at /admin/two-factor, which meant that moving that
+ * group to /legacy would have carried the enrolment page with it and deleting
+ * the group later would have taken it away entirely.
+ *
+ * Outside the `twofactor` middleware, deliberately: requiring a confirmed
+ * second factor to reach the page where you set up your second factor is a
+ * redirect loop. EnsureTwoFactorEnabled sends people here.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+Route::view('/two-factor', 'auth.two-factor-setup')
+    ->middleware(['auth', 'verified', 'admin', 'throttle:admin'])
+    ->name('two-factor.setup');
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * THE CUSTOM ADMIN, NOW AT /legacy.
+ *
+ * /admin belongs to the Filament panel as of Task 33 — it is the address the
+ * client types, and they had landed on this admin's placeholder three times.
+ *
+ * This is NOT dead code and is NOT deleted. Six media capabilities still live
+ * only here: the thumbnail picker, the focal-point drag control, the EXIF
+ * display, rendition inspection, reprocess, and the trash screen. The standing
+ * rule holds — nothing is deleted until its replacement has a passing test —
+ * so it keeps a working address until those six move.
+ *
+ * The name prefix moved with the path. Leaving route('admin.*') pointing at
+ * /legacy/* would be a trap for whoever reads this next.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+Route::prefix('legacy')
+    ->name('legacy.')
     ->middleware(['auth', 'verified', 'admin', 'throttle:admin'])
     ->group(function () {
-        Route::view('/two-factor', 'admin.two-factor-setup')->name('two-factor.setup');
-
         Route::middleware('twofactor')->group(function () {
-            Route::view('/', 'admin.dashboard')->name('dashboard');
+            /*
+             * A REAL SCREEN, NOT A PLACEHOLDER.
+             *
+             * This was a placeholder view telling the reader that the real
+             * admin screens were still to come — which is what the client
+             * kept landing on. The view is deleted; anybody who reaches
+             * /legacy lands on the media library, which is the reason this
+             * admin still exists at all.
+             */
+            Route::redirect('/', '/legacy/media')->name('dashboard');
 
             Route::prefix('projects')->name('projects.')->group(function () {
                 Route::get('/', ProjectIndex::class)->name('index');

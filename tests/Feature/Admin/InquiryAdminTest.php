@@ -57,8 +57,8 @@ class InquiryAdminTest extends TestCase
         $inquiry = Inquiry::factory()->create();
 
         foreach ([
-            route('admin.inquiries.index'),
-            route('admin.inquiries.show', $inquiry),
+            route('legacy.inquiries.index'),
+            route('legacy.inquiries.show', $inquiry),
         ] as $url) {
             $response = $this->get($url);
 
@@ -267,7 +267,7 @@ class InquiryAdminTest extends TestCase
         Inquiry::factory()->status(InquiryStatus::Booked)->create();
 
         $html = $this->actingAs($this->owner())
-            ->get(route('admin.inquiries.index'))
+            ->get(route('legacy.inquiries.index'))
             ->assertOk()
             ->getContent();
 

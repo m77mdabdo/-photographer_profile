@@ -176,6 +176,10 @@ return [
         'challenge_use_recovery' => 'Use a recovery code instead',
         'challenge_use_code' => 'Use an authentication code instead',
         'challenge_submit' => 'Confirm',
+        'setup_heading' => 'Two-factor authentication required',
+        'setup_lede' => 'Enrol an authenticator app, then confirm a code to finish. You will be asked for a code from it each time you sign in.',
+        'setup_begin' => 'Begin setup',
+        'setup_confirm' => 'Confirm',
     ],
     'login' => [
         'heading' => 'Sign in',
@@ -184,6 +188,17 @@ return [
     ],
 
 
+    /*
+     * A5 — the one link to the custom admin, labelled for what it is.
+     *
+     * Not "Old admin" and not "Legacy": those name the software's history,
+     * which is the studio's problem only if we make it theirs. It names the
+     * tools that are actually there.
+     */
+    'legacy' => [
+        'label' => 'Media tools',
+        'hint' => 'The few picture tools not moved yet: choosing by thumbnail, the focal-point control, camera data, renditions and the trash.',
+    ],
     'nav' => [
         // The five groups, named for what the owner is doing.
         'group_work' => 'The work',

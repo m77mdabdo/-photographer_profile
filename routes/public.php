@@ -144,5 +144,5 @@ Route::get('/work/{project:slug}/preview', [ProjectController::class, 'preview']
  * see and a test can assert, rather than an accident of line order.
  */
 Route::get('/{page:slug}', [PageController::class, 'show'])
-    ->where('page', PageController::SLUG_PATTERN)
+    ->where('page', PageController::slugPattern())
     ->name('pages.show');

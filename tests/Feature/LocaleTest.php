@@ -181,13 +181,13 @@ class LocaleTest extends TestCase
 
         foreach (PageController::RESERVED as $segment) {
             $this->assertMatchesRegularExpression(
-                '/'.PageController::SLUG_PATTERN.'/',
+                '/'.PageController::slugPattern().'/',
                 'a-real-page-slug',
                 'the pattern should still admit an ordinary slug'
             );
 
             $this->assertDoesNotMatchRegularExpression(
-                '/'.PageController::SLUG_PATTERN.'/',
+                '/'.PageController::slugPattern().'/',
                 $segment,
                 "the flat-page wildcard must refuse the reserved segment '$segment'"
             );

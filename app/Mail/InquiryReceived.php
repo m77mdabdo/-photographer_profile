@@ -50,7 +50,7 @@ class InquiryReceived extends Mailable implements ShouldQueue
             with: [
                 // Absolute, because a link in an email has no page to resolve
                 // a relative path against — the same reasoning as og:image.
-                'url' => route('admin.inquiries.show', $this->inquiry),
+                'url' => route('legacy.inquiries.show', $this->inquiry),
             ],
         );
     }

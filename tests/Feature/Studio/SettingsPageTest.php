@@ -48,7 +48,7 @@ class SettingsPageTest extends TestCase
         $this->assertTrue(is_subclass_of(SettingsPage::class, \Filament\Pages\Page::class));
         $this->assertFalse(is_subclass_of(SettingsPage::class, \Filament\Resources\Resource::class));
 
-        $this->get('/studio/settings')->assertOk();
+        $this->get('/admin/settings')->assertOk();
     }
 
     /** Settings cannot be created or destroyed, in bulk or singly. */
@@ -121,7 +121,7 @@ class SettingsPageTest extends TestCase
     /** Both locales are on screen, and the Arabic side is right-to-left. */
     public function test_both_locales_are_editable_on_the_page(): void
     {
-        $html = $this->get('/studio/settings')->assertOk()->getContent();
+        $html = $this->get('/admin/settings')->assertOk()->getContent();
 
         $this->assertStringContainsString('English', $html);
         $this->assertStringContainsString('العربية', $html);

@@ -39,7 +39,7 @@ class StudioPanelTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const PANEL = '/studio';
+    private const PANEL = '/admin';
 
     private function admin(UserRole $role = UserRole::Owner, bool $confirmed = true): User
     {
@@ -101,7 +101,7 @@ class StudioPanelTest extends TestCase
 
         $this->actingAs($user)
             ->get(self::PANEL)
-            ->assertRedirect(route('admin.two-factor.setup'));
+            ->assertRedirect(route('two-factor.setup'));
     }
 
     /**
@@ -114,7 +114,7 @@ class StudioPanelTest extends TestCase
     public function test_the_two_factor_setup_page_remains_reachable(): void
     {
         $this->actingAs($this->admin(confirmed: false))
-            ->get(route('admin.two-factor.setup'))
+            ->get(route('two-factor.setup'))
             ->assertOk();
     }
 
@@ -423,13 +423,13 @@ class StudioPanelTest extends TestCase
         $user = $this->admin();
 
         /*
-         * /ar/studio is a door, not a second panel: Filament gives a panel one
+         * /ar/admin is a door, not a second panel: Filament gives a panel one
          * path, and these pages are noindex with no canonical to protect. The
          * prefixed address stores the preference and lands on the real one.
          */
         $this->actingAs($user)
-            ->get('/ar/studio')
-            ->assertRedirect('/studio')
+            ->get('/ar/admin')
+            ->assertRedirect('/admin')
             ->assertCookie(Locale::COOKIE, 'ar', false);
 
         $html = $this->actingAs($user)
@@ -509,21 +509,33 @@ class StudioPanelTest extends TestCase
         }
 
         /*
-         * THE OLD PANEL TIER IS EMPTY. Not "smaller" — empty. Every sidebar
-         * href is inside /studio, so nothing in the navigation sends an editor
-         * back to /admin.
+         * ───────────────────────────────────────────────────────────────────
+         * EXACTLY ONE LINK OUT, AND IT IS THE DELETION CHECKLIST.
+         *
+         * Task 33 swapped the addresses: the panel is /admin and the custom
+         * admin is /legacy. So the assertion inverted — it used to be "no
+         * sidebar link contains /admin" and is now "exactly one contains
+         * /legacy".
+         *
+         * One, not none, because six media capabilities still live only in
+         * the custom admin and an owner needs a way to reach them. When this
+         * assertion can be changed to zero, the custom admin can be deleted.
+         * ───────────────────────────────────────────────────────────────────
          */
         preg_match_all('#<a\s+href="([^"]+)"[^>]*class="fi-sidebar-item-btn"#s', $html, $matches);
 
         $this->assertNotEmpty($matches[1], 'no sidebar links were found, so this proves nothing');
 
-        foreach (array_unique($matches[1]) as $href) {
-            $this->assertStringNotContainsString(
-                '/admin',
-                $href,
-                "the sidebar still links out to the old panel: $href"
-            );
-        }
+        $outbound = array_values(array_unique(array_filter(
+            $matches[1],
+            fn (string $href): bool => ! str_contains($href, '/admin') || str_contains($href, '/legacy'),
+        )));
+
+        $this->assertSame(
+            [route('legacy.media.index')],
+            $outbound,
+            'the sidebar should carry exactly one link out, to the media tools: '.implode(' ', $outbound)
+        );
 
         // And nothing is disabled, because nothing is a placeholder any more.
         $this->assertStringNotContainsString('aria-disabled="true"', $html);
@@ -662,7 +674,7 @@ class StudioPanelTest extends TestCase
     /** The layout owns session('status'); a page must not render it again. */
     public function test_only_the_layout_renders_the_status_flash(): void
     {
-        $page = (string) file_get_contents(resource_path('views/admin/two-factor-setup.blade.php'));
+        $page = (string) file_get_contents(resource_path('views/auth/two-factor-setup.blade.php'));
 
         $this->assertStringNotContainsString("session('status')", $page);
 
@@ -682,16 +694,17 @@ class StudioPanelTest extends TestCase
         $html = $this->actingAs($this->admin())->get(self::PANEL)->assertOk()->getContent();
 
         /*
-         * B5 — the widgets pointed at /admin while the panel had no resources
-         * to point at. They now link into /studio, and every link is resolved
-         * rather than merely present.
+         * B5 — the widgets pointed at the custom admin while the panel had no
+         * resources to point at. They now link into the panel's own
+         * resources, and every link is resolved rather than merely present.
          */
-        preg_match_all('#href="(http://localhost/studio[^"]*)"#', $html, $matches);
+        preg_match_all('#href="(http://localhost/admin[^"]*)"#', $html, $matches);
 
         $this->assertNotEmpty($matches[1], 'the dashboard should link into the panel');
 
+        // And none of them leaves for the custom admin.
         foreach (array_unique($matches[1]) as $url) {
-            $this->assertStringNotContainsString('/admin', $url);
+            $this->assertStringNotContainsString('/legacy', $url);
         }
 
         foreach (array_unique($matches[1]) as $url) {
@@ -714,10 +727,10 @@ class StudioPanelTest extends TestCase
          * spelling of the same promise: a count opens the rows it counted.
          */
         foreach ([
-            'studio/enquiries?tableFilters[status][value]=new',
-            'studio/projects?tableFilters[status][value]=draft',
-            'studio/articles?tableFilters[status][value]=draft',
-            'studio/projects?tableFilters[status][value]=published',
+            'admin/enquiries?tableFilters[status][value]=new',
+            'admin/projects?tableFilters[status][value]=draft',
+            'admin/articles?tableFilters[status][value]=draft',
+            'admin/projects?tableFilters[status][value]=published',
         ] as $expected) {
             $this->assertStringContainsString(
                 str_replace(['&', '[', ']'], ['&amp;', '%5B', '%5D'], $expected),
@@ -753,6 +766,6 @@ class StudioPanelTest extends TestCase
             ->assertSee('The media pipeline')
             ->assertSee('coast-0412.arw')
             ->assertSee('Unsupported colour profile.')
-            ->assertSee('studio/media?tableFilters%5Bstatus%5D%5Bvalue%5D=failed', escape: false);
+            ->assertSee('admin/media?tableFilters%5Bstatus%5D%5Bvalue%5D=failed', escape: false);
     }
 }

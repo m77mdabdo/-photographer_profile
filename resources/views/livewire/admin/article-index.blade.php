@@ -3,7 +3,7 @@
         <h1 class="admin-heading">Journal</h1>
         <p class="admin-note">{{ $articles->total() }} {{ Str::plural('piece', $articles->total()) }}</p>
 
-        <a href="{{ route('admin.articles.create') }}" class="admin-button">New piece</a>
+        <a href="{{ route('legacy.articles.create') }}" class="admin-button">New piece</a>
     </header>
 
     @if ($message !== '')
@@ -66,7 +66,7 @@
                     @endif
 
                     <span class="project-row__main">
-                        <a href="{{ route('admin.articles.edit', $article) }}" class="project-row__title">
+                        <a href="{{ route('legacy.articles.edit', $article) }}" class="project-row__title">
                             {{ $article->title }}
                         </a>
                         <x-admin.translation-state :record="$article" />

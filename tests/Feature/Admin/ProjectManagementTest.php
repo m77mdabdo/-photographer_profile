@@ -66,10 +66,10 @@ class ProjectManagementTest extends TestCase
     {
         $project = Project::factory()->create();
 
-        $this->get(route('admin.projects.index'))->assertRedirect(route('login'));
-        $this->get(route('admin.projects.create'))->assertRedirect(route('login'));
-        $this->get(route('admin.projects.edit', $project))->assertRedirect(route('login'));
-        $this->get(route('admin.categories.index'))->assertRedirect(route('login'));
+        $this->get(route('legacy.projects.index'))->assertRedirect(route('login'));
+        $this->get(route('legacy.projects.create'))->assertRedirect(route('login'));
+        $this->get(route('legacy.projects.edit', $project))->assertRedirect(route('login'));
+        $this->get(route('legacy.categories.index'))->assertRedirect(route('login'));
     }
 
     // ----------------------------------------------------------------- 2
@@ -277,7 +277,7 @@ class ProjectManagementTest extends TestCase
         $this->assertFalse($response);
 
         $this->actingAs($user)
-            ->delete(route('admin.media.destroy', $media))
+            ->delete(route('legacy.media.destroy', $media))
             ->assertForbidden();
 
         $this->assertDatabaseHas('media', ['id' => $media->id, 'deleted_at' => null]);

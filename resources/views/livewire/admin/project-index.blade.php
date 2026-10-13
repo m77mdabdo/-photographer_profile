@@ -2,7 +2,7 @@
     <header class="module-header">
         <h1 class="admin-heading">Projects</h1>
         <p class="admin-note">{{ $projects->total() }} {{ Str::plural('project', $projects->total()) }}</p>
-        <a href="{{ route('admin.projects.create') }}" class="admin-button">New project</a>
+        <a href="{{ route('legacy.projects.create') }}" class="admin-button">New project</a>
     </header>
 
     @if ($message !== '')
@@ -54,7 +54,7 @@
                     give it a cover image from the media library, then build its story out of
                     blocks. Nothing is visible publicly until you publish it.
                 </p>
-                <a href="{{ route('admin.projects.create') }}" class="admin-button">Create the first project</a>
+                <a href="{{ route('legacy.projects.create') }}" class="admin-button">Create the first project</a>
             @endif
         </div>
     @else
@@ -87,7 +87,7 @@
                     </span>
 
                     <span class="project-row__main">
-                        <a href="{{ route('admin.projects.edit', $project) }}" class="project-row__title">
+                        <a href="{{ route('legacy.projects.edit', $project) }}" class="project-row__title">
                             {{ $project->title }}
                             @if ($project->is_demo)
                                 {{--
@@ -134,7 +134,7 @@
                             {{ $project->is_featured ? 'Unfeature' : 'Feature' }}
                         </button>
 
-                        <a href="{{ route('admin.projects.edit', $project) }}" class="admin-link">Edit</a>
+                        <a href="{{ route('legacy.projects.edit', $project) }}" class="admin-link">Edit</a>
 
                         {{--
                             The story builder had no link anywhere in the admin.
@@ -143,7 +143,7 @@
                             browser harness could not discover a link to a page it
                             was meant to check.
                         --}}
-                        <a href="{{ route('admin.projects.story', $project) }}" class="admin-link">Story</a>
+                        <a href="{{ route('legacy.projects.story', $project) }}" class="admin-link">Story</a>
                     </span>
                 </li>
             @endforeach

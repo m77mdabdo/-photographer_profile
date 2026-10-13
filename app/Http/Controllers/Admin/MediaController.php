@@ -59,7 +59,7 @@ class MediaController extends Controller
                 'name' => $media->original_filename,
                 'status' => $media->status->value,
                 'status_label' => $media->status->label(),
-                'url' => route('admin.media.show', $media),
+                'url' => route('legacy.media.show', $media),
             ];
         }
 
@@ -84,7 +84,7 @@ class MediaController extends Controller
         $medium->delete();
 
         return redirect()
-            ->route('admin.media.index')
+            ->route('legacy.media.index')
             ->with('status', 'Moved to trash. The files are still on disk.');
     }
 

@@ -51,7 +51,7 @@ class NoThirdPartyTest extends TestCase
     /** No panel page requests anything from anywhere else. */
     public function test_no_panel_page_requests_a_third_party_asset(): void
     {
-        $paths = ['/studio', '/studio/media', '/studio/projects', '/studio/settings', '/studio/users'];
+        $paths = ['/admin', '/admin/media', '/admin/projects', '/admin/settings', '/admin/users'];
 
         foreach ($paths as $path) {
             $html = $this->get($path)->assertOk()->getContent();

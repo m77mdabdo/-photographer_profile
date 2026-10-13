@@ -70,6 +70,10 @@ class TwoFactorEnforcementTest extends TestCase
      * names the class in its own authMiddleware — two registrations of one
      * rule, and a change that only reached one of them would be worse than no
      * change at all.
+     *
+     * TASK 33 SWAPPED THE ADDRESSES. The panel is /admin and the custom admin
+     * is /legacy; /studio is a permanent 301. The two stacks are the same two
+     * stacks, so these assertions moved with them rather than being dropped.
      */
     public function test_with_enforcement_on_an_admin_without_a_factor_reaches_neither_panel(): void
     {
@@ -77,12 +81,12 @@ class TwoFactorEnforcementTest extends TestCase
 
         $user = $this->adminWithoutTwoFactor();
 
-        $this->actingAs($user)->get('/admin')->assertRedirect(route('admin.two-factor.setup'));
-        $this->actingAs($user)->get('/studio')->assertRedirect(route('admin.two-factor.setup'));
+        $this->actingAs($user)->get('/admin')->assertRedirect(route('two-factor.setup'));
+        $this->actingAs($user)->get('/legacy')->assertRedirect(route('two-factor.setup'));
 
         // And a deeper page in each, so it is the middleware and not one route.
-        $this->actingAs($user)->get('/admin/media')->assertRedirect(route('admin.two-factor.setup'));
-        $this->actingAs($user)->get('/studio/projects')->assertRedirect(route('admin.two-factor.setup'));
+        $this->actingAs($user)->get('/admin/projects')->assertRedirect(route('two-factor.setup'));
+        $this->actingAs($user)->get('/legacy/projects')->assertRedirect(route('two-factor.setup'));
     }
 
     // ----------------------------------------------------------------- 2
@@ -95,9 +99,9 @@ class TwoFactorEnforcementTest extends TestCase
         $user = $this->adminWithoutTwoFactor();
 
         $this->actingAs($user)->get('/admin')->assertOk();
-        $this->actingAs($user)->get('/studio')->assertOk();
-        $this->actingAs($user)->get('/admin/media')->assertOk();
-        $this->actingAs($user)->get('/studio/projects')->assertOk();
+        $this->actingAs($user)->get('/legacy')->assertRedirect('/legacy/media');
+        $this->actingAs($user)->get('/admin/projects')->assertOk();
+        $this->actingAs($user)->get('/legacy/projects')->assertOk();
     }
 
     /**
@@ -123,7 +127,7 @@ class TwoFactorEnforcementTest extends TestCase
             ->update(['role' => 'subscriber']);
 
         $this->actingAs($outsider->fresh())->get('/admin')->assertForbidden();
-        $this->actingAs($outsider->fresh())->get('/studio')->assertForbidden();
+        $this->actingAs($outsider->fresh())->get('/legacy')->assertForbidden();
     }
 
     /**
@@ -138,7 +142,7 @@ class TwoFactorEnforcementTest extends TestCase
         config(['auth.require_two_factor' => false]);
 
         $this->get('/admin')->assertRedirect(route('login'));
-        $this->get('/studio')->assertRedirect(route('login'));
+        $this->get('/legacy')->assertRedirect(route('login'));
     }
 
     /** And with it off, an admin who DID enrol is unaffected. */
@@ -147,10 +151,10 @@ class TwoFactorEnforcementTest extends TestCase
         $user = $this->adminWithTwoFactor();
 
         config(['auth.require_two_factor' => true]);
-        $this->actingAs($user)->get('/studio')->assertOk();
+        $this->actingAs($user)->get('/admin')->assertOk();
 
         config(['auth.require_two_factor' => false]);
-        $this->actingAs($user)->get('/studio')->assertOk();
+        $this->actingAs($user)->get('/admin')->assertOk();
     }
 
     // ----------------------------------------------------------------- 3
@@ -359,7 +363,7 @@ class TwoFactorEnforcementTest extends TestCase
 
         // And the setup page is still reachable by an admin with no factor.
         $this->actingAs($this->adminWithoutTwoFactor())
-            ->get(route('admin.two-factor.setup'))
+            ->get(route('two-factor.setup'))
             ->assertOk();
     }
 }

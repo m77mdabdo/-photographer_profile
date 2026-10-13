@@ -19,6 +19,7 @@ use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationGroup;
+use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -38,22 +39,26 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
  * The Filament panel.
  *
  * ───────────────────────────────────────────────────────────────────────────
- * IT LIVES AT /studio, NOT /admin, AND THAT IS A PERMANENT CHOICE
+ * IT LIVES AT /admin, AS OF TASK 33.
  *
- * The custom admin owns /admin and keeps it until step 10. The two have to run
- * side by side, because the old one is the only thing that makes this
- * reversible — abandoning Filament in month two must not mean the studio
- * cannot edit its own website.
+ * It was at /studio while the custom admin still owned /admin — the two had to
+ * run side by side, because the old one was the only thing that made this
+ * reversible.
  *
- * The obvious temporary names — /admin2, /new-admin, /filament — are all names
- * that would have to be changed the day the old admin is deleted, and changing
- * an admin's address means every bookmark, every saved password and every
- * muscle-memory URL breaks on a day when something else is already changing.
- * /studio is a name this panel can keep for ever: it is what the thing is.
+ * That reasoning held and the cost was concrete: /admin is the address the
+ * client types, and three times they landed on the old admin's placeholder
+ * dashboard, which told them the real screens were still to come. An address
+ * is a promise about where the work is, and the work is here.
  *
- * `studio` is also added to PageController::RESERVED, because the flat-page
- * wildcard would otherwise take it for a page slug — the identical trap that
- * `ar` and `en` needed guarding against two tasks ago.
+ * So the panel takes /admin, the custom admin moves to /legacy, and every
+ * /studio path 301s to its /admin equivalent so no bookmark breaks. The old
+ * admin is NOT deleted: six media capabilities still live only there, and the
+ * standing rule is that nothing is deleted until its replacement has a passing
+ * test.
+ *
+ * `admin`, `studio` and `legacy` are all in PageController::RESERVED, because
+ * the flat-page wildcard would otherwise take any of them for a page slug —
+ * the identical trap that `ar` and `en` needed guarding against.
  * ───────────────────────────────────────────────────────────────────────────
  *
  * FORTIFY KEEPS LOGIN, AND THE REASON IS ONE LINE OF FILAMENT'S SOURCE
@@ -119,8 +124,19 @@ class StudioPanelProvider extends PanelProvider
     {
         return $panel
             ->default()
+
+            /*
+             * The ID stays `studio` while the PATH becomes `admin`.
+             *
+             * The id is the internal handle — it names the route prefix
+             * (filament.studio.*), the theme directory and every
+             * Filament::getPanel() call in the test suite. Renaming it would
+             * churn hundreds of route names to express something no visitor
+             * sees, on the same commit that changes the addresses visitors do
+             * see. The path is the promise; the id is plumbing.
+             */
             ->id('studio')
-            ->path('studio')
+            ->path('admin')
 
             /*
              * NO ->login(). See the class comment: Fortify owns the login
@@ -189,6 +205,39 @@ class StudioPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
 
             ->navigationGroups($this->navigationGroups())
+
+            /*
+             * ───────────────────────────────────────────────────────────────
+             * A5 — ONE LINK OUT, AND IT SAYS WHAT IS THROUGH IT.
+             *
+             * Six media capabilities still live only in the custom admin: the
+             * thumbnail picker, the focal-point drag control, the EXIF
+             * display, rendition inspection, reprocess and the trash screen.
+             * Until each has a replacement with a passing test, an owner needs
+             * a way to reach them — and exactly one, in the System group,
+             * rather than a link from every media screen.
+             *
+             * Labelled "Media tools", not "Old admin" or "Legacy". Those name
+             * the software's history, which is the studio's problem only if we
+             * make it theirs. This names what is actually through the door.
+             *
+             * It opens in a new tab: the two admins have different chrome, and
+             * a visitor who follows it has not left the panel, they have
+             * stepped out to fetch something.
+             *
+             * THIS ITEM IS THE DELETION CHECKLIST. When it can be removed, the
+             * custom admin can be removed with it.
+             * ───────────────────────────────────────────────────────────────
+             */
+            ->navigationItems([
+                NavigationItem::make('legacy-media-tools')
+                    ->label(fn (): string => __('studio.legacy.label'))
+                    ->icon('heroicon-o-wrench-screwdriver')
+                    ->group(fn (): string => __('studio.nav.group_system'))
+                    ->sort(99)
+                    ->url(fn (): string => route('legacy.media.index'), shouldOpenInNewTab: true)
+                    ->visible(fn (): bool => auth()->user()?->can('viewAny', \App\Models\Media::class) ?? false),
+            ])
 
             /*
              * ───────────────────────────────────────────────────────────────

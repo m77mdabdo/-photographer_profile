@@ -2,7 +2,7 @@
     <header class="module-header">
         <h1 class="admin-heading">Media</h1>
         <p class="admin-note">{{ $media->total() }} {{ Str::plural('image', $media->total()) }}</p>
-        <a href="{{ route('admin.media.trash') }}" class="admin-link">Trash</a>
+        <a href="{{ route('legacy.media.trash') }}" class="admin-link">Trash</a>
     </header>
 
     {{--
@@ -15,11 +15,11 @@
         <h2 id="uploader-heading" class="uploader__heading">Add images</h2>
 
         <form method="POST"
-              action="{{ route('admin.media.store') }}"
+              action="{{ route('legacy.media.store') }}"
               enctype="multipart/form-data"
               class="uploader__form"
               data-uploader
-              data-endpoint="{{ route('admin.media.store') }}">
+              data-endpoint="{{ route('legacy.media.store') }}">
             @csrf
 
             <div class="uploader__dropzone" data-dropzone>
@@ -97,7 +97,7 @@
             <ul class="media-grid" role="list">
                 @foreach ($media as $item)
                     <li class="media-card" wire:key="media-{{ $item->id }}" data-media-id="{{ $item->id }}">
-                        <a href="{{ route('admin.media.show', $item) }}" class="media-card__link">
+                        <a href="{{ route('legacy.media.show', $item) }}" class="media-card__link">
                             <span class="media-card__frame">
                                 @if ($item->status === \App\Enums\MediaStatus::Ready && $item->variants->isNotEmpty())
                                     <x-picture :media="$item"

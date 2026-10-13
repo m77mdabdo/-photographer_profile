@@ -164,7 +164,7 @@ class ResourceInventoryTest extends TestCase
         ]));
 
         $this->assertFalse(\App\Filament\Resources\Users\UserResource::canViewAny());
-        $this->get('/studio/users')->assertForbidden();
+        $this->get('/admin/users')->assertForbidden();
     }
 
     // ----------------------------------------------------------------- D8

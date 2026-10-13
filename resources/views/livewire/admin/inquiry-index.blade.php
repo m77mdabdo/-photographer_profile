@@ -53,7 +53,7 @@
                 <li @class(['project-row', 'project-row--unread' => $inquiry->status->isUnread()])
                     wire:key="inquiry-{{ $inquiry->id }}">
                     <span class="project-row__main">
-                        <a href="{{ route('admin.inquiries.show', $inquiry) }}" class="project-row__title">
+                        <a href="{{ route('legacy.inquiries.show', $inquiry) }}" class="project-row__title">
                             {{ $inquiry->name }}
                         </a>
                         <span class="project-row__meta">

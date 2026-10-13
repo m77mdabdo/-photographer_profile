@@ -247,7 +247,7 @@ class MediaLivewireTest extends TestCase
 
     public function test_a_guest_cannot_reach_the_trash_route(): void
     {
-        $this->get(route('admin.media.trash'))->assertRedirect(route('login'));
+        $this->get(route('legacy.media.trash'))->assertRedirect(route('login'));
     }
 
     // ----------------------------------------------------------------- 10

@@ -1,5 +1,5 @@
 <div data-unsaved-guard data-dirty="{{ $dirty ? '1' : '0' }}">
-    <p class="breadcrumb"><a href="{{ route('admin.services.index') }}">← All services</a></p>
+    <p class="breadcrumb"><a href="{{ route('legacy.services.index') }}">← All services</a></p>
 
     <header class="module-header">
         <h1 class="admin-heading">{{ $service?->exists ? 'Edit service' : 'New service' }}</h1>
@@ -206,7 +206,7 @@
                 <a href="{{ route('services.show', $service) }}" class="admin-link">View on the site</a>
             @endif
 
-            <a href="{{ route('admin.services.index') }}" class="admin-link">Cancel</a>
+            <a href="{{ route('legacy.services.index') }}" class="admin-link">Cancel</a>
         </div>
     
     {{--

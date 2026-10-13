@@ -56,9 +56,9 @@ class ArticleAdminTest extends TestCase
         $article = Article::factory()->create();
 
         foreach ([
-            route('admin.articles.index'),
-            route('admin.articles.create'),
-            route('admin.articles.edit', $article),
+            route('legacy.articles.index'),
+            route('legacy.articles.create'),
+            route('legacy.articles.edit', $article),
         ] as $url) {
             $response = $this->get($url);
 

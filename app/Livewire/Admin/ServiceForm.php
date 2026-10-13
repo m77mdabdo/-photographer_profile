@@ -241,7 +241,7 @@ class ServiceForm extends Component
 
         session()->flash('status', 'Service saved.');
 
-        $this->redirectRoute('admin.services.edit', $this->service, navigate: false);
+        $this->redirectRoute('legacy.services.edit', $this->service, navigate: false);
     }
 
     /**
