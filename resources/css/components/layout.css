@@ -145,12 +145,6 @@ main:focus {
 }
 
 /* A placeholder page heading until real homepage content exists. */
-.page-heading {
-    max-width: var(--container-wide);
-    margin-inline: auto;
-    padding: var(--sp-12) var(--gutter);
-    font-size: var(--fs-display-l);
-}
 
 /* ------------------------------------------------------------------ *
  * Colour scheme control. Three buttons, no script.

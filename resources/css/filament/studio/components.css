@@ -125,7 +125,6 @@
 .project-row__handle { cursor:grab; padding:var(--sp-2); color:var(--text-secondary); touch-action:none; }
 .project-row__handle:focus-visible { color:var(--accent); }
 .form-section__heading { font-size:var(--fs-h3); }
-.field-row > .field { flex:1 1 12rem; }
 .form-actions { display:flex; gap:var(--sp-4); align-items:center; }
 .picker { position:fixed; inset:0; z-index:var(--z-modal); background:rgba(11,11,12,.8); display:flex; align-items:center; justify-content:center; padding:var(--sp-5); }
 .picker__panel { background:var(--bg); border:1px solid var(--border); padding:var(--sp-5); max-width:60rem; width:100%; max-height:85vh; overflow-y:auto; }

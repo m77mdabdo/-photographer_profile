@@ -365,9 +365,17 @@ class StudioPanelTest extends TestCase
          * That is a deliberate change to a PUBLIC stylesheet, so this
          * assertion failed exactly as designed. The JS hash is untouched,
          * which is the useful half of the signal: nothing but CSS moved.
+         *
+         * REPINNED AGAIN IN TASK 34 PART C, CSS ONLY.
+         *
+         * The dead-code audit found two orphan selectors in
+         * pages/enquiry.css — .field--full and .field--wide, which no
+         * template has ever named — and one in components/layout.css,
+         * .page-heading. Removing them changes the public bundle's bytes and
+         * therefore its hash. The JS hash is again untouched.
          * ───────────────────────────────────────────────────────────────────
          */
-        $this->assertSame('assets/public-CR5BLD1H.css', $publicCss, 'the public stylesheet changed');
+        $this->assertSame('assets/public-DSf5dtrF.css', $publicCss, 'the public stylesheet changed');
         $this->assertSame('assets/public-B-FzqxLO.js', $publicJs, 'the public entry changed');
 
         // And the panel's theme is its own entry, not part of either.
