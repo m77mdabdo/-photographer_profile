@@ -98,6 +98,14 @@ final class SiteCopy
          * whole site leads here, so it is the last string that should have
          * been beyond the client's reach.
          */
+        /*
+         * Task 34 D2. The heading over the testimonial strip, which sits
+         * immediately before the closing invitation — so it belongs to the
+         * same group an owner edits when they are thinking about that part
+         * of the page.
+         */
+        ['key' => 'testimonials.heading', 'value' => 'What clients say', 'ar' => 'ما يقوله العملاء', 'type' => 'string', 'group' => 'contact'],
+
         ['key' => 'closing.title', 'value' => 'The diary is open for next year.', 'ar' => 'المفكّرة مفتوحة للعام القادم.', 'type' => 'string', 'group' => 'contact'],
         ['key' => 'closing.cta', 'value' => 'Start a conversation', 'ar' => 'ابدأ محادثة', 'type' => 'string', 'group' => 'contact'],
 

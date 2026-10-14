@@ -15,6 +15,8 @@
 
     <x-home.archive-strip :media="$archive" />
 
+    <x-home.testimonials :testimonials="$testimonials" />
+
     <x-home.closing />
 
     @if (! $hero && $selected->isEmpty() && $archive->isEmpty())

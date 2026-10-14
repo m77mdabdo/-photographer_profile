@@ -375,7 +375,16 @@ class StudioPanelTest extends TestCase
          * therefore its hash. The JS hash is again untouched.
          * ───────────────────────────────────────────────────────────────────
          */
-        $this->assertSame('assets/public-DSf5dtrF.css', $publicCss, 'the public stylesheet changed');
+        /*
+         * REPINNED AGAIN IN TASK 34 D2, CSS ONLY, for two changes: the
+         * testimonial strip's own styles, and two Arabic typography fixes at
+         * the token level — Arabic takes neither letter-spacing nor a Latin
+         * monospace face, and the public site had no rule about either.
+         *
+         * The JS hash is untouched for the fourth time running, which is the
+         * useful half of this assertion.
+         */
+        $this->assertSame('assets/public-Ds6HETAd.css', $publicCss, 'the public stylesheet changed');
         $this->assertSame('assets/public-B-FzqxLO.js', $publicJs, 'the public entry changed');
 
         // And the panel's theme is its own entry, not part of either.

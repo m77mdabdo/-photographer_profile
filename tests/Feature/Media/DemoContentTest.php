@@ -331,9 +331,10 @@ class DemoContentTest extends TestCase
             $queries = [];
             $request->get('/')->assertOk();
 
-            // Eleven: eight for the page, one for the client marquee, one for
-            // the journal strip, one for the services strip.
-            $this->assertCount(11, $queries, 'theme='.($theme ?? 'system').' issued '.count($queries));
+            // Twelve: eight for the page, one each for the client marquee,
+            // the journal strip, the services strip and — since Task 34 D2 —
+            // the testimonial strip.
+            $this->assertCount(12, $queries, 'theme='.($theme ?? 'system').' issued '.count($queries));
         }
     }
 

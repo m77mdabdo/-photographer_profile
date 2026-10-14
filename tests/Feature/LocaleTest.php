@@ -530,7 +530,13 @@ class LocaleTest extends TestCase
             return $count;
         };
 
-        $expected = ['/' => 11, '/journal' => 3, '/services' => 1, '/work' => 6];
+        /*
+         * The home page rose 11 → 12 in Task 34 D2: the testimonial strip is
+         * one flat select, warm, in every locale. It is NOT cached like the
+         * navigation, because a published quote can be scheduled and a cache
+         * that outlives its publish date would hold it back.
+         */
+        $expected = ['/' => 12, '/journal' => 3, '/services' => 1, '/work' => 6];
 
         foreach ($expected as $path => $queries) {
             foreach (Locale::codes() as $locale) {

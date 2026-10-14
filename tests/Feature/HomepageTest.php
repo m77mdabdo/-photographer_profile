@@ -998,7 +998,7 @@ class HomepageTest extends TestCase
         $this->get('/')->assertOk();
 
         /*
-         * Fifteen on a cold cache, eleven on a warm one.
+         * Sixteen on a cold cache, twelve on a warm one.
          *
          * THE THREE THAT DISAPPEAR are the site-wide maps, each read once per
          * process and then cached forever:
@@ -1029,21 +1029,29 @@ class HomepageTest extends TestCase
          * costs one `select * from menus where location = ?` on a cold cache.
          *
          * ONE, not one per link: App\Support\Navigation resolves the whole
-         * menu and caches it per locale, exactly like the legal links above,
-         * and the warm count is unchanged at eleven. The fixture here has an
-         * empty menu, so the items query does not appear; NavigationTest
-         * measures the populated case and holds it flat as links are added.
+         * menu and caches it per locale, exactly like the legal links above.
+         * The fixture here has an empty menu, so the items query does not
+         * appear; NavigationTest measures the populated case and holds it
+         * flat as links are added.
+         *
+         * RAISED AGAIN IN TASK 34 D2, by one on BOTH counts, for the
+         * testimonial strip.
+         *
+         * Deliberately NOT cached, unlike the navigation: a testimonial has
+         * a publish date, and a cache that outlives it would hold back a
+         * quote the studio had scheduled. One flat select with its portraits
+         * eager-loaded is the right price for that.
          */
         $settingsQueries = array_filter($queries, static fn (string $sql): bool => str_contains($sql, '`settings`'));
 
         $this->assertCount(1, $settingsQueries, 'the settings map must be one query, not one per key');
-        $this->assertCount(15, $queries, 'cold: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
+        $this->assertCount(16, $queries, 'cold: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
 
         // Warm, which is every request after the first.
         $queries = [];
         $this->get('/')->assertOk();
 
-        $this->assertCount(11, $queries, 'warm: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
+        $this->assertCount(12, $queries, 'warm: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
     }
 
     /**

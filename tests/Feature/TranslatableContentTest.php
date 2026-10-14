@@ -410,7 +410,8 @@ class TranslatableContentTest extends TestCase
          * a translations table — would have added a join per locale to every
          * one of these.
          */
-        $expected = ['/' => 11, '/journal' => 3, '/services' => 1, '/work' => 6];
+        // The home page rose 11 → 12 in Task 34 D2 for the testimonial strip.
+        $expected = ['/' => 12, '/journal' => 3, '/services' => 1, '/work' => 6];
 
         foreach ($expected as $path => $queries) {
             foreach (Locale::codes() as $locale) {

@@ -585,7 +585,15 @@ class CrudPathsTest extends TestCase
                 continue;
             }
 
-            if ($field->isNumeric()) {
+            /*
+             * Only a TextInput knows whether it is numeric; Textarea has no
+             * such method, and asking it is a BadMethodCallException. Until
+             * Task 34 D2 every resource's first editable field happened to be
+             * a TextInput, so this line was never reached with the other
+             * type — Testimonials leads with the quote, which is a Textarea
+             * because a client's sentence is not rich text.
+             */
+            if ($field instanceof \Filament\Forms\Components\TextInput && $field->isNumeric()) {
                 continue;
             }
 

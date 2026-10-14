@@ -148,6 +148,9 @@ class AppServiceProvider extends ServiceProvider
         // policy says so in words rather than by omitting the methods.
         Gate::policy(\App\Models\Menu::class, \App\Policies\MenuPolicy::class);
 
+        // Task 34 D2.
+        Gate::policy(\App\Models\Testimonial::class, \App\Policies\TestimonialPolicy::class);
+
         /*
          * THE THREE THAT WERE MISSING, FOUND IN TASK 31.
          *

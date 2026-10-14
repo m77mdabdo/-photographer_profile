@@ -10,6 +10,7 @@ use App\Models\Client;
 use App\Models\Media;
 use App\Models\Project;
 use App\Models\Service;
+use App\Models\Testimonial;
 use App\Support\AccentColor;
 use App\Support\EditorialLayout;
 use App\Support\SeoData;
@@ -83,6 +84,22 @@ class HomeController extends Controller
                 ->get(),
 
             'clients' => Client::active()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'url']),
+
+            /*
+             * Task 34 D2. With their portraits, because rendering one without
+             * eager-loading it would be a query per quote — on the home page,
+             * which is the one page everybody loads.
+             *
+             * Four at most: this is a strip before the closing invitation,
+             * not a page of references.
+             */
+            'testimonials' => Testimonial::query()
+                ->published()
+                ->with('portrait.variants')
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->limit(4)
+                ->get(),
             'seo' => SeoData::make(
                 description: $hero?->excerpt,
                 ogImage: $hero?->cover,

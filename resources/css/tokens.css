@@ -239,6 +239,59 @@
     --font-mono: 'JetBrains Mono', 'Mono Fallback', ui-monospace, Menlo, Consolas, monospace;
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ARABIC DOES NOT TAKE TRACKING.
+ *
+ * Arabic letters JOIN. Pulling them apart with letter-spacing does not make
+ * a heading airier, it breaks the word into disconnected shapes — the script
+ * equivalent of p r i n t i n g   l i k e   t h i s, except that it also
+ * severs the ligatures the reader is actually reading.
+ *
+ * Found in Task 34 D2 by screenshotting the new testimonial strip in Arabic:
+ * its heading uses --tracking-wide, like every other eyebrow and mono label
+ * on the site, and came out spaced apart. The defect is not that section's —
+ * it is every tracked string on the public site, in Arabic, since the type
+ * system was built.
+ *
+ * resources/css/auth.css has handled this since the front door was designed,
+ * one component at a time, with [lang='ar'] overrides. The public site had
+ * no such rule anywhere.
+ *
+ * Fixed at the TOKEN rather than per component, so it reaches every use at
+ * once and a new component cannot forget it. Negative tracking goes too: it
+ * is a display-face nicety for Latin capitals and does the same damage.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+:root:lang(ar),
+[lang='ar'] {
+    --tracking-tight: 0;
+    --tracking-wide: 0;
+
+    /*
+     * AND IT DOES NOT TAKE A LATIN MONOSPACE FACE.
+     *
+     * The same screenshot showed the second half of the problem. Every
+     * eyebrow, caption, meta line and rail label on this site is set in
+     * --font-mono — fifty-five declarations — and JetBrains Mono has no
+     * Arabic glyphs at all. Each Arabic letter therefore fell back
+     * INDIVIDUALLY into a system monospace, which forces every glyph into
+     * the same advance width and so breaks the joins the script is read by:
+     * the word arrives as a row of separated shapes.
+     *
+     * The text stack instead, which is what resources/css/auth.css has done
+     * component by component since the front door was designed. Monospace is
+     * a Latin typographic device: its job here is the look of a technical
+     * label, and in Arabic that look costs legibility.
+     *
+     * Figures are unaffected — they are Latin either way, and the pages that
+     * genuinely need tabular alignment ask for font-variant-numeric rather
+     * than for this face.
+     */
+    --font-mono: var(--font-sans);
+}
+
+
 /* ===================================================================
  * LIGHT REGISTER
  *

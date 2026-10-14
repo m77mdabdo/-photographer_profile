@@ -241,14 +241,15 @@ class ThemeTest extends TestCase
             $request->get('/')->assertOk();
 
             /*
-             * Eleven: eight for the page, then one each for the client
-             * marquee, the journal strip and the services strip. None of
-             * those three tables is about projects, so none can ride along on
-             * an existing load. The theme itself still touches nothing — it is
-             * a cookie read and an attribute — which is what this pins.
+             * Twelve: eight for the page, then one each for the client
+             * marquee, the journal strip, the services strip and — since
+             * Task 34 D2 — the testimonial strip. None of those four tables
+             * is about projects, so none can ride along on an existing load.
+             * The theme itself still touches nothing — it is a cookie read
+             * and an attribute — which is what this pins.
              */
             $this->assertCount(
-                11,
+                12,
                 $queries,
                 "theme=".($cookie ?? 'system')." issued ".count($queries).' queries'
             );

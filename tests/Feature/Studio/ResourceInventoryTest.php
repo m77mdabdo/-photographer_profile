@@ -48,7 +48,7 @@ class ResourceInventoryTest extends TestCase
      * one key-value document rather than a table of rows. That is Part C, and
      * the test below holds it to it.
      */
-    private const EXPECTED_RESOURCES = 13;
+    private const EXPECTED_RESOURCES = 14;
 
     protected function setUp(): void
     {
@@ -72,14 +72,14 @@ class ResourceInventoryTest extends TestCase
     // ----------------------------------------------------------------- 0
 
     /**
-     * The thirteen exist, and they are discovered rather than declared.
+     * The fourteen exist, and they are discovered rather than declared.
      *
      * The count has moved twice and the name of this test with it: eleven,
-     * then twelve when Settings became a Page, and thirteen in Task 34 D1
-     * when Navigation arrived. It is a PIN rather than a rule — a resource
+     * then twelve when Settings became a Page, and thirteen in Task 34 D1 when Navigation
+     * arrived, and fourteen in D2 with Testimonials. It is a PIN rather than a rule — a resource
      * appearing or disappearing unnoticed is the thing it catches.
      */
-    public function test_the_panel_has_thirteen_resources(): void
+    public function test_the_panel_has_fourteen_resources(): void
     {
         $resources = $this->resources();
 
@@ -230,8 +230,20 @@ class ResourceInventoryTest extends TestCase
             $covered++;
         }
 
-        // Nine of the eleven: Enquiries and Redirects hold no translatable text.
-        $this->assertSame(9, $covered, 'the number of translatable resources moved');
+        /*
+         * Ten of the fourteen. Four hold no translatable text at all:
+         *
+         *   Enquiries   a message a client sent, in their words
+         *   Redirects   two paths and a status code
+         *   Users       a name and an email address
+         *   Navigation  its labels live on MENU ITEMS, which this loop cannot
+         *               see — the form is one repeater and the fields belong
+         *               to a related model. NavigationTest drives that round
+         *               trip in both locales instead.
+         *
+         * Testimonials joined in Task 34 D2, bringing it from nine to ten.
+         */
+        $this->assertSame(10, $covered, 'the number of translatable resources moved');
     }
 
     /** @return list<string> every leaf field's state path in a resource's form */

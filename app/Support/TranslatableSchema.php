@@ -72,6 +72,13 @@ final class TranslatableSchema
          * Translatable::displayColumn() handles the panel's ordering.
          */
         'menu_items' => ['label'],
+
+        /*
+         * Task 34 D2. The attribution is here with the other two because a
+         * name is transliterated even when it is not translated — an Arabic
+         * page should not carry one Latin name in the middle of a sentence.
+         */
+        'testimonials' => ['quote', 'attribution', 'role'],
     ];
 
     /**

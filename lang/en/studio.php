@@ -281,6 +281,7 @@ return [
         'hint' => 'The few picture tools not moved yet: choosing by thumbnail, the focal-point control, camera data, renditions and the trash.',
     ],
     'nav' => [
+        'testimonials' => 'Testimonials',
         'menus' => 'Navigation',
         // The five groups, named for what the owner is doing.
         'group_work' => 'The work',
@@ -316,6 +317,8 @@ return [
     ],
 
     'model' => [
+        'testimonial' => 'Testimonial',
+        'testimonials' => 'Testimonials',
         'menu' => 'Menu',
         'menus' => 'Navigation',
         'media' => 'Image',
@@ -524,5 +527,14 @@ return [
         'live' => 'Working',
         'refuse_create' => 'There are two menus because the design has two places for one. A third would be a menu nothing draws.',
         'refuse_delete' => 'A menu is a place in the design, so it cannot be deleted. Remove its links instead, or switch them off.',
+    ],
+
+    'testimonials' => [
+        'words' => 'The words',
+        'quote' => 'Quote',
+        'who' => 'Who said it',
+        'portrait' => 'Portrait',
+        'portrait_hint' => 'Optional. Most clients do not send one, and a row of empty circles is worse than none.',
+        'heading' => 'What clients say',
     ],
 ];

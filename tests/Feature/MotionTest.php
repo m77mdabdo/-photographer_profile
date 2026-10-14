@@ -463,7 +463,8 @@ class MotionTest extends TestCase
          * model, no setting and no cache, so if any of these move, something
          * other than motion moved them.
          */
-        $this->assertSame(11, $measure('/'), 'the homepage query count moved');
+        // 11 → 12 in Task 34 D2, for the testimonial strip's one flat select.
+        $this->assertSame(12, $measure('/'), 'the homepage query count moved');
         $this->assertSame(3, $measure('/journal'), 'the journal query count moved');
         $this->assertSame(1, $measure('/services'), 'the services query count moved');
 
