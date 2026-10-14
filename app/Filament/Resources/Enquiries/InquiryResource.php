@@ -21,6 +21,7 @@ use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -169,6 +170,53 @@ class InquiryResource extends Resource
             Section::make(__('studio.enquiries.message'))->schema([
                 TextEntry::make('message')->hiddenLabel()->prose(),
             ]),
+
+            /*
+             * The studio's notes, under the message they are about. Hidden
+             * when there are none: an empty panel headed "Notes" is a
+             * heading over nothing.
+             */
+            Section::make(__('studio.enquiries.notes'))
+                ->visible(fn (Inquiry $record): bool => $record->notes()->exists())
+                ->schema([
+                    RepeatableEntry::make('notes')
+                        ->hiddenLabel()
+                        ->schema([
+                            TextEntry::make('body')->hiddenLabel()->prose(),
+
+                            TextEntry::make('created_at')
+                                ->hiddenLabel()
+                                ->size('xs')
+                                ->color('gray')
+                                /*
+                                 * Who wrote it, or that they have gone. A
+                                 * note outlives the person who typed it.
+                                 */
+                                ->state(function ($record): string {
+                                    /*
+                                     * Untyped, and resolved defensively.
+                                     * A RepeatableEntry hands its children
+                                     * the ROW in some versions and the
+                                     * parent in others — the same trap that
+                                     * made MenuResource's repeater load
+                                     * empty labels in D1. Asking the row for
+                                     * what it is costs nothing and cannot be
+                                     * wrong.
+                                     */
+                                    $note = $record instanceof \App\Models\InquiryNote ? $record : null;
+
+                                    if ($note === null) {
+                                        return '';
+                                    }
+
+                                    return trim(sprintf(
+                                        '%s · %s',
+                                        $note->author?->name ?? __('studio.activity.system'),
+                                        $note->created_at?->diffForHumans() ?? '',
+                                    ), ' ·');
+                                }),
+                        ]),
+                ]),
 
             Section::make(__('studio.enquiries.provenance'))
                 ->columns(2)

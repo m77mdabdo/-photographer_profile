@@ -146,6 +146,10 @@ return [
     ],
 
     'enquiries' => [
+        'notes' => 'Your notes',
+        'add_note' => 'Add a note',
+        'note' => 'Note',
+        'note_added' => 'Note added.',
         'handling' => 'Handling',
         'who' => 'Who wrote',
         'the_work' => 'The work',
