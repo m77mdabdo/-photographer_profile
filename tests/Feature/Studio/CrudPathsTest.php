@@ -391,8 +391,35 @@ class CrudPathsTest extends TestCase
         $actions = $this->tableActions($resource);
 
         if (! isset($pages['edit']) && ! in_array('edit', $actions['row'], true)) {
-            // Enquiries are read-only apart from their handling fields, which
-            // the view page owns; EnquiriesTest drives that.
+            /*
+             * ───────────────────────────────────────────────────────────────
+             * A RESOURCE WITH NOTHING TO EDIT.
+             *
+             *   Enquiries    read-only apart from their handling fields,
+             *                which the view page owns; EnquiriesTest drives
+             *                that.
+             *   Activity     a record of what happened. An audit trail
+             *                somebody can edit is not an audit trail, and
+             *                ActivityLogPolicy refuses update in words.
+             *
+             * Asserted against the POLICY rather than against a list of
+             * names, so a resource that merely loses its edit action still
+             * fails here.
+             * ───────────────────────────────────────────────────────────────
+             */
+            $refusal = \Illuminate\Support\Facades\Gate::forUser(auth()->user())
+                ->inspect('update', $record);
+
+            if ($refusal->denied()) {
+                $this->assertNotEmpty(
+                    $refusal->message(),
+                    class_basename($resource).' refuses editing without saying why'
+                );
+
+                return;
+            }
+
+            // Otherwise it must be the one that is edited on its view page.
             $this->assertSame('InquiryResource', class_basename($resource));
             $this->addToAssertionCount(1);
 

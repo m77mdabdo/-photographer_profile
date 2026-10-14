@@ -151,6 +151,9 @@ class AppServiceProvider extends ServiceProvider
         // Task 34 D2.
         Gate::policy(\App\Models\Testimonial::class, \App\Policies\TestimonialPolicy::class);
 
+        // Task 34 D3. Read-only: every write ability is refused in words.
+        Gate::policy(\App\Models\ActivityLog::class, \App\Policies\ActivityLogPolicy::class);
+
         /*
          * THE THREE THAT WERE MISSING, FOUND IN TASK 31.
          *

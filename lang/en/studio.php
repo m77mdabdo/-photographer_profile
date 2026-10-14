@@ -281,6 +281,7 @@ return [
         'hint' => 'The few picture tools not moved yet: choosing by thumbnail, the focal-point control, camera data, renditions and the trash.',
     ],
     'nav' => [
+        'activity' => 'Activity',
         'testimonials' => 'Testimonials',
         'menus' => 'Navigation',
         // The five groups, named for what the owner is doing.
@@ -317,6 +318,8 @@ return [
     ],
 
     'model' => [
+        'activity' => 'Activity entry',
+        'activities' => 'Activity',
         'testimonial' => 'Testimonial',
         'testimonials' => 'Testimonials',
         'menu' => 'Menu',
@@ -536,5 +539,45 @@ return [
         'portrait' => 'Portrait',
         'portrait_hint' => 'Optional. Most clients do not send one, and a row of empty circles is worse than none.',
         'heading' => 'What clients say',
+    ],
+
+    'activity' => [
+        'when' => 'When',
+        'what' => 'What happened',
+        'subject' => 'What changed',
+        'who' => 'Who',
+        'detail' => 'Detail',
+        'since' => 'Since',
+        'system' => 'The system',
+        'deleted_actor' => ':name (account removed)',
+        'refuse_write' => 'The activity log is a record of what happened. Nothing here can be written or changed by hand.',
+        'refuse_delete' => 'An audit trail somebody can delete is not an audit trail. Entries are removed only by the retention window — see activity:prune.',
+
+        'event' => [
+            'published' => 'Published',
+            'unpublished' => 'Unpublished',
+            'deleted' => 'Moved to trash',
+            'destroyed' => 'Deleted for good',
+            'restored' => 'Restored',
+            'role_changed' => 'Role changed',
+            'user_added' => 'Person added',
+            'setting_changed' => 'Setting changed',
+            'signed_in' => 'Signed in',
+            'signed_out' => 'Signed out',
+            'sign_in_failed' => 'Sign-in refused',
+        ],
+
+        'kind' => [
+            'Project' => 'Project',
+            'Article' => 'Journal entry',
+            'Service' => 'Service',
+            'Page' => 'Page',
+            'Testimonial' => 'Testimonial',
+            'Media' => 'Image',
+            'Menu' => 'Menu',
+            'MenuItem' => 'Navigation link',
+            'User' => 'Person',
+            'Setting' => 'Setting',
+        ],
     ],
 ];

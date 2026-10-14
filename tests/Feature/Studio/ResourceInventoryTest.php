@@ -48,7 +48,7 @@ class ResourceInventoryTest extends TestCase
      * one key-value document rather than a table of rows. That is Part C, and
      * the test below holds it to it.
      */
-    private const EXPECTED_RESOURCES = 14;
+    private const EXPECTED_RESOURCES = 15;
 
     protected function setUp(): void
     {
@@ -72,14 +72,15 @@ class ResourceInventoryTest extends TestCase
     // ----------------------------------------------------------------- 0
 
     /**
-     * The fourteen exist, and they are discovered rather than declared.
+     * The fifteen exist, and they are discovered rather than declared.
      *
      * The count has moved twice and the name of this test with it: eleven,
      * then twelve when Settings became a Page, and thirteen in Task 34 D1 when Navigation
-     * arrived, and fourteen in D2 with Testimonials. It is a PIN rather than a rule — a resource
+     * arrived, fourteen in D2 with Testimonials and
+     * fifteen in D3 with the activity log. It is a PIN rather than a rule — a resource
      * appearing or disappearing unnoticed is the thing it catches.
      */
-    public function test_the_panel_has_fourteen_resources(): void
+    public function test_the_panel_has_fifteen_resources(): void
     {
         $resources = $this->resources();
 
