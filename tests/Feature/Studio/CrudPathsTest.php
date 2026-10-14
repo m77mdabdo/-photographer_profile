@@ -312,17 +312,57 @@ class CrudPathsTest extends TestCase
                 ->assertHasNoFormErrors();
         } else {
             /*
-             * Media and Enquiries have no create path AT ALL, deliberately: a
-             * photograph arrives by upload (MediaUploadTest drives that), and
-             * an enquiry is a message a client sent — a row typed by the
-             * studio would be a fabricated record of something somebody said.
-             * InquiryPolicy::create() refuses it in so many words.
+             * Three resources have no create path AT ALL, deliberately, and
+             * each policy refuses it in so many words:
+             *
+             *   Media       a photograph arrives by upload — MediaUploadTest
+             *               drives that path.
+             *   Enquiries   a message a client sent. A row typed by the
+             *               studio would be a fabricated record of something
+             *               somebody said.
+             *   Navigation  a menu is a place in the DESIGN, and the design
+             *               has two. A third would be a menu nothing draws.
+             *
+             * Asserted against the BEHAVIOUR rather than against that list,
+             * so a resource that loses its create form by accident still
+             * fails here. A missing form is acceptable in exactly two ways:
+             *
+             *   the policy refuses creation, in words — Enquiries, Navigation
+             *   creation happens another way            — Media's uploader
+             *
+             * Media's policy ALLOWS create, because a photograph is certainly
+             * created; it simply arrives through an upload action rather than
+             * a form. Asserting a refusal there would have been asserting the
+             * wrong thing about the right resource.
              */
-            $this->assertContains(
-                class_basename($resource),
-                ['MediaResource', 'InquiryResource'],
-                class_basename($resource).' has no create path and is not one of the two that should not'
+            $refusal = \Illuminate\Support\Facades\Gate::forUser(auth()->user())
+                ->inspect('create', $model);
+
+            /*
+             * Read off the live PAGE, not the resource's table. ListMedia
+             * adds its uploader in getHeaderActions(), so a table built from
+             * MediaResource::table() alone never sees it — and the getter is
+             * protected, so the cached accessor is the public way in.
+             */
+            $pageActions = array_map(
+                fn ($action) => $action->getName(),
+                Livewire::test($pages['index']->getPage())->instance()->getCachedHeaderActions(),
             );
+
+            $otherPath = in_array('upload', $pageActions, true)
+                || in_array('upload', $actions['header'], true);
+
+            $this->assertTrue(
+                $refusal->denied() || $otherPath,
+                class_basename($resource).' has no create path, no upload path, and no policy refusing one'
+            );
+
+            if ($refusal->denied()) {
+                $this->assertNotEmpty(
+                    $refusal->message(),
+                    class_basename($resource).' refuses creation without saying why'
+                );
+            }
 
             $this->addToAssertionCount(1);
 
@@ -361,7 +401,27 @@ class CrudPathsTest extends TestCase
 
         $editable = $this->editableTextField($resource);
 
-        $this->assertNotNull($editable, class_basename($resource).' has no editable text field to change');
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * A RESOURCE WHOSE CONTENT LIVES IN A REPEATER.
+         *
+         * Navigation (Task 34 D1) has no editable field at the form's top
+         * level at all: a menu IS its list of links, so the form is one
+         * repeater and every field belongs to a related row. The walker above
+         * skips a repeater's children deliberately — they are not this
+         * model's columns — which left this test with nothing to type into.
+         *
+         * Driven through the repeater instead rather than exempted, because
+         * "every resource edits through its real form" is the whole point of
+         * this file, and a resource excused from it is a resource nobody is
+         * checking.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        if ($editable === null) {
+            $this->editThroughRepeater($resource, $record);
+
+            return;
+        }
 
         $field = $editable->getName();
         $marker = 'edited'.random_int(1000, 9999);
@@ -393,6 +453,121 @@ class CrudPathsTest extends TestCase
             $actual,
             class_basename($resource).": saving $field reported success and changed nothing"
         );
+    }
+
+    /**
+     * Edit the first row of the first repeater, and prove it saved.
+     *
+     * @param  class-string<Resource>  $resource
+     */
+    private function editThroughRepeater(string $resource, \Illuminate\Database\Eloquent\Model $record): void
+    {
+        $pages = $resource::getPages();
+        $page = $pages['index']->getPage();
+
+        /*
+         * The repeater's name comes from the SCHEMA, not from the loaded
+         * data: a menu with no links yet would show an empty array and look
+         * like no repeater at all.
+         */
+        $repeaterKey = $this->firstRepeaterName($resource);
+
+        $this->assertNotNull(
+            $repeaterKey,
+            class_basename($resource).' has neither an editable field nor a repeater to edit'
+        );
+
+        /*
+         * And it needs a row to edit. Created through the RELATION so this
+         * stays generic — the test does not need to know that a menu's rows
+         * are menu items.
+         */
+        $relation = $record->{$repeaterKey}();
+
+        if ($relation->count() === 0) {
+            $relation->getRelated()::factory()->create([
+                $relation->getForeignKeyName() => $record->getKey(),
+            ]);
+        }
+
+        $data = Livewire::test($page)
+            ->mountAction(TestAction::make('edit')->table($record))
+            ->get('mountedActions.0.data');
+
+        $rows = $data[$repeaterKey] ?? [];
+
+        $this->assertNotEmpty($rows, class_basename($resource).': the repeater loaded no rows');
+        $rowKey = array_key_first($rows);
+        $marker = 'edited'.random_int(1000, 9999);
+
+        /*
+         * The label is translatable, so the path carries the locale — the
+         * same shape the browser posts. Writing the default locale only, and
+         * then asserting the other survived, is the guarantee that matters
+         * for any translatable field in this application.
+         */
+        $other = collect(\App\Support\Locale::codes())
+            ->first(fn (string $code): bool => $code !== \App\Support\Locale::DEFAULT);
+
+        $before = $rows[$rowKey]['label'][$other] ?? null;
+
+        Livewire::test($page)
+            ->mountAction(TestAction::make('edit')->table($record))
+            ->set("mountedActions.0.data.{$repeaterKey}.{$rowKey}.label.".\App\Support\Locale::DEFAULT, $marker)
+            ->call('callMountedAction')
+            ->assertHasNoFormErrors();
+
+        $item = \App\Models\MenuItem::query()->find($rows[$rowKey]['id'] ?? null);
+
+        $this->assertNotNull($item, class_basename($resource).': the repeater row vanished on save');
+
+        $this->assertSame(
+            $marker,
+            $item->getTranslation('label', \App\Support\Locale::DEFAULT, fallback: false),
+            class_basename($resource).': editing a repeater row reported success and changed nothing'
+        );
+
+        $this->assertSame(
+            $before,
+            $item->getTranslation('label', $other, fallback: false),
+            class_basename($resource).": editing one locale destroyed $other"
+        );
+    }
+
+    /**
+     * The name of the first repeater in a resource's form, if it has one.
+     *
+     * @param  class-string<Resource>  $resource
+     */
+    private function firstRepeaterName(string $resource): ?string
+    {
+        $page = $resource::getPages()['index']->getPage();
+
+        $schema = $resource::form(
+            \Filament\Schemas\Schema::make(Livewire::test($page)->instance())
+        );
+
+        $found = null;
+
+        $walk = function (array $components) use (&$walk, &$found): void {
+            foreach ($components as $component) {
+                if ($found !== null) {
+                    return;
+                }
+
+                if ($component instanceof \Filament\Forms\Components\Repeater) {
+                    $found = $component->getName();
+
+                    return;
+                }
+
+                $walk($component->getDefaultChildComponents());
+            }
+        };
+
+        $walk($schema->getComponents());
+
+        return $found;
     }
 
     /** The first field we can safely overwrite. */
@@ -433,11 +608,35 @@ class CrudPathsTest extends TestCase
 
         $actions = $this->tableActions($resource);
 
-        $this->assertContains(
-            'delete',
-            $actions['row'],
-            class_basename($resource).' offers no way to delete a row'
-        );
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * A RESOURCE WITH NOTHING TO DELETE.
+         *
+         * Navigation's two menus are places in the DESIGN — the header strip
+         * and the footer column — and MenuPolicy refuses delete in words. A
+         * delete button whose only behaviour is to refuse is worse than no
+         * button: it is a control that teaches somebody it does not work.
+         *
+         * The refusal is asserted rather than the omission, so a resource
+         * that merely FORGETS its delete action still fails here.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        if (! in_array('delete', $actions['row'], true)) {
+            $refusal = \Illuminate\Support\Facades\Gate::forUser(auth()->user())
+                ->inspect('delete', $record);
+
+            $this->assertTrue(
+                $refusal->denied(),
+                class_basename($resource).' offers no delete action and no policy refusing one'
+            );
+
+            $this->assertNotEmpty(
+                $refusal->message(),
+                class_basename($resource).' refuses deletion without saying why'
+            );
+
+            return;
+        }
 
         Livewire::test($resource::getPages()['index']->getPage())
             ->callAction(TestAction::make('delete')->table($record));

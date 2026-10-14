@@ -126,41 +126,33 @@
 
         <nav class="site-nav" aria-label="{{ \App\Support\SiteCopy::get('footer.nav_label') }}">
             {{--
-                Labels from the settings table, destinations still placeholder:
-                the real routes land in a later task. The key is the address the
-                template asks for; the word a visitor reads is the client's.
+                ═══════════════════════════════════════════════════════════════
+                THE NAVIGATION IS DATA (Task 34 D1).
+                
+                This was six entries hardcoded here, with only their LABELS
+                coming from settings — so the studio could rename "Work" and
+                could not reorder it, remove it, or add the page they had just
+                written. Adding one meant a developer and a deploy.
+                
+                App\Support\Navigation resolves each item to an address and
+                drops any that no longer has one, so this template never has
+                to ask whether a link is real. Cached per locale and dropped
+                by the models' own save hooks.
+                ═══════════════════════════════════════════════════════════════
             --}}
-            @php
-                /*
-                 * Every item now has a destination. The routeless branch below
-                 * is kept because the next section to be built will need it
-                 * again, and because a nav item without a route must stay
-                 * unfocusable and unannounced rather than become a link to
-                 * nowhere — the journal spent six tasks as one of these.
-                 */
-                $navRoutes = [
-                    'work' => route('work.index'),
-                    'services' => route('services.index'),
-                    'archive' => route('archive.index'),
-                    'journal' => route('journal.index'),
-                    'about' => route('about'),
-                    'contact' => route('contact.show'),
-                ];
-            @endphp
-            <ul role="list" class="site-nav__list">
-                @foreach ($navRoutes as $item => $href)
-                    @if ($label = \App\Support\Settings::get('nav.'.$item))
+            @php($navItems = \App\Support\Navigation::for(\App\Models\Menu::HEADER))
+
+            @if ($navItems !== [])
+                <ul role="list" class="site-nav__list">
+                    @foreach ($navItems as $item)
                         <li>
-                            @if ($href)
-                                <a href="{{ $href }}"
-                                   @if (request()->url() === $href || str_starts_with(request()->url(), $href.'/')) aria-current="page" @endif>{{ $label }}</a>
-                            @else
-                                <span aria-disabled="true">{{ $label }}</span>
-                            @endif
+                            <a href="{{ $item['url'] }}"
+                               @if ($item['external']) target="_blank" rel="noopener" @endif
+                               @if (! $item['external'] && (request()->url() === $item['url'] || str_starts_with(request()->url(), $item['url'].'/'))) aria-current="page" @endif>{{ $item['label'] }}</a>
                         </li>
-                    @endif
-                @endforeach
-            </ul>
+                    @endforeach
+                </ul>
+            @endif
         </nav>
 
         {{--

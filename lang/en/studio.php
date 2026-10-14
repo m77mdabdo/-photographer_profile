@@ -281,6 +281,7 @@ return [
         'hint' => 'The few picture tools not moved yet: choosing by thumbnail, the focal-point control, camera data, renditions and the trash.',
     ],
     'nav' => [
+        'menus' => 'Navigation',
         // The five groups, named for what the owner is doing.
         'group_work' => 'The work',
         'group_writing' => 'Writing',
@@ -315,6 +316,8 @@ return [
     ],
 
     'model' => [
+        'menu' => 'Menu',
+        'menus' => 'Navigation',
         'media' => 'Image',
         'media_plural' => 'Media',
     ],
@@ -501,5 +504,25 @@ return [
         'lede' => 'The hero interlocks the studio name with :name. Here is how it will behave. None of this stops you publishing.',
         'good' => 'Good:',
         'worth_knowing' => 'Worth knowing:',
+    ],
+
+    'menus' => [
+        'items' => 'Links',
+        'add' => 'Add a link',
+        'label' => 'Label',
+        'type' => 'Kind',
+        'type_route' => 'A section of this site',
+        'type_page' => 'A page you have written',
+        'type_external' => 'Somewhere else',
+        'destination' => 'Goes to',
+        'url' => 'Address',
+        'url_hint' => 'The full address, beginning with https://',
+        'shown' => 'Shown',
+        'place' => 'Where',
+        'place_header' => 'The strip at the top',
+        'place_footer' => 'The foot of the page',
+        'live' => 'Working',
+        'refuse_create' => 'There are two menus because the design has two places for one. A third would be a menu nothing draws.',
+        'refuse_delete' => 'A menu is a place in the design, so it cannot be deleted. Remove its links instead, or switch them off.',
     ],
 ];

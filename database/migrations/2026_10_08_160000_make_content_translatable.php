@@ -75,6 +75,10 @@ return new class extends Migration
          * guarantee from data that was relying on it.
          */
         foreach (TranslatableSchema::slugs() as $table => $column) {
+            if (! Schema::hasTable($table)) {
+                continue;
+            }
+
             $duplicates = DB::table($table)
                 ->select($column)
                 ->whereNotNull($column)
@@ -98,6 +102,10 @@ return new class extends Migration
          * is not enforcing slug uniqueness.
          */
         foreach (TranslatableSchema::slugs() as $table => $column) {
+            if (! Schema::hasTable($table)) {
+                continue;
+            }
+
             $index = $this->existingUniqueIndex($table, $column);
 
             if ($index !== null) {
@@ -111,7 +119,18 @@ return new class extends Migration
          * asks Doctrine to rebuild indexes and it is not worth the argument.
          * MODIFY preserves the data.
          */
+        /*
+         * A table that does not exist yet is skipped rather than fatal. This
+         * migration is driven by TranslatableSchema, which is a LIVING list:
+         * Task 34 D1 added menu_items to it, and menu_items is created by a
+         * migration that runs after this one. On a fresh database this loop
+         * would otherwise fail on a table from the future.
+         */
         foreach (TranslatableSchema::all() as $table => $columns) {
+            if (! Schema::hasTable($table)) {
+                continue;
+            }
+
             foreach ($columns as $column) {
                 DB::statement("ALTER TABLE `$table` MODIFY `$column` LONGTEXT NULL");
             }
@@ -129,6 +148,10 @@ return new class extends Migration
          * rather than merely the presence of a document.
          */
         foreach (TranslatableSchema::all() as $table => $columns) {
+            if (! Schema::hasTable($table)) {
+                continue;
+            }
+
             foreach ($columns as $column) {
                 DB::statement("ALTER TABLE `$table` MODIFY `$column` JSON NULL");
             }
@@ -138,7 +161,7 @@ return new class extends Migration
         foreach (TranslatableSchema::generatedColumns() as $generated) {
             ['table' => $table, 'source' => $source, 'locale' => $locale, 'name' => $name, 'slug' => $isSlug] = $generated;
 
-            if (Schema::hasColumn($table, $name)) {
+            if (! Schema::hasTable($table) || Schema::hasColumn($table, $name)) {
                 continue;
             }
 
@@ -243,6 +266,10 @@ return new class extends Migration
         }
 
         foreach (TranslatableSchema::all() as $table => $columns) {
+            if (! Schema::hasTable($table)) {
+                continue;
+            }
+
             foreach ($columns as $column) {
                 DB::statement("ALTER TABLE `$table` MODIFY `$column` LONGTEXT NULL");
 
@@ -263,6 +290,10 @@ return new class extends Migration
         }
 
         foreach (TranslatableSchema::slugs() as $table => $column) {
+            if (! Schema::hasTable($table)) {
+                continue;
+            }
+
             DB::statement("ALTER TABLE `$table` MODIFY `$column` VARCHAR(255) NOT NULL");
             DB::statement("ALTER TABLE `$table` ADD UNIQUE INDEX `{$table}_{$column}_unique` (`$column`)");
         }

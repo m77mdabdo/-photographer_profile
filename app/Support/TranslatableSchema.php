@@ -62,6 +62,16 @@ final class TranslatableSchema
         'media' => ['alt', 'caption'],
         'clients' => ['name'],
         'settings' => ['value'],
+
+        /*
+         * Task 34 D1. The word a visitor reads in the navigation, per locale.
+         *
+         * No entry in INDEXED below, deliberately: a menu is a handful of
+         * rows read whole on every page and already cached, so an index on it
+         * would be maintained for a sort that never happens. The JSON path in
+         * Translatable::displayColumn() handles the panel's ordering.
+         */
+        'menu_items' => ['label'],
     ];
 
     /**

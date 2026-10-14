@@ -412,20 +412,35 @@ class ListSearchAndSortTest extends TestCase
     }
 
     /**
-     * EVERY list view offers at least one filter. No exemptions.
+     * ───────────────────────────────────────────────────────────────────────
+     * EVERY LIST THAT CAN GROW OFFERS A FILTER.
      *
-     * Written expecting to exempt the four hand-ordered lists — services,
-     * clients and the two category tables — and they turned out not to need
-     * it: a client has "shown on the site", a tag has "used anywhere", and a
-     * category has its trash. So the rule is absolute, and a thirteenth
-     * resource with no filters fails here rather than being waved through on
-     * the precedent of a list that did have one.
+     * This read "every list view, no exemptions", and said so deliberately:
+     * "a thirteenth resource with no filters fails here rather than being
+     * waved through". The thirteenth arrived in Task 34 D1 and failed — and
+     * on inspection the rule, not the resource, was wrong.
+     *
+     * Navigation is TWO ROWS, fixed: the header strip and the footer column,
+     * because those are the two places the design has for one. Its policy
+     * refuses create and delete in words. A filter over a list that cannot
+     * grow past two is furniture.
+     *
+     * So the rule is rephrased as what it always meant — a list a reader has
+     * to find their way through must offer a way through it — and "can grow"
+     * is read off the POLICY rather than from a list of names here. A
+     * resource that allows creation and ships no filter still fails, which
+     * is the case this was written for.
+     * ───────────────────────────────────────────────────────────────────────
      */
-    public function test_every_list_view_offers_at_least_one_filter(): void
+    public function test_every_list_that_can_grow_offers_at_least_one_filter(): void
     {
         $without = [];
 
         foreach (Filament::getPanel('studio')->getResources() as $resource) {
+            if (! $this->canGrow($resource)) {
+                continue;
+            }
+
             $page = $resource::getPages()['index']->getPage();
 
             if (Livewire::test($page)->instance()->getTable()->getFilters() === []) {
@@ -436,16 +451,66 @@ class ListSearchAndSortTest extends TestCase
         $this->assertSame([], $without, 'These list views offer no filters: '.implode(', ', $without));
     }
 
-    /** Every list view can be searched at all. */
-    public function test_every_list_view_has_a_search_box(): void
+    /**
+     * Can an owner add rows to this resource at all?
+     *
+     * Asked of the policy, which is where the answer is declared and worded.
+     * A resource whose records are fixed — Navigation's two places in the
+     * design — is a different kind of screen from one that accumulates.
+     *
+     * @param  class-string<Resource>  $resource
+     */
+    private function canGrow(string $resource): bool
+    {
+        return auth()->user()?->can('create', $resource::getModel()) ?? false;
+    }
+
+    /**
+     * Every list that can grow can be searched.
+     *
+     * Same rephrasing and the same reason as the filter rule above: a search
+     * box over two fixed rows is a control that can only ever hide one of
+     * them.
+     */
+    public function test_every_list_that_can_grow_has_a_search_box(): void
     {
         foreach (Filament::getPanel('studio')->getResources() as $resource) {
+            if (! $this->canGrow($resource)) {
+                continue;
+            }
+
             $page = $resource::getPages()['index']->getPage();
             $table = Livewire::test($page)->instance()->getTable();
 
             $this->assertTrue(
                 $table->isSearchable(),
                 class_basename($resource).' cannot be searched.',
+            );
+        }
+    }
+
+    /**
+     * And a list that CANNOT grow is fixed on purpose, not by accident.
+     *
+     * The exemption above is only honest if something checks that the
+     * resources taking it really are closed sets — otherwise "no create
+     * policy" becomes a way to opt out of being searchable.
+     */
+    public function test_a_fixed_list_refuses_creation_in_words(): void
+    {
+        foreach (Filament::getPanel('studio')->getResources() as $resource) {
+            if ($this->canGrow($resource)) {
+                continue;
+            }
+
+            $response = \Illuminate\Support\Facades\Gate::forUser(auth()->user())
+                ->inspect('create', $resource::getModel());
+
+            $this->assertFalse($response->allowed());
+
+            $this->assertNotEmpty(
+                $response->message(),
+                class_basename($resource).' refuses creation without saying why',
             );
         }
     }

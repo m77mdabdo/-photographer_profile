@@ -998,7 +998,7 @@ class HomepageTest extends TestCase
         $this->get('/')->assertOk();
 
         /*
-         * Fourteen on a cold cache, eleven on a warm one.
+         * Fifteen on a cold cache, eleven on a warm one.
          *
          * THE THREE THAT DISAPPEAR are the site-wide maps, each read once per
          * process and then cached forever:
@@ -1019,11 +1019,25 @@ class HomepageTest extends TestCase
          * RAISED IN TASK 24 for the journal strip, and again in TASK 25 for
          * the services strip: neither articles nor services can ride along on
          * a query about projects, and each is one flat select.
+         *
+         * RAISED AGAIN IN TASK 34 D1, by one, for the NAVIGATION.
+         *
+         * The header's links used to be six entries hardcoded in the layout,
+         * which is why they cost nothing: nobody could change them without a
+         * deploy. They are rows now, so the owner can reorder them, switch
+         * one off, or add a link to a page they have just written — and that
+         * costs one `select * from menus where location = ?` on a cold cache.
+         *
+         * ONE, not one per link: App\Support\Navigation resolves the whole
+         * menu and caches it per locale, exactly like the legal links above,
+         * and the warm count is unchanged at eleven. The fixture here has an
+         * empty menu, so the items query does not appear; NavigationTest
+         * measures the populated case and holds it flat as links are added.
          */
         $settingsQueries = array_filter($queries, static fn (string $sql): bool => str_contains($sql, '`settings`'));
 
         $this->assertCount(1, $settingsQueries, 'the settings map must be one query, not one per key');
-        $this->assertCount(14, $queries, 'cold: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
+        $this->assertCount(15, $queries, 'cold: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
 
         // Warm, which is every request after the first.
         $queries = [];

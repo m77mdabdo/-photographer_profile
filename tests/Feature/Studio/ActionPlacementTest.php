@@ -69,6 +69,24 @@ class ActionPlacementTest extends TestCase
     }
 
     /**
+     * Can a freshly created record of this kind be deleted at all?
+     *
+     * @param  class-string<\Illuminate\Database\Eloquent\Model>  $model
+     */
+    private function canDeleteARecord(string $model): bool
+    {
+        $record = $model::factory()->create();
+
+        $allowed = auth()->user()?->can('delete', $record) ?? false;
+
+        // Force, so a soft-deleting model does not leave a row behind for the
+        // next resource in the loop to trip over.
+        $record->forceDelete();
+
+        return $allowed;
+    }
+
+    /**
      * Destructive last, always, on every resource.
      *
      * Stated as "no destructive action comes before a non-destructive one"
@@ -124,9 +142,33 @@ class ActionPlacementTest extends TestCase
                 }
             }
 
-            $expected = in_array(SoftDeletes::class, class_uses_recursive($model), true)
-                ? ['delete', 'restore', 'force']
-                : ['delete'];
+            /*
+             * A resource that cannot delete anything offers none of these,
+             * and that is the right row rather than a gap in it. Navigation's
+             * two menus are places in the design: there is nothing to
+             * delete, and a button whose only behaviour is to refuse is
+             * worse than no button at all.
+             *
+             * Asked of the policy with a REAL RECORD, which took three
+             * attempts to get right:
+             *
+             *   deleteAny  is the BULK ability, and Media and the category
+             *              tables refuse it for their own reasons while
+             *              deleting one row happily.
+             *   create     is refused by Enquiries, which arrive from the
+             *              contact form and are certainly deletable.
+             *
+             * "Can a freshly made row of this kind be deleted" is the
+             * question the row of buttons is answering, so it is the one to
+             * ask. Fresh, because Media refuses while an image is in use and
+             * a locked Page refuses always — both correct, neither about
+             * whether the RESOURCE offers the action.
+             */
+            $expected = match (true) {
+                ! $this->canDeleteARecord($model) => [],
+                in_array(SoftDeletes::class, class_uses_recursive($model), true) => ['delete', 'restore', 'force'],
+                default => ['delete'],
+            };
 
             $this->assertSame($expected, $order, "$name has its destructive actions in the wrong order");
         }
@@ -143,7 +185,8 @@ class ActionPlacementTest extends TestCase
     public function test_only_soft_deleting_resources_offer_restore(): void
     {
         foreach ($this->tables() as $name => [$table, $model]) {
-            $softDeletes = in_array(SoftDeletes::class, class_uses_recursive($model), true);
+            $softDeletes = in_array(SoftDeletes::class, class_uses_recursive($model), true)
+                && $this->canDeleteARecord($model);
 
             $offersRestore = collect($table->getRecordActions())
                 ->contains(fn ($action): bool => $action instanceof RestoreAction);

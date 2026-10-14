@@ -144,6 +144,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Page::class, PagePolicy::class);
         Gate::policy(Redirect::class, RedirectPolicy::class);
 
+        // Task 34 D1. A menu is edited and never created or destroyed; the
+        // policy says so in words rather than by omitting the methods.
+        Gate::policy(\App\Models\Menu::class, \App\Policies\MenuPolicy::class);
+
         /*
          * THE THREE THAT WERE MISSING, FOUND IN TASK 31.
          *
