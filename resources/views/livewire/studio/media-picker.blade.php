@@ -6,15 +6,15 @@
                     <h2 id="picker-heading" class="picker__heading">
                         {{ $multiple ? 'Choose images' : 'Choose an image' }}
                     </h2>
-                    <button type="button" class="admin-link" wire:click="closePicker">Close</button>
+                    <button type="button" class="admin-link" wire:click="closePicker">{{ __('studio.story.picker_close') }}</button>
                 </header>
 
                 <div class="picker__controls">
                     <div class="field">
-                        <label for="picker-search">Search</label>
+                        <label for="picker-search">{{ __('studio.story.picker_search') }}</label>
                         <input type="search" id="picker-search"
                                wire:model.live.debounce.400ms="search"
-                               placeholder="Filename, alt text or credit" autofocus>
+                               placeholder="{{ __('studio.story.picker_search_hint') }}" autofocus>
                     </div>
 
                     @if ($projectId !== null)
@@ -37,7 +37,7 @@
                         @if ($max !== null) of {{ $max }} available @endif
 
                         @if ($selected !== [])
-                            <button type="button" class="admin-link" wire:click="clearSelection">Clear</button>
+                            <button type="button" class="admin-link" wire:click="clearSelection">{{ __('studio.story.picker_clear') }}</button>
                         @endif
                     </p>
 
@@ -46,14 +46,14 @@
                     @endif
 
                     <p class="admin-note">
-                        Space toggles an image. Shift+click, or Shift+Enter, extends the selection
+                        {{ __('studio.story.picker_keys') }}
                         from the last one you touched.
                     </p>
                 @endif
 
                 @if ($media->isEmpty())
                     <p class="admin-note">
-                        No processed images match. Only images that finished processing can be used.
+                        {{ __('studio.story.picker_empty') }}
                     </p>
                 @else
                     <ul class="picker__grid" role="list">

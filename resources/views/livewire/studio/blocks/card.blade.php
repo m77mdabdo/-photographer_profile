@@ -28,17 +28,17 @@
         <span class="block-card__flag" data-flag hidden aria-hidden="true">!</span>
 
         <span class="block-card__actions">
-            <button type="button" class="admin-link" data-move="-1" aria-label="Move block up">↑</button>
-            <button type="button" class="admin-link" data-move="1" aria-label="Move block down">↓</button>
-            <button type="button" class="admin-link" data-duplicate>Duplicate</button>
-            <button type="button" class="admin-link" data-remove>Remove</button>
+            <button type="button" class="admin-link" data-move="-1" aria-label="{{ __('studio.story.move_up') }}">↑</button>
+            <button type="button" class="admin-link" data-move="1" aria-label="{{ __('studio.story.move_down') }}">↓</button>
+            <button type="button" class="admin-link" data-duplicate>{{ __('studio.story.duplicate') }}</button>
+            <button type="button" class="admin-link" data-remove>{{ __('studio.story.remove') }}</button>
         </span>
     </header>
 
     <div class="block-card__confirm" data-confirm hidden>
         <p class="admin-note">Remove this {{ $type->label() }} block? Its images stay in the library.</p>
-        <button type="button" class="admin-button admin-button--danger" data-remove-confirm>Yes, remove it</button>
-        <button type="button" class="admin-link" data-remove-cancel>Cancel</button>
+        <button type="button" class="admin-button admin-button--danger" data-remove-confirm>{{ __('studio.story.confirm_remove') }}</button>
+        <button type="button" class="admin-link" data-remove-cancel>{{ __('studio.story.cancel') }}</button>
     </div>
 
     <ul class="block-card__errors" data-errors role="alert" hidden></ul>
@@ -70,22 +70,22 @@
                             @endif
 
                             <label class="block-media__alt">
-                                <span class="sr-only">Alt text for this image</span>
+                                <span class="sr-only">{{ __('studio.story.alt_for_image') }}</span>
                                 <input type="text" data-description
                                        value="{{ $descriptions[$slot] ?? '' }}"
                                        placeholder="{{ $item?->alt ? 'Using: '.$item->alt : 'Describe this image' }}">
                             </label>
 
                             <span class="block-media__controls">
-                                <button type="button" class="admin-link" data-media-move="-1" aria-label="Move image earlier">←</button>
-                                <button type="button" class="admin-link" data-media-move="1" aria-label="Move image later">→</button>
-                                <button type="button" class="admin-link" data-media-remove aria-label="Remove image">×</button>
+                                <button type="button" class="admin-link" data-media-move="-1" aria-label="{{ __('studio.story.move_image_earlier') }}">←</button>
+                                <button type="button" class="admin-link" data-media-move="1" aria-label="{{ __('studio.story.move_image_later') }}">→</button>
+                                <button type="button" class="admin-link" data-media-remove aria-label="{{ __('studio.story.remove_image') }}">×</button>
                             </span>
                         </li>
                     @endforeach
                 </ul>
 
-                <button type="button" class="admin-button admin-button--quiet" data-add-media>Add images</button>
+                <button type="button" class="admin-button admin-button--quiet" data-add-media>{{ __('studio.story.add_images') }}</button>
             </div>
         @endif
 

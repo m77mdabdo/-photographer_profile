@@ -16,11 +16,19 @@ enum UserRole: string
     case Owner = 'owner';
     case Editor = 'editor';
 
+    /**
+     * The word an editor reads, in their own language.
+     *
+     * Task 34 F1: these were English string literals, so an Arabic panel
+     * showed "Draft" and "Published" in every status badge and every filter.
+     * Found by PanelArabicRenderTest, which renders every panel screen in
+     * Arabic and fails on any Latin word.
+     */
     public function label(): string
     {
         return match ($this) {
-            self::Owner => 'Owner',
-            self::Editor => 'Editor',
+            self::Owner => __('studio.role.owner'),
+            self::Editor => __('studio.role.editor'),
         };
     }
 

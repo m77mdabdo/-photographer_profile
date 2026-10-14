@@ -193,8 +193,16 @@ class MenuResource extends Resource
             ->modifyQueryUsing(fn ($query) => $query->with(['items.page']))
             ->columns([
                 TextColumn::make('location')
-                    ->label(__('studio.menus.place'))
-                    ->formatStateUsing(fn (string $state): string => __('studio.menus.place_'.$state))
+                    ->label(__('studio.menus.where'))
+                    /*
+                     * A GROUP, not a prefix glued onto a key segment.
+                     * 'studio.menus.place_'.$state produced a key that no
+                     * locale file declares and no scan can check — the
+                     * dynamic-key rule in PanelArabicRenderTest can verify
+                     * 'studio.menus.place.' resolves to a group and cannot
+                     * verify half a word.
+                     */
+                    ->formatStateUsing(fn (string $state): string => __('studio.menus.place.'.$state))
                     ->weight('semibold'),
 
                 TextColumn::make('items_count')

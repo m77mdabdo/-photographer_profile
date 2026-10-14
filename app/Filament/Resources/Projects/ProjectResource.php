@@ -61,6 +61,26 @@ class ProjectResource extends Resource
         return __('studio.nav.projects');
     }
 
+
+    /**
+     * The noun Filament puts in its own sentences.
+     *
+     * Task 34 F1. Without these, Filament derives "Article", "articles" and
+     * "Create article" from the CLASS NAME — in English, whatever language
+     * the panel is in. Found by PanelArabicRenderTest: fourteen screens were
+     * showing English nouns in an Arabic panel, in breadcrumbs, empty states
+     * and every modal heading.
+     */
+    public static function getModelLabel(): string
+    {
+        return __('studio.model.project');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('studio.model.project_plural');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
@@ -140,6 +160,16 @@ class ProjectResource extends Resource
                 ->description(__('studio.section.credits_hint'))
                 ->schema([
                     Repeater::make('credits')
+                        /*
+                         * Labelled AND hidden. hiddenLabel() hides the
+                         * label visually and keeps it as the accessible
+                         * name, which is right — and without an explicit
+                         * one Filament derives "Credits" from the
+                         * relationship, in English, whatever language the
+                         * panel is in. A screen-reader user working in
+                         * Arabic heard the only English word on the form.
+                         */
+                        ->label(__('studio.section.credits'))
                         ->hiddenLabel()
                         ->relationship('credits')
                         ->orderColumn('sort_order')
@@ -156,8 +186,8 @@ class ProjectResource extends Resource
                 ->columns(2)
                 ->schema([
                     ...ResourceDefaults::publishing(),
-                    TextInput::make('year')->label('Year')->numeric(),
-                    Toggle::make('is_featured')->label('Featured')->live(),
+                    TextInput::make('year')->label(__('studio.field.year'))->numeric(),
+                    Toggle::make('is_featured')->label(__('studio.filter.featured'))->live(),
                 ]),
         ]);
     }

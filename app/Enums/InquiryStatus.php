@@ -21,16 +21,24 @@ enum InquiryStatus: string
     case Closed = 'closed';
     case Spam = 'spam';
 
+    /**
+     * The word an editor reads, in their own language.
+     *
+     * Task 34 F1: these were English string literals, so an Arabic panel
+     * showed "Draft" and "Published" in every status badge and every filter.
+     * Found by PanelArabicRenderTest, which renders every panel screen in
+     * Arabic and fails on any Latin word.
+     */
     public function label(): string
     {
         return match ($this) {
-            self::New => 'New',
-            self::Read => 'Read',
-            self::Contacted => 'Contacted',
-            self::Qualified => 'Qualified',
-            self::Booked => 'Booked',
-            self::Closed => 'Closed',
-            self::Spam => 'Spam',
+            self::New => __('studio.inquiry_status.new'),
+            self::Read => __('studio.inquiry_status.read'),
+            self::Contacted => __('studio.inquiry_status.contacted'),
+            self::Qualified => __('studio.inquiry_status.qualified'),
+            self::Booked => __('studio.inquiry_status.booked'),
+            self::Closed => __('studio.inquiry_status.closed'),
+            self::Spam => __('studio.inquiry_status.spam'),
         };
     }
 
@@ -41,13 +49,13 @@ enum InquiryStatus: string
     public function description(): string
     {
         return match ($this) {
-            self::New => 'Arrived, not yet read.',
-            self::Read => 'Read, no reply sent yet.',
-            self::Contacted => 'Replied to, waiting on them.',
-            self::Qualified => 'Real work, dates and budget discussed.',
-            self::Booked => 'In the diary.',
-            self::Closed => 'Finished, declined or gone quiet.',
-            self::Spam => 'Not a real enquiry.',
+            self::New => __('studio.inquiry_status.new_note'),
+            self::Read => __('studio.inquiry_status.read_note'),
+            self::Contacted => __('studio.inquiry_status.contacted_note'),
+            self::Qualified => __('studio.inquiry_status.qualified_note'),
+            self::Booked => __('studio.inquiry_status.booked_note'),
+            self::Closed => __('studio.inquiry_status.closed_note'),
+            self::Spam => __('studio.inquiry_status.spam_note'),
         };
     }
 

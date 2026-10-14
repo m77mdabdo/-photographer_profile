@@ -7,8 +7,8 @@
         the others — see StoryBuilder::$editingLocale for why that is the
         honest answer rather than per-locale fields inside every block.
     --}}
-    <div class="story-locale" role="group" aria-label="Editing language">
-        <span class="story-locale__label">Editing</span>
+    <div class="story-locale" role="group" aria-label="{{ __('studio.story.editing_language') }}">
+        <span class="story-locale__label">{{ __('studio.story.editing') }}</span>
 
         @foreach ($this->locales() as $code)
             <button type="button"
@@ -21,16 +21,24 @@
         @endforeach
 
         <p class="story-locale__note">
-            Fields show this language only. Saving leaves the other languages untouched.
+            {{ __('studio.story.locale_note') }}
         </p>
     </div>
 
 
     <header class="module-header">
-        <h1 class="admin-heading">Story</h1>
-        <p class="admin-note"><span data-block-count>{{ count($blocks) }}</span> blocks</p>
+        <h1 class="admin-heading">{{ __('studio.story.story') }}</h1>
+        {{--
+            The word follows the number in English and precedes it in Arabic,
+            so it cannot be a count with a noun glued after it. trans_choice
+            gives each language its own sentence — and Arabic's plural rules
+            are not English's, which is the whole reason this is not
+            "{{ $n }} blocks".
+        --}}
+        <p class="admin-note"><span data-block-count>{{ count($blocks) }}</span>
+            {{ trans_choice('studio.story.block_count', count($blocks)) }}</p>
 
-        <span class="badge" data-dirty-badge role="status" aria-live="polite" hidden>Unsaved changes</span>
+        <span class="badge" data-dirty-badge role="status" aria-live="polite" hidden>{{ __('studio.story.unsaved') }}</span>
 
         {{--
             Preview, through the panel's own route. This was a ternary on
@@ -44,15 +52,15 @@
         {{-- Visible undo: a keyboard-only affordance is not discoverable. --}}
         <span class="undo-group">
             <button type="button" class="admin-link" data-undo disabled
-                    title="Undo (Ctrl/Cmd+Z)">Undo</button>
+                    title="{{ __('studio.story.undo_hint') }}">{{ __('studio.story.undo') }}</button>
             <button type="button" class="admin-link" data-redo disabled
-                    title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>
+                    title="{{ __('studio.story.redo_hint') }}">{{ __('studio.story.redo') }}</button>
         </span>
 
         <button type="button" class="admin-button" data-save
                 wire:loading.attr="disabled" wire:target="saveStory">
-            <span wire:loading.remove wire:target="saveStory">Save story</span>
-            <span wire:loading wire:target="saveStory">Saving…</span>
+            <span wire:loading.remove wire:target="saveStory">{{ __('studio.story.save') }}</span>
+            <span wire:loading wire:target="saveStory">{{ __('studio.story.saving') }}</span>
         </button>
     </header>
 
@@ -68,8 +76,8 @@
             An unsaved draft of this story from this session was found
             (<span data-draft-count>0</span> blocks). It has not been saved to the server.
         </p>
-        <button type="button" class="admin-button" data-draft-restore>Restore the draft</button>
-        <button type="button" class="admin-link" data-draft-discard>Discard it</button>
+        <button type="button" class="admin-button" data-draft-restore>{{ __('studio.story.restore_draft') }}</button>
+        <button type="button" class="admin-link" data-draft-discard>{{ __('studio.story.discard_draft') }}</button>
     </div>
 
     {{-- Another tab holds an unsaved draft of this same story. --}}
@@ -81,7 +89,7 @@
     {{-- The save was refused because the story moved underneath us. --}}
     @if ($stale)
         <div class="warning-strip warning-strip--stale" role="alert">
-            <span>This story changed elsewhere after you opened it. Nothing has been overwritten.</span>
+            <span>{{ __('studio.story.stale') }}</span>
             <button type="button" class="admin-button" wire:click="reloadStory">
                 Discard my changes and reload
             </button>
@@ -90,7 +98,7 @@
 
     {{-- A dropped connection, distinct from a story that needs fixing. --}}
     <p class="warning-strip warning-strip--network" data-network-error hidden role="alert">
-        Could not reach the server. <strong>Your work is safe — nothing was lost.</strong> Try again.
+        {{ __('studio.story.offline') }} <strong>{{ __('studio.story.offline_safe') }}</strong> {{ __('studio.story.offline_retry') }}
     </p>
 
     {{-- What is wrong, before Save is pressed. Clicking jumps to the first. --}}
@@ -109,18 +117,18 @@
     <div class="builder">
         {{-- D2: a compact outline, rebuilt locally on every structural change. --}}
         <nav class="outline" aria-labelledby="outline-heading">
-            <h2 id="outline-heading" class="outline__heading">Outline</h2>
+            <h2 id="outline-heading" class="outline__heading">{{ __('studio.story.outline') }}</h2>
             <ol class="outline__list" data-outline></ol>
 
             <div class="outline__actions">
-                <button type="button" class="admin-link" data-collapse-all>Collapse all</button>
-                <button type="button" class="admin-link" data-expand-all>Expand all</button>
+                <button type="button" class="admin-link" data-collapse-all>{{ __('studio.story.collapse_all') }}</button>
+                <button type="button" class="admin-link" data-expand-all>{{ __('studio.story.expand_all') }}</button>
             </div>
         </nav>
 
         <div class="builder__main">
             <section class="type-picker" aria-labelledby="add-block-heading">
-                <h2 id="add-block-heading" class="form-section__heading">Add a block</h2>
+                <h2 id="add-block-heading" class="form-section__heading">{{ __('studio.story.add_block') }}</h2>
 
                 @foreach ($types as $group => $cases)
                     <div class="type-picker__group">
@@ -156,7 +164,7 @@
             </ul>
 
             <div class="form-actions">
-                <button type="button" class="admin-button" data-save>Save story</button>
+                <button type="button" class="admin-button" data-save>{{ __('studio.story.save') }}</button>
             </div>
         </div>
     </div>

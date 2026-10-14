@@ -47,6 +47,26 @@ class ArticleCategoryResource extends Resource
         return __('studio.nav.article_categories');
     }
 
+
+    /**
+     * The noun Filament puts in its own sentences.
+     *
+     * Task 34 F1. Without these, Filament derives "Article", "articles" and
+     * "Create article" from the CLASS NAME — in English, whatever language
+     * the panel is in. Found by PanelArabicRenderTest: fourteen screens were
+     * showing English nouns in an Arabic panel, in breadcrumbs, empty states
+     * and every modal heading.
+     */
+    public static function getModelLabel(): string
+    {
+        return __('studio.model.article_category');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('studio.model.article_category_plural');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
