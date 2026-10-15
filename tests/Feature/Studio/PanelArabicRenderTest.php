@@ -324,6 +324,116 @@ class PanelArabicRenderTest extends TestCase
         return $files;
     }
 
+    // ----------------------------------------------------------------- 3b
+
+    /**
+     * ───────────────────────────────────────────────────────────────────────
+     * A SELECT ON A TRANSLATABLE RELATIONSHIP RESOLVES ITS OWN LABELS.
+     *
+     * Select::relationship('tags', 'name') reads that column STRAIGHT OUT OF
+     * THE DATABASE, and `name` on a tag is a translatable JSON document — so
+     * every chip, every option and every remove button's accessible name on
+     * the journal form read
+     *
+     *     {"en": "process", "ar": "عملية"}
+     *
+     * WHY THIS IS A STRUCTURAL CHECK AND NOT A RENDERED ONE. It was written
+     * first as a scan of the rendered edit form, and that version PASSED with
+     * the bug reinstated: Filament builds a searchable select's chips in the
+     * browser, so the JSON is never in the HTML PHP produces. The browser
+     * harness found it, printing the control's accessible name, and the
+     * harness is where that check belongs.
+     *
+     * What a PHP test can say is that the resource asked for the label to be
+     * resolved through the model. That is the thing a future edit would drop,
+     * and it is checkable here.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public function test_a_select_on_a_translatable_relationship_resolves_its_labels(): void
+    {
+        $failures = [];
+
+        foreach (Filament::getPanel('studio')->getResources() as $resource) {
+            foreach ($this->selects($resource) as $select) {
+                $relationship = $select->getRelationshipName();
+
+                if ($relationship === null) {
+                    continue;
+                }
+
+                $model = $resource::getModel();
+
+                if (! method_exists(new $model, $relationship)) {
+                    continue;
+                }
+
+                $related = (new $model)->{$relationship}()->getRelated();
+
+                $attribute = $select->getRelationshipTitleAttribute();
+
+                if ($attribute === null
+                    || ! method_exists($related, 'isTranslatableAttribute')
+                    || ! $related->isTranslatableAttribute($attribute)) {
+                    continue;
+                }
+
+                if (! $select->hasOptionLabelFromRecordUsingCallback()) {
+                    $failures[] = sprintf(
+                        '%s: the %s select reads the translatable column "%s" directly',
+                        class_basename($resource),
+                        $relationship,
+                        $attribute,
+                    );
+                }
+            }
+        }
+
+        $this->assertSame(
+            [],
+            $failures,
+            "these selects will print a translation map instead of a word:\n  ".implode("\n  ", $failures)
+        );
+    }
+
+    /**
+     * Every Select in a resource's form and filters.
+     *
+     * @param  class-string<Resource>  $resource
+     * @return list<\Filament\Forms\Components\Select>
+     */
+    private function selects(string $resource): array
+    {
+        $page = $resource::getPages()['index']->getPage();
+        $instance = Livewire::test($page)->instance();
+
+        $found = [];
+
+        $walk = function (array $components) use (&$walk, &$found): void {
+            foreach ($components as $component) {
+                if ($component instanceof \Filament\Forms\Components\Select) {
+                    $found[] = $component;
+                }
+
+                $walk($component->getDefaultChildComponents());
+            }
+        };
+
+        $walk($resource::form(\Filament\Schemas\Schema::make($instance))->getComponents());
+
+        foreach ($resource::table(\Filament\Tables\Table::make($instance))->getFilters() as $filter) {
+            if (method_exists($filter, 'getSchema')) {
+                continue;   // a custom filter's own fields are its business
+            }
+
+            if ($filter instanceof \Filament\Tables\Filters\SelectFilter) {
+                // A SelectFilter owns a Select internally; ask it directly.
+                $found[] = $filter->getSelect();
+            }
+        }
+
+        return $found;
+    }
+
     // ----------------------------------------------------------------- 4
 
     /** The two locale files are the same shape, key for key. */

@@ -402,6 +402,92 @@
     min-block-size: 2.75rem;
 }
 
+
+/*
+ * The two that cannot simply be made taller.
+ *
+ * A toggle is a drawn switch with its own dimensions, and a remove button
+ * sits INSIDE a select's value chip — growing either one distorts the
+ * control it belongs to. Padding grows the hit area instead and leaves the
+ * drawing alone, which is what the target-size criterion actually asks for.
+ */
+.fi-fo-toggle {
+    min-block-size: 2.75rem;
+    /* Vertically centred, so the switch still sits where it looks. */
+    display: inline-flex;
+    align-items: center;
+}
+
+/*
+ * THE TWO CONTROLS INSIDE A SELECT'S CHIPS.
+ *
+ * "Clear selection" and the per-tag remove button measured 28px and 20px.
+ * The second fails even WCAG 2.2's 24px minimum, let alone the 44px this
+ * panel holds itself to — and it is the control somebody uses when they have
+ * tagged a journal entry wrongly and are trying to undo it.
+ *
+ * Sized properly rather than given a hidden overlay: a transparent
+ * pseudo-element would enlarge the hit area and leave the measured button at
+ * 20px, which means the check would still fail and be RIGHT to — a target
+ * nobody can see the edges of is only half fixed.
+ *
+ * The chips grow to match, which is what a touch-friendly multi-select looks
+ * like anyway.
+ */
+.fi-select-input-value-remove-btn,
+.fi-select-input-clear-btn,
+/*
+ * And the one on a chosen tag's badge, which is a different control from
+ * the select's own: 20px, and the one somebody reaches for when they have
+ * tagged a journal entry wrongly.
+ */
+.fi-badge-delete-btn {
+    min-block-size: 2.75rem;
+    min-inline-size: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/*
+ * THE STORY BUILDER'S OWN CONTROLS.
+ *
+ * It is a real Livewire component with its own markup, so Filament's classes
+ * do not reach it. Undo, Redo, Collapse all, Expand all, Preview and the two
+ * locale buttons were all 24px — on the screen a photographer spends the
+ * most time on, and several of them are the ones used most often.
+ *
+ * .fi-link is Filament's own, and the "back to the project" link it draws
+ * above the builder is 20px.
+ */
+.admin-link,
+.story-locale__option,
+.fi-link {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 2.75rem;
+}
+
+
+/*
+ * A LINK THAT IS THE WHOLE VALUE OF A FIELD.
+ *
+ * An enquiry's email address is a mailto: link in an infolist — the control
+ * somebody taps to reply, which is the single most likely action on that
+ * screen — and it measured 20px.
+ *
+ * Scoped to an entry's content rather than to links generally: a link inside
+ * a SENTENCE is exempt from the target-size criterion precisely because
+ * enlarging it would break the line it sits in, and the prose entries on
+ * these screens (an enquiry's message) contain exactly that kind.
+ */
+.fi-in-entry-content > a,
+a.fi-in-entry-content {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 2.75rem;
+}
+
 /* ---- A1: the media picker field ------------------------------------------ */
 
 /*
@@ -498,6 +584,34 @@
 .fi-ac-link-action,
 .fi-ac-icon-btn-action,
 .fi-pagination-item,
+
+/*
+ * ───────────────────────────────────────────────────────────────────────────
+ * THE CONTROLS TASK 33 MISSED, BECAUSE IT ONLY MEASURED THE DASHBOARD.
+ *
+ * That task reported "every interactive control is at least 44px" having
+ * probed one screen with a scratch script that was then deleted. Task 34 G2
+ * promoted the check into the browser harness, where it runs on every panel
+ * screen at every viewport — and immediately found eight screens with
+ * controls under the line:
+ *
+ *   fi-tabs-item                    36px   the locale tabs, on EVERY
+ *                                          translatable form in the panel
+ *   fi-select-input-btn             36px   every select trigger
+ *   fi-select-input-value-remove-btn 16px  removing one chosen tag
+ *   fi-fo-toggle                    24px   every switch
+ *   fi-ta-col                       32px   a sortable header in a
+ *                                          reorderable table
+ *
+ * The locale tabs are the one that matters most: they are how an Arabic
+ * translation is reached, on every form, and they were 36px on a phone.
+ * ───────────────────────────────────────────────────────────────────────────
+ */
+.fi-tabs-item,
+.fi-select-input-btn,
+.fi-ta-col,
+.fi-breadcrumbs-item-label,
+.fi-pagination-item-btn,
 /*
  * .fi-btn as well as .fi-pagination-item, because simple pagination renders
  * its Previous/Next as plain buttons and they measured 36px — the first pass

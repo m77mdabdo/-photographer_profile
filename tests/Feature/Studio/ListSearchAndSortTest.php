@@ -234,15 +234,50 @@ class ListSearchAndSortTest extends TestCase
         $record = $subject();
 
         /*
-         * The decoys are forced off the subject's year. ProjectFactory picks
-         * one at random from a plausible range, so one in a handful of runs
-         * produced a decoy also made in 2024 and failed the assertion below
-         * on a fixture collision rather than on a defect. A flaky test about
-         * search is worse than no test about search.
+         * ───────────────────────────────────────────────────────────────────
+         * THE DECOYS ARE DETERMINISTIC, NOT RANDOM.
+         *
+         * They exist to prove a search does not match everything, so what
+         * they must never do is accidentally contain a search term. Both
+         * halves of this were found the hard way:
+         *
+         *   · ProjectFactory picks a year at random from a plausible range,
+         *     and one run in a handful produced a decoy also made in 2024.
+         *   · ArticleFactory writes a faker sentence, and one produced a
+         *     title containing "Edit Is".
+         *
+         * A flaky test about search is worse than no test about search, so
+         * every text field a search could reach is overwritten with a string
+         * that shares no word with any subject above.
+         * ───────────────────────────────────────────────────────────────────
          */
-        $decoys = $record::factory()->count(3)->create(
-            in_array('year', $record->getFillable(), true) ? ['year' => 1999] : []
-        );
+        $inert = 'Zzyzx Quorum Vellum';
+
+        $overrides = [];
+
+        foreach (['title', 'name', 'quote', 'label'] as $field) {
+            if (in_array($field, $record->getFillable(), true)) {
+                $overrides[$field] = method_exists($record, 'isTranslatableAttribute')
+                    && $record->isTranslatableAttribute($field)
+                        ? ['en' => $inert, 'ar' => 'زيزكس']
+                        : $inert;
+            }
+        }
+
+        foreach (['excerpt', 'summary', 'attribution', 'role', 'company', 'message', 'location', 'client'] as $field) {
+            if (in_array($field, $record->getFillable(), true)) {
+                $overrides[$field] = method_exists($record, 'isTranslatableAttribute')
+                    && $record->isTranslatableAttribute($field)
+                        ? ['en' => $inert, 'ar' => 'زيزكس']
+                        : $inert;
+            }
+        }
+
+        if (in_array('year', $record->getFillable(), true)) {
+            $overrides['year'] = 1999;
+        }
+
+        $decoys = $record::factory()->count(3)->create($overrides);
 
         foreach ($terms as $what => $term) {
             $matched = Livewire::test($page)

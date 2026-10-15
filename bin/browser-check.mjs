@@ -35,6 +35,7 @@
  * in a finally block, so a crashed run still cleans up after itself.
  *
  * Usage:  npm run check:browser [-- --base=http://127.0.0.1:8000] [--only=/work]
+ *                               [--viewport=390]
  *                               [--public-only]
  */
 
@@ -67,12 +68,38 @@ const BASE = args.base || 'http://127.0.0.1:8000'
  * Viewports. 390 is an iPhone in portrait; 768 and 1024 straddle the 900px
  * breakpoint where the hero recomposes; 1440 is the design width.
  */
+/*
+ * ───────────────────────────────────────────────────────────────────────────
+ * --viewport=390 RUNS ONE COLUMN OF THE MATRIX.
+ *
+ * A full run is 300-odd page loads against a library of 182 images, and on a
+ * machine under memory pressure Chrome does not survive it: it died twice at
+ * different points, each time taking the rest of the run with it. The report
+ * is honest about that — the matrix prints and the run fails — but a
+ * truncated matrix is not a matrix.
+ *
+ * Slicing by viewport makes each run a quarter of the length, which is short
+ * enough to finish. Four runs produce the same four columns; combining them
+ * is the reader's job rather than the harness's, and the alternative was
+ * teaching it to relaunch a browser and sign in again mid-run, which is more
+ * moving parts in the thing that is supposed to be reliable.
+ * ───────────────────────────────────────────────────────────────────────────
+ */
 const VIEWPORTS = [
   { label: '1440', width: 1440, height: 900 },
   { label: '1024', width: 1024, height: 900 },
   { label: '768', width: 768, height: 1000 },
   { label: '390', width: 390, height: 844 },
 ]
+
+const SELECTED_VIEWPORTS = args.viewport
+  ? VIEWPORTS.filter((v) => v.label === String(args.viewport))
+  : VIEWPORTS
+
+if (SELECTED_VIEWPORTS.length === 0) {
+  console.error(`--viewport=${args.viewport} matches none of: ${VIEWPORTS.map((v) => v.label).join(', ')}`)
+  process.exit(2)
+}
 
 const THEMES = [
   { label: 'dark', scheme: 'dark' },
@@ -240,72 +267,34 @@ const ADMIN_PAGES = [
   { label: 'studio settings', path: '/admin/settings', admin: true },
 
   /*
+   * Task 34's own screens. The media detail page is DISCOVERED rather than
+   * addressed, for the reason the edit forms are: its id depends on the
+   * seed, and a hardcoded one is a check that passes until somebody
+   * reseeds.
+   */
+  { label: 'studio navigation', path: '/admin/menus', admin: true },
+  { label: 'studio testimonials', path: '/admin/testimonials', admin: true },
+  { label: 'studio activity', path: '/admin/activity/activity-logs', admin: true },
+  {
+    label: 'studio media detail',
+    admin: true,
+    discover: { from: '/admin/media', selector: 'a[href*="/admin/media/"]' },
+  },
+
+  /*
    * ───────────────────────────────────────────────────────────────────────
-   * THE CUSTOM ADMIN, AT /legacy — WHERE TASK 33 PART A PUT IT.
+   * THE CUSTOM ADMIN IS GONE (Task 34 Part B).
    *
-   * These eighteen targets still said /admin after Part A swapped the two
-   * addresses, which meant they were pointing at the FILAMENT PANEL. Most of
-   * them passed, because the panel has a screen at the same path and the
-   * harness only asked for HTTP 200 and a clean console — so sixteen rows
-   * were checking the panel twice under a legacy label while the custom
-   * admin, which is still the only place the chunked uploader and the
-   * per-image detail screen exist, went unchecked at every viewport.
+   * Eighteen targets lived here. They moved from /admin to /legacy in Part
+   * A's address swap and were deleted outright in Part B, once all six media
+   * capabilities had landed in the panel. /legacy/* now answers a permanent
+   * redirect, so leaving them would have been eighteen rows checking that a
+   * redirect redirects.
    *
-   * Two of them did not pass, and that is the only reason this was found:
-   * /admin/media/trash and /admin/inquiries have no panel equivalent at
-   * those paths, so they 404'd in all eight columns.
-   *
-   * A label that no longer names what it checks is worse than a missing row.
+   * The screens that replaced them are in the studio list above, and the
+   * ones Part A and Part D added are at the end of it.
    * ───────────────────────────────────────────────────────────────────────
    */
-  { label: 'legacy dashboard', path: '/legacy', admin: true },
-  { label: 'legacy media library', path: '/legacy/media', admin: true },
-  {
-    label: 'legacy media detail',
-    admin: true,
-    /*
-     * :not([href$="/trash"]) — without it this matched the "Trash" link in the
-     * header and the harness checked the trash page twice while reporting one
-     * of them as the media detail. A discovery selector that silently matches
-     * the wrong page is worse than one that finds nothing.
-     */
-    discover: { from: '/legacy/media', selector: 'a[href*="/legacy/media/"]:not([href$="/trash"])' },
-  },
-  { label: 'legacy media trash', path: '/legacy/media/trash', admin: true },
-  { label: 'legacy projects', path: '/legacy/projects', admin: true },
-  {
-    label: 'legacy project editor',
-    admin: true,
-    discover: { from: '/legacy/projects', selector: 'a[href*="/edit"]' },
-  },
-  {
-    label: 'legacy story builder',
-    admin: true,
-    discover: { from: '/legacy/projects', selector: 'a[href*="/story"]' },
-  },
-  { label: 'legacy journal', path: '/legacy/articles', admin: true },
-  { label: 'legacy services', path: '/legacy/services', admin: true },
-  {
-    label: 'legacy service editor',
-    admin: true,
-    discover: { from: '/legacy/services', selector: 'a[href*="/edit"]' },
-  },
-  { label: 'legacy pages', path: '/legacy/pages', admin: true },
-  { label: 'legacy redirects', path: '/legacy/redirects', admin: true },
-  {
-    label: 'legacy article editor',
-    admin: true,
-    discover: { from: '/legacy/articles', selector: 'a[href*="/edit"]' },
-  },
-  { label: 'legacy inquiries', path: '/legacy/inquiries', admin: true },
-  {
-    label: 'legacy inquiry detail',
-    admin: true,
-    discover: { from: '/legacy/inquiries', selector: 'a[href*="/legacy/inquiries/"]' },
-  },
-  { label: 'legacy categories', path: '/legacy/categories', admin: true },
-  { label: 'legacy clients', path: '/legacy/clients', admin: true },
-  { label: 'legacy settings', path: '/legacy/settings', admin: true },
 ]
 
 // ---------------------------------------------------------------------------
@@ -613,6 +602,50 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir) {
 
     if (r.bottom > 0 && r.right > 0 && r.top < window.innerHeight) {
       problems.push(`skip link is visible without focus (top ${Math.round(r.top)})`)
+    }
+  }
+
+  // --- 4a2. every control is big enough to hit ------------------------------
+  /*
+   * ───────────────────────────────────────────────────────────────────────────
+   * TOUCH TARGETS, PROMOTED FROM A THROWAWAY PROBE.
+   *
+   * Task 33 D2 measured this with a scratch script, found 41 controls under
+   * 44px — fifteen sidebar items, eight table sort buttons, the wordmark and
+   * Filament's simple-pagination buttons — and fixed them in the panel's
+   * theme. Nothing then kept them fixed: the probe was deleted, and Task 34
+   * added five new screens nobody measured.
+   *
+   * 44px is the figure both Apple and WCAG 2.2 settle on, and on this product
+   * it is not an accessibility nicety: the person using it is a photographer
+   * checking enquiries on a phone, often one-handed, often outdoors.
+   *
+   * The skip link is excluded BY NAME rather than by size: it is visually
+   * hidden until focused, and giving a hidden element a 44px box would put an
+   * invisible target in the corner of every page.
+   * ───────────────────────────────────────────────────────────────────────────
+   */
+  if (isAdmin) {
+    const small = []
+
+    for (const el of document.querySelectorAll('a, button, [role="button"], summary')) {
+      if (el.closest('.fi-sr-only') || el.classList.contains('fi-sr-only')) continue
+
+      const r = el.getBoundingClientRect()
+
+      if (r.width === 0 || r.height === 0) continue       // not on screen
+      if (r.height >= 44) continue
+
+      const name = (el.textContent || '').trim().slice(0, 24)
+        || el.getAttribute('aria-label')
+        || el.className?.toString?.().split(' ')[0]
+        || el.tagName.toLowerCase()
+
+      small.push(`${name} (${Math.round(r.height)}px)`)
+    }
+
+    if (small.length) {
+      problems.push(`${small.length} control(s) under 44px: ${[...new Set(small)].slice(0, 6).join(', ')}`)
     }
   }
 
@@ -962,16 +995,48 @@ async function run() {
      */
     let browserLost = null
 
-    /** Build a fresh session-less page and point it at this viewport/theme. */
+    /**
+     * Build a fresh session-less page and point it at this viewport/theme.
+     *
+     * ───────────────────────────────────────────────────────────────────────
+     * AN INCOGNITO CONTEXT IF CHROME WILL GIVE ONE, A CLEARED PAGE IF NOT.
+     *
+     * createBrowserContext is the clean way to get a page with no session,
+     * and on a machine under memory pressure it is also the single most
+     * reliable way to lose the browser: both Arabic runs died here, in the
+     * same call, having rendered nothing.
+     *
+     * The fallback asks for an ordinary page and clears its cookies, which
+     * is the same STATE by a cheaper route — the sign-in screen needs to be
+     * unauthenticated, not to be in a separate profile. Chrome is told to
+     * clear cookies through CDP because page.deleteCookie() needs to be
+     * told which cookies, and the point is to be rid of all of them.
+     * ───────────────────────────────────────────────────────────────────────
+     */
     const makeGuestPage = async (viewport, theme) => {
-      guestContext = await browser.createBrowserContext()
-      guestPage = await guestContext.newPage()
+      try {
+        guestContext = await browser.createBrowserContext()
+        guestPage = await guestContext.newPage()
 
-      if (LOCALE !== 'en') {
-        await guestContext.setCookie({ name: 'locale', value: LOCALE, url: BASE, path: '/' })
+        if (LOCALE !== 'en') {
+          await guestContext.setCookie({ name: 'locale', value: LOCALE, url: BASE, path: '/' })
+        }
+
+        return guestPage
+      } catch (e) {
+        guestContext = null
+        guestPage = await browser.newPage()
+
+        const session = await guestPage.createCDPSession()
+        await session.send('Network.clearBrowserCookies')
+        await session.detach()
+
+        if (LOCALE !== 'en') {
+          await guestPage.setCookie({ name: 'locale', value: LOCALE, url: BASE, path: '/' })
+        }
+
+        return guestPage
       }
-
-      return guestPage
     }
 
     /** Use the shared guest page, rebuilding it once if its session has died. */
@@ -1000,7 +1065,7 @@ async function run() {
     for (const theme of THEMES) {
       if (browserLost) break
 
-      for (const viewport of VIEWPORTS) {
+      for (const viewport of SELECTED_VIEWPORTS) {
         if (browserLost) break
 
         const page = await browser.newPage()

@@ -324,3 +324,18 @@
     block-size: 1rem;
     accent-color: var(--accent);
 }
+
+/*
+ * The front door's own small control.
+ *
+ * "Forgotten your password?" measured 17px — the link somebody reaches for
+ * precisely when they are already having a bad time, on a phone. The 44px
+ * applies to it for the same reason it applies to everything in the panel.
+ */
+.auth-form a,
+.auth-card__note a,
+.auth-card__aside a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 2.75rem;
+}

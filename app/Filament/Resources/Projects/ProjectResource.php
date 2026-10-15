@@ -151,6 +151,27 @@ class ProjectResource extends Resource
                     Select::make('categories')
                         ->label(__('studio.nav.categories'))
                         ->relationship('categories', 'name')
+                        /*
+                         * ───────────────────────────────────────────────────
+                         * THE LABEL COMES THROUGH THE MODEL, NOT THE COLUMN.
+                         *
+                         * ->relationship(…, 'name') reads that column
+                         * straight out of the database, and `name` here is a
+                         * translatable JSON document — so the chips and the
+                         * options read
+                         *
+                         *     {"en": "process", "ar": "عملية"}
+                         *
+                         * and so did the remove button's accessible name.
+                         * Found in Task 34 G2 by the harness's touch-target
+                         * check, which prints the control's accessible name
+                         * and printed that.
+                         *
+                         * getOptionLabelFromRecordUsing goes through the
+                         * accessor, which resolves the active locale.
+                         * ───────────────────────────────────────────────────
+                         */
+                        ->getOptionLabelFromRecordUsing(fn ($record): string => (string) $record->name)
                         ->multiple()
                         ->preload()
                         ->searchable(),
