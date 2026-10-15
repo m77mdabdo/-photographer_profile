@@ -328,6 +328,10 @@ class ProjectResource extends Resource
              * occasional visit. A link rather than a modal, because the
              * builder needs the whole viewport.
              */
+            // E2 — what will appear here, and what to do meanwhile.
+            ->emptyStateHeading(fn (): string => __('studio.empty.project_heading'))
+            ->emptyStateDescription(fn (): string => __('studio.empty.project_body'))
+            ->emptyStateIcon('heroicon-o-photo')
             ->recordActions(ResourceDefaults::rowActionsFor(
                 Project::class,
                 self::TRANSLATED,

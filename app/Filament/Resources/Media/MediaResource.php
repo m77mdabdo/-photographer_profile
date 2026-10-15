@@ -337,6 +337,10 @@ class MediaResource extends Resource
              * the camera data and the renditions are, and it is the reason
              * the custom admin can be deleted. Edit stays for the words.
              */
+            // E2 — what will appear here, and what to do meanwhile.
+            ->emptyStateHeading(fn (): string => __('studio.empty.media_heading'))
+            ->emptyStateDescription(fn (): string => __('studio.empty.media_body'))
+            ->emptyStateIcon('heroicon-o-photo')
             ->recordActions(ResourceDefaults::rowActionsFor(
                 Media::class,
                 self::TRANSLATED,

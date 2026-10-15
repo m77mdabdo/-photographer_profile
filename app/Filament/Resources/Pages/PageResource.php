@@ -146,6 +146,10 @@ class PageResource extends Resource
                 ResourceDefaults::statusFilter(),
                 ResourceDefaults::trashedFilter(),
             ])
+            // E2 — what will appear here, and what to do meanwhile.
+            ->emptyStateHeading(fn (): string => __('studio.empty.page_heading'))
+            ->emptyStateDescription(fn (): string => __('studio.empty.page_body'))
+            ->emptyStateIcon('heroicon-o-document-text')
             ->recordActions(ResourceDefaults::rowActionsFor(Page::class, self::TRANSLATED))
             ->toolbarActions([ResourceDefaults::bulkActions()])
             ->defaultSort('updated_at', 'desc');

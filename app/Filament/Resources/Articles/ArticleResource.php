@@ -203,6 +203,10 @@ class ArticleResource extends Resource
 
                 ResourceDefaults::trashedFilter(),
             ])
+            // E2 — what will appear here, and what to do meanwhile.
+            ->emptyStateHeading(fn (): string => __('studio.empty.article_heading'))
+            ->emptyStateDescription(fn (): string => __('studio.empty.article_body'))
+            ->emptyStateIcon('heroicon-o-pencil-square')
             ->recordActions(ResourceDefaults::rowActionsFor(Article::class, self::TRANSLATED))
             ->toolbarActions([ResourceDefaults::bulkActions()])
             ->defaultSort('updated_at', 'desc');

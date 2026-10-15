@@ -92,6 +92,10 @@ class ClientResource extends Resource
                 TernaryFilter::make('is_active')
                     ->label(__('studio.filter.active')),
             ])
+            // E2 — what will appear here, and what to do meanwhile.
+            ->emptyStateHeading(fn (): string => __('studio.empty.client_heading'))
+            ->emptyStateDescription(fn (): string => __('studio.empty.client_body'))
+            ->emptyStateIcon('heroicon-o-identification')
             ->recordActions(ResourceDefaults::rowActionsFor(Client::class, self::TRANSLATED))
             ->headerActions([Translatable::createAction(self::TRANSLATED)])
             ->defaultSort('sort_order')

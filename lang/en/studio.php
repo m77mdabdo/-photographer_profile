@@ -686,4 +686,61 @@ return [
         'owner' => 'Owner',
         'editor' => 'Editor',
     ],
+
+    /*
+     * ═══════════════════════════════════════════════════════════════════════
+     * E2 — AN EMPTY TABLE SAYS WHAT WILL APPEAR AND WHAT TO DO MEANWHILE.
+     *
+     * Filament's default is an ✗ in a circle over "No Testimonials" and
+     * "Create a Testimonial to get started." Three things are wrong with it
+     * and only one is cosmetic:
+     *
+     *   · an ✗ is the mark for something WRONG. An empty list is not an
+     *     error, it is a studio that has not done that thing yet.
+     *   · "No Testimonials" names the model class, in the plural Filament
+     *     derived. It is the software talking about its own tables.
+     *   · "to get started" is filler. It tells somebody nothing they did not
+     *     know from the empty table in front of them.
+     *
+     * What an owner needs from an empty screen is what will appear here, and
+     * whether there is anything to do now — the standard Task 33 B5 set for
+     * the dashboard's empty states, applied to the lists.
+     *
+     * Each resource names its own icon, and never a cross. The pairing of a
+     * _heading with a _body, the parity of this group with the Arabic one,
+     * and the fact that every resource table sets all three, are asserted in
+     * tests/Feature/Studio/PanelEmptyStateTest.php — a table added later
+     * without an empty state fails there rather than shipping the default.
+     * ═══════════════════════════════════════════════════════════════════════
+     */
+    'empty' => [
+        'menu_heading' => 'No menus',
+        'menu_body' => 'A menu is the set of links in the header or the footer. Both are seeded; edit one to change what a visitor sees.',
+        'project_heading' => 'No work published yet',
+        'project_body' => 'A project is a set of photographs with a story around them. The home page and the archive both fill themselves from here.',
+        'article_heading' => 'The journal is empty',
+        'article_body' => 'Writing about the work is how people find it. An entry appears on the journal page the moment it is published.',
+        'service_heading' => 'Nothing offered yet',
+        'service_body' => 'What the studio does, and roughly what it costs. These become the services page and the strip on the home page.',
+        'page_heading' => 'No pages yet',
+        'page_body' => 'A page is standing text at its own address — about, terms, how you work. The privacy notice and the terms are seeded and locked.',
+        'testimonial_heading' => 'No testimonials yet',
+        'testimonial_body' => 'When a client says something worth keeping, put it here. A strip appears on the home page, before the invitation to get in touch, as soon as there is one.',
+        'inquiry_heading' => 'No enquiries yet',
+        'inquiry_body' => 'Messages from the contact form arrive here, unread first. Nothing needs doing until one does.',
+        'media_heading' => 'The library is empty',
+        'media_body' => 'Upload photographs and they are processed into every size the site needs. Everything else on this list draws from here.',
+        'redirect_heading' => 'No redirects',
+        'redirect_body' => 'One is written automatically whenever a published address changes, so an old link keeps working. You can add your own.',
+        'tag_heading' => 'No tags yet',
+        'tag_body' => 'A tag groups journal entries across sections. They appear as you write.',
+        'client_heading' => 'No clients listed',
+        'client_body' => 'Names shown on the home page, in the order you set. Only add the ones you are happy to name.',
+        'article_category_heading' => 'No journal sections yet',
+        'article_category_body' => 'A section files the writing — notes, technique, travel. The journal lists only the sections that have something published in them.',
+        'category_heading' => 'No categories yet',
+        'category_body' => 'A category files the work — weddings, editorial, documentary. The archive offers only the ones with published work in them.',
+        'activity_heading' => 'Nothing recorded yet',
+        'activity_body' => 'Publishing, deletions, role changes, settings and sign-ins appear here as they happen. Entries older than a year are removed automatically.',
+    ],
 ];

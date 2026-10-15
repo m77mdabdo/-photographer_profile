@@ -117,6 +117,10 @@ class TagResource extends Resource
              * here because a tag has no deleted_at: this row used to offer
              * both, for a trash that does not exist.
              */
+            // E2 — what will appear here, and what to do meanwhile.
+            ->emptyStateHeading(fn (): string => __('studio.empty.tag_heading'))
+            ->emptyStateDescription(fn (): string => __('studio.empty.tag_body'))
+            ->emptyStateIcon('heroicon-o-hashtag')
             ->recordActions(ResourceDefaults::rowActionsFor(Tag::class, self::TRANSLATED))
             ->headerActions([Translatable::createAction(self::TRANSLATED)])
             ->filters([

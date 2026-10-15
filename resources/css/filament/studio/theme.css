@@ -183,8 +183,29 @@
     letter-spacing: -0.015em;
 }
 
+/*
+ * ALL FOUR, not the two this listed until E1.
+ *
+ * The rule above sets the display face and a display face's negative
+ * tracking on four selectors; this exception named two of them, so an Arabic
+ * MODAL heading — every delete confirmation in the panel — and the
+ * dashboard's figures were still asking for Archivo, which has no Arabic
+ * glyphs at all. Each letter fell back on its own, which is the fault D2
+ * found on the public site and fixed at --font-mono: the word arrives as a
+ * row of separated shapes rather than a joined one.
+ *
+ * Found by tests/Feature/Studio/PanelTrackingTest.php while it was looking
+ * for literal tracking, which is the second thing that test caught that
+ * reading the file had not.
+ */
 [dir='rtl'] .fi-header-heading,
-[dir='rtl'] .fi-section-header-heading {
+[dir='rtl'] .fi-section-header-heading,
+[dir='rtl'] .fi-modal-heading,
+[dir='rtl'] .fi-wi-stats-overview-stat-value,
+[lang='ar'] .fi-header-heading,
+[lang='ar'] .fi-section-header-heading,
+[lang='ar'] .fi-modal-heading,
+[lang='ar'] .fi-wi-stats-overview-stat-value {
     font-family: var(--font-sans);
     letter-spacing: normal;
 }
@@ -194,9 +215,7 @@
  * site is — EXIF, dates, dimensions, the archive counts.
  */
 .fi-wi-stats-overview-stat-value,
-.studio-figure__value,
-.studio-list__meta time,
-.studio-list__meta {
+.studio-figure__value {
     font-family: var(--font-mono);
     font-feature-settings: 'tnum' 1;
 }
@@ -552,6 +571,116 @@ a.fi-in-entry-content {
     min-block-size: 2.75rem;
 }
 
+/* ---- E2: the empty state's own circle ------------------------------------- */
+
+/*
+ * The last round thing after the avatar. Filament draws its empty-state icon
+ * in a circular well; every other container in this panel is a right angle,
+ * and this one is the largest shape on an empty screen.
+ *
+ * One declaration against Filament's class, for the same reason as the
+ * avatar: it keeps taking upstream fixes.
+ */
+.fi-ta-empty-state-icon-bg,
+.fi-in-empty-state-icon-bg {
+    border-radius: 0;
+}
+
+/* ---- E: typography in the roles a person reads for an hour ---------------- */
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * E1 — THE TABLE IS THE PANEL, SO ITS TEXT IS THE PANEL'S TEXT.
+ *
+ * Measured before changing anything, on /admin/projects at 1440:
+ *
+ *     page heading   30px / 36px  Archivo 700
+ *     table header   14px / 20px  Inter Tight 600
+ *     table cell     14px / 24px  Inter Tight 400
+ *     sidebar item   14px / 20px
+ *     body           16px / 24px
+ *
+ * Two things were wrong with that, and neither is a matter of taste.
+ *
+ * FIRST, the table text is 14px — Filament's default, and the size everything
+ * in this panel is actually READ at. The public site sets its body at 16px.
+ * A photographer going through a morning of enquiries is reading a table, not
+ * a page heading, and 14px is a size you tolerate rather than one you read
+ * comfortably for an hour. 15px with a 1.5 line-height is the compromise that
+ * costs no layout: rows stay the height they were, because 24px of leading
+ * was already there.
+ *
+ * SECOND, the header and the data were THE SAME SIZE, separated by weight
+ * alone — 600 against 400. That is the weakest possible hierarchy: it
+ * disappears at a glance, it disappears entirely for anyone whose rendering
+ * does not honour variable weights, and it is the one distinction the brief
+ * asks not to lean on by itself.
+ *
+ * The header is now smaller, uppercase, tracked and muted, which is the
+ * treatment this project already gives a label everywhere else — the media
+ * detail screen's facts, the dashboard's cluster names, the public site's
+ * eyebrows. Four signals instead of one, and the data is the biggest thing in
+ * the table, which is the right way round for a data table.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+.fi-ta-text,
+.fi-ta-record-content {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+/*
+ * The CELL as well as the sort button: a column that cannot be sorted has no
+ * button inside it at all — its label is a bare text node on the cell — so a
+ * rule aimed only at the button left "Translated" sentence-case and 14px
+ * beside four uppercase 12px neighbours.
+ */
+.fi-ta-header-cell,
+.fi-ta-header-cell-label,
+.fi-ta-header-cell-sort-btn {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--studio-muted);
+}
+
+/* Arabic takes neither tracking nor case — see tokens.css. */
+[dir='rtl'] .fi-ta-header-cell,
+[dir='rtl'] .fi-ta-header-cell-label,
+[dir='rtl'] .fi-ta-header-cell-sort-btn,
+[lang='ar'] .fi-ta-header-cell,
+[lang='ar'] .fi-ta-header-cell-label,
+[lang='ar'] .fi-ta-header-cell-sort-btn {
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * E3 — THE LAST ROUND THING.
+ *
+ * The brief asks whether squaring the badge pills and the avatar circle is
+ * worth a component override. Measured first, which answered half of it:
+ *
+ *     .fi-badge            0px      already square
+ *     .fi-btn, .fi-input   0px      already square
+ *     .fi-avatar           9999px   still a circle
+ *
+ * The badges were squared by the --radius-* tokens in @theme and needed
+ * nothing. The avatar sets its radius directly, so the tokens never reached
+ * it, and it was the only curved element left in a panel whose every other
+ * corner is a right angle — on every screen, in the top corner.
+ *
+ * ONE SELECTOR, NOT AN OVERRIDE. This is the E4 line: a declaration against
+ * Filament's class keeps taking upstream fixes, and a forked
+ * component stops. There was never a case for forking anything here.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+.fi-avatar {
+    border-radius: 0;
+}
+
 /* ---- D2: touch targets --------------------------------------------------- */
 
 /*
@@ -808,101 +937,29 @@ a.fi-in-entry-content {
  * table. Dead CSS outlives the markup it styled unless it is deleted with it.
  */
 
-.studio-list { display: grid; }
-
-.studio-list__item {
-    display: grid;
-    gap: 0.15rem;
-    padding-block: 0.6rem;
-    border-bottom: 1px solid var(--studio-line);
-}
-
-.studio-list__item:first-child { padding-block-start: 0; }
-.studio-list__item:last-child { border-bottom: 0; padding-block-end: 0; }
-
-.studio-list__link {
-    font-family: var(--font-serif);
-    font-variation-settings: 'wght' 650;
-    font-size: 0.9375rem;
-    line-height: 1.2;
-    color: var(--studio-text);
-    text-decoration: none;
-}
-
-[dir='rtl'] .studio-list__link { font-family: var(--font-sans); }
-
-.studio-list__link:hover { color: var(--studio-accent); }
-
-.studio-list__excerpt {
-    font-size: 0.8125rem;
-    color: var(--studio-muted);
-}
-
-.studio-list__meta {
-    font-size: 0.625rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--studio-muted);
-    display: flex;
-    gap: 0.35rem;
-    flex-wrap: wrap;
-}
-
-[dir='rtl'] .studio-list__meta {
-    font-family: var(--font-sans);
-    letter-spacing: normal;
-    text-transform: none;
-}
-
-.studio-list__item--unread .studio-list__link { color: var(--studio-accent); }
-
-.studio-badge {
-    font-family: var(--font-mono);
-    font-size: 0.5625rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 0.05rem 0.3rem;
-    border: 1px solid currentColor;
-    color: var(--studio-accent);
-    vertical-align: 0.1em;
-}
-
 /*
- * C3 — the empty states. Two lines: what will appear here, and what to do
- * meanwhile. A single "Nothing yet" tells a new owner the panel is working and
- * nothing else.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * E1 — AND NINETY-FIVE MORE LINES OF IT, DIRECTLY BELOW THAT SENTENCE.
+ *
+ * .studio-list, .studio-list__item, __link, __excerpt, __meta, --unread,
+ * .studio-badge, .studio-empty, .studio-empty__hint and .studio-more lived
+ * here until E1, with their two Arabic exceptions and their hover states.
+ *
+ * Every one styled the blade lists that RecentEnquiries and RecentlyEdited
+ * used to render. Task 33 replaced those widgets with real Filament tables in
+ * e47783d; the markup went, the stylesheet stayed, and the comment above —
+ * written in that same commit, about the stat cards — sat on top of it.
+ *
+ * Found by measuring. A probe asked the Arabic dashboard for the computed
+ * style of .studio-badge and .studio-list__meta and got nothing back, because
+ * nothing in resources/views or app/ emits either class any more. Grepping
+ * the whole repository for the four names outside this directory returns the
+ * test that names .studio-badge, and nothing else.
+ *
+ * Left behind on purpose: the figures band above, which studio-figures.blade.php
+ * does still render.
+ * ═══════════════════════════════════════════════════════════════════════════
  */
-.studio-empty {
-    font-size: 0.875rem;
-    color: var(--studio-muted);
-    margin: 0;
-}
-
-.studio-empty__hint {
-    display: block;
-    margin-top: 0.3rem;
-    font-size: 0.8125rem;
-    color: var(--studio-muted);
-    opacity: 0.8;
-}
-
-/* A section's own footer link, in the mono voice. */
-.studio-more {
-    font-family: var(--font-mono);
-    font-size: 0.6875rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--studio-accent);
-    text-decoration: none;
-}
-
-[dir='rtl'] .studio-more {
-    font-family: var(--font-sans);
-    letter-spacing: normal;
-    text-transform: none;
-}
-
-.studio-more:hover { text-decoration: underline; }
 
 /*
  * C5 — DENSITY ON A PHONE.
@@ -937,4 +994,53 @@ a.fi-in-entry-content {
      * saved was not worth it. The padding above is where the density came
      * from; the column count was not the problem.
      */
+}
+
+
+/* ---- E1: Arabic takes no tracking, including in the panel's own labels ---- */
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * FOUR RULES THE TOKEN FIX NEVER REACHED.
+ *
+ * ADR 0003 settled this and D2 implemented it: Arabic is cursive, so
+ * letter-spacing pulls the joins apart, and the fix belongs at the token —
+ * tokens.css sets --tracking-wide and --tracking-tight to 0 under
+ * [lang='ar'], which covers every tracked string on the public site at once
+ * "so a new component cannot forget it".
+ *
+ * Found while reading this file for E1, not in the browser: four of the
+ * panel's own label rules carry a LITERAL value rather than the token, so
+ * the Arabic block could not reach them. Three are surfaces the owner reads
+ * in Arabic:
+ *
+ *     .studio-media-detail__facts dt     0.06em   the media screen's facts
+ *     .studio-media-detail__table th     0.06em   its renditions table
+ *     .studio-figures__group             0.08em   the dashboard's clusters
+ *
+ * The fourth was .studio-badge, and the same scan showed why it had never
+ * been noticed: it styles markup Task 33 deleted. It is gone, with the rest
+ * of the dead block above, rather than fixed.
+ *
+ * The mono face on the figures was already handled, because --font-mono IS
+ * a token; only the tracking leaked. That is the whole argument for tokens
+ * and against literals, and it is why the invariant is now a test:
+ * tests/Feature/Studio/PanelTrackingTest.php reads this stylesheet and fails
+ * on a tracked rule in the panel with no Arabic counterpart, so the fifth one
+ * cannot be written silently.
+ *
+ * text-transform goes too, in the same breath as the other exceptions in
+ * this file: Arabic is unicase, so uppercase is a no-op on the glyphs, but
+ * leaving it declared tells the next reader that capitals are part of the
+ * label's design in Arabic, and they are not.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+[dir='rtl'] .studio-media-detail__facts dt,
+[lang='ar'] .studio-media-detail__facts dt,
+[dir='rtl'] .studio-media-detail__table th,
+[lang='ar'] .studio-media-detail__table th,
+[dir='rtl'] .studio-figures__group,
+[lang='ar'] .studio-figures__group {
+    letter-spacing: normal;
+    text-transform: none;
 }

@@ -150,6 +150,10 @@ class ActivityLogResource extends Resource
                         fn (Builder $query, string $date): Builder => $query->whereDate('created_at', '>=', $date),
                     )),
             ])
+            // E2 — what will appear here, and what to do meanwhile.
+            ->emptyStateHeading(fn (): string => __('studio.empty.activity_heading'))
+            ->emptyStateDescription(fn (): string => __('studio.empty.activity_body'))
+            ->emptyStateIcon('heroicon-o-clock')
             ->recordActions([])
             ->toolbarActions([])
             ->defaultSort('created_at', 'desc')

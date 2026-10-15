@@ -365,6 +365,10 @@ class InquiryResource extends Resource
              * somebody sent, and editing it would make it a record of what we
              * remember them sending. The rest of the row is everybody else's.
              */
+            // E2 — what will appear here, and what to do meanwhile.
+            ->emptyStateHeading(fn (): string => __('studio.empty.inquiry_heading'))
+            ->emptyStateDescription(fn (): string => __('studio.empty.inquiry_body'))
+            ->emptyStateIcon('heroicon-o-envelope')
             ->recordActions(ResourceDefaults::rowActionsFor(
                 Inquiry::class,
                 lead: [ViewAction::make()],

@@ -224,6 +224,10 @@ class MenuResource extends Resource
                         ? 'success'
                         : 'warning'),
             ])
+            // E2 — what will appear here, and what to do meanwhile.
+            ->emptyStateHeading(fn (): string => __('studio.empty.menu_heading'))
+            ->emptyStateDescription(fn (): string => __('studio.empty.menu_body'))
+            ->emptyStateIcon('heroicon-o-bars-3')
             ->recordActions([EditAction::make()])
             ->defaultSort('location');
     }

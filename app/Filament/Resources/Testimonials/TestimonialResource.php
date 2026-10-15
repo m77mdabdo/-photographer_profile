@@ -113,6 +113,10 @@ class TestimonialResource extends Resource
                 ResourceDefaults::statusFilter(),
                 ResourceDefaults::trashedFilter(),
             ])
+            // E2 — what will appear here, and what to do meanwhile.
+            ->emptyStateHeading(fn (): string => __('studio.empty.testimonial_heading'))
+            ->emptyStateDescription(fn (): string => __('studio.empty.testimonial_body'))
+            ->emptyStateIcon('heroicon-o-chat-bubble-left-right')
             ->recordActions(ResourceDefaults::rowActionsFor(Testimonial::class, self::TRANSLATED))
             /*
              * On the TABLE's header, not the page's, which is where every

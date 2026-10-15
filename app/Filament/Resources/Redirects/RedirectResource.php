@@ -232,6 +232,10 @@ class RedirectResource extends Resource
                 TernaryFilter::make('is_active')
                     ->label(__('studio.redirects.active')),
             ])
+            // E2 — what will appear here, and what to do meanwhile.
+            ->emptyStateHeading(fn (): string => __('studio.empty.redirect_heading'))
+            ->emptyStateDescription(fn (): string => __('studio.empty.redirect_body'))
+            ->emptyStateIcon('heroicon-o-arrow-path-rounded-square')
             ->recordActions(ResourceDefaults::rowActionsFor(Redirect::class))
             ->headerActions([CreateAction::make()])
             ->defaultSort('created_at', 'desc');

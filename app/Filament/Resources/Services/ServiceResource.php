@@ -145,6 +145,10 @@ class ServiceResource extends Resource
                 ResourceDefaults::statusFilter(),
                 ResourceDefaults::trashedFilter(),
             ])
+            // E2 — what will appear here, and what to do meanwhile.
+            ->emptyStateHeading(fn (): string => __('studio.empty.service_heading'))
+            ->emptyStateDescription(fn (): string => __('studio.empty.service_body'))
+            ->emptyStateIcon('heroicon-o-briefcase')
             ->recordActions(ResourceDefaults::rowActionsFor(Service::class, self::TRANSLATED))
             ->toolbarActions([ResourceDefaults::bulkActions()])
             ->defaultSort('sort_order')

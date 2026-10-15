@@ -89,6 +89,10 @@ class ArticleCategoryResource extends Resource
                 Translatable::statusColumn(self::TRANSLATED),
                 ResourceDefaults::updatedColumn(),
             ])
+            // E2 — what will appear here, and what to do meanwhile.
+            ->emptyStateHeading(fn (): string => __('studio.empty.article_category_heading'))
+            ->emptyStateDescription(fn (): string => __('studio.empty.article_category_body'))
+            ->emptyStateIcon('heroicon-o-folder')
             ->recordActions(ResourceDefaults::rowActionsFor(ArticleCategory::class, self::TRANSLATED))
             ->headerActions([Translatable::createAction(self::TRANSLATED)])
             ->defaultSort('sort_order')
