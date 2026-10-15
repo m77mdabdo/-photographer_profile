@@ -402,7 +402,7 @@ function chromePath() {
  * image the browser could decode, and a stylesheet that exists is not the same
  * as a font that applied.
  */
-function inPageAudit(isAdmin, isReducedMotion, expectedDir) {
+function inPageAudit(isAdmin, isReducedMotion, expectedDir, expectsLocaleSwitcher) {
   const problems = []
 
   // --- 0. the document's language and direction ----------------------------
@@ -410,19 +410,89 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir) {
    * Checked FIRST, and checked at all because a 200 proves nothing here.
    * An Arabic page that renders left-to-right returns 200, loads every image
    * and passes every other check in this file while being completely wrong.
-   * The admin is not localised, so it is exempt.
+   *
+   * ─────────────────────────────────────────────────────────────────────────
+   * THE ADMIN IS NO LONGER EXEMPT, AND THE EXEMPTION WAS STALE.
+   *
+   * This read `if (!isAdmin)` with the comment "the admin is not localised",
+   * which stopped being true in Task 34 Part F: the panel is 519 keys in
+   * lockstep with RTL throughout. So the one surface with the most strings on
+   * it was the one surface whose direction nothing measured in a browser.
+   *
+   * Task 34b asks for exactly this check on every panel screen after
+   * switching, which is what twenty-four admin targets × four viewports ×
+   * two languages now is. The hreflang and canonical rules below stay
+   * public-only: the panel is noindex and has ONE address per screen, which
+   * is the whole reason its language lives in a cookie.
+   * ─────────────────────────────────────────────────────────────────────────
    */
+  const dir = document.documentElement.getAttribute('dir')
+
+  if (dir !== expectedDir) {
+    problems.push(`<html dir> is "${dir}", expected "${expectedDir}"`)
+  }
+
+  if (!document.documentElement.getAttribute('lang')) {
+    problems.push('<html> has no lang attribute')
+  }
+
+  /*
+   * THE PANEL'S OWN LANGUAGE CONTROL, on the page and agreeing with it.
+   *
+   * Task 34b. The switcher is rendered into the topbar on every panel screen,
+   * so "it is there" is checkable everywhere rather than on the one screen
+   * somebody thought to look at — which is how Task 33's touch-target claim
+   * went wrong. Four things are asked, and the third is the one that matters:
+   * a control that says English on an Arabic page is worse than no control.
+   *
+   * The sign-in page is excluded by the caller: it is the front door, not the
+   * panel, and it has no switcher yet.
+   */
+  if (expectsLocaleSwitcher) {
+    const form = document.querySelector('form.studio-locale')
+
+    if (!form) {
+      problems.push('no interface-language switcher in the topbar')
+    } else {
+      if (!form.closest('.fi-topbar')) {
+        problems.push('the locale switcher is not in the topbar')
+      }
+
+      const options = [...form.querySelectorAll('button[name="locale"]')]
+
+      if (options.length < 2) {
+        problems.push(`locale switcher offers ${options.length} language(s)`)
+      }
+
+      const pressed = options.filter((b) => b.getAttribute('aria-pressed') === 'true')
+      const documentLang = (document.documentElement.getAttribute('lang') || '').slice(0, 2)
+
+      if (pressed.length !== 1) {
+        problems.push(`locale switcher marks ${pressed.length} languages as current`)
+      } else if (pressed[0].value !== documentLang) {
+        problems.push(
+          `locale switcher shows "${pressed[0].value}" while the document is "${documentLang}"`
+        )
+      }
+
+      for (const option of options) {
+        const box = option.getBoundingClientRect()
+
+        if (box.height < 44 || box.width < 44) {
+          problems.push(
+            `locale switcher "${option.value}" is ${Math.round(box.width)}x${Math.round(box.height)}px`
+          )
+        }
+
+        // Reachable by keyboard: a real button, enabled, not taken out of order.
+        if (option.disabled || option.tabIndex < 0) {
+          problems.push(`locale switcher "${option.value}" is not keyboard reachable`)
+        }
+      }
+    }
+  }
+
   if (!isAdmin) {
-    const dir = document.documentElement.getAttribute('dir')
-
-    if (dir !== expectedDir) {
-      problems.push(`<html dir> is "${dir}", expected "${expectedDir}"`)
-    }
-
-    if (!document.documentElement.getAttribute('lang')) {
-      problems.push('<html> has no lang attribute')
-    }
-
     /*
      * The alternates have to be there on every page, because a page that
      * omits them breaks the reciprocity the whole annotation depends on.
@@ -1246,7 +1316,14 @@ async function run() {
             )
             .catch(() => {})
 
-          const audit = await activePage.evaluate(inPageAudit, target.admin === true, REDUCED, EXPECTED_DIR)
+          const audit = await activePage.evaluate(
+            inPageAudit,
+            target.admin === true,
+            REDUCED,
+            EXPECTED_DIR,
+            // The panel, but not the front door, which has no switcher.
+            target.admin === true && target.guest !== true
+          )
             problems = problems.concat(audit.problems)
             stats = audit
 

@@ -713,6 +713,17 @@ return [
      * without an empty state fails there rather than shipping the default.
      * ═══════════════════════════════════════════════════════════════════════
      */
+    /*
+     * Task 34b — the panel's own language switcher, and the words that keep
+     * it apart from the per-field content tabs. 'interface' is the one the
+     * control wears; 'content' is what Translatable::tabs() announces.
+     */
+    'locale' => [
+        'interface' => 'Interface',
+        'interface_legend' => 'Interface language',
+        'content_legend' => 'Content language',
+    ],
+
     'empty' => [
         'menu_heading' => 'No menus',
         'menu_body' => 'A menu is the set of links in the header or the footer. Both are seeded; edit one to change what a visitor sees.',

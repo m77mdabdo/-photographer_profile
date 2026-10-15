@@ -75,6 +75,26 @@ final class Translatable
             }
 
             $tabs[] = Tab::make(Locale::native($locale))
+                /*
+                 * ───────────────────────────────────────────────────────────
+                 * TASK 34b — A DOCUMENT, BECAUSE THIS IS THE CONTENT'S
+                 * LANGUAGE AND NOT THE PANEL'S.
+                 *
+                 * Since the topbar gained an interface-language switcher
+                 * there are two controls on a form naming the same two
+                 * languages, and they do different things: this one chooses
+                 * which language's WORDS are being typed, and leaves the
+                 * panel in whatever language the editor reads. The pairing an
+                 * editor meets most often is the confusing one — an Arabic
+                 * panel with the English tab open, writing English.
+                 *
+                 * The globe is the chrome; the document is the content. An
+                 * icon rather than a longer label because the label is the
+                 * language's own name and must stay that, and because the
+                 * distinction has to survive at 390px.
+                 * ───────────────────────────────────────────────────────────
+                 */
+                ->icon('heroicon-m-document-text')
                 ->schema($components)
                 /*
                  * The count of untranslated fields, on the tab itself, so an
@@ -103,7 +123,15 @@ final class Translatable
                 ->badgeColor('warning');
         }
 
-        return Tabs::make('locales')->tabs($tabs)->columnSpanFull();
+        /*
+         * The announced name of the tab strip. Filament's default is
+         * "Tabs", which tells a screen-reader user nothing about which of the
+         * form's two language controls they have landed on; this says which.
+         */
+        return Tabs::make('locales')
+            ->label(__('studio.locale.content_legend'))
+            ->tabs($tabs)
+            ->columnSpanFull();
     }
 
     /**

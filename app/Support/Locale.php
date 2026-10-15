@@ -248,6 +248,48 @@ final class Locale
     }
 
     /**
+     * ═══════════════════════════════════════════════════════════════════════
+     * THE SURFACES BEHIND A LOGIN, WHICH HAVE ONE ADDRESS EACH.
+     *
+     * /admin/projects is the same address in both languages: Filament gives a
+     * panel one path, the panel is noindex, and no crawler will ever see it —
+     * so the stored preference decides the language and there is no second
+     * URL to be canonical about. SetLocale has worked this way since the
+     * panel was built.
+     *
+     * The list lived there as a private constant until Task 34b, when the
+     * panel's own switcher needed the same answer: a return path under
+     * /admin must NOT be given a locale prefix, because /ar/admin is a door
+     * that sets a cookie and redirects rather than an address that serves
+     * anything. Two copies of this list would be two definitions of what is
+     * private, which is the kind of disagreement that ends with an Arabic
+     * editor bouncing through three redirects to reach the page they were
+     * already on.
+     * ═══════════════════════════════════════════════════════════════════════
+     *
+     * @var list<string>
+     */
+    public const PRIVATE_PREFIXES = [
+        'studio', 'admin', 'login', 'logout', 'register',
+        'forgot-password', 'reset-password', 'two-factor-challenge', 'user',
+    ];
+
+    /**
+     * Is this path one of those surfaces?
+     *
+     * Any locale prefix is stripped first, so /ar/admin answers the same as
+     * /admin — the prefix is how the door is reached, not what it leads to.
+     */
+    public static function isPrivatePath(string $path): bool
+    {
+        [, $bare] = self::split($path);
+
+        $first = explode('/', ltrim($bare, '/'))[0] ?? '';
+
+        return in_array($first, self::PRIVATE_PREFIXES, true);
+    }
+
+    /**
      * Every locale's version of the current URL, as [code => absolute url].
      *
      * This is the hreflang set, and it is built from the request path rather

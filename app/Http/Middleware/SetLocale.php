@@ -156,20 +156,13 @@ class SetLocale
     /**
      * Paths behind a login, which have one address each and are never indexed.
      *
-     * @var list<string>
+     * The list moved to Locale in Task 34b, when the panel's own locale
+     * switcher needed the same answer about a return path. It is asked here
+     * rather than inlined so there is one definition of "private".
      */
-    private const PRIVATE_PREFIXES = [
-        'studio', 'admin', 'login', 'logout', 'register',
-        'forgot-password', 'reset-password', 'two-factor-challenge', 'user',
-    ];
-
     private function isPrivateSurface(Request $request): bool
     {
-        [, $bare] = Locale::split($request->getPathInfo());
-
-        $first = explode('/', ltrim($bare, '/'))[0] ?? '';
-
-        return in_array($first, self::PRIVATE_PREFIXES, true);
+        return Locale::isPrivatePath($request->getPathInfo());
     }
 
     /**

@@ -143,6 +143,35 @@ class StudioPanelProvider extends PanelProvider
             PanelsRenderHook::BODY_END,
             fn (): string => Blade::render('@livewire(\'studio.media-picker\')'),
         );
+
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * TASK 34b — THE INTERFACE LANGUAGE, IN THE TOPBAR.
+         *
+         * The panel has been fully translated since Part F and had no way to
+         * change its language from inside it: the cookie SetLocale reads was
+         * written only by the public site's footer switcher. An owner who
+         * wants to work in Arabic had to leave the panel to find out they
+         * could.
+         *
+         * TOPBAR_END rather than the user menu, for two reasons. The user
+         * menu is a dropdown, so the control would be two interactions away
+         * and invisible until the second one — a language switcher somebody
+         * cannot see is the problem this is fixing. And Filament builds that
+         * menu from items, which are links; this has to be a form, because it
+         * writes a preference (see LocaleController) and because a link that
+         * changes state is a link a browser may prefetch.
+         *
+         * Rendered on every panel page, which is what makes requirement D
+         * checkable: the harness now asserts the switcher's state agrees with
+         * <html lang> on all twenty-four panel screens, at four viewports, in
+         * both languages.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::TOPBAR_END,
+            fn (): string => Blade::render('@include(\'filament.studio.locale-switch\')'),
+        );
     }
 
     public function panel(Panel $panel): Panel

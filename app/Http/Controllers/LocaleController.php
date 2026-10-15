@@ -45,8 +45,28 @@ class LocaleController extends Controller
          * project. Locale::pathFor strips whatever prefix the submitted path
          * carries and applies the new one, so a round trip
          * /ar/work/x -> /work/x -> /ar/work/x is stable.
+         *
+         * ───────────────────────────────────────────────────────────────────
+         * EXCEPT BEHIND THE LOGIN, WHERE THE ADDRESS DOES NOT CHANGE.
+         *
+         * Task 34b. /admin/projects is the same address in both languages —
+         * see Locale::PRIVATE_PREFIXES — so prefixing a panel path would send
+         * the editor to /ar/admin/projects, which is a door that writes the
+         * cookie and redirects back. The cookie below is already doing that
+         * job, so the prefix would buy a second round trip and nothing else.
+         *
+         * The query string survives for the same surface and only there. On
+         * the public site a ?page=4 carried across a language change lands on
+         * a pagination state that may not exist; in the panel the query IS
+         * the state — the dashboard's deep links carry tableFilters, and
+         * switching language on a filtered list must not quietly unfilter it.
+         * ───────────────────────────────────────────────────────────────────
          */
-        $target = Locale::pathFor($locale, $this->safeReturnPath($request));
+        $return = $this->safeReturnPath($request);
+
+        $target = Locale::isPrivatePath($return)
+            ? $return
+            : Locale::pathFor($locale, (string) (parse_url($return, PHP_URL_PATH) ?: '/'));
 
         return redirect()->to($target)->withCookie(cookie(
             name: Locale::COOKIE,
@@ -82,9 +102,16 @@ class LocaleController extends Controller
             return '/';
         }
 
-        // Drop any query string: the switcher returns to the page, not to a
-        // particular filtered state of it, and a stale ?page=4 after a
-        // language change is worse than landing on page one.
-        return (string) (parse_url($candidate, PHP_URL_PATH) ?: '/');
+        /*
+         * The QUERY STRING IS KEPT HERE and dropped by the caller for the
+         * public site, rather than thrown away in this method as it was until
+         * Task 34b. The panel needs it — see the caller — and a method called
+         * "safe" should be about safety, not about which half of a URL a
+         * particular surface wants.
+         */
+        $path = (string) (parse_url($candidate, PHP_URL_PATH) ?: '/');
+        $query = parse_url($candidate, PHP_URL_QUERY);
+
+        return $query === null || $query === '' ? $path : $path.'?'.$query;
     }
 }
