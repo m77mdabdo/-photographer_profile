@@ -229,10 +229,20 @@ class PanelStylesheetTest extends TestCase
      * the orphans, says "dead CSS outlives the markup it styled unless it is
      * deleted with it".
      *
-     * The classes in this directory are ours and are written out literally in
-     * blade, so every one of them can be looked for. Filament's own (.fi-*)
-     * are not checked: they are upstream markup, and a selector for a
-     * component this panel does not currently show is not dead.
+     * The classes in this directory are ours, so every one of them can be
+     * looked for. Filament's own (.fi-*) are not checked: they are upstream
+     * markup, and a selector for a component this panel does not currently
+     * show is not dead.
+     *
+     * ONE INDIRECTION IS UNDERSTOOD, AND ONLY ONE. Task 34c made the three
+     * locale switchers a single component with a `block` prop, so
+     * .studio-locale__option is composed at render time from block="studio-
+     * locale" and the literal `__option` in the component — a literal search
+     * reported all four as dead on the day they started being used. A
+     * composed name counts as live when BOTH halves are present: the block
+     * declared on a component somewhere, and the element suffix written out
+     * in a view. Both halves still have to exist, so deleting either one
+     * fails this test.
      * ═══════════════════════════════════════════════════════════════════════
      */
     public function test_no_rule_styles_markup_that_no_longer_exists(): void
@@ -246,9 +256,23 @@ class PanelStylesheetTest extends TestCase
                     preg_match_all('/\.(studio-[a-z0-9_-]+)/', $selector, $matches);
 
                     foreach ($matches[1] as $class) {
-                        if (! str_contains($sources, $class)) {
-                            $orphans[$class] = basename($sheet).': .'.$class;
+                        if (str_contains($sources, $class)) {
+                            continue;
                         }
+
+                        // A BEM name a component composes: block + __element.
+                        if (str_contains($class, '__')) {
+                            [$blockName, $element] = explode('__', $class, 2);
+
+                            if (
+                                str_contains($sources, 'block="'.$blockName.'"')
+                                && str_contains($sources, '__'.$element)
+                            ) {
+                                continue;
+                            }
+                        }
+
+                        $orphans[$class] = basename($sheet).': .'.$class;
                     }
                 }
             }

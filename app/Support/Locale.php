@@ -272,6 +272,28 @@ final class Locale
     public const PRIVATE_PREFIXES = [
         'studio', 'admin', 'login', 'logout', 'register',
         'forgot-password', 'reset-password', 'two-factor-challenge', 'user',
+
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * /two-factor WAS MISSING, AND HAD BEEN SINCE PART B.
+         *
+         * Enrolment lived at /admin/two-factor inside the custom admin, where
+         * the 'admin' entry above covered it. Task 34 Part B gave it its own
+         * address outside both admins — correctly, so that deleting the admin
+         * could not take enrolment with it — and this list was not updated.
+         *
+         * The consequence was silent and exactly the fault Task 32 exists to
+         * catch: an owner with locale=ar visiting /two-factor got an ENGLISH
+         * page, because a path that is not private falls through to "the URL
+         * decides" and the URL has no prefix. Nothing failed; the page simply
+         * ignored the preference every other page honours.
+         *
+         * Found in 34c by asking what the front door's switcher should do
+         * with a return path of /two-factor: prefix it, as the public rule
+         * says, and send the owner to /ar/two-factor, which is not a route.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        'two-factor',
     ];
 
     /**

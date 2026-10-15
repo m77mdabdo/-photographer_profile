@@ -173,8 +173,23 @@
 }
 .auth-split__form {
     display: flex;
-    align-items: flex-start;
-    justify-content: center;
+    /*
+     * A COLUMN SINCE 34c, AND IT HAD TO BECOME ONE.
+     *
+     * This pane held exactly one child — the card — so a row centred it and
+     * nothing else was ever asked of it. Adding the language switcher above
+     * the card made it a second FLEX ITEM, and the row put the two side by
+     * side: at 1440 the control sat in the empty gutter to the left of the
+     * form, and at 390 it overlapped the words "تسجيل الدخول". Caught by
+     * screenshotting both widths before trusting either.
+     *
+     * The alignment below reproduces exactly what the row did: the card
+     * centred horizontally, held to the top on a phone and centred
+     * vertically from 900px up.
+     */
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
     padding: var(--sp-7) var(--gutter);
 }
 @media (min-width: 900px) {
@@ -190,7 +205,7 @@
         border-inline-end: var(--rule-hair) solid var(--border);
     }
     .auth-split__form {
-        align-items: center;
+        justify-content: center;
         padding-inline: var(--sp-8);
     }
 }
@@ -338,4 +353,89 @@
     display: inline-flex;
     align-items: center;
     min-block-size: 2.75rem;
+}
+
+/* ------------------------------------------------------------------ *
+ * 34c — THE LANGUAGE, ON THE FRONT DOOR.
+ *
+ * The same control as the panel's and the public header's, in this
+ * page's register: hairline boxes, the mono label, the hard edges the
+ * rest of this stylesheet uses. It sits above the card in the form
+ * pane, which is where somebody who cannot read the form is looking.
+ *
+ * 44px on both buttons at every width — the floor G2 set and the
+ * harness enforces, and this control is now on six pages.
+ * ------------------------------------------------------------------ */
+
+.auth-locale {
+    inline-size: 100%;
+    max-inline-size: 26rem;        /* the card's width, so they line up */
+    margin-block-end: var(--sp-5);
+}
+
+.auth-locale__set {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.auth-locale__icon {
+    display: inline-flex;
+    inline-size: 1rem;
+    block-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.auth-locale__icon svg {
+    inline-size: 100%;
+    block-size: 100%;
+}
+
+.auth-locale__label {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-inline-end: auto;       /* the languages sit at the far end */
+}
+
+/*
+ * Arabic takes neither tracking nor case, and no Latin monospace face —
+ * the same exception .auth-brand has carried since the front door was
+ * designed, and the token fix in tokens.css does not reach a literal.
+ */
+[lang='ar'] .auth-locale__label {
+    font-family: var(--font-text);
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+.auth-locale__option {
+    min-block-size: 44px;
+    min-inline-size: 44px;
+    padding-inline: var(--sp-3);
+    font-size: var(--fs-meta);
+    color: var(--text-secondary);
+    border: var(--rule-hair) solid var(--border);
+    transition: color var(--dur-fast) var(--ease-out);
+}
+
+.auth-locale__option:hover,
+.auth-locale__option:focus-visible {
+    color: var(--text-primary);
+}
+
+/*
+ * The current language by FILL, not colour alone — the same decision the
+ * theme switch records two blocks up, and aria-pressed carries it for a
+ * screen reader either way.
+ */
+.auth-locale__option[aria-pressed='true'] {
+    color: var(--bg);
+    background-color: var(--text-primary);
+    border-color: var(--text-primary);
 }

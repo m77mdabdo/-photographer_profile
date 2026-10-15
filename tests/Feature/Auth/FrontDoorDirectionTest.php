@@ -50,11 +50,28 @@ class FrontDoorDirectionTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** Every front-door page, and how to reach it. */
+    /**
+     * Every front-door page, and how to reach it.
+     *
+     * THREE UNTIL 34c, WHICH IS TWO SHORT. The guarantee is about the family
+     * of pages somebody meets before they are signed in — and enrolment and
+     * password confirmation are in that family even though they need a
+     * session. They are checked here too now, because /two-factor turned out
+     * to be the one page in it that ignored the language cookie entirely.
+     *
+     * The challenge has its own case below: it needs a half-signed-in
+     * session, which is state rather than an address.
+     */
     private const PAGES = [
         'login' => '/login',
         'forgot password' => '/forgot-password',
         'reset password' => '/reset-password/a-token?email=owner%40example.com',
+    ];
+
+    /** The two that need a signed-in user. */
+    private const AUTHENTICATED_PAGES = [
+        'two-factor setup' => '/two-factor',
+        'confirm password' => '/user/confirm-password',
     ];
 
     /**
@@ -72,7 +89,57 @@ class FrontDoorDirectionTest extends TestCase
         // The <title> and meta are not visible body text.
         $body = (string) preg_replace('#<head>.*?</head>#s', '', $body);
 
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * THE LANGUAGE SWITCHER IS CUT OUT HERE AND CHECKED SEPARATELY.
+         *
+         * 34c put the control on every one of these pages, and one of its two
+         * buttons says "English" — in English, deliberately and necessarily:
+         * somebody who reads only Arabic can find "العربية", and somebody who
+         * reads only English must be able to find their own language on an
+         * Arabic page. That is the entire purpose of the control.
+         *
+         * So this is an exception, and it is kept HONEST by being bounded.
+         * The subtree is removed from the text scanned below, and
+         * assertSwitcherIsTheOnlyLatin() then asserts that what was removed
+         * contains the language names and nothing else — a stray English
+         * sentence inside the form fails just as it would outside it.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        $body = (string) preg_replace('#<form[^>]*data-locale-switcher.*?</form>#s', '', $body);
+
         return trim((string) preg_replace('/\s+/', ' ', strip_tags($body)));
+    }
+
+    /**
+     * The control is there, and the only Latin inside it is the name of a
+     * language. Called for every page the Arabic assertions cover.
+     */
+    private function assertSwitcherIsTheOnlyLatin(string $html, string $name): void
+    {
+        $this->assertMatchesRegularExpression(
+            '#<form[^>]*data-locale-switcher#',
+            $html,
+            "{$name} has no language switcher, so an Arabic reader cannot leave English",
+        );
+
+        preg_match('#<form[^>]*data-locale-switcher.*?</form>#s', $html, $match);
+
+        $inside = trim((string) preg_replace('/\s+/', ' ', strip_tags($match[0])));
+
+        preg_match_all('/[A-Za-z]{3,}/', $inside, $latin);
+
+        /*
+         * "English" twice — the visible label and the parenthesised name the
+         * screen reader hears — and nothing else. The Arabic option's visible
+         * label is Arabic and its announced name is Arabic, so neither shows
+         * up here.
+         */
+        $this->assertSame(
+            ['English'],
+            array_values(array_unique($latin[0])),
+            "{$name}: the switcher carries English beyond the language's name: ".implode(', ', array_unique($latin[0])),
+        );
     }
 
     // ----------------------------------------------------------------- 0a
@@ -83,11 +150,27 @@ class FrontDoorDirectionTest extends TestCase
         \App\Support\Settings::set('site.name', 'استوديو الجوهرة');
         \App\Support\Settings::flush();
 
-        foreach (self::PAGES as $name => $path) {
+        $pages = self::PAGES;
+
+        foreach (self::AUTHENTICATED_PAGES as $name => $path) {
+            $pages[$name] = $path;
+        }
+
+        foreach ($pages as $name => $path) {
+            if (isset(self::AUTHENTICATED_PAGES[$name])) {
+                $this->actingAs(User::factory()->create([
+                    'role' => UserRole::Owner,
+                    'two_factor_secret' => encrypt('SECRETVALUE'),
+                    'two_factor_confirmed_at' => now(),
+                ]));
+            }
+
             $html = $this->withUnencryptedCookie(Locale::COOKIE, 'ar')->get($path)->getContent();
 
             $this->assertStringContainsString('dir="rtl"', $html, "$name is not RTL under the ar cookie");
             $this->assertStringContainsString('lang="ar"', $html, "$name does not declare Arabic");
+
+            $this->assertSwitcherIsTheOnlyLatin($html, $name);
 
             $text = $this->visibleText($html);
 
@@ -129,6 +212,8 @@ class FrontDoorDirectionTest extends TestCase
             ->getContent();
 
         $this->assertStringContainsString('dir="rtl"', $html);
+
+        $this->assertSwitcherIsTheOnlyLatin($html, 'two-factor challenge');
 
         preg_match_all('/[A-Za-z]{3,}/', $this->visibleText($html), $latin);
 

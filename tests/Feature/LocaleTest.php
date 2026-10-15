@@ -267,8 +267,34 @@ class LocaleTest extends TestCase
          * The attributes are in the markup the server sent, so there is
          * nothing to reconcile after paint. A direction that settled in later
          * would relay out the whole document in front of the reader.
+         *
+         * ───────────────────────────────────────────────────────────────────
+         * ONE ELEMENT MAY REVERSE, AND ONLY ONE KIND: A LANGUAGE'S OWN NAME.
+         *
+         * 34c made the three switchers one component, and with it the public
+         * one gained what the panel's had: lang and dir on each option, so
+         * "English" inside an Arabic page is marked as English rather than
+         * left to the bidi algorithm. That is not a direction settling late —
+         * it is a correctly annotated run of foreign text, and it is in the
+         * first byte like everything else here.
+         *
+         * So the exception is BOUNDED rather than removed. Every dir="ltr"
+         * inside an Arabic body must be on an element that also declares
+         * lang="en"; anything else — a layout div, a card, a section — fails
+         * exactly as it did before.
+         * ───────────────────────────────────────────────────────────────────
          */
-        $this->assertStringNotContainsString('dir="ltr"', explode('<body', $arabic)[1] ?? '');
+        $body = explode('<body', $arabic)[1] ?? '';
+
+        preg_match_all('/<[^>]*dir="ltr"[^>]*>/', $body, $reversed);
+
+        foreach ($reversed[0] as $element) {
+            $this->assertMatchesRegularExpression(
+                '/lang="en"/',
+                $element,
+                'an element reverses direction without naming a language: '.$element,
+            );
+        }
     }
 
     // ----------------------------------------------------------------- 6

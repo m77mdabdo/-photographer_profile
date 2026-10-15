@@ -50,6 +50,43 @@
         <main class="auth-split__form" id="auth-main" tabindex="-1">
             {{--
                 ═══════════════════════════════════════════════════════════════
+                TASK 34c — THE LANGUAGE, BEFORE THE FORM.
+
+                An owner who reads only Arabic met this page in English with no
+                way out of it: the cookie SetLocale reads was written by the
+                public site's header and, since 34b, by the panel's topbar —
+                both of which are on the far side of a door they cannot read.
+
+                IN THE LAYOUT, NOT IN A VIEW, so it is on all six Fortify
+                pages at once: sign-in, the reset request, the reset form, the
+                second-factor challenge, password confirmation and enrolment.
+                Being locked out mid-flow is exactly when somebody needs it,
+                and adding it view by view is how a page gets missed.
+
+                FIRST IN THE FORM PANE, and therefore early in the tab order,
+                because the person who needs this control cannot read anything
+                below it. It costs a reader who does not need it two tabs; the
+                skip link above jumps the lot.
+
+                NOT IN THE IDENTITY PANEL. That aside is aria-hidden, and
+                focusable content inside aria-hidden is unreachable to a
+                screen-reader user while remaining reachable by Tab — the
+                worst of both.
+                ═══════════════════════════════════════════════════════════════
+            --}}
+            <x-locale-switch
+                block="auth-locale"
+                :legend="__('studio.locale.interface_legend')"
+                :label="__('studio.locale.interface')"
+                :keep-query="true"
+            >
+                <x-slot:icon>
+                    <x-heroicon-m-globe-alt />
+                </x-slot:icon>
+            </x-locale-switch>
+
+            {{--
+                ═══════════════════════════════════════════════════════════════
                 THE STATUS FLASH, WHICH NOTHING HAS RENDERED SINCE TASK 33.
                 
                 Fortify answers in session('status'): "Two-factor

@@ -283,6 +283,64 @@ const ADMIN_PAGES = [
 
   /*
    * ───────────────────────────────────────────────────────────────────────
+   * TASK 34c — THE FRONT DOOR, ALL OF IT.
+   *
+   * One of these six was checked before: the sign-in page. The other five
+   * are the rest of the Fortify flow, and they are the pages somebody is on
+   * when something has already gone wrong — a forgotten password, a lost
+   * phone, an enrolment half done. They all carry the locale switcher now,
+   * and Task 32 found this exact family rendering RTL with English content,
+   * so they are the pages that most need the direction check.
+   *
+   * EVERY PATH WAS READ OFF `php artisan route:list` BEFORE IT WAS WRITTEN
+   * HERE, which is the rule G3 set after eighteen targets were found
+   * pointing at an admin that no longer existed. Two were not what they
+   * look like: enrolment is /two-factor (this project's own route, not
+   * Fortify's /user/two-factor-authentication, which is a POST), and
+   * password confirmation is under /user.
+   *
+   * The reset form is addressed with a token that is not a real one: Fortify
+   * renders the view for any token and validates on submit, so this checks
+   * the page an owner sees after clicking a mail link without needing to
+   * send one. The ?email= is the half that matters here anyway — it is what
+   * the switcher must not lose.
+   */
+  { label: 'door reset request', path: '/forgot-password', admin: true, guest: true },
+  {
+    label: 'door reset form',
+    path: '/reset-password/harness-token?email=owner%40example.test',
+    admin: true,
+    guest: true,
+  },
+  {
+    label: 'door two-factor challenge',
+    path: '/two-factor-challenge',
+    admin: true,
+    guest: true,
+    /*
+     * The one page in this harness that cannot be reached by addressing it:
+     * a bare GET redirects to /login, and auditing that would report the
+     * login page passing under this row's name. So it is reached the way a
+     * person reaches it — by signing in and stopping at the second factor.
+     */
+    arrive: async (page, { base, credentials }) => {
+      await page.goto(base + '/login', { waitUntil: 'networkidle2' })
+      await page.type('input[name="email"]', credentials.email)
+      await page.type('input[name="password"]', credentials.password)
+
+      const [response] = await Promise.all([
+        page.waitForNavigation({ waitUntil: 'networkidle2' }),
+        page.click(SUBMIT),
+      ])
+
+      return response
+    },
+  },
+  { label: 'door two-factor setup', path: '/two-factor', admin: true },
+  { label: 'door confirm password', path: '/user/confirm-password', admin: true },
+
+  /*
+   * ───────────────────────────────────────────────────────────────────────
    * THE CUSTOM ADMIN IS GONE (Task 34 Part B).
    *
    * Eighteen targets lived here. They moved from /admin to /legacy in Part
@@ -357,6 +415,27 @@ function totp(secret, atMs = Date.now()) {
  * reported as a row of admin failures with a cause rather than taking the
  * whole public run down with it.
  */
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * THE FORM'S OWN SUBMIT, NOT THE PAGE'S FIRST ONE.
+ *
+ * This was `button[type="submit"]` until Task 34c put a language switcher on
+ * the front door — two more submit buttons, ahead of the sign-in button in
+ * the DOM. So the harness clicked "English", posted the locale form, came
+ * back to /login signed out, and carried on.
+ *
+ * It then reported every panel screen as passing, because the check below
+ * asked only whether /admin returned 200 — and for a signed-out visitor it
+ * does: Fortify renders the login page. Twenty-four admin rows audited the
+ * sign-in screen under other names.
+ *
+ * Both halves are fixed: the selector excludes the switcher, and the check
+ * below now asks whether the PANEL is on the screen rather than whether a
+ * request succeeded.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+const SUBMIT = 'form:not([data-locale-switcher]) button[type="submit"]'
+
 async function loginAsDisposableAdmin(page, credentials) {
   await page.goto(BASE + '/login', { waitUntil: 'networkidle2' })
   await page.type('input[name="email"]', credentials.email)
@@ -364,7 +443,7 @@ async function loginAsDisposableAdmin(page, credentials) {
 
   await Promise.all([
     page.waitForNavigation({ waitUntil: 'networkidle2' }),
-    page.click('button[type="submit"]'),
+    page.click(SUBMIT),
   ])
 
   if (page.url().includes('two-factor-challenge')) {
@@ -372,7 +451,7 @@ async function loginAsDisposableAdmin(page, credentials) {
 
     await Promise.all([
       page.waitForNavigation({ waitUntil: 'networkidle2' }),
-      page.click('button[type="submit"]'),
+      page.click(SUBMIT),
     ])
   }
 
@@ -380,6 +459,20 @@ async function loginAsDisposableAdmin(page, credentials) {
 
   if (!response || response.status() !== 200) {
     return `admin login landed on ${page.url()} (${response ? response.status() : 'no response'})`
+  }
+
+  /*
+   * A 200 AT /admin IS NOT THE SAME AS BEING IN THE PANEL. A signed-out
+   * visitor gets the login page with a 200 at this address; the panel has a
+   * sidebar and the login page does not.
+   */
+  const inPanel = await page.evaluate(() => ({
+    path: location.pathname,
+    panel: !!document.querySelector('.fi-sidebar, .fi-topbar'),
+  }))
+
+  if (!inPanel.panel || !inPanel.path.startsWith('/admin')) {
+    return `signed in but landed on ${inPanel.path} with no panel chrome — the sign-in form did not submit`
   }
 
   return null
@@ -449,13 +542,31 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir, expectsLocaleSwitche
    * panel, and it has no switcher yet.
    */
   if (expectsLocaleSwitcher) {
-    const form = document.querySelector('form.studio-locale')
+    /*
+     * FOUND BY CONTRACT, NOT BY CLASS. The panel's control and the front
+     * door's share one component and one data attribute; their class names
+     * differ because their stylesheets do. Looking for the attribute is what
+     * lets one rule cover both surfaces — and it fails loudly if a third
+     * surface is given a copy of the markup without the contract.
+     */
+    const form = document.querySelector('form[data-locale-switcher]')
 
     if (!form) {
-      problems.push('no interface-language switcher in the topbar')
+      problems.push('no interface-language switcher on this page')
     } else {
-      if (!form.closest('.fi-topbar')) {
-        problems.push('the locale switcher is not in the topbar')
+      const topbar = document.querySelector('.fi-topbar')
+
+      if (topbar && !form.closest('.fi-topbar')) {
+        problems.push('the locale switcher is not in the panel topbar')
+      }
+
+      /*
+       * The front door's identity panel is aria-hidden. A focusable control
+       * inside it would be reachable by Tab and invisible to a screen
+       * reader, which is the worst of both.
+       */
+      if (form.closest('[aria-hidden="true"]')) {
+        problems.push('the locale switcher is inside an aria-hidden element')
       }
 
       const options = [...form.querySelectorAll('button[name="locale"]')]
@@ -1230,10 +1341,17 @@ async function run() {
              */
             const requestPath = target.admin ? target.path : localised(target.path)
 
-            const response = await activePage.goto(BASE + requestPath, {
-              waitUntil: 'networkidle2',
-              timeout: 30000,
-            })
+            /*
+             * `arrive` is for a page that cannot be addressed — the
+             * second-factor challenge exists only partway through signing
+             * in. Everything else is a plain navigation.
+             */
+            const response = target.arrive
+              ? await target.arrive(activePage, { base: BASE, credentials })
+              : await activePage.goto(BASE + requestPath, {
+                  waitUntil: 'networkidle2',
+                  timeout: 30000,
+                })
 
             status = response ? response.status() : 0
 
@@ -1321,8 +1439,13 @@ async function run() {
             target.admin === true,
             REDUCED,
             EXPECTED_DIR,
-            // The panel, but not the front door, which has no switcher.
-            target.admin === true && target.guest !== true
+            /*
+             * EVERY admin target, as of 34c: the panel's topbar and the
+             * front door's form pane. The exclusion that used to be here
+             * said "but not the front door, which has no switcher", which
+             * was the gap this task closed.
+             */
+            target.admin === true
           )
             problems = problems.concat(audit.problems)
             stats = audit
