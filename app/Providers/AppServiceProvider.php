@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Http\Middleware\RejectUninstalledFeature;
 use App\Models\Article;
 use App\Models\ArticleCategory;
 use App\Models\Category;
@@ -38,6 +39,7 @@ use App\Support\TwoFactorEnforcement;
 use App\Support\Sitemap;
 use App\Support\Theme;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -106,6 +108,54 @@ class AppServiceProvider extends ServiceProvider
          * why it throws rather than warns.
          */
         TwoFactorEnforcement::assertSafeForEnvironment();
+
+        /*
+         * TASK 36 A5 — CLOSE THE TWO ROUTES filament/actions REGISTERS FOR A
+         * FEATURE THIS APPLICATION DOES NOT HAVE.
+         *
+         * The package calls middlewareGroup('filament.actions', ['web']) in
+         * its own boot(); this provider boots after it, so re-declaring the
+         * group replaces it.
+         *
+         * BEFORE 'web', NOT AFTER IT, and the first attempt had it after.
+         * Route-model binding is SubstituteBindings, which lives INSIDE the
+         * web group — so appending still let an anonymous request query the
+         * missing table and still returned 500. Measured, not reasoned:
+         * four requests wrote 592 lines of exception to the log with the
+         * middleware second, and none with it first.
+         *
+         * See RejectUninstalledFeature for what was and was not at risk.
+         */
+        Route::middlewareGroup('filament.actions', [RejectUninstalledFeature::class, 'web']);
+
+        /*
+         * TASK 36 B1 — THE CEILING THAT WAS ACTUALLY IN FORCE.
+         *
+         * Every panel upload goes through Livewire's temporary-file endpoint
+         * before Filament or StoreUploadedMedia see a byte, and
+         * config/livewire.php leaves temporary_file_upload.rules as null —
+         * which means Livewire's own default, ['required', 'file', 'max:12288'].
+         *
+         * So the real limit was 12 MB. config/media.php says 60, the removed
+         * StoreMediaRequest said 60, the FileUpload field said 50 because of
+         * the typo above, and a photographer with a 20 MB frame got a generic
+         * Livewire validation failure from none of them. Four numbers, one
+         * upload.
+         *
+         * Set here rather than in config/livewire.php because the value has
+         * exactly one home — config/media.php — and a config file cannot read
+         * another config file without duplicating it.
+         *
+         * MIMES AS WELL AS SIZE. The authoritative check stays where it was,
+         * in StoreUploadedMedia, which reads the bytes; this is the cheaper
+         * gate that stops a non-image being written into livewire-tmp at all.
+         */
+        config()->set('livewire.temporary_file_upload.rules', [
+            'required',
+            'file',
+            'mimes:'.implode(',', (array) config('media.accepted_extensions')),
+            'max:'.(int) config('media.max_upload_kb'),
+        ]);
 
         /*
          * Layouts live in resources/views/layouts rather than under

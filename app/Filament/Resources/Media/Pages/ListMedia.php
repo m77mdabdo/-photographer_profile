@@ -74,7 +74,19 @@ class ListMedia extends ListRecords
                      * check. The real one is getimagesize() inside the action.
                      */
                     ->acceptedFileTypes(config('media.accepted_mimes'))
-                    ->maxSize(config('media.max_upload_kilobytes', 51200))
+                    /*
+                     * TASK 36 B1 — THE KEY WAS WRONG AND THE DEFAULT HID IT.
+                     *
+                     * This read config('media.max_upload_kilobytes', 51200).
+                     * There is no such key. config/media.php calls it
+                     * max_upload_kb and sets it to 61440, so the field has
+                     * been enforcing the 50 MB default all along while the
+                     * configuration said 60 — and the default meant nothing
+                     * ever failed loudly enough to notice. No default here:
+                     * a missing ceiling should break the screen, not quietly
+                     * invent one.
+                     */
+                    ->maxSize((int) config('media.max_upload_kb'))
                     ->helperText(__('studio.media.upload_hint'))
                     ->saveUploadedFileUsing(function (TemporaryUploadedFile $file) {
                         $this->store($file);

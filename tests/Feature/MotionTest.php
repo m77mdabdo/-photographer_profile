@@ -472,12 +472,31 @@ class MotionTest extends TestCase
          * And the strongest form of the claim: the response bytes are
          * identical whatever a client would do with them. There is no
          * server-side branch on motion at all.
+         *
+         * APART FROM THE CSP NONCE, which Task 36 C made fresh per request
+         * and which is SUPPOSED to differ — a reused nonce is a nonce that
+         * protects nothing. withoutNonces() replaces it with a fixed marker;
+         * the count assertion below is what stops a page that has lost its
+         * nonces entirely from passing this as "equal".
          */
+        $plain = (string) $this->get('/')->getContent();
+        $reduced = (string) $this->withHeaders(['Sec-CH-Prefers-Reduced-Motion' => 'reduce'])->get('/')->getContent();
+
+        $this->assertGreaterThan(0, $this->nonceCount($plain), 'the page carries no CSP nonce at all');
+        $this->assertSame($this->nonceCount($plain), $this->nonceCount($reduced));
+
         $this->assertSame(
-            $this->get('/')->getContent(),
-            $this->withHeaders(['Sec-CH-Prefers-Reduced-Motion' => 'reduce'])->get('/')->getContent(),
+            $this->withoutNonces($plain),
+            $this->withoutNonces($reduced),
             'the server varies its output on a motion hint'
         );
+
+        /*
+         * And the nonce itself really did change, which is the other half of
+         * the claim and the half a normalising comparison would otherwise
+         * hide.
+         */
+        $this->assertNotSame($plain, $reduced, 'the nonce was reused between two requests');
     }
 
     // ----------------------------------------------------------- helpers

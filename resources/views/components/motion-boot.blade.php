@@ -37,7 +37,7 @@
     the server's HTML — which carries no hidden state of its own — is the
     finished site.
 --}}
-<script data-motion-boot>
+<script data-motion-boot @if ($nonce = \Illuminate\Support\Facades\Vite::cspNonce()) nonce="{{ $nonce }}" @endif>
 (function () {
     try {
         var root = document.documentElement;

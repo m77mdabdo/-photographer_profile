@@ -359,6 +359,56 @@ const ADMIN_PAGES = [
 // The disposable admin, and the TOTP it needs.
 // ---------------------------------------------------------------------------
 
+/*
+ * ───────────────────────────────────────────────────────────────────────────
+ * TASK 36 C2 — THE ONE THING A CSP CANNOT BE VERIFIED WITHOUT.
+ *
+ * A Content-Security-Policy is a string in a header. Reading it tells you
+ * nothing about whether the page still works under it, and the failure mode
+ * is silent: a blocked stylesheet leaves a page that renders, just wrongly.
+ *
+ * Chrome fires securitypolicyviolation on the document for every refusal, so
+ * the listener goes in through evaluateOnNewDocument — which runs BEFORE any
+ * script on the page, including the inline boot block, so a violation caused
+ * by the first script on the page is still caught.
+ *
+ * It reported 84 violations on the panel the first time it ran, all of them
+ * inline <style> elements from Filament's own layout, and none on the public
+ * site. See App\Http\Middleware\SecurityHeaders for what was done about it.
+ * ───────────────────────────────────────────────────────────────────────────
+ */
+async function watchCspViolations(page) {
+  await page.evaluateOnNewDocument(() => {
+    window.__cspViolations = []
+
+    document.addEventListener('securitypolicyviolation', (event) => {
+      window.__cspViolations.push([
+        event.effectiveDirective || event.violatedDirective,
+        event.blockedURI || 'inline',
+        `${event.sourceFile || ''}:${event.lineNumber || 0}`,
+      ].join(' '))
+    })
+  })
+
+  return page
+}
+
+/** Everything the page refused since the last navigation, then forget it. */
+async function takeCspViolations(page) {
+  try {
+    return await page.evaluate(() => {
+      const found = window.__cspViolations || []
+      window.__cspViolations = []
+
+      return found
+    })
+  } catch {
+    // The page is gone; a violation we cannot read is not a violation we can
+    // report, and the navigation failure is already a problem of its own.
+    return []
+  }
+}
+
 const CREDENTIALS_PATH = 'storage/app/private/harness-admin.json'
 
 function artisan(...argv) {
@@ -1367,6 +1417,7 @@ async function run() {
     /** Use the shared guest page, rebuilding it once if its session has died. */
     const withGuestPage = async (viewport, theme) => {
       const prepare = async (page) => {
+        await watchCspViolations(page)
         await page.setViewport({ width: viewport.width, height: viewport.height })
         await page.emulateMediaFeatures([
           { name: 'prefers-color-scheme', value: theme.scheme },
@@ -1394,6 +1445,7 @@ async function run() {
         if (browserLost) break
 
         const page = await browser.newPage()
+        await watchCspViolations(page)
         await page.setViewport({ width: viewport.width, height: viewport.height })
         await page.emulateMediaFeatures([
           { name: 'prefers-color-scheme', value: theme.scheme },
@@ -1619,6 +1671,15 @@ async function run() {
           activePage.off('console', onConsole)
           activePage.off('requestfailed', onFailed)
           activePage.off('response', onResponse)
+
+          /*
+           * Deduplicated: Filament's layout emits the same inline <style> on
+           * every screen, so one broken directive would otherwise be reported
+           * six times per page and bury everything else.
+           */
+          for (const violation of new Set(await takeCspViolations(activePage))) {
+            problems.push(`CSP refused: ${violation}`)
+          }
 
           for (const err of consoleErrors) problems.push(`console error: ${err}`)
           for (const req of failedRequests) problems.push(`request failed: ${req}`)

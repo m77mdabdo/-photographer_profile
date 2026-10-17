@@ -1,4 +1,28 @@
 # ───────────────────────────────────────────────────────────────────────────
+# TASK 36 B2 — THIS DIRECTORY, AND ONLY THIS DIRECTORY, IS PUBLISHABLE.
+#
+# The application root above now carries an .htaccess that denies everything
+# at every depth, because the project root turned out to be reachable over
+# HTTP on the development machine and .env was downloadable. That denial is
+# inherited by every subdirectory, this one included, so it is granted back
+# here explicitly.
+#
+# On a correctly configured deployment — document root at public/ — this line
+# changes nothing: it restates the default. It only matters where the document
+# root is one level up, and there it is the difference between a working site
+# and a 403 on every page.
+# ───────────────────────────────────────────────────────────────────────────
+
+<IfModule mod_authz_core.c>
+    Require all granted
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Allow from all
+</IfModule>
+
+# ───────────────────────────────────────────────────────────────────────────
 # TASK 35 A6 — COMPRESSION AND CACHING, FOR THE SERVER THAT READS THIS FILE.
 #
 # Lighthouse against a production build scored `uses-text-compression` at zero

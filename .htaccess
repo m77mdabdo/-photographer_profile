@@ -1,0 +1,49 @@
+# ───────────────────────────────────────────────────────────────────────────
+# TASK 36 B2 — NOTHING IN HERE IS A WEB DOCUMENT.
+#
+# This is the application root. The only directory a web server should ever
+# publish is public/, and the deployment is meant to point its document root
+# there. This file is what happens when it does not.
+#
+# FOUND BY EXECUTION, NOT BY READING. The project sits inside XAMPP's htdocs
+# on the development machine, so the project root is also a URL path, and it
+# answered:
+#
+#   GET /photographer/.env                     200   1,360 bytes
+#   GET /photographer/.git/config              200     320 bytes
+#   GET /photographer/storage/logs/laravel.log 200   7.0 MB
+#   GET /photographer/composer.json            200   3,122 bytes
+#
+# The .env that was being served holds APP_KEY, DB_PASSWORD, MAIL_PASSWORD,
+# the AWS pair and PEXELS_API_KEY. The readable .git means the full source and
+# the full history, not just one file. There is no application code involved
+# in any of it: Apache reads those bytes off the disk and PHP never runs, so
+# no middleware, no route and no test inside Laravel could have seen it.
+#
+# WHAT THIS FILE DOES. It denies everything, for every file, at every depth
+# below this directory — including storage/, vendor/, .git/, bootstrap/cache/
+# and every dotfile. public/.htaccess grants access back for itself, which is
+# the one directory that is supposed to be reachable, so a document root
+# pointed at either place behaves correctly.
+#
+# A SERVER THAT IGNORES .htaccess IGNORES THIS, which is why it is a second
+# line and not the first. The first line is the document root, and deployment
+# must point it at public/. See docs/deployment.md.
+# ───────────────────────────────────────────────────────────────────────────
+
+# Apache 2.4
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+
+# Apache 2.2 and earlier
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
+
+# Belt and braces for a server that honours mod_rewrite but not the above.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^ - [F,L]
+</IfModule>

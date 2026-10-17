@@ -146,11 +146,46 @@ class ProductionQueryProfileTest extends TestCase
         /*
          * The infrastructure cost, pinned so a fourth site-wide map or a
          * second session write shows up as a change rather than as weather.
+         *
+         * ───────────────────────────────────────────────────────────────────
+         * GARBAGE COLLECTION IS A LOTTERY, AND THIS TEST WAS FAILING TWO RUNS
+         * IN A HUNDRED BECAUSE OF IT.
+         *
+         * Laravel's StartSession calls collectGarbage() on config
+         * session.lottery, which is [2, 100]: two per cent of requests also
+         * issue `delete from sessions where last_activity <= ?`. That made a
+         * sixth query appear at random, on a random one of these paths, and
+         * fail an assertion pinned at five. Found during Task 36's full-suite
+         * run, where the SAME suite failed on /archive once and on
+         * /work/category/architecture the next time with nothing changed in
+         * between.
+         *
+         * It is excluded rather than accommodated by raising the number to
+         * six. Raising it would quietly give every page one more free
+         * session write for ever; naming the GC statement keeps the ceiling
+         * at what a request actually pays and still fails if a second write
+         * appears.
+         * ───────────────────────────────────────────────────────────────────
          */
+        $steady = array_values(array_filter(
+            $infrastructure,
+            fn (string $sql): bool => ! (str_contains($sql, 'delete from `sessions`') && str_contains($sql, 'last_activity')),
+        ));
+
         $this->assertLessThanOrEqual(
             5,
-            count($infrastructure),
-            $path.' pays '.count($infrastructure).' cache/session queries: '.implode(' | ', $infrastructure),
+            count($steady),
+            $path.' pays '.count($steady).' cache/session queries: '.implode(' | ', $steady),
+        );
+
+        /*
+         * And the GC, when the lottery fires, is ONE statement and not a
+         * query per expired row.
+         */
+        $this->assertLessThanOrEqual(
+            1,
+            count($infrastructure) - count($steady),
+            $path.' issued more than one session garbage-collection statement',
         );
     }
 

@@ -1,0 +1,61 @@
+# ───────────────────────────────────────────────────────────────────────────
+# TASK 36 B2 — THE UPLOAD DIRECTORY DOES NOT RUN CODE.
+#
+# This directory is the target of the public/storage symlink, so everything
+# in it is reachable over HTTP, and everything in it arrived as an upload.
+#
+# MEASURED, BEFORE THIS FILE EXISTED. Three files were written into
+# storage/app/public/media and fetched through the symlink:
+#
+#   _t36probe.php       -> 200, body "EXECUTED-8.1.17"
+#   _t36probe.gif.php   -> 200, body "GIF89aEXECUTED-DISGUISED"
+#   _t36probe.phtml     -> 200, served as text (no handler)
+#
+# The first two RAN. Apache maps any .php in a published directory to the PHP
+# handler whatever the rest of the name says, so a file called holiday.gif.php
+# is a script, and a GIF header in front of it changes nothing.
+#
+# Nothing in the application lets such a file be written — MediaUploader
+# validates the mime type, re-encodes every image and names the result itself
+# from a UUID, so the uploaded filename never reaches the disk (see
+# tests/Feature/Security/UploadHardeningTest.php, which proves it by trying).
+# This file is the second lock: it means that if that validation is ever
+# wrong, the worst case is a downloaded file rather than executed code.
+#
+# BOTH MECHANISMS, BECAUSE NEITHER IS PORTABLE ALONE. php_flag only exists
+# under mod_php and is a fatal error under php-fpm, hence the <IfModule>
+# guards; the Require denial works everywhere .htaccess is read at all, and
+# is the one that matters.
+#
+# A SERVER THAT IGNORES .htaccess IGNORES THIS. Under nginx the equivalent is
+# a location block for the storage path with no fastcgi_pass. See
+# docs/deployment.md.
+# ───────────────────────────────────────────────────────────────────────────
+
+# Anything that could be a script is not downloadable, let alone runnable.
+<FilesMatch "(?i)\.(php|phtml|php[0-9]|phps|pht|phar|cgi|pl|py|rb|sh|bash|exe|jsp|asp|aspx|htaccess|htpasswd)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# And no interpreter is attached to anything here in the first place.
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .phps .pht .phar
+RemoveType .php .phtml .php3 .php4 .php5 .php7 .php8 .phps .pht .phar
+
+# No directory listings, and no CGI.
+Options -ExecCGI -Indexes

@@ -66,7 +66,22 @@ class CompressionTest extends TestCase
         $body = (string) $gzipped->getContent();
 
         $this->assertLessThan($raw / 2, strlen($body), 'compression saved less than half');
-        $this->assertSame($plain->getContent(), gzdecode($body), 'the compressed body is not the page');
+
+        /*
+         * THE SAME PAGE, NOT THE SAME BYTES — the CSP nonce Task 36 C added
+         * is fresh per request, so this compares the two responses with the
+         * nonce normalised and asserts separately that both carry one. A
+         * body that decompressed to something else entirely still fails;
+         * a body that lost its nonce fails on the count.
+         */
+        $decoded = (string) gzdecode($body);
+
+        $this->assertGreaterThan(0, $this->nonceCount($decoded), 'the decompressed page carries no CSP nonce');
+        $this->assertSame(
+            $this->withoutNonces((string) $plain->getContent()),
+            $this->withoutNonces($decoded),
+            'the compressed body is not the page'
+        );
     }
 
     /** A client that does not ask gets plain bytes. */

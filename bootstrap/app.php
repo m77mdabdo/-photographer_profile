@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Middleware\EnsureTwoFactorEnabled;
 use App\Http\Middleware\CompressResponse;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\HandleRedirects;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\ResolveTheme;
@@ -49,6 +50,16 @@ return Application::configure(basePath: dirname(__DIR__))
          * It does nothing when a web server has already encoded the response.
          * See the class.
          */
+        /*
+         * TASK 36 C — THE SECURITY HEADERS, OUTERMOST OF ALL.
+         *
+         * Before compression, so the CSP nonce exists before any view is
+         * rendered and the headers are on every response the application can
+         * produce — including the 404 and the 419, which are exactly the
+         * pages an injection probe asks for.
+         */
+        $middleware->prepend(SecurityHeaders::class);
+
         $middleware->prepend(CompressResponse::class);
 
         $middleware->prepend(HandleRedirects::class);
