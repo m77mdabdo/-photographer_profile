@@ -91,21 +91,34 @@ class StoreInquiryRequest extends FormRequest
      */
     public function messages(): array
     {
+        /*
+         * ═══════════════════════════════════════════════════════════════════
+         * TASK 35 H4 — AND THEY ARE TRANSLATED, WHICH THEY WERE NOT.
+         *
+         * Eleven refusals, written as English literals, on the ONE form a
+         * member of the public fills in. An Arabic visitor who left the name
+         * blank was answered "Please give a name to reply to." — on an
+         * Arabic page, in an Arabic flow, after an Arabic heading.
+         *
+         * Nothing caught it because a validation message only exists when a
+         * submission fails, and no scan has ever submitted anything.
+         * ═══════════════════════════════════════════════════════════════════
+         */
         return [
-            'name.required' => 'Please give a name to reply to.',
-            'name.max' => 'That name is longer than the form can store — 120 characters is the limit.',
+            'name.required' => __('studio.contact_errors.name_required'),
+            'name.max' => __('studio.contact_errors.name_max'),
 
-            'email.required' => 'An email address is needed, or there is no way to answer you.',
-            'email.email' => 'That email address does not look complete — check for a typo.',
-            'email.max' => 'That email address is longer than 190 characters, which is longer than any real one.',
+            'email.required' => __('studio.contact_errors.email_required'),
+            'email.email' => __('studio.contact_errors.email_invalid'),
+            'email.max' => __('studio.contact_errors.email_max'),
 
-            'shoot_date_text.max' => 'That is longer than the date box can hold — put the detail in the message instead.',
+            'shoot_date_text.max' => __('studio.contact_errors.date_max'),
 
-            'message.required' => 'Please say something about the work — this is the part that gets read first.',
-            'message.min' => 'A little more detail would help: what the pictures are for, and roughly when.',
-            'message.max' => 'That message is over 5,000 characters. Send the essentials and the rest can follow by email.',
+            'message.required' => __('studio.contact_errors.message_required'),
+            'message.min' => __('studio.contact_errors.message_min'),
+            'message.max' => __('studio.contact_errors.message_max'),
 
-            'consent.accepted' => 'Please confirm you are happy for your details to be kept, so the enquiry can be answered.',
+            'consent.accepted' => __('studio.contact_errors.consent'),
         ];
     }
 

@@ -431,6 +431,59 @@ return [
      * `scope_*` is the two-save-buttons answer: this page saves the STORY and
      * nothing else, and says so rather than leaving an owner to discover it.
      */
+    /*
+     * 35 H4 — THE STORY BUILDER'S BLOCK TYPES.
+     *
+     * BlockType::label() returned these as English literals, and the builder
+     * is a Livewire component rather than a Filament screen, so the Arabic
+     * scan that found the other four enums never looked at it.
+     */
+    /*
+     * 35 H4 — THE MAIL SUBJECTS AND THE CONTACT FORM'S REFUSALS.
+     *
+     * Both were English literals in PHP: a subject line in an inbox and the
+     * eleven sentences a member of the public meets when a submission fails.
+     * A validation message only exists when something goes wrong, which is
+     * why no render scan had ever seen one.
+     */
+    'mail' => [
+        'received_subject' => 'Enquiry from :name',
+        'acknowledged_subject' => 'Your enquiry to :studio',
+    ],
+
+    'contact_errors' => [
+        'name_required' => 'Please give a name to reply to.',
+        'name_max' => 'That name is longer than the form can store — 120 characters is the limit.',
+        'email_required' => 'An email address is needed, or there is no way to answer you.',
+        'email_invalid' => 'That email address does not look complete — check for a typo.',
+        'email_max' => 'That email address is longer than 190 characters, which is longer than any real one.',
+        'date_max' => 'That is longer than the date box can hold — put the detail in the message instead.',
+        'message_required' => 'Please say something about the work — this is the part that gets read first.',
+        'message_min' => 'A little more detail would help: what the pictures are for, and roughly when.',
+        'message_max' => 'That message is over 5,000 characters. Send the essentials and the rest can follow by email.',
+        'consent' => 'Please confirm you are happy for your details to be kept, so the enquiry can be answered.',
+    ],
+
+    'block' => [
+        'full_width_image' => 'Full-width image',
+        'contained_image' => 'Contained image',
+        'portrait_pair' => 'Portrait pair',
+        'landscape_pair' => 'Landscape pair',
+        'three_image_grid' => 'Three-image grid',
+        'image_text' => 'Image with text',
+        'text_image' => 'Text with image',
+        'full_width_text' => 'Full-width text',
+        'quote' => 'Pull quote',
+        'video' => 'Video',
+        'embed' => 'Embed',
+        'spacer' => 'Spacer',
+        'credits' => 'Credits',
+        'gallery_strip' => 'Gallery strip',
+        'group_image' => 'Image',
+        'group_text' => 'Text',
+        'group_media' => 'Media',
+    ],
+
     'story' => [
         'block_count' => 'block|blocks',
         'story' => 'Story',

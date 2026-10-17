@@ -29,24 +29,24 @@ enum BlockType: string
     case Credits = 'credits';
     case GalleryStrip = 'gallery_strip';
 
+    /**
+     * ═══════════════════════════════════════════════════════════════════════
+     * TASK 35 H4 — THE FIFTH ENUM, WHICH TASK 34 PART F MISSED.
+     *
+     * Part F translated PublishStatus, InquiryStatus, MediaStatus and
+     * UserRole, because PanelArabicRenderTest found them: all four are
+     * rendered by Filament columns and filters on screens that scan covers.
+     * This one is rendered by the STORY BUILDER, a Livewire component with
+     * its own blade, and so "Full-width image" has been sitting in the
+     * Arabic panel's type picker since the builder was written.
+     *
+     * Fourteen labels and three group names, in the language files where
+     * every other string in this panel lives.
+     * ═══════════════════════════════════════════════════════════════════════
+     */
     public function label(): string
     {
-        return match ($this) {
-            self::FullWidthImage => 'Full-width image',
-            self::ContainedImage => 'Contained image',
-            self::PortraitPair => 'Portrait pair',
-            self::LandscapePair => 'Landscape pair',
-            self::ThreeImageGrid => 'Three-image grid',
-            self::ImageText => 'Image with text',
-            self::TextImage => 'Text with image',
-            self::FullWidthText => 'Full-width text',
-            self::Quote => 'Pull quote',
-            self::Video => 'Video',
-            self::Embed => 'Embed',
-            self::Spacer => 'Spacer',
-            self::Credits => 'Credits',
-            self::GalleryStrip => 'Gallery strip',
-        };
+        return (string) __('studio.block.'.$this->value);
     }
 
     /**
@@ -54,15 +54,17 @@ enum BlockType: string
      */
     public function group(): string
     {
-        return match ($this) {
+        $group = match ($this) {
             self::FullWidthImage, self::ContainedImage, self::PortraitPair,
-            self::LandscapePair, self::ThreeImageGrid, self::GalleryStrip => 'Image',
+            self::LandscapePair, self::ThreeImageGrid, self::GalleryStrip => 'image',
 
             self::ImageText, self::TextImage, self::FullWidthText,
-            self::Quote, self::Credits => 'Text',
+            self::Quote, self::Credits => 'text',
 
-            self::Video, self::Embed, self::Spacer => 'Media',
+            self::Video, self::Embed, self::Spacer => 'media',
         };
+
+        return (string) __('studio.block.group_'.$group);
     }
 
     /**

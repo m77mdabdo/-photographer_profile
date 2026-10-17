@@ -121,14 +121,34 @@ class ArabicRenderTest extends TestCase
         return $stripped === '' ? '/' : (string) $stripped;
     }
 
-    /** The text a visitor actually reads, with the markup removed. */
+    /**
+     * The text a visitor actually reads — AND WHAT A SCREEN READER READS.
+     *
+     * ═══════════════════════════════════════════════════════════════════════
+     * TASK 35 H4 — STRENGTHENED, NOT WEAKENED.
+     *
+     * This returned strip_tags() only, so every aria-label, title, alt and
+     * placeholder on an Arabic page was outside the scan: a blind Arabic
+     * visitor could be read an English label by a page this test called
+     * clean, and that is the failure nobody sees. The attributes a person
+     * meets are now part of the text, in both of the scans that read pages.
+     * ═══════════════════════════════════════════════════════════════════════
+     */
     private function visibleText(string $html): string
     {
         $body = (string) preg_replace('#<(script|style|template)[^>]*>.*?</\1>#s', '', $html);
         $body = (string) preg_replace('#<head>.*?</head>#s', '', $body);
         $body = (string) preg_replace('#<!--.*?-->#s', '', $body);
 
-        return trim((string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($body))));
+        preg_match_all(
+            '/\b(aria-label|title|placeholder|alt|aria-description|aria-roledescription)="([^"]*)"/i',
+            $body,
+            $attributes,
+        );
+
+        $text = strip_tags($body).' '.implode(' ', $attributes[2]);
+
+        return trim((string) preg_replace('/\s+/', ' ', html_entity_decode($text)));
     }
 
     /** @return list<string> the Latin words left on the page */
@@ -137,6 +157,81 @@ class ArabicRenderTest extends TestCase
         preg_match_all('/[A-Za-z][A-Za-z\'’-]{2,}/', $text, $matches);
 
         return array_values(array_unique(array_diff($matches[0], self::ALLOWED)));
+    }
+
+    // ----------------------------------------------------------------- H7
+
+    /**
+     * ═══════════════════════════════════════════════════════════════════════
+     * TASK 35 H7 — EACH EXCEPTION IS NARROW, AND HERE IS THE PROOF.
+     *
+     * A scan with a blanket allow is a scan that passes. This file has four
+     * exceptions, and the only way to know they are not hiding anything is
+     * to plant a real untranslated string in each one's neighbourhood and
+     * watch the scan fail:
+     *
+     *   · "English", the switcher's own label for the other language
+     *   · proper nouns the owner typed — handled by setting all content to
+     *     Arabic before scanning, rather than by an allow-list
+     *   · publication and journal names inside content
+     *   · camera and lens names from EXIF
+     *
+     * The first is a literal allow and is tested here. The other three are
+     * CONTENT, and the protection is structural rather than an allow-list:
+     * makeEverythingArabic() rewrites every SETTINGS value, and the record
+     * cases translate every column of the record they seed, so a Latin word
+     * that survives either came from the code or is a real gap in the
+     * content. Planting one proves the scan reads content at all — the third
+     * case below seeds a project, writes an English title into BOTH locales
+     * and watches the scan name it.
+     * ═══════════════════════════════════════════════════════════════════════
+     */
+    public function test_each_exception_is_narrow(): void
+    {
+        $this->makeEverythingArabic();
+
+        // The page is clean to start with.
+        $clean = $this->latinWords($this->visibleText(
+            (string) $this->get('/ar')->assertOk()->getContent(),
+        ));
+
+        $this->assertSame([], $clean, 'the Arabic home page is not clean before planting anything');
+
+        // 1. a word beside the allowed one is NOT allowed.
+        $page = (string) $this->get('/ar')->getContent();
+
+        $planted = str_replace('</main>', '<p>English Portfolio</p></main>', $page);
+
+        $this->assertContains(
+            'Portfolio',
+            $this->latinWords($this->visibleText($planted)),
+            'a word planted beside the switcher label was not caught',
+        );
+
+        // 2. an English word in an ATTRIBUTE, which nothing read until 35 H4.
+        $labelled = str_replace('<main', '<main aria-label="Main navigation"', $page);
+
+        $this->assertNotSame(
+            [],
+            $this->latinWords($this->visibleText($labelled)),
+            'an English aria-label was not caught',
+        );
+
+        // 3. CONTENT: a project title left in English survives into the page.
+        $project = \App\Models\Project::factory()->create([
+            'status' => \App\Enums\PublishStatus::Published,
+            'published_at' => now()->subDay(),
+        ]);
+
+        $project->setTranslations('title', ['en' => 'Harbour Notes', 'ar' => 'Harbour Notes']);
+        $project->setTranslations('slug', ['en' => 'harbour-notes', 'ar' => 'harbour-notes-ar']);
+        $project->save();
+
+        $this->assertContains(
+            'Harbour',
+            $this->latinWords($this->visibleText((string) $this->get('/ar/work')->getContent())),
+            'an untranslated project title was not caught',
+        );
     }
 
     // ----------------------------------------------------------------- 1

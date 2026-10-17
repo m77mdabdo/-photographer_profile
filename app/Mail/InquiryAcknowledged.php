@@ -53,7 +53,7 @@ class InquiryAcknowledged extends Mailable implements ShouldQueue
              * by searching for what they were working on rather than for the
              * studio's name.
              */
-            subject: 'Your enquiry to '.$studio,
+            subject: __('studio.mail.acknowledged_subject', ['studio' => $studio]),
 
             // Falls back to the configured sender when no studio address is
             // set, rather than throwing inside a queued job.

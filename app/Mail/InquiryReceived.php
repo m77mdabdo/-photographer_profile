@@ -32,7 +32,14 @@ class InquiryReceived extends Mailable implements ShouldQueue
         $name = $this->inquiry->name;
 
         return new Envelope(
-            subject: 'Enquiry from '.$name,
+            /*
+             * 35 H4 — TRANSLATED, LIKE THE BODY BESIDE IT.
+             *
+             * A literal. The body of this message has been translated since
+             * it was written and the line the studio actually sees in its
+             * inbox was English whatever language the panel is in.
+             */
+            subject: __('studio.mail.received_subject', ['name' => $name]),
             /*
              * Reply-To, not From. Sending AS the enquirer would fail SPF at
              * most receivers and land the notification in spam — the one

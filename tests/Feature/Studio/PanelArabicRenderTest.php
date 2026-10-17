@@ -105,7 +105,23 @@ class PanelArabicRenderTest extends TestCase
         $body = (string) preg_replace('#<head>.*?</head>#s', '', $body);
         $body = (string) preg_replace('#<!--.*?-->#s', '', $body);
 
-        return trim((string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($body))));
+        /*
+         * 35 H4 — AND THE ATTRIBUTES, which this did not read.
+         *
+         * The panel is full of icon-only chrome whose only name is an
+         * aria-label or a title: the sidebar collapse, the column toggle,
+         * the reorder control. Every one of them was outside this scan, on
+         * the surface with the most strings in the product.
+         */
+        preg_match_all(
+            '/\b(aria-label|title|placeholder|alt|aria-description|aria-roledescription)="([^"]*)"/i',
+            $body,
+            $attributes,
+        );
+
+        $text = strip_tags($body).' '.implode(' ', $attributes[2]);
+
+        return trim((string) preg_replace('/\s+/', ' ', html_entity_decode($text)));
     }
 
     /**
