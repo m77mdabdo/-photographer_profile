@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\EnsureTwoFactorEnabled;
+use App\Http\Middleware\CompressResponse;
 use App\Http\Middleware\HandleRedirects;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\ResolveTheme;
@@ -36,6 +37,20 @@ return Application::configure(basePath: dirname(__DIR__))
          * It costs no query on a miss (see the class), so running it on every
          * request is free.
          */
+        /*
+         * TASK 35 A6 — COMPRESSION, OUTERMOST.
+         *
+         * Prepended, so it wraps every other middleware and sees the finished
+         * body of every response the application can produce — including the
+         * ones that never reach a route: the 404, the 419 and the redirect
+         * answers below. A response compressed anywhere further in would miss
+         * exactly the pages that are cheapest to compress.
+         *
+         * It does nothing when a web server has already encoded the response.
+         * See the class.
+         */
+        $middleware->prepend(CompressResponse::class);
+
         $middleware->prepend(HandleRedirects::class);
 
         /*

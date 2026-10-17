@@ -1,3 +1,52 @@
+# ───────────────────────────────────────────────────────────────────────────
+# TASK 35 A6 — COMPRESSION AND CACHING, FOR THE SERVER THAT READS THIS FILE.
+#
+# Lighthouse against a production build scored `uses-text-compression` at zero
+# with "Est savings of 190 KiB" on the home page: 71 KiB of HTML, 76 KiB of
+# CSS and 78 KiB of JavaScript, every byte raw. The application now compresses
+# its own responses as a floor (see App\Http\Middleware\CompressResponse), but
+# STATIC files never reach PHP — a stylesheet is read off disk by the web
+# server and handed straight out — so the server has to be told.
+#
+# Everything here is wrapped in <IfModule>: a host without mod_deflate serves
+# exactly what it served before rather than a 500.
+# ───────────────────────────────────────────────────────────────────────────
+
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
+    AddOutputFilterByType DEFLATE application/javascript application/x-javascript
+    AddOutputFilterByType DEFLATE application/json application/xml application/rss+xml
+    AddOutputFilterByType DEFLATE image/svg+xml
+
+    # Already-compressed formats gain nothing and cost CPU on every request.
+    SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png|avif|webp|woff2?|zip|gz)$ no-gzip dont-vary
+</IfModule>
+
+<IfModule mod_brotli.c>
+    AddOutputFilterByType BROTLI_COMPRESS text/html text/css application/javascript application/json image/svg+xml
+</IfModule>
+
+<IfModule mod_headers.c>
+    # Vite writes a content hash into every filename here, so the URL changes
+    # whenever the bytes do and a year is safe.
+    <FilesMatch "\.(css|js)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    # The faces are NOT content-hashed — /fonts/archivo-latin.woff2 keeps its
+    # name through a replacement — so a month rather than a year, and no
+    # immutable: a swapped face should reach a returning visitor this year.
+    <FilesMatch "\.woff2$">
+        Header set Cache-Control "public, max-age=2592000"
+    </FilesMatch>
+
+    # Renditions are rewritten in place by a reprocess, which keeps the URL.
+    # A week is long enough to matter and short enough to heal.
+    <FilesMatch "\.(avif|webp|jpe?g|png)$">
+        Header set Cache-Control "public, max-age=604800"
+    </FilesMatch>
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

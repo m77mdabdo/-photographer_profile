@@ -205,7 +205,33 @@ class StudioPanelProvider extends PanelProvider
             ])
 
             /*
-             * NO ->font(). Filament's font helper fetches from a provider —
+             * ═══════════════════════════════════════════════════════════════
+             * TASK 35 A5 — AND THE PRELOAD THAT CAME WITH THE FONT WE NEVER
+             * ASKED FOR.
+             *
+             * Measured on a phone profile: every panel page downloaded
+             * /fonts/filament/filament/inter/inter-latin-wght-normal-*.woff2,
+             * 67 KiB, on top of this project's own faces — and nothing on the
+             * screen was set in it. Filament PRELOADS its bundled Inter
+             * whenever a panel has not named a font of its own
+             * (HasFont::getFontPreload falls through to the default), and a
+             * preload fetches whether or not a glyph is ever drawn.
+             *
+             * The @font-face declarations stay registered and cost nothing:
+             * a face nothing renders in is never downloaded. It is the
+             * PRELOAD that had to go, and Filament's own API cancels it —
+             * a null family keeps every default, and an empty preload array
+             * is an explicit "none".
+             *
+             * 67 KiB on every page of a working surface used weekly.
+             * ═══════════════════════════════════════════════════════════════
+             */
+            ->font(null, preload: [])
+            ->monoFont(null, preload: [])
+            ->serifFont(null, preload: [])
+
+            /*
+             * NO ->font() WITH A FAMILY. Filament's font helper fetches from a provider —
              * Google, Bunny, or a local registration — and this project
              * already self-hosts Archivo, Inter Tight and JetBrains Mono with
              * measured size-adjust fallbacks. The theme imports fonts.css and
