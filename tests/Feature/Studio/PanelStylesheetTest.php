@@ -137,60 +137,89 @@ class PanelStylesheetTest extends TestCase
     }
 
     /**
-     * THE SAME SCAN, FOR THE FACE RATHER THAN THE TRACKING.
+     * ═══════════════════════════════════════════════════════════════════════
+     * THE SAME QUESTION, ANSWERED SOMEWHERE BETTER SINCE 34e.
      *
-     * --font-serif is Archivo, which has no Arabic coverage, and unlike
-     * --font-mono it is NOT remapped for Arabic by tokens.css — the panel
-     * declares it itself. So every rule that asks for it has to hand the face
-     * back, and this is the test that says so. It is the invariant that was
-     * broken when the exception beside the headings listed two selectors out
-     * of four.
+     * This used to require that every rule asking for --font-serif ALSO had
+     * an Arabic counterpart handing the face back to var(--font-sans),
+     * because Archivo has no Arabic glyphs and this panel had no Arabic
+     * display face to offer instead. Five rules, five exceptions, and a test
+     * to keep them in step — bookkeeping that existed because the TOKEN was
+     * wrong.
+     *
+     * 34e gave the panel a real Arabic display face, so --font-serif is
+     * remapped to Rubik under [lang='ar'] and every rule reading the token
+     * gets an Arabic-capable face without anybody writing a counterpart. The
+     * invariant worth keeping is therefore about the token rather than about
+     * each rule: in Arabic, the display stack and the text stack must BEGIN
+     * with a face that has Arabic glyphs.
+     *
+     * The per-rule exceptions still exist and still carry the tracking and
+     * case corrections, which the token cannot express.
+     * ═══════════════════════════════════════════════════════════════════════
      */
-    public function test_the_latin_display_face_is_handed_back_in_arabic(): void
+    public function test_the_arabic_stacks_begin_with_an_arabic_face(): void
+    {
+        $arabicFaces = ['Rubik', 'IBM Plex Sans Arabic'];
+
+        $blocks = [
+            'tokens.css --font-display' => [base_path('resources/css/tokens.css'), '--font-display'],
+            'tokens.css --font-sans' => [base_path('resources/css/tokens.css'), '--font-sans'],
+            'theme.css --font-serif' => [base_path('resources/css/filament/studio/theme.css'), '--font-serif'],
+        ];
+
+        foreach ($blocks as $what => [$file, $token]) {
+            $css = (string) file_get_contents($file);
+
+            /*
+             * The LAST declaration of the token wins in these files: the
+             * Latin default is declared first and the Arabic block restates
+             * it further down.
+             */
+            preg_match_all('/'.preg_quote($token, '/').':\s*([^;]+);/', $css, $matches);
+
+            $this->assertNotEmpty($matches[1], "{$what} is not declared at all");
+
+            $arabicStack = trim(end($matches[1]));
+            $first = trim(explode(',', $arabicStack)[0], " '\"");
+
+            $this->assertContains(
+                $first,
+                $arabicFaces,
+                "{$what} leads with {$first}, which has no Arabic glyphs: {$arabicStack}",
+            );
+
+            // And the Latin face stays behind it, for Latin runs in Arabic text.
+            $this->assertMatchesRegularExpression(
+                '/(Archivo|Inter Tight)/',
+                $arabicStack,
+                "{$what} drops the Latin face entirely: {$arabicStack}",
+            );
+        }
+    }
+
+    /** Nothing in the panel asks for a Latin-only face by NAME. */
+    public function test_no_rule_names_a_latin_face_directly(): void
     {
         $offenders = [];
 
         foreach (self::SHEETS as $sheet) {
-            $rules = $this->rules(base_path($sheet));
-
-            $handedBack = [];
-
-            foreach ($rules as [$selectors, $body]) {
-                if (! str_contains($body, 'var(--font-sans)')) {
+            foreach ($this->rules(base_path($sheet)) as [$selectors, $body]) {
+                if (! preg_match("/font-family\s*:\s*'?(Archivo|Inter Tight|JetBrains Mono)/", $body, $m)) {
                     continue;
                 }
 
-                foreach ($selectors as $selector) {
-                    if (preg_match("/^\[(?:dir='rtl'|lang='ar')\]\s+(.+)$/", $selector, $m)) {
-                        $handedBack[trim($m[1])] = true;
-                    }
-                }
-            }
-
-            foreach ($rules as [$selectors, $body]) {
-                if (! preg_match('/font-family\s*:\s*var\(--font-serif\)/', $body)) {
-                    continue;
-                }
-
-                foreach ($selectors as $selector) {
-                    if (str_contains($selector, "dir='rtl'") || str_contains($selector, "lang='ar'")) {
-                        continue;
-                    }
-
-                    if (! isset($handedBack[$selector])) {
-                        $offenders[] = basename($sheet).': '.$selector.' asks for the display face';
-                    }
-                }
+                $offenders[] = basename($sheet).': '.$selectors[0].' names '.$m[1].' instead of a token';
             }
         }
 
-        $this->assertSame(
-            [],
-            $offenders,
-            "Archivo has no Arabic glyphs, so each letter falls back on its own.\n"
-            ."Add a [dir='rtl'] / [lang='ar'] rule giving these var(--font-sans):\n  "
-            .implode("\n  ", $offenders),
-        );
+        /*
+         * A rule that names a Latin face directly cannot be remapped for
+         * Arabic by the token block, and that is how this panel spent four
+         * tasks rendering Arabic in whatever the system supplied. The tokens
+         * are the only place a face is chosen.
+         */
+        $this->assertSame([], $offenders, implode("\n  ", $offenders));
     }
 
     /**

@@ -37,7 +37,21 @@ final class Settings
      * @var array<string, list<string>>
      */
     private const CONFIG_OVERRIDES = [
-        'site.name' => ['seo.site_name', 'seo.default_title'],
+        /*
+         * 34e B1 — AND THE ENVELOPE SENDER.
+         *
+         * config/mail.php reads MAIL_FROM_NAME, which falls back to APP_NAME,
+         * which on this installation is literally "Laravel". The mail BODY
+         * has taken the studio's name from this table since the vendor layout
+         * was published — the header, the title and the footer — so the only
+         * thing still announcing a PHP framework to a prospective client was
+         * the From line of the message carrying all of it.
+         *
+         * Driven from the same row for the same reason as the rest: a studio
+         * that renames itself in the panel renames itself everywhere,
+         * including in the inbox, without anybody editing a .env on a server.
+         */
+        'site.name' => ['seo.site_name', 'seo.default_title', 'mail.from.name'],
         'seo.description' => ['seo.default_description'],
     ];
 

@@ -258,7 +258,40 @@ class FontMetricsTest extends TestCase
     {
         $fonts = glob(public_path('fonts/*.woff2')) ?: [];
 
-        $this->assertCount(6, $fonts, 'three families, Latin and Latin Extended');
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * NINE FILES SINCE 34e, AND THE COUNT IS NOT THE POINT.
+         *
+         * This asserted six — three Latin families, Latin and Latin Extended
+         * each — and the Arabic faces made it fail by arriving. The number
+         * was shorthand for "the files you think are served are the files
+         * that are served", so it says that instead: every face declared in
+         * fonts.css is on disk, every file on disk is declared, and all of
+         * them can be read.
+         *
+         * The x-height arithmetic above deliberately does NOT extend to the
+         * Arabic faces. Arabic has no x-height to match and its fallback is a
+         * different face on every operating system, so there is no
+         * size-adjust to check — see the note in fonts.css and ADR 0003.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        $css = (string) file_get_contents(base_path('resources/css/fonts.css'));
+
+        preg_match_all("#url\('/fonts/([^']+\.woff2)'\)#", $css, $declared);
+
+        $onDisk = array_map('basename', $fonts);
+
+        sort($onDisk);
+        $declaredFiles = array_values(array_unique($declared[1]));
+        sort($declaredFiles);
+
+        $this->assertSame(
+            $declaredFiles,
+            $onDisk,
+            'the faces declared in fonts.css and the files in public/fonts have drifted apart',
+        );
+
+        $this->assertGreaterThanOrEqual(9, count($fonts), 'three Latin families and two Arabic ones');
 
         $measured = $this->measure($fonts);
 

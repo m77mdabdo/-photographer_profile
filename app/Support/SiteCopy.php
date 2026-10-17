@@ -178,9 +178,24 @@ final class SiteCopy
 
         // --- the about page ------------------------------------------------
         ['key' => 'about.heading', 'value' => 'Available dark', 'ar' => 'الضوء المتاح', 'type' => 'string', 'group' => 'about'],
-        ['key' => 'about.biography', 'value' => "I photograph people and places on commission, mostly in the north of England, mostly in whatever light is already there.\n\nI trained as a printer before I trained as a photographer, which is the wrong way round and has been useful ever since: it is hard to overexpose a negative when you have spent three years trying to rescue somebody else's.\n\nWork has appeared in Aperture Quarterly and The Gentlewoman, and in the archives of two harbour trusts who wanted a record rather than a brochure.", 'ar' => 'أصوّر الناس والأماكن بالتكليف، في شمال إنجلترا غالبًا، وفي الضوء الموجود أصلًا غالبًا.\n\nتدرّبت على الطباعة قبل أن أتدرّب على التصوير، وهو ترتيب مقلوب أفادني منذ ذلك الحين: يصعب أن تُفرِط في تعريض فيلم بعد ثلاث سنوات من محاولة إنقاذ أفلام الآخرين.\n\nنُشرت أعمالي في Aperture Quarterly و The Gentlewoman، وفي أرشيف هيئتَي ميناء أرادتا سجلًا لا كتيّبًا ترويجيًا.', 'type' => 'text', 'group' => 'about'],
+    /*
+     * ───────────────────────────────────────────────────────────────────────
+     * 34e — THE ARABIC PARAGRAPHS WERE SINGLE-QUOTED.
+     *
+     * The English halves of about.biography and about.approach are written in
+     * DOUBLE quotes, where \n is a newline. The Arabic halves were written in
+     * single quotes, where it is a backslash and an n — so the Arabic about
+     * page rendered "غالبًا.\n\nتدرّبت على الطباعة" with the escape visible in
+     * the middle of the sentence, on the page that introduces the studio.
+     *
+     * Found by screenshotting that page in Arabic after the webfonts landed,
+     * which is the first time anybody had looked at it closely enough to read
+     * the words rather than check the direction.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+        ['key' => 'about.biography', 'value' => "I photograph people and places on commission, mostly in the north of England, mostly in whatever light is already there.\n\nI trained as a printer before I trained as a photographer, which is the wrong way round and has been useful ever since: it is hard to overexpose a negative when you have spent three years trying to rescue somebody else's.\n\nWork has appeared in Aperture Quarterly and The Gentlewoman, and in the archives of two harbour trusts who wanted a record rather than a brochure.", 'ar' => "أصوّر الناس والأماكن بالتكليف، في شمال إنجلترا غالبًا، وفي الضوء الموجود أصلًا غالبًا.\n\nتدرّبت على الطباعة قبل أن أتدرّب على التصوير، وهو ترتيب مقلوب أفادني منذ ذلك الحين: يصعب أن تُفرِط في تعريض فيلم بعد ثلاث سنوات من محاولة إنقاذ أفلام الآخرين.\n\nنُشرت أعمالي في Aperture Quarterly و The Gentlewoman، وفي أرشيف هيئتَي ميناء أرادتا سجلًا لا كتيّبًا ترويجيًا.", 'type' => 'text', 'group' => 'about'],
         ['key' => 'about.approach_heading', 'value' => 'How the work is made', 'ar' => 'كيف يُصنع العمل', 'type' => 'string', 'group' => 'about'],
-        ['key' => 'about.approach', 'value' => "Available light, one camera, no assistant unless the job genuinely needs one.\n\nI shoot slowly and edit hard. A commission usually produces between two hundred and four hundred frames and delivers between twelve and thirty, because the edit is the work and handing over a folder of everything is handing over the part nobody wanted.\n\nEverything is printed before it is approved. A picture that only works on a screen is not finished.", 'ar' => 'ضوء متاح، كاميرا واحدة، ولا مساعد إلا إذا كان العمل يحتاجه فعلًا.\n\nأصوّر على مهل وأنتقي بقسوة. التكليف الواحد ينتج بين مئتين وأربعمئة إطار، ويُسلَّم منه بين اثني عشر وثلاثين، لأن الانتقاء هو العمل، وتسليم مجلد بكل شيء هو تسليم الجزء الذي لم يرده أحد.\n\nكل صورة تُطبع قبل أن تُعتمد. الصورة التي تنجح على الشاشة وحدها لم تكتمل بعد.', 'type' => 'text', 'group' => 'about'],
+        ['key' => 'about.approach', 'value' => "Available light, one camera, no assistant unless the job genuinely needs one.\n\nI shoot slowly and edit hard. A commission usually produces between two hundred and four hundred frames and delivers between twelve and thirty, because the edit is the work and handing over a folder of everything is handing over the part nobody wanted.\n\nEverything is printed before it is approved. A picture that only works on a screen is not finished.", 'ar' => "ضوء متاح، كاميرا واحدة، ولا مساعد إلا إذا كان العمل يحتاجه فعلًا.\n\nأصوّر على مهل وأنتقي بقسوة. التكليف الواحد ينتج بين مئتين وأربعمئة إطار، ويُسلَّم منه بين اثني عشر وثلاثين، لأن الانتقاء هو العمل، وتسليم مجلد بكل شيء هو تسليم الجزء الذي لم يرده أحد.\n\nكل صورة تُطبع قبل أن تُعتمد. الصورة التي تنجح على الشاشة وحدها لم تكتمل بعد.", 'type' => 'text', 'group' => 'about'],
         ['key' => 'about.clients_heading', 'value' => 'Selected clients', 'ar' => 'عملاء مختارون', 'type' => 'string', 'group' => 'about'],
         ['key' => 'about.studio_label', 'value' => 'Studio', 'ar' => 'الاستوديو', 'type' => 'string', 'group' => 'about'],
         ['key' => 'about.cta', 'value' => 'Start a conversation', 'ar' => 'ابدأ محادثة', 'type' => 'string', 'group' => 'about'],

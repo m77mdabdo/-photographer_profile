@@ -289,6 +289,31 @@
      * than for this face.
      */
     --font-mono: var(--font-sans);
+
+    /*
+     * ═══════════════════════════════════════════════════════════════════════
+     * 34e — AND NOW IT HAS FACES OF ITS OWN.
+     *
+     * Until this commit the two lines above were the whole of the Arabic
+     * typography: tracking off, and the monospace swapped for a stack whose
+     * first two entries have no Arabic glyphs either. Arabic rendered in
+     * whatever the operating system supplied — a different face per visitor,
+     * none of them chosen, on half the product.
+     *
+     * Rubik takes the display role and IBM Plex Sans Arabic the text role,
+     * each ahead of the Latin face it replaces rather than instead of it:
+     * font fallback is per GLYPH, so a Latin word inside an Arabic sentence —
+     * a filename, an f-number, "SECOND SKIN" — still comes out of Archivo or
+     * Inter Tight, and the two scripts keep the faces they were designed in.
+     *
+     * The mono token above is deliberately NOT remapped to an Arabic
+     * monospace: ADR 0003 decided that a monospace is a Latin device and that
+     * Arabic set in one is less legible, not more technical. --font-mono
+     * resolves to the text stack, which now begins with a real Arabic face.
+     * ═══════════════════════════════════════════════════════════════════════
+     */
+    --font-display: 'Rubik', 'Archivo', 'Archivo Fallback', 'Arial Narrow', Arial, sans-serif;
+    --font-sans: 'IBM Plex Sans Arabic', 'Inter Tight', 'Inter Fallback', -apple-system, 'Segoe UI', system-ui, sans-serif;
 }
 
 

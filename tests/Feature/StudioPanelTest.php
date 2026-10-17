@@ -401,7 +401,27 @@ class StudioPanelTest extends TestCase
          * The JS hash is untouched for the fifth time running, which is the
          * useful half of this assertion.
          */
-        $this->assertSame('assets/public-kwChYOQ2.css', $publicCss, 'the public stylesheet changed');
+        /*
+         * REPINNED IN TASK 34e: THE ARABIC FACES.
+         *
+         * fonts.css gained three @font-face rules — Rubik and IBM Plex Sans
+         * Arabic, Arabic subsets only — and tokens.css maps the display and
+         * text tokens to them under [lang='ar']. The public bundle carries
+         * both files, so its bytes moved for the first real typographic
+         * change since the site was built.
+         *
+         * Also in this number: six rules in auth.css that asked for
+         * var(--font-text), a token that has never existed anywhere.
+         *
+         * AND THE BUNDLE GOT SMALLER DESPITE ALL THAT — 96.5 KiB to 76.3 —
+         * because resources/views/welcome.blade.php went with it. Laravel's
+         * stock welcome page, 82,574 bytes of markup on no route, was still
+         * inside the @source glob: every Tailwind utility it names has been
+         * compiled into the PUBLIC stylesheet of a site that cannot reach it.
+         *
+         * The JS hash is untouched for the sixth time running.
+         */
+        $this->assertSame('assets/public-B_UZ_0bO.css', $publicCss, 'the public stylesheet changed');
         $this->assertSame('assets/public-B-FzqxLO.js', $publicJs, 'the public entry changed');
 
         // And the panel's theme is its own entry, not part of either.

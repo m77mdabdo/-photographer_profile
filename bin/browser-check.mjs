@@ -973,7 +973,7 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir, expectsLocaleSwitche
    * on this page asks for a face, does that face actually arrive? A declared
    * family nobody uses is waste, not a defect, and is not this check's job.
    */
-  const families = ['Archivo', 'JetBrains Mono', 'Inter Tight']
+  const families = ['Archivo', 'JetBrains Mono', 'Inter Tight', 'Rubik', 'IBM Plex Sans Arabic']
   const requested = new Set()
 
   for (const el of document.querySelectorAll('*')) {
@@ -990,6 +990,92 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir, expectsLocaleSwitche
     problems.push(`fonts requested but not applied: ${missing.join(', ')}`)
   }
 
+  /*
+   * ───────────────────────────────────────────────────────────────────────
+   * 34e A5 — THE ARABIC FACES, MEASURED BY RENDERING RATHER THAN DECLARED.
+   *
+   * Until 34e this site shipped no Arabic face at all, and nothing here
+   * noticed: every check above asks whether text is present, laid out and
+   * the right direction, and a page set in Geeza Pro satisfies all of them.
+   * Half the product rendered in whatever the operating system supplied.
+   *
+   * Three questions, and the third is the one a CSS declaration cannot
+   * answer:
+   *
+   *   1. was the face DOWNLOADED — document.fonts carries it as loaded,
+   *      which only happens when the browser needed a glyph from it
+   *   2. is it what the Arabic text COMPUTES to
+   *   3. does it CHANGE THE RENDERING — the same Arabic string measured in
+   *      the real stack and in a generic fallback must not come out the same
+   *      width, because identical widths are what "the webfont never
+   *      arrived" looks like
+   *
+   * fonts.check() alone is not enough for any of this: it answers "could
+   * this family be used", and on a machine with the family installed
+   * locally it answers yes whether or not the site ever shipped it.
+   * ───────────────────────────────────────────────────────────────────────
+   */
+  if (expectedDir === 'rtl') {
+    const arabicFaces = ['IBM Plex Sans Arabic', 'Rubik']
+    const loaded = new Set([...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family))
+
+    for (const face of arabicFaces) {
+      if (!loaded.has(face)) {
+        problems.push(`the Arabic ${face === 'Rubik' ? 'display' : 'text'} face was never loaded: ${face}`)
+      }
+    }
+
+    /*
+     * What the page INHERITS, rather than what one element happens to say.
+     *
+     * The first version of this took the first <p> carrying Arabic and
+     * demanded the text face — and the front door's brand IS a <p>, set in
+     * the display face on purpose, so six correct pages were reported
+     * broken. The body's own stack is the one every element falls back to,
+     * and a sampled element only has to be in one of the two Arabic faces.
+     */
+    const bodyStack = getComputedStyle(document.body).fontFamily
+
+    if (!bodyStack.includes('IBM Plex Sans Arabic')) {
+      problems.push(`the page does not inherit the Arabic text face: ${bodyStack}`)
+    }
+
+    const arabicSample = [...document.querySelectorAll('p, li, td, h1, h2, .fi-ta-text, .fi-sidebar-item-label')]
+      .find((el) => /[\u0600-\u06FF]/.test(el.textContent || ''))
+
+    if (arabicSample) {
+      const stack = getComputedStyle(arabicSample).fontFamily
+
+      if (!arabicFaces.some((face) => stack.includes(face))) {
+        problems.push(`Arabic text is set in a face with no Arabic glyphs: ${stack}`)
+      }
+    }
+
+    /*
+     * And the rendering itself. A span of Arabic in the page's own stack,
+     * against the same span in a face nobody ships: equal widths mean the
+     * webfont is not doing anything.
+     */
+    const probe = document.createElement('span')
+    probe.textContent = 'أنس فريد الضوء المتاح'
+    probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font-size:64px;'
+    document.body.appendChild(probe)
+
+    probe.style.fontFamily = '"IBM Plex Sans Arabic", serif'
+    const withFace = probe.getBoundingClientRect().width
+
+    probe.style.fontFamily = 'serif'
+    const withFallback = probe.getBoundingClientRect().width
+
+    probe.remove()
+
+    if (Math.abs(withFace - withFallback) < 1) {
+      problems.push(
+        `the Arabic face changed nothing: ${Math.round(withFace)}px against ${Math.round(withFallback)}px of fallback`
+      )
+    }
+  }
+
   // And the wordmark is actually rendering in the display face, not a fallback.
   const wordmark = document.querySelector(
     isAdmin
@@ -997,7 +1083,14 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir, expectsLocaleSwitche
       : '.hero__wordmark, .work-index__title, .sheet-page__title, .enquiry__title, .studio__title, .journal__title'
   )
 
-  if (wordmark && !getComputedStyle(wordmark).fontFamily.includes('Archivo')) {
+  /*
+   * 34e — THE DISPLAY FACE DEPENDS ON THE SCRIPT. Archivo has no Arabic
+   * glyphs, so an Arabic page's display role is Rubik; demanding Archivo
+   * there was a check that could only have passed by accident.
+   */
+  const displayFace = expectedDir === 'rtl' ? 'Rubik' : 'Archivo'
+
+  if (wordmark && !getComputedStyle(wordmark).fontFamily.includes(displayFace)) {
     problems.push(`display face did not apply: ${getComputedStyle(wordmark).fontFamily}`)
   }
 

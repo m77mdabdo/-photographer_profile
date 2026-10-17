@@ -139,9 +139,19 @@ class MenuResource extends Resource
                         ->required()
                         ->maxLength(60)]),
 
+                    /*
+                     * 34e C3 — NOT THE BROWSER'S SELECT.
+                     *
+                     * Every other select in this panel is Filament's own
+                     * (->native(false)); these three were the operating
+                     * system's, inside a repeater nobody had screenshotted
+                     * open. Same class as the native date control A4 removed.
+                     */
                     Select::make('type')
                         ->label(__('studio.menus.type'))
                         ->required()
+                        ->native(false)
+                        ->selectablePlaceholder(false)
                         ->live()
                         ->default(MenuItem::TYPE_ROUTE)
                         ->options([
@@ -153,12 +163,16 @@ class MenuResource extends Resource
                     Select::make('target')
                         ->label(__('studio.menus.destination'))
                         ->required()
+                        ->native(false)
+                        ->selectablePlaceholder(false)
                         ->visible(fn (Get $get): bool => $get('type') === MenuItem::TYPE_ROUTE)
                         ->options(fn (): array => MenuItem::linkableRoutes()),
 
                     Select::make('page_id')
                         ->label(__('studio.menus.destination'))
                         ->required()
+                        ->native(false)
+                        ->selectablePlaceholder(false)
                         ->searchable()
                         ->preload()
                         ->visible(fn (Get $get): bool => $get('type') === MenuItem::TYPE_PAGE)

@@ -133,6 +133,26 @@
     --studio-on-accent: var(--on-accent);
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * 34e — THE PANEL'S DISPLAY TOKEN, IN ARABIC.
+ *
+ * tokens.css maps --font-display and --font-sans to Rubik and IBM Plex Sans
+ * Arabic under [lang='ar'], and the panel inherits both. --font-serif is the
+ * panel's OWN name for the display role and had no Arabic answer, so this is
+ * the one token that has to be restated here.
+ *
+ * Rubik first and Archivo behind it, so a Latin word inside an Arabic
+ * heading — a project title, a filename — still comes out of the face it was
+ * designed in. Fallback is per glyph; the order is the whole mechanism.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+:root:lang(ar),
+[lang='ar'],
+[dir='rtl'] {
+    --font-serif: 'Rubik', 'Archivo', 'Archivo Fallback', Arial, sans-serif;
+}
+
 /* ---- Chrome ------------------------------------------------------------ */
 
 .fi-body {
@@ -160,10 +180,14 @@
     color: var(--studio-text);
 }
 
-/* Arabic has no condensed display face and is unicase — see ADR 0003. */
+/*
+ * 34e — IT HAS A DISPLAY FACE NOW, so the brand keeps the display role in
+ * Arabic rather than dropping to the text face. Unicase still applies: Arabic
+ * has no capitals and the tracking stays off — see ADR 0003.
+ */
 [dir='rtl'] .fi-logo,
 [lang='ar'] .fi-logo {
-    font-family: var(--font-sans);
+    font-family: var(--font-serif);
     font-variation-settings: 'wght' 700;
     letter-spacing: normal;
     text-transform: none;
@@ -206,7 +230,13 @@
 [lang='ar'] .fi-section-header-heading,
 [lang='ar'] .fi-modal-heading,
 [lang='ar'] .fi-wi-stats-overview-stat-value {
-    font-family: var(--font-sans);
+    /*
+     * 34e — var(--font-serif), which is Rubik in Arabic. This said
+     * var(--font-sans) because Archivo has no Arabic glyphs at all and the
+     * heading fell back a letter at a time; the display ROLE was never the
+     * problem, the face was.
+     */
+    font-family: var(--font-serif);
     letter-spacing: normal;
 }
 

@@ -321,3 +321,74 @@ One block, not two hundred edits:
 That covers all 97 letter-spacing declarations, because every one of them reads
 a token. The 7 line-heights do not read a token and need explicit overrides.
 The 83 uppercase rules need nothing mechanical and a great deal of design.
+
+---
+
+## Addendum, Task 34e — the Arabic faces, and the swap
+
+**Status:** accepted
+**Date:** 2026-10-17
+
+Everything above was written about an Arabic site with **no Arabic font**. Three
+Latin faces were self-hosted, subset, metric-matched and pinned by a test that
+fails on a 0.4-point drift, and Arabic rendered in whatever the operating system
+supplied — Geeza Pro on macOS, Segoe UI or Tahoma on Windows, Noto Naskh on
+Android. Half the product, and nothing in the suite or the browser harness
+noticed, because a page set in a fallback renders, returns 200 and satisfies
+every check that asks whether text is there.
+
+### What ships
+
+| Role | Face | File | Bytes |
+|---|---|---|---|
+| display | Rubik, variable 300–900 | `rubik-arabic.woff2` | 32,480 |
+| text | IBM Plex Sans Arabic 400 | `ibm-plex-sans-arabic-400-arabic.woff2` | 33,512 |
+| text | IBM Plex Sans Arabic 600 | `ibm-plex-sans-arabic-600-arabic.woff2` | 35,884 |
+
+Both are SIL OFL, self-hosted with their licences beside them. There is no
+subsetting tool on this machine — no `pyftsubset`, no fontTools, no
+`woff2_compress` — so these are the per-script subsets Google Fonts publishes,
+carrying the unicode-range they publish with them. For scale: the unsubsetted
+upstream `Rubik[wght].ttf` is 359,804 bytes and every published Rubik subset
+together is 123,840; `IBMPlexSansArabic-Regular.ttf` is 235,924 and its four
+published subsets are 52,096.
+
+**The mono role does not change.** The decision above stands: a monospace is a
+Latin typographic device, and `--font-mono` resolves to the text stack under
+`[lang='ar']`. Numerals, dates, EXIF and dimensions stay JetBrains Mono in both
+languages because they are Latin in both.
+
+### size-adjust does not transfer
+
+The three Latin faces each have a metric-matched fallback: a `local()` face with
+`size-adjust`, `ascent-override` and `descent-override` read out of the binary,
+so the swap moves nothing. That technique cannot be applied here.
+
+- **There is no x-height to match.** Arabic has no case. Its vertical rhythm is
+  the baseline, the tooth height and the depth of the descending bowls, and
+  `size-adjust` scales none of those relative to anything comparable.
+- **The fallback is a different face on every system**, and `local()` cannot
+  name "whatever this machine has". A single number tuned against Geeza Pro is
+  wrong for Segoe UI and wrong again for Noto Naskh.
+
+### The measured cost, and the decision
+
+Layout shift on Arabic pages, cold cache, Slow-3G network emulation (400 ms
+latency, 400 kbps), three runs each, Chrome's own `layout-shift` entries:
+
+| Page | CLS |
+|---|---|
+| `/ar` | 0.0034 |
+| `/ar/work` | 0.0024 |
+| `/ar/about` | **0.0078** |
+
+The worst Arabic page shifts **0.0078**, about one thirteenth of the 0.1 that
+Core Web Vitals calls "good", and the shifts land on the navigation and the
+facts list rather than on the hero.
+
+**Decision: `font-display: swap` is kept.** `block` would hide Arabic text for
+up to three seconds to avoid a shift of eight thousandths; `optional` would mean
+a first-time Arabic reader never sees the designed face at all. Both trade the
+reader's content for a number already an order of magnitude inside the
+threshold. If the figure ever climbs — a heavier face, a slower host — the
+measurement is repeatable and the decision is reversible in one declaration.

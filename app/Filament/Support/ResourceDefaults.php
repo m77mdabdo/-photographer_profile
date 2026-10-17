@@ -47,7 +47,21 @@ final class ResourceDefaults
                     ->mapWithKeys(fn ($s): array => [$s->value => $s->label()])->all())
                 ->default(\App\Enums\PublishStatus::Draft->value)
                 ->required()
-                ->native(false),
+                ->native(false)
+                /*
+                 * 34e C1 — AND IT DOES NOT OFFER TO BE EMPTIED.
+                 *
+                 * Filament gives every non-native select a clear ✕, and on a
+                 * REQUIRED one it is an affordance that cannot be honoured:
+                 * pressing it empties the control, the form refuses to save,
+                 * and the editor is left with a validation error they did not
+                 * ask for. On this form it was also the loudest glyph in the
+                 * section — a 24px cross beside a 13px status.
+                 *
+                 * Status is never absent: the column is NOT NULL and the
+                 * default is Draft.
+                 */
+                ->selectablePlaceholder(false),
 
             /*
              * ═══════════════════════════════════════════════════════════════

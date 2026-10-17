@@ -298,6 +298,23 @@ class MediaResource extends Resource
                      * ═══════════════════════════════════════════════════════
                      */
                     ->lineClamp(2)
+                    /*
+                     * 34e C2 — AND IT TAKES THE ROOM IT NEEDS.
+                     *
+                     * Measured at 1440: this column had 164px of a 1056px
+                     * table, against 229px for three row actions and 110px
+                     * for a pair of pixel dimensions. The column that says
+                     * WHICH PHOTOGRAPH the row is about was the second
+                     * narrowest thing on the screen, and 274 characters of
+                     * description were being clamped into about 25.
+                     *
+                     * A measure rather than a percentage: the sentence wants
+                     * a comfortable line of roughly 45 characters, and the
+                     * columns beside it are all content-sized, so asking for
+                     * a width here takes the slack out of them rather than
+                     * squeezing anything that was already tight.
+                     */
+                    ->width('24rem')
                     ->description(fn (Media $record): string => $record->original_filename),
 
                 /*
@@ -364,10 +381,22 @@ class MediaResource extends Resource
                     ->formatStateUsing(fn (int $state): string => trans_choice('studio.media.usage_short', $state, ['count' => $state]))
                     ->color(fn (int $state): string => $state > 0 ? 'primary' : 'gray'),
 
+                /*
+                 * 34e C2 — HIDDEN BY DEFAULT, WHICH IS WHAT PAYS FOR THE
+                 * COLUMN BESIDE IT.
+                 *
+                 * A table at 1440 has 1056px and this column was taking 110
+                 * of them to say "2852 × 3565" — a number nobody scans a
+                 * library for, on the screen whose question is "which
+                 * photograph is this". The description now has the room
+                 * instead; the dimensions are one click away in the column
+                 * menu, and they are on the Inspect screen beside the
+                 * renditions they actually matter to.
+                 */
                 TextColumn::make('width')
                     ->label(__('studio.media.dimensions'))
                     ->state(fn (Media $record): string => $record->width.' × '.$record->height)
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Translatable::statusColumn(self::TRANSLATED),
 

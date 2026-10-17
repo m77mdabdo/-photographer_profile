@@ -77,7 +77,26 @@
         worth taking bandwidth from the hero photograph, which is the LCP
         element. The sans waits for the same reason.
     --}}
-    <link rel="preload" href="/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+    {{--
+        34e — AND THE PRELOAD FOLLOWS THE LOCALE.
+
+        An English visitor must never fetch an Arabic face and an Arabic
+        visitor must never fetch a Latin display face they will not see a
+        glyph of. unicode-range already guarantees the browser does not USE
+        the wrong one; a preload is the one thing that would fetch it anyway,
+        because a preload names a file rather than a range.
+
+        One face each, and in both cases it is the one the wordmark is set in
+        — the largest thing above the fold and the only swap a visitor would
+        actually notice. The text face waits for the same reason the Latin
+        sans does: at body size, against a system Arabic fallback, its swap
+        costs a glyph substitution rather than a relayout of the hero.
+    --}}
+    @if (\App\Support\Locale::isDefault())
+        <link rel="preload" href="/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+    @else
+        <link rel="preload" href="/fonts/rubik-arabic.woff2" as="font" type="font/woff2" crossorigin>
+    @endif
 
     {{--
         CSS only. The public site runs no JavaScript: nothing here needs it,

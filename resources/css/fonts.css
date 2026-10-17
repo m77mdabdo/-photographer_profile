@@ -156,3 +156,122 @@
     descent-override: 29.8%;
     line-gap-override: 0%;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * ARABIC. TASK 34e.
+ *
+ * Until this commit the site loaded NO ARABIC FACE AT ALL. Three Latin faces
+ * were self-hosted, measured and metric-matched, and every Arabic page —
+ * public and panel, half the product — rendered in whatever the operating
+ * system happened to supply: Geeza Pro on a Mac, Segoe UI on Windows, Noto
+ * Naskh on Android. Nothing in the test suite or the browser harness noticed,
+ * because a page set in a fallback renders, returns 200 and passes every
+ * check that asks whether text is there.
+ *
+ *   Rubik                 display — the wordmark, headings, the brand
+ *   IBM Plex Sans Arabic  text    — anything read in sentences
+ *
+ * The MONO ROLE IS UNCHANGED. ADR 0003 settled it: numerals, dates, EXIF and
+ * dimensions are Latin in both languages and stay JetBrains Mono, and
+ * tokens.css maps --font-mono to the TEXT stack under [lang='ar'] so Arabic
+ * words never land in a Latin monospace.
+ *
+ * WHY THESE FILES AND NOT A SUBSET OF OUR OWN. There is no subsetting tool on
+ * this machine — no pyftsubset, no fontTools, no woff2_compress — and the
+ * brief's instruction in that case is to ship the published per-script
+ * subsets rather than install one. These are Google Fonts' own Arabic
+ * subsets, carrying the same unicode-range they publish:
+ *
+ *   Rubik[wght].ttf, unsubsetted upstream      359,804 B
+ *   every published Rubik subset together      123,840 B
+ *   the Arabic subset, which is what ships      32,480 B
+ *
+ *   IBMPlexSansArabic-Regular.ttf, upstream    235,924 B
+ *   every published subset of weight 400        52,096 B
+ *   the Arabic subsets at 400 and 600           69,396 B
+ *
+ * Rubik is one variable file for the whole 300–900 range. IBM Plex Sans
+ * Arabic is published as static weights, so two are shipped — 400 for text
+ * and 600 for the semibold this design uses on titles and labels — rather
+ * than four, which would have been 139 kB for two weights nothing asks for.
+ *
+ * AN ENGLISH VISITOR DOWNLOADS NONE OF IT. unicode-range is the mechanism:
+ * a browser fetches a subset only when it has a glyph in that range to draw.
+ * The preload in the layout is locale-conditional for the same reason, and
+ * that is asserted rather than claimed — see FontsTest.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+@font-face {
+    font-family: 'Rubik';
+    font-style: normal;
+    font-weight: 300 900;          /* one variable file covers the range */
+    font-display: swap;
+    src: url('/fonts/rubik-arabic.woff2') format('woff2');
+    unicode-range:
+U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E,
+        U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC,
+        U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC7, U+10EC9-10EEE, U+10EF0-10EFF,
+        U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32,
+        U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B,
+        U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D,
+        U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77,
+        U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3,
+        U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+}
+
+@font-face {
+    font-family: 'IBM Plex Sans Arabic';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/fonts/ibm-plex-sans-arabic-400-arabic.woff2') format('woff2');
+    unicode-range:
+U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E,
+        U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC,
+        U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC7, U+10EC9-10EEE, U+10EF0-10EFF,
+        U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32,
+        U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B,
+        U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D,
+        U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77,
+        U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3,
+        U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+}
+
+@font-face {
+    font-family: 'IBM Plex Sans Arabic';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/fonts/ibm-plex-sans-arabic-600-arabic.woff2') format('woff2');
+    unicode-range:
+U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E,
+        U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC,
+        U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC7, U+10EC9-10EEE, U+10EF0-10EFF,
+        U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32,
+        U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B,
+        U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D,
+        U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77,
+        U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3,
+        U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * SIZE-ADJUST DOES NOT TRANSFER, AND THERE IS NO ARABIC FALLBACK FACE HERE.
+ *
+ * The three Latin faces above each have a metric-matched fallback: a local
+ * face with size-adjust, ascent-override and descent-override read out of the
+ * binaries, so the swap from fallback to webfont moves nothing. That
+ * technique does not work for Arabic, and the reason is not effort:
+ *
+ *   · THERE IS NO x-HEIGHT TO MATCH. Arabic has no case and no x-height; its
+ *     vertical rhythm is the baseline, the tooth height and the depth of the
+ *     descending bowls, and none of those is what size-adjust scales.
+ *   · THE FALLBACK IS A DIFFERENT FACE ON EVERY SYSTEM. Geeza Pro on macOS,
+ *     Segoe UI / Tahoma on Windows, Noto Naskh or Droid Arabic on Android.
+ *     A single size-adjust number tuned against one of them is wrong for the
+ *     other two, and `local()` cannot name "whatever this system has".
+ *
+ * So the Arabic faces swap honestly, and the cost was MEASURED rather than
+ * guessed: see docs/decisions/0003-the-arabic-composition.md for the layout
+ * shift figure and the decision taken on the strength of it.
+ * ─────────────────────────────────────────────────────────────────────────── */

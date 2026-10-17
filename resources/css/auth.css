@@ -145,12 +145,24 @@
     min-width: 0;
 }
 .filters .field { min-width: 0; flex: 1 1 12rem; }
+/*
+ * 34e — var(--font-text) WAS NEVER A TOKEN.
+ *
+ * Six rules in this file asked for it and nothing has ever defined it: the
+ * declaration was invalid at computed-value time, so font-family fell back to
+ * `inherit` and the front door has been running on whatever html happened to
+ * be set to. It looked right — the inherited face IS the text face — which is
+ * why it survived four tasks of Arabic typography work.
+ *
+ * --font-sans is the token that exists and means the thing these rules meant.
+ * Under [lang='ar'] it now resolves to IBM Plex Sans Arabic.
+ */
 .auth-shell {
     min-height: 100dvh;
     margin: 0;
     background-color: var(--bg);
     color: var(--text-primary);
-    font-family: var(--font-text);
+    font-family: var(--font-sans);
 }
 .auth-split {
     min-height: 100dvh;
@@ -235,9 +247,22 @@
     text-transform: uppercase;
     color: var(--text-secondary);
 }
-[lang='ar'] .auth-brand,
+/*
+ * 34e — THE BRAND KEEPS THE DISPLAY ROLE IN ARABIC.
+ *
+ * This handed the studio's name back to the text face because Archivo has no
+ * Arabic glyphs; the role was never wrong, the face was. --font-display is
+ * Rubik under [lang='ar'] now. The note beneath it is a label and stays in
+ * the text face, which is where it was going anyway.
+ */
+[lang='ar'] .auth-brand {
+    font-family: var(--font-display);
+    text-transform: none;
+    letter-spacing: normal;
+}
+
 [lang='ar'] .auth-brand__note {
-    font-family: var(--font-text);
+    font-family: var(--font-sans);
     text-transform: none;
     letter-spacing: normal;
 }
@@ -257,7 +282,7 @@
     letter-spacing: var(--tracking-tight);
 }
 [lang='ar'] .auth-card__title {
-    font-family: var(--font-text);
+    font-family: var(--font-sans);
     letter-spacing: normal;
 }
 .auth-card__rule {
@@ -288,7 +313,7 @@
     border-block-start: var(--rule-hair) solid var(--border);
 }
 [lang='ar'] .auth-card__note {
-    font-family: var(--font-text);
+    font-family: var(--font-sans);
     letter-spacing: normal;
     text-transform: none;
 }
@@ -320,7 +345,7 @@
     transform: scaleX(1);
 }
 [lang='ar'] .auth-submit {
-    font-family: var(--font-text);
+    font-family: var(--font-sans);
     letter-spacing: normal;
     text-transform: none;
 }
@@ -409,7 +434,7 @@
  * designed, and the token fix in tokens.css does not reach a literal.
  */
 [lang='ar'] .auth-locale__label {
-    font-family: var(--font-text);
+    font-family: var(--font-sans);
     letter-spacing: normal;
     text-transform: none;
 }

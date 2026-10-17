@@ -106,6 +106,8 @@ class UserResource extends Resource
                     ->mapWithKeys(fn (UserRole $r): array => [$r->value => $r->label()])->all())
                 ->required()
                 ->native(false)
+                /* 34e C1 — required, so no clear ✕; see ResourceDefaults. */
+                ->selectablePlaceholder(false)
                 ->helperText(__('studio.users.role_hint'))
 
                 /*

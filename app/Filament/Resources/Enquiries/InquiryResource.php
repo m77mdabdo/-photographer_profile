@@ -149,7 +149,17 @@ class InquiryResource extends Resource
                         ->options(fn (): array => collect(InquiryStatus::cases())
                             ->mapWithKeys(fn (InquiryStatus $s): array => [$s->value => $s->label()])->all())
                         ->required()
-                        ->native(false),
+                        ->native(false)
+                        /*
+                         * 34e C1 — A REQUIRED FIELD DOES NOT OFFER TO BE
+                         * EMPTIED. Filament puts a clear ✕ on every
+                         * non-native select, and on a required one it is an
+                         * affordance that cannot be honoured: pressing it
+                         * blanks the control and the form then refuses to
+                         * save. On the publishing panel it was also the
+                         * largest glyph in the section.
+                         */
+                        ->selectablePlaceholder(false),
 
                     \Filament\Forms\Components\TextInput::make('heard_from')
                         ->label(__('studio.enquiries.heard_from'))
