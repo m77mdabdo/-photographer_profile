@@ -17,5 +17,7 @@ use Filament\Resources\Pages\ManageRecords;
  */
 class ManageUsers extends ManageRecords
 {
+    use \App\Filament\Support\NamesPlaces;
+
     protected static string $resource = UserResource::class;
 }

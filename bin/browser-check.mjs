@@ -635,6 +635,57 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir, expectsLocaleSwitche
     }
   }
 
+  /*
+   * ───────────────────────────────────────────────────────────────────────
+   * 34d C2 — THE STUDIO'S NAME, WHATEVER IT IS CALLED.
+   *
+   * The hero sizes the wordmark from its CHARACTER COUNT and sets it on one
+   * line with nowrap, which had only ever been rendered with a one-word,
+   * twelve-character name. The studio is Anas Fareed: eleven characters,
+   * two words and a space.
+   *
+   * So the wordmark is measured rather than assumed, at every viewport and
+   * in both languages: one line, inside the viewport, and the document not
+   * pushed into horizontal scroll by it. The same three checks would catch
+   * the next rename as well, which is the point — nothing here knows what
+   * the studio is called.
+   * ───────────────────────────────────────────────────────────────────────
+   */
+  const wordmarkEl = document.querySelector('.hero__wordmark')
+
+  if (wordmarkEl) {
+    const style = getComputedStyle(wordmarkEl)
+    const box = wordmarkEl.getBoundingClientRect()
+    const lines = Math.round(box.height / (parseFloat(style.fontSize) * 0.8))
+
+    if (lines > 1) {
+      problems.push(`the wordmark wrapped onto ${lines} lines: "${wordmarkEl.textContent.trim()}"`)
+    }
+
+    if (box.left < 0 || box.right > window.innerWidth) {
+      problems.push(
+        `the wordmark runs outside the viewport: ${Math.round(box.left)}..${Math.round(box.right)} of ${window.innerWidth}`
+      )
+    }
+  }
+
+  // The header's wordmark is the same name in a smaller place.
+  const headerMark = document.querySelector('.site-header__mark')
+
+  if (headerMark) {
+    const markBox = headerMark.getBoundingClientRect()
+    const markStyle = getComputedStyle(headerMark)
+    const markLines = Math.round(markBox.height / parseFloat(markStyle.lineHeight || markStyle.fontSize))
+
+    if (markLines > 1) {
+      problems.push(`the header wordmark broke onto ${markLines} lines`)
+    }
+
+    if (markBox.right > window.innerWidth) {
+      problems.push('the header wordmark runs off the screen')
+    }
+  }
+
   // --- 0b. the page actually painted something ------------------------------
   /*
    * A BLANK PAGE THAT PASSES EVERY OTHER CHECK.

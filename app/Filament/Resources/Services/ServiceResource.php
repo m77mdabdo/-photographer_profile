@@ -26,6 +26,29 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ServiceResource extends Resource
 {
+    /*
+     * 34d A3 — WHAT TO CALL ONE OF THESE WHEN A SCREEN IS ABOUT IT.
+     *
+     * Filament falls back to the model's LABEL when a resource does not say,
+     * so the breadcrumb on a record screen read "Pages › Page" once the
+     * screen type came out of it — the software naming its own class, which
+     * is the fault A3 is about one level down.
+     *
+     * Read through the model, so a translatable attribute arrives in the
+     * reader's language rather than as its JSON.
+     */
+    protected static ?string $recordTitleAttribute = 'title';
+
+    /*
+     * NOT A SEARCH FEATURE. Filament turns global search on for any resource
+     * that has a record title, and naming the records for the breadcrumbs
+     * above put a search field in the topbar of every screen — a feature
+     * nobody asked for, searching translatable JSON columns through
+     * whereRaw, which is the one thing TranslatableBuilder cannot rewrite.
+     * The panel's search is per table, where the filters are.
+     */
+    protected static bool $isGloballySearchable = false;
+
     /** Edit URLs carry the id, not the slug. See the trait. */
     use AddressesRecordsById;
 
@@ -101,10 +124,17 @@ class ServiceResource extends Resource
                      * the public template formats it; a "pounds" field here
                      * would mean two places that disagree about rounding.
                      */
+                    /*
+                     * 34d B1 — A PRICE IS THE WORST FIELD TO PUT A SPINNER
+                     * ON. A scroll wheel over <input type="number"> changes
+                     * the value with no click and no undo, and this one is in
+                     * pence: one notch is a penny, forty notches is forty.
+                     * Integer pence, typed.
+                     */
                     TextInput::make('price_from_pence')
                         ->label(__('studio.field.price_from'))
-                        ->numeric()
-                        ->minValue(0)
+                        ->rules(['integer', 'min:0'])
+                        ->extraInputAttributes(['inputmode' => 'numeric'])
                         ->helperText(__('studio.field.price_hint')),
 
                     TextInput::make('canonical_url')

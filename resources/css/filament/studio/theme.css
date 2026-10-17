@@ -1149,3 +1149,140 @@ a.fi-in-entry-content {
     color: var(--studio-bg);
     border-color: var(--studio-text);
 }
+
+
+/* ---- 34d: what the screenshots showed ------------------------------------ */
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * A5 — THE TOGGLE WAS THE LOUDEST THING ON THE FORM.
+ *
+ * Measured on /admin/pages/{id}/edit: the Indexable switch is a 44×24 pill
+ * with a circular knob, filled with the ACCENT at full strength when on. On
+ * a form whose every other control is a hairline rectangle on the ground
+ * colour, it was the only saturated block — louder than the heading, louder
+ * than the primary button beneath it, and louder than the publishing status
+ * it sits beside, which is the field that actually decides whether the world
+ * sees this page.
+ *
+ * It is still a switch, because a switch is the right control for a setting
+ * that takes effect as typed. What changes is its register:
+ *
+ *   · square, like every other corner in this panel (E3's argument)
+ *   · the "on" fill is the TEXT colour, not the accent — the same inversion
+ *     the locale switcher's current language uses, which is this panel's
+ *     established way of saying "this one"
+ *   · a hairline border in both states, so "off" is a drawn control rather
+ *     than an empty grey slot
+ *
+ * The 44px hit area above is untouched: this styles the drawing inside it.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+/*
+ * MEASURED, TWICE. The first attempt squared the button and filled it with
+ * the text colour, which turned a 44×24 orange pill into a 44×44 WHITE
+ * SQUARE — the same fault, louder. The button is the hit area (G2's 44px)
+ * and the track at the same time, so the drawing has to come off it:
+ *
+ *   the button   transparent, 44×44, still the whole target
+ *   ::before     the track — the button's full width, 24px tall, centred,
+ *                a hairline rectangle like every input on the form
+ *   the knob     Filament's own 20×20 div, squared, and filled with the
+ *                text colour when on and the line colour when off
+ *
+ * Nothing is forked: the knob is Filament's element, moved by Filament's own
+ * transform. This gives it corners and a colour.
+ */
+.fi-fo-toggle {
+    position: relative;
+    border-radius: 0;
+    border: 0;
+    background-color: transparent;
+}
+
+.fi-fo-toggle::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: calc(50% - 0.75rem);
+    block-size: 1.5rem;
+    border: 1px solid var(--studio-line);
+    pointer-events: none;
+}
+
+.fi-fo-toggle.fi-toggle-on::before {
+    border-color: var(--studio-text);
+}
+
+/* Filament's knob carries no class of its own; it is the button's only child. */
+.fi-fo-toggle > div {
+    border-radius: 0;
+    background-color: var(--studio-line);
+    box-shadow: none;
+}
+
+.fi-fo-toggle.fi-toggle-on > div {
+    background-color: var(--studio-text);
+}
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * A6 — ONE BAND ABOVE A TABLE, NOT TWO.
+ *
+ * Measured on /admin/categories at 1440: .fi-ta-header-ctn was 126px of
+ * chrome in two stacked rows — a 65px band holding one button at the far
+ * end, and a 61px band holding the search field, the filter and column
+ * buttons, and the reorder control alone at the other end. Between the page
+ * heading and the first row of data sat 126px of almost nothing, and the
+ * reorder control — the one thing on that screen a person is looking for
+ * when the order is wrong — floated in it with no neighbours.
+ *
+ * They are one row now. The actions sit at the inline end, the toolbar fills
+ * the space before them, and the reorder control keeps its place at the
+ * start of the toolbar where the drag handles below it line up.
+ *
+ * NOT A FORKED COMPONENT: Filament still renders both containers and
+ * everything inside them. This says where they go.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+@media (min-width: 768px) {
+    .fi-ta-header-ctn {
+        display: flex;
+        flex-direction: row-reverse;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    /* The actions keep their own width; the toolbar takes the rest. */
+    .fi-ta-header-ctn > .fi-ta-header {
+        flex: 0 0 auto;
+        padding-inline-start: 0;
+    }
+
+    .fi-ta-header-ctn > .fi-ta-header-toolbar {
+        flex: 1 1 auto;
+        padding-inline-end: 0;
+    }
+}
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * A1 — EVERY ROW IN THE LIBRARY IS THE SAME HEIGHT.
+ *
+ * The alt text is a sentence, and the library's rows measured 153px to 177px
+ * because each one wrapped to a different number of lines. MediaResource
+ * clamps it to two and fixes the column's measure; this holds the box open
+ * at two lines so a short description does not make a shorter row either.
+ *
+ * min-block-size rather than block-size: a two-line box that cannot grow
+ * would clip a descender at some font size somewhere, and the clamp has
+ * already decided how many lines there are.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+.fi-ta-cell-alt .fi-ta-text-item-label {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-block-size: calc(2 * 1.5em);
+}

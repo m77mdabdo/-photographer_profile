@@ -384,7 +384,24 @@ class StudioPanelTest extends TestCase
          * The JS hash is untouched for the fourth time running, which is the
          * useful half of this assertion.
          */
-        $this->assertSame('assets/public-Ds6HETAd.css', $publicCss, 'the public stylesheet changed');
+        /*
+         * REPINNED IN TASK 34d PART C, CSS ONLY, AND FOR ONE RULE.
+         *
+         * The studio's real name is two words, and the public header had only
+         * ever been rendered with a one-word one: at 390 it broke "ANAS /
+         * FAREED" across two lines, in both languages. The header now gives
+         * the name its own row on a phone — which is name-independent, where
+         * the first attempt (nowrap) sent a 49-character name 96px off the
+         * side of the screen and the whole document into horizontal scroll.
+         *
+         * 34d's PANEL work is not in this number: the theme is a separate
+         * entry, asserted below, and the public bundle moved only for the
+         * header rule.
+         *
+         * The JS hash is untouched for the fifth time running, which is the
+         * useful half of this assertion.
+         */
+        $this->assertSame('assets/public-kwChYOQ2.css', $publicCss, 'the public stylesheet changed');
         $this->assertSame('assets/public-B-FzqxLO.js', $publicJs, 'the public entry changed');
 
         // And the panel's theme is its own entry, not part of either.

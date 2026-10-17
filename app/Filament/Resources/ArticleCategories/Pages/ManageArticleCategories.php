@@ -17,6 +17,8 @@ use Filament\Resources\Pages\ManageRecords;
  */
 class ManageArticleCategories extends ManageRecords
 {
+    use \App\Filament\Support\NamesPlaces;
+
     protected static string $resource = ArticleCategoryResource::class;
 
     protected function mutateFormDataBeforeCreate(array $data): array

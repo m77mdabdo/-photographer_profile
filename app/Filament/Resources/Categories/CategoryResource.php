@@ -83,7 +83,17 @@ class CategoryResource extends Resource
         return $table
             ->columns([
                 Translatable::displayColumn('name'),
-                TextColumn::make('projects_count')->counts('projects')->label(__('studio.table.used'))->badge(),
+                /*
+                 * 34d B2 — the count says what it counts. A bare "4" took
+                 * its meaning from the header above it and a grey badge
+                 * meant "none" only to somebody who had seen a coloured one.
+                 */
+                TextColumn::make('projects_count')
+                    ->counts('projects')
+                    ->label(__('studio.table.used'))
+                    ->badge()
+                    ->formatStateUsing(fn (int $state): string => trans_choice('studio.table.used_count', $state, ['count' => $state]))
+                    ->color(fn (int $state): string => $state > 0 ? 'primary' : 'gray'),
                 Translatable::statusColumn(self::TRANSLATED),
                 ResourceDefaults::updatedColumn(),
             ])

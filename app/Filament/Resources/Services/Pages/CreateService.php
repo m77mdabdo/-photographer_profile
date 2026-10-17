@@ -11,6 +11,8 @@ use Filament\Resources\Pages\CreateRecord;
 
 class CreateService extends CreateRecord
 {
+    use \App\Filament\Support\NamesPlaces;
+
     protected static string $resource = ServiceResource::class;
 
     /**

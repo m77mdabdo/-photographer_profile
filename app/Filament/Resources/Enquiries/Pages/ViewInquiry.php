@@ -12,6 +12,8 @@ use Filament\Resources\Pages\ViewRecord;
 
 class ViewInquiry extends ViewRecord
 {
+    use \App\Filament\Support\NamesPlaces;
+
     protected static string $resource = InquiryResource::class;
 
     /**

@@ -13,6 +13,37 @@
     min-height: var(--header-height);
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * 34d C2 — THE STUDIO'S NAME DOES NOT BREAK BETWEEN ITS WORDS.
+ *
+ * Found by rendering the real name: "Anas Fareed" is two words, and this
+ * header had only ever been seen with a one-word studio name. At 390 it wrapped
+ * to "ANAS / FAREED" in both languages — a person's name broken across two
+ * lines by a layout that simply never had a space to break at before.
+ *
+ * nowrap WAS THE WRONG FIX, and measuring a second name showed why: a studio
+ * called "The Northumberland Documentary Photography Studio" then ran 96px off
+ * the right of a 390px screen and took the whole document into horizontal
+ * scroll. A rule that only works for a short name is the same defect as a
+ * layout that only works for a one-word one.
+ *
+ * So the name gets THE WHOLE ROW on a phone instead, with the navigation
+ * wrapping underneath it. A short name takes one line of it and a long name
+ * takes two; neither is cut between its words at the width where this
+ * happened, and nothing overflows at any length.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+.site-header {
+    flex-wrap: wrap;
+}
+
+@media (max-width: 699px) {
+    .site-header__mark {
+        flex: 1 0 100%;
+    }
+}
+
 .site-header__mark {
     font-family: var(--font-display);
     font-variation-settings: 'wght' var(--wght-mid);

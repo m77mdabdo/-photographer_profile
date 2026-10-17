@@ -10,6 +10,8 @@ use Filament\Resources\Pages\ListRecords;
 
 class ListArticles extends ListRecords
 {
+    use \App\Filament\Support\NamesPlaces;
+
     protected static string $resource = ArticleResource::class;
 
     protected function getHeaderActions(): array

@@ -80,7 +80,18 @@ class ClientResource extends Resource
         return $table
             ->columns([
                 Translatable::displayColumn('name', alsoSearch: ['url']),
-                TextColumn::make('url')->label(__('studio.field.website'))->toggleable()->url(fn ($record) => $record->url, true),
+                /*
+                 * 34d A2 — the cell is a LINK OUT, and an empty one is an
+                 * unnamed control: a client with no website rendered an
+                 * anchor with no text and nowhere to go. The address is the
+                 * label when there is one, and there is no link when there
+                 * is not.
+                 */
+                TextColumn::make('url')
+                    ->label(__('studio.field.website'))
+                    ->toggleable()
+                    ->placeholder(__('studio.clients.no_website'))
+                    ->url(fn ($record): ?string => $record->url ?: null, true),
                 Translatable::statusColumn(self::TRANSLATED),
                 ResourceDefaults::updatedColumn(),
             ])

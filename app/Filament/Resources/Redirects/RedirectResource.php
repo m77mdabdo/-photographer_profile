@@ -19,7 +19,6 @@ use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -200,9 +199,29 @@ class RedirectResource extends Resource
                     ->searchable()
                     ->fontFamily('mono'),
 
-                TextColumn::make('status_code')->label(__('studio.redirects.kind'))->badge(),
+                /*
+                 * 34d B2 — "301" IS NOT A MEANING, and this project had
+                 * already written the one it wants: "301 — permanent".
+                 */
+                TextColumn::make('status_code')
+                    ->label(__('studio.redirects.kind'))
+                    ->badge()
+                    ->formatStateUsing(fn (int $state): string => $state === 301
+                        ? __('studio.redirects.permanent')
+                        : __('studio.redirects.temporary'))
+                    ->color('gray'),
 
-                IconColumn::make('is_active')->label(__('studio.redirects.active'))->boolean(),
+                /*
+                 * 34d A2 — a tick and a cross said live or not live in
+                 * colour and shape alone; these say it.
+                 */
+                TextColumn::make('is_active')
+                    ->label(__('studio.redirects.active'))
+                    ->badge()
+                    ->formatStateUsing(fn (bool $state): string => $state
+                        ? __('studio.redirects.live')
+                        : __('studio.redirects.paused'))
+                    ->color(fn (bool $state): string => $state ? 'success' : 'gray'),
 
                 TextColumn::make('source')->label(__('studio.redirects.origin'))->badge()->color('gray')->toggleable(),
 

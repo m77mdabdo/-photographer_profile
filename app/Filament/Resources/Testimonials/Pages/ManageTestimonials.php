@@ -14,6 +14,8 @@ use Filament\Resources\Pages\ManageRecords;
  */
 class ManageTestimonials extends ManageRecords
 {
+    use \App\Filament\Support\NamesPlaces;
+
     protected static string $resource = TestimonialResource::class;
 
     protected function mutateFormDataBeforeCreate(array $data): array

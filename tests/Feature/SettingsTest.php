@@ -51,9 +51,27 @@ class SettingsTest extends TestCase
         $this->assertGreaterThan(15, Setting::query()->count(), 'there are enough keys for this to matter');
     }
 
+
+    /**
+     * The seeded value of a key, read from the defaults rather than written
+     * out here.
+     *
+     * These three cases said 'Photographer' — the placeholder the site was
+     * built on — and Task 34d Part C gave the studio its real name, which
+     * broke two tests about CACHING and one about FALLBACK. None of them is
+     * about what the studio is called; each needed the seeded value, which
+     * is what this returns. The next rename changes nothing in this file.
+     */
+    private function seeded(string $key): string
+    {
+        $row = collect(\App\Support\SiteCopy::defaults())->firstWhere('key', $key);
+
+        return (string) $row['value'];
+    }
+
     public function test_a_write_invalidates_the_cache(): void
     {
-        $this->assertSame('Photographer', Settings::get('site.name'));
+        $this->assertSame($this->seeded('site.name'), Settings::get('site.name'));
 
         Settings::set('site.name', 'Marsden Studio');
 
@@ -73,7 +91,15 @@ class SettingsTest extends TestCase
          * opinion", not "render nothing" — a blank studio name must not blank
          * the page.
          */
-        $this->assertSame('Photographer', config('seo.site_name'));
+        /*
+         * The CONFIG default, which is deliberately not the studio's name:
+         * config/seo.php describes any site with no settings row yet. Read
+         * from the file so this asserts the fallback rather than a string.
+         */
+        $this->assertSame(
+            (string) (require base_path('config/seo.php'))['site_name'],
+            config('seo.site_name'),
+        );
     }
 
     public function test_the_table_overrides_config_for_the_keys_they_share(): void
@@ -132,7 +158,7 @@ class SettingsTest extends TestCase
      */
     public function test_the_memo_does_not_leak_between_boots(): void
     {
-        $this->assertSame('Photographer', Settings::get('site.name'));
+        $this->assertSame($this->seeded('site.name'), Settings::get('site.name'));
 
         /*
          * Another process changes the row. Raw query and raw cache forget, so
@@ -148,7 +174,7 @@ class SettingsTest extends TestCase
         Cache::forget(Settings::CACHE_KEY);
 
         // Within one request the memo is still authoritative, and should be.
-        $this->assertSame('Photographer', Settings::get('site.name'), 'the memo serves the request it was filled in');
+        $this->assertSame($this->seeded('site.name'), Settings::get('site.name'), 'the memo serves the request it was filled in');
 
         // A fresh boot must drop it.
         (new \App\Providers\AppServiceProvider($this->app))->boot();

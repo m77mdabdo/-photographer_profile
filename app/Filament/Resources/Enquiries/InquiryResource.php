@@ -52,6 +52,29 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
  */
 class InquiryResource extends Resource
 {
+    /*
+     * 34d A3 — WHAT TO CALL ONE OF THESE WHEN A SCREEN IS ABOUT IT.
+     *
+     * Filament falls back to the model's LABEL when a resource does not say,
+     * so the breadcrumb on a record screen read "Pages › Page" once the
+     * screen type came out of it — the software naming its own class, which
+     * is the fault A3 is about one level down.
+     *
+     * Read through the model, so a translatable attribute arrives in the
+     * reader's language rather than as its JSON.
+     */
+    protected static ?string $recordTitleAttribute = 'name';
+
+    /*
+     * NOT A SEARCH FEATURE. Filament turns global search on for any resource
+     * that has a record title, and naming the records for the breadcrumbs
+     * above put a search field in the topbar of every screen — a feature
+     * nobody asked for, searching translatable JSON columns through
+     * whereRaw, which is the one thing TranslatableBuilder cannot rewrite.
+     * The panel's search is per table, where the filters are.
+     */
+    protected static bool $isGloballySearchable = false;
+
     /** Edit URLs carry the id, not the slug. See the trait. */
     use AddressesRecordsById;
 

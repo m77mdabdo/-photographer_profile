@@ -14,6 +14,8 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditPage extends EditRecord
 {
+    use \App\Filament\Support\NamesPlaces;
+
     protected static string $resource = PageResource::class;
 
     protected function getHeaderActions(): array

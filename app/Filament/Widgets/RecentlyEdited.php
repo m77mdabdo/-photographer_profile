@@ -46,6 +46,7 @@ class RecentlyEdited extends TableWidget
                     ->label(__('studio.field.title'))
                     ->weight('semibold')
                     ->wrap()
+                    ->lineClamp(2)
                     ->searchable()
                     ->formatStateUsing(fn (?string $state, Model $record): string => $state
                         ?: __('studio.untranslated.untitled', ['id' => $record->record_id])),

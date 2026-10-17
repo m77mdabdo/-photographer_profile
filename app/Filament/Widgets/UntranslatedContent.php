@@ -71,6 +71,7 @@ class UntranslatedContent extends TableWidget
                     ->label(__('studio.untranslated.record'))
                     ->weight('semibold')
                     ->wrap()
+                    ->lineClamp(2)
                     ->searchable()
                     /*
                      * The English label, because that is the value that

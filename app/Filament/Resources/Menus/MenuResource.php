@@ -208,7 +208,8 @@ class MenuResource extends Resource
                 TextColumn::make('items_count')
                     ->counts('items')
                     ->label(__('studio.menus.items'))
-                    ->badge(),
+                    ->badge()
+                    ->formatStateUsing(fn (int $state): string => trans_choice('studio.menus.item_count', $state, ['count' => $state])),
 
                 /*
                  * How many of those a visitor can actually follow. A link to
@@ -219,6 +220,15 @@ class MenuResource extends Resource
                 TextColumn::make('resolvable')
                     ->label(__('studio.menus.live'))
                     ->badge()
+                    /*
+                     * 34d B2 — "3" beside "3" told you nothing was wrong only
+                     * if you compared the two columns; "3 of 3" says it on its
+                     * own, and the colour stays as the glance.
+                     */
+                    ->formatStateUsing(fn (int $state, Menu $record): string => __('studio.menus.live_count', [
+                        'count' => $state,
+                        'total' => $record->items_count,
+                    ]))
                     ->state(fn (Menu $record): int => $record->resolvableCount())
                     ->color(fn (int $state, Menu $record): string => $state === $record->items_count
                         ? 'success'

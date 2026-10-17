@@ -15,6 +15,8 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditProject extends EditRecord
 {
+    use \App\Filament\Support\NamesPlaces;
+
     protected static string $resource = ProjectResource::class;
 
     /**

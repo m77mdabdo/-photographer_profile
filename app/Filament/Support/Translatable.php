@@ -280,14 +280,62 @@ final class Translatable
                         }
                     }
 
+                    /*
+                     * ───────────────────────────────────────────────────
+                     * 34d A7 — NAMED IN THE READER'S LANGUAGE, NOT ITS OWN.
+                     *
+                     * This read Locale::native($locale), so an English
+                     * panel showed "العربية — 1": an RTL run, a neutral
+                     * dash and a digit inside an LTR cell. The bidi
+                     * algorithm then put the count on the LEFT of the
+                     * Arabic word, and the badge read "1 — العربية" — the
+                     * count first, which is not what it says, and a
+                     * different arrangement again in the Arabic panel.
+                     *
+                     * The switcher names a language in itself because
+                     * somebody has to find their own language in a list
+                     * they cannot read. A STATUS BADGE is the opposite
+                     * case: it is read by whoever is using the panel, in
+                     * the language they are using it in. translatedName()
+                     * gives "Arabic" to an English panel and "العربية" to
+                     * an Arabic one, so neither mixes scripts and the bidi
+                     * question does not arise.
+                     *
+                     * And the ✓ became a word, because B2 asks that a
+                     * badge never carry its meaning in a glyph or a colour
+                     * alone.
+                     * ───────────────────────────────────────────────────
+                     */
                     $states[] = $missing === 0
-                        ? Locale::native($locale).' ✓'
-                        : Locale::native($locale).' — '.$missing;
+                        ? __('studio.table.translation_complete', ['language' => Locale::translatedName($locale)])
+                        : __('studio.table.translation_missing', [
+                            'language' => Locale::translatedName($locale),
+                            'count' => $missing,
+                        ]);
                 }
 
                 return $states;
             })
-            ->color(fn (string $state): string => str_contains($state, '✓') ? 'gray' : 'warning')
+            /*
+             * The colour follows the words rather than hunting for a glyph
+             * inside them: this used to look for "✓", which stopped existing
+             * when the badge started speaking. The complete sentence is
+             * rebuilt for each locale and compared whole, so a reworded
+             * translation cannot silently turn every badge amber.
+             */
+            ->color(function (string $state): string {
+                foreach (Locale::codes() as $locale) {
+                    $complete = (string) __('studio.table.translation_complete', [
+                        'language' => Locale::translatedName($locale),
+                    ]);
+
+                    if ($state === $complete) {
+                        return 'gray';
+                    }
+                }
+
+                return 'warning';
+            })
             ->toggleable();
     }
 

@@ -34,7 +34,15 @@ use Illuminate\Http\RedirectResponse;
  */
 class ProjectPreviewRedirect extends Page
 {
-    use InteractsWithRecord;
+    /*
+     * InteractsWithRecord draws its own breadcrumbs, and they are the ones
+     * NamesPlaces replaces — the record's title is already in them, and so is
+     * the screen type after it. The trait wins; it calls the page's own
+     * parent for the trail and adds the record itself.
+     */
+    use InteractsWithRecord, \App\Filament\Support\NamesPlaces {
+        \App\Filament\Support\NamesPlaces::getBreadcrumbs insteadof InteractsWithRecord;
+    }
 
     protected static string $resource = ProjectResource::class;
 

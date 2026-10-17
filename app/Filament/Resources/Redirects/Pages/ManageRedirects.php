@@ -10,6 +10,8 @@ use Filament\Resources\Pages\ManageRecords;
 
 class ManageRedirects extends ManageRecords
 {
+    use \App\Filament\Support\NamesPlaces;
+
     protected static string $resource = RedirectResource::class;
 
     /** Paths are normalised before they are stored, as the old panel does. */

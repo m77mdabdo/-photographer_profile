@@ -12,6 +12,8 @@ use Filament\Resources\Pages\ListRecords;
  */
 class ListActivity extends ListRecords
 {
+    use \App\Filament\Support\NamesPlaces;
+
     protected static string $resource = ActivityLogResource::class;
 
     protected function getHeaderActions(): array

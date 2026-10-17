@@ -74,6 +74,7 @@ return [
         'destroy_mismatch' => 'هذا ليس اسم الملف. لم يُحذف شيء.',
         'the_file' => 'الملف',
         'usage_count' => 'غير مستخدمة|مستخدمة في صفحة واحدة|مستخدمة في :count صفحات',
+        'usage_short' => '{0}غير مستخدمة|{1}صفحة واحدة|{2}صفحتان|[3,10]:count صفحات|[11,*]:count صفحة',
         'detail' => 'فحص',
         'reprocess' => 'إعادة توليد النسخ',
         'reprocess_confirm' => 'تُبنى النسخ من الأصل من جديد. لا يُمَسّ الملف على القرص.',
@@ -255,7 +256,18 @@ return [
 
     ],
 
+    'clients' => [
+        'no_website' => 'لا موقع',
+    ],
+
+    'breadcrumb' => [
+        'new' => ':thing جديد',
+    ],
+
     'table' => [
+        'used_count' => '{0}غير مستخدم|{1}استخدام واحد|{2}استخدامان|[3,10]:count استخدامات|[11,*]:count استخداماً',
+        'translation_complete' => ':language مكتملة',
+        'translation_missing' => ':language — :count ناقصة',
         'used' => 'مستخدم',
         'translated' => 'الترجمة',
         'status' => 'الحالة',
@@ -452,6 +464,8 @@ return [
         'permanent' => '301 — دائم',
         'temporary' => '302 — مؤقت',
         'active' => 'مفعّل',
+        'live' => 'يعمل',
+        'paused' => 'موقوف',
         'origin' => 'المصدر',
         'hits' => 'الزيارات',
         'manual' => 'أُضيف يدوياً',
@@ -516,6 +530,8 @@ return [
     ],
 
     'menus' => [
+        'item_count' => '{0}لا روابط|{1}رابط واحد|{2}رابطان|[3,10]:count روابط|[11,*]:count رابطاً',
+        'live_count' => ':count من :total تعمل',
         'where' => 'الموضع',
         'items' => 'الروابط',
         'add' => 'أضف رابطاً',

@@ -101,7 +101,8 @@ class ActivityLogResource extends Resource
                         : null)
                     ->placeholder('—')
                     ->searchable()
-                    ->wrap(),
+                    ->wrap()
+                    ->lineClamp(2),
 
                 TextColumn::make('actor')
                     ->label(__('studio.activity.who'))
@@ -117,7 +118,8 @@ class ActivityLogResource extends Resource
                             ->map(fn ($value, $key): string => $key.': '.(is_scalar($value) ? (string) $value : json_encode($value)))
                             ->implode('  ·  '))
                     ->toggleable(isToggledHiddenByDefault: true)
-                    ->wrap(),
+                    ->wrap()
+                    ->lineClamp(2),
             ])
             ->filters([
                 SelectFilter::make('event')

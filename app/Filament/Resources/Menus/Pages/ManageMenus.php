@@ -13,6 +13,8 @@ use Filament\Resources\Pages\ManageRecords;
  */
 class ManageMenus extends ManageRecords
 {
+    use \App\Filament\Support\NamesPlaces;
+
     protected static string $resource = MenuResource::class;
 
     /** No create action: a menu is a place in the design, not a record. */

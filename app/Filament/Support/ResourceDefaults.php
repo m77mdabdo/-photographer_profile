@@ -49,9 +49,43 @@ final class ResourceDefaults
                 ->required()
                 ->native(false),
 
+            /*
+             * ═══════════════════════════════════════════════════════════════
+             * 34d A4 — FILAMENT'S PICKER, NOT THE BROWSER'S.
+             *
+             * This rendered <input type="datetime-local">, which is the one
+             * control on the page the browser draws itself: a US-format
+             * 09/28/2026, 05:37 PM with the browser's own calendar glyph, on
+             * a panel that is otherwise entirely typeset. It is the same
+             * fault Task 24 fixed on the contact form, and the answer there
+             * was a plain text field — correctly, because a client's "late
+             * spring" is not a timestamp.
+             *
+             * THIS one is. published_at schedules a publication: the scope
+             * compares it to now(), so it has to be a real moment, and a
+             * free-text box that accepts "late spring" would be lying about
+             * what the field does. So it is Filament's own picker, which the
+             * panel already prefers for Select, styled by the same theme as
+             * every other control.
+             *
+             * ARABIC, MEASURED RATHER THAN ASSUMED. Filament's bundled dayjs
+             * carries only English month names, which looked like a reason
+             * not to do this — and the rendered picker in Arabic shows
+             * "سبتمبر 2026" with Arabic weekday names, right to left. The
+             * closed field reads "28 سبتمبر 2026، 17:37" against "28 Sep
+             * 2026, 17:37", with Western digits per ADR 0005.
+             *
+             * The separator is the only part this file has to decide: Arabic
+             * has its own comma, and a Latin one inside an Arabic date is the
+             * kind of small wrongness this project has been removing all
+             * task. j M Y matches the tables' own date format.
+             * ═══════════════════════════════════════════════════════════════
+             */
             DateTimePicker::make('published_at')
                 ->label(__('studio.field.published_at'))
                 ->seconds(false)
+                ->native(false)
+                ->displayFormat(fn (): string => Locale::isDefault() ? 'j M Y, H:i' : 'j M Y، H:i')
                 ->helperText(__('studio.field.published_at_hint')),
         ];
     }

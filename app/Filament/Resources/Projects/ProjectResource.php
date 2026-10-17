@@ -38,6 +38,29 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ProjectResource extends Resource
 {
+    /*
+     * 34d A3 — WHAT TO CALL ONE OF THESE WHEN A SCREEN IS ABOUT IT.
+     *
+     * Filament falls back to the model's LABEL when a resource does not say,
+     * so the breadcrumb on a record screen read "Pages › Page" once the
+     * screen type came out of it — the software naming its own class, which
+     * is the fault A3 is about one level down.
+     *
+     * Read through the model, so a translatable attribute arrives in the
+     * reader's language rather than as its JSON.
+     */
+    protected static ?string $recordTitleAttribute = 'title';
+
+    /*
+     * NOT A SEARCH FEATURE. Filament turns global search on for any resource
+     * that has a record title, and naming the records for the breadcrumbs
+     * above put a search field in the topbar of every screen — a feature
+     * nobody asked for, searching translatable JSON columns through
+     * whereRaw, which is the one thing TranslatableBuilder cannot rewrite.
+     * The panel's search is per table, where the filters are.
+     */
+    protected static bool $isGloballySearchable = false;
+
     /** Edit URLs carry the id, not the slug. See the trait. */
     use AddressesRecordsById;
 
@@ -207,7 +230,23 @@ class ProjectResource extends Resource
                 ->columns(2)
                 ->schema([
                     ...ResourceDefaults::publishing(),
-                    TextInput::make('year')->label(__('studio.field.year'))->numeric(),
+                    /*
+                     * 34d B1 — NOT ->numeric(), WHICH IS AN input type=number.
+                     *
+                     * The browser draws that one: a spinner on hover, a scroll
+                     * wheel that silently changes the year, and a thousands
+                     * separator in some locales — the same class of fault as
+                     * the native date input A4 removed from the form beside
+                     * it, on a panel that draws everything else itself.
+                     *
+                     * The VALIDATION is unchanged in meaning and stricter in
+                     * fact: integer rather than "numeric", which refused
+                     * nothing a year should refuse but accepted 1987.5.
+                     */
+                    TextInput::make('year')
+                        ->label(__('studio.field.year'))
+                        ->rule('integer')
+                        ->extraInputAttributes(['inputmode' => 'numeric', 'maxlength' => 4]),
                     Toggle::make('is_featured')->label(__('studio.filter.featured'))->live(),
                 ]),
         ]);

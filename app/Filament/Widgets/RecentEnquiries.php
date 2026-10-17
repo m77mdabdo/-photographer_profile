@@ -52,6 +52,7 @@ class RecentEnquiries extends TableWidget
                     ->weight(fn (Inquiry $record): string => $record->status === InquiryStatus::New ? 'bold' : 'normal')
                     ->searchable()
                     ->wrap()
+                    ->lineClamp(2)
                     /*
                      * The first line of the message, as the row's own
                      * description — "about what", without a second column

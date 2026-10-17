@@ -17,6 +17,8 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class ListMedia extends ListRecords
 {
+    use \App\Filament\Support\NamesPlaces;
+
     protected static string $resource = MediaResource::class;
 
     protected function getHeaderActions(): array

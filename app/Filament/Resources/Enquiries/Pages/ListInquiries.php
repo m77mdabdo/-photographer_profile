@@ -9,6 +9,8 @@ use Filament\Resources\Pages\ListRecords;
 
 class ListInquiries extends ListRecords
 {
+    use \App\Filament\Support\NamesPlaces;
+
     protected static string $resource = InquiryResource::class;
 
     /*

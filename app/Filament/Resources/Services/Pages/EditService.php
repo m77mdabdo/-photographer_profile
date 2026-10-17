@@ -14,6 +14,8 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditService extends EditRecord
 {
+    use \App\Filament\Support\NamesPlaces;
+
     protected static string $resource = ServiceResource::class;
 
     protected function getHeaderActions(): array

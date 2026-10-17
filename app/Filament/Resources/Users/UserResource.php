@@ -17,7 +17,6 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Tables\Filters\SelectFilter;
@@ -157,10 +156,19 @@ class UserResource extends Resource
                  * editable: an admin who could clear it could lock somebody
                  * out or walk past the guard.
                  */
-                IconColumn::make('two_factor_confirmed_at')
+                /*
+                 * 34d A2 — a tick or a cross, and the two strings that say
+                 * which were already written for the filter beside it. The
+                 * last icon-only indicator in the panel.
+                 */
+                TextColumn::make('two_factor_confirmed_at')
                     ->label(__('studio.users.two_factor'))
-                    ->boolean()
-                    ->getStateUsing(fn (User $record): bool => $record->two_factor_confirmed_at !== null),
+                    ->badge()
+                    ->getStateUsing(fn (User $record): bool => $record->two_factor_confirmed_at !== null)
+                    ->formatStateUsing(fn (bool $state): string => $state
+                        ? __('studio.users.two_factor_on')
+                        : __('studio.users.two_factor_off'))
+                    ->color(fn (bool $state): string => $state ? 'success' : 'warning'),
 
                 TextColumn::make('last_login_at')
                     ->label(__('studio.users.last_seen'))

@@ -88,6 +88,7 @@ return [
         'destroy_mismatch' => 'That is not the filename. Nothing was deleted.',
         'the_file' => 'The file',
         'usage_count' => 'Not used anywhere|Used on one page|Used on :count pages',
+        'usage_short' => '{0}Unused|{1}1 page|[2,*]:count pages',
         'detail' => 'Inspect',
         'reprocess' => 'Reprocess renditions',
         'reprocess_confirm' => 'The renditions are rebuilt from the original. The file on disk is not touched.',
@@ -313,7 +314,25 @@ return [
         // not exist anywhere yet.
     ],
 
+        /*
+     * 34d B2 — a badge never carries its meaning in a colour or a glyph
+     * alone. These are the words the counts and the translation state say
+     * for themselves; the colour stays underneath as the glance.
+     */
+    /* 34d A3 — the only word a breadcrumb adds that is not a place. */
+    'clients' => [
+        'no_website' => 'No website',
+    ],
+
+    'breadcrumb' => [
+        'new' => 'New :thing',
+    ],
+
     'table' => [
+        'used_count' => '{0}Unused|{1}1 use|[2,*]:count uses',
+        'translation_complete' => ':language complete',
+        'translation_missing' => ':language — :count missing',
+
         'used' => 'Used',
         'translated' => 'Translated',
         'status' => 'Status',
@@ -516,6 +535,8 @@ return [
         'permanent' => '301 — permanent',
         'temporary' => '302 — temporary',
         'active' => 'Active',
+        'live' => 'Live',
+        'paused' => 'Paused',
         'origin' => 'Origin',
         'hits' => 'Hits',
         'manual' => 'Added by hand',
@@ -580,6 +601,9 @@ return [
     ],
 
     'menus' => [
+        'item_count' => '{0}No links|{1}1 link|[2,*]:count links',
+        'live_count' => ':count of :total work',
+
         'where' => 'Where',
         'items' => 'Links',
         'add' => 'Add a link',

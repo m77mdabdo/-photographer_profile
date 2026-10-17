@@ -44,13 +44,40 @@ final class SiteCopy
          * each language. A real studio's name is a proper noun and the owner
          * will replace both — but a fresh install should not be half-English.
          */
-        ['key' => 'site.name', 'value' => 'Photographer', 'ar' => 'مصوّر فوتوغرافي', 'type' => 'string', 'group' => 'identity'],
+        /*
+         * ═══════════════════════════════════════════════════════════════════
+         * THE STUDIO'S REAL NAME, AND WHY IT IS STILL A DEFAULT.
+         *
+         * "Photographer" was the placeholder a site with no client yet is
+         * built on. The studio is Anas Fareed.
+         *
+         * This row is the DEFAULT, not the value: SettingsSeeder creates a
+         * setting and never updates one, so a studio that has since renamed
+         * itself keeps its own name through every deploy (see
+         * Concerns\ProtectsEditedContent). Changing a name on a site that is
+         * already running is therefore data — a write through Settings, which
+         * is what the Settings screen does — and this line is what a fresh
+         * install starts from.
+         *
+         * NOTHING ELSE ABOUT THE SHAPE OF THIS STRING IS ASSUMED. The hero
+         * sizes the wordmark from its character count, so a shorter name
+         * grows and a longer one shrinks; "Anas Fareed" contains a SPACE,
+         * which the single-line wordmark had never been rendered with until
+         * Task 34d C2 measured it at four widths in both languages.
+         * ═══════════════════════════════════════════════════════════════════
+         */
+        ['key' => 'site.name', 'value' => 'Anas Fareed', 'ar' => 'أنس فريد', 'type' => 'string', 'group' => 'identity'],
         ['key' => 'site.statement', 'value' => 'Working in available dark. Portraits, series and commissions made slowly, printed carefully, and kept.', 'ar' => 'نعمل في الضوء المتاح. بورتريهات ومتتاليات وتكليفات تُصنع على مهل، وتُطبع بعناية، وتُحفَظ.', 'type' => 'text', 'group' => 'identity'],
         ['key' => 'site.location', 'value' => 'Northumberland, UK', 'ar' => 'نورثمبرلاند، المملكة المتحدة', 'type' => 'string', 'group' => 'identity'],
         ['key' => 'site.disciplines', 'value' => 'Portrait — Editorial — Archive', 'ar' => 'بورتريه — تحريري — أرشيف', 'type' => 'string', 'group' => 'identity'],
 
         // --- attribution ------------------------------------------------
-        ['key' => 'attribution.name', 'value' => 'A. Marsden', 'type' => 'string', 'group' => 'attribution'],
+        /*
+         * The name on the attribution line, in the journal's byline and in
+         * the structured data's founder — the same person as site.name, and
+         * it had a different placeholder in it.
+         */
+        ['key' => 'attribution.name', 'value' => 'Anas Fareed', 'ar' => 'أنس فريد', 'type' => 'string', 'group' => 'attribution'],
         ['key' => 'attribution.role', 'value' => 'Photographer & Printer', 'ar' => 'مصوّر وطابع', 'type' => 'string', 'group' => 'attribution'],
         ['key' => 'attribution.city', 'value' => 'Newcastle', 'ar' => 'نيوكاسل', 'type' => 'string', 'group' => 'attribution'],
 

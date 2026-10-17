@@ -85,7 +85,12 @@ class ArticleCategoryResource extends Resource
         return $table
             ->columns([
                 Translatable::displayColumn('name'),
-                TextColumn::make('articles_count')->counts('articles')->label(__('studio.table.used'))->badge(),
+                TextColumn::make('articles_count')
+                    ->counts('articles')
+                    ->label(__('studio.table.used'))
+                    ->badge()
+                    ->formatStateUsing(fn (int $state): string => trans_choice('studio.table.used_count', $state, ['count' => $state]))
+                    ->color(fn (int $state): string => $state > 0 ? 'primary' : 'gray'),
                 Translatable::statusColumn(self::TRANSLATED),
                 ResourceDefaults::updatedColumn(),
             ])

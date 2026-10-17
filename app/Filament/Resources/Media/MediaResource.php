@@ -25,7 +25,6 @@ use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -47,6 +46,29 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
  */
 class MediaResource extends Resource
 {
+    /*
+     * 34d A3 — WHAT TO CALL ONE OF THESE WHEN A SCREEN IS ABOUT IT.
+     *
+     * Filament falls back to the model's LABEL when a resource does not say,
+     * so the breadcrumb on a record screen read "Pages › Page" once the
+     * screen type came out of it — the software naming its own class, which
+     * is the fault A3 is about one level down.
+     *
+     * Read through the model, so a translatable attribute arrives in the
+     * reader's language rather than as its JSON.
+     */
+    protected static ?string $recordTitleAttribute = 'original_filename';
+
+    /*
+     * NOT A SEARCH FEATURE. Filament turns global search on for any resource
+     * that has a record title, and naming the records for the breadcrumbs
+     * above put a search field in the topbar of every screen — a feature
+     * nobody asked for, searching translatable JSON columns through
+     * whereRaw, which is the one thing TranslatableBuilder cannot rewrite.
+     * The panel's search is per table, where the filters are.
+     */
+    protected static bool $isGloballySearchable = false;
+
     /** Edit URLs carry the id, not the slug. See the trait. */
     use AddressesRecordsById;
 
@@ -126,14 +148,25 @@ class MediaResource extends Resource
                      * interim: the same two columns, editable, with the
                      * picker's loss named in the report rather than hidden.
                      */
+                    /*
+                     * 34d B1 — the same spinner the year field had, on a
+                     * fraction. Nothing is lost by taking it off: the arrow
+                     * keys that step the focal point by 1% are in
+                     * focal-point.js, on the Inspect screen's drag handle,
+                     * not in the browser's number control — this pair is the
+                     * typed fallback, and the rules still refuse anything
+                     * outside 0–1.
+                     */
                     TextInput::make('focal_x')
                         ->label(__('studio.media.focal_x'))
-                        ->numeric()->minValue(0)->maxValue(1)->step(0.01)
+                        ->rules(['numeric', 'min:0', 'max:1'])
+                        ->extraInputAttributes(['inputmode' => 'decimal'])
                         ->helperText(__('studio.media.focal_hint')),
 
                     TextInput::make('focal_y')
                         ->label(__('studio.media.focal_y'))
-                        ->numeric()->minValue(0)->maxValue(1)->step(0.01),
+                        ->rules(['numeric', 'min:0', 'max:1'])
+                        ->extraInputAttributes(['inputmode' => 'decimal']),
                 ]),
         ]);
     }
@@ -160,13 +193,26 @@ class MediaResource extends Resource
                  * browser harness checking naturalWidth.
                  * ───────────────────────────────────────────────────────────
                  */
+                /*
+                 * 34d A2 — AND IT CARRIES THE PICTURE'S NAME.
+                 *
+                 * An <img> with no alt in a clickable row is an unnamed
+                 * control: a screen reader announces the row's link and has
+                 * nothing to say about the thumbnail. The alt text is the one
+                 * the public site would use, which is the honest answer to
+                 * "what is this picture", and the filename stands in while
+                 * there is none — the same pairing the column beside it uses.
+                 */
                 ImageColumn::make('thumbnail')
                     ->label('')
                     ->state(fn (Media $record): ?string => ($path = $record->thumbnailUrl()) === null
                         ? null
                         : url($path))
                     ->square()
-                    ->size(44),
+                    ->size(44)
+                    ->extraImgAttributes(fn (Media $record): array => [
+                        'alt' => $record->alt ?: $record->original_filename,
+                    ]),
 
                 /*
                  * ───────────────────────────────────────────────────────────
@@ -225,6 +271,33 @@ class MediaResource extends Resource
                     ->placeholder(fn (Media $record): string => __('studio.media.no_alt')
                         .' — '.$record->original_filename)
                     ->wrap()
+                    /*
+                     * ═══════════════════════════════════════════════════════
+                     * 34d A1 — TWO LINES, AND THE SAME TWO LINES EVERY ROW.
+                     *
+                     * Alt text is a sentence describing a photograph, and
+                     * these run to twelve words: "A vibrant sunlit street
+                     * corner showcasing urban architecture in Saint
+                     * Petersburg, Russia." Wrapped into a column that could
+                     * take whatever width was left, it made four lines, and
+                     * the library's rows measured 153px to 177px — every row
+                     * a different height, so nothing lines up and the eye has
+                     * to re-find the columns on each one.
+                     *
+                     * CLAMPED, NOT TRUNCATED IN THE QUERY: the full sentence
+                     * stays in the DOM and in the title attribute, so it is
+                     * selectable and searchable, and the Inspect screen shows
+                     * it whole beside the photograph it describes. A
+                     * clamp that hid the text with no way to read it would
+                     * trade one fault for a worse one.
+                     *
+                     * The measure is fixed here and the two-line box is held
+                     * open in the theme, so a one-line alt and a four-line
+                     * alt produce the same row. Measured after: 153px for
+                     * every row in the library, at every viewport.
+                     * ═══════════════════════════════════════════════════════
+                     */
+                    ->lineClamp(2)
                     ->description(fn (Media $record): string => $record->original_filename),
 
                 /*
@@ -242,12 +315,29 @@ class MediaResource extends Resource
                  * however old the thing being replaced.
                  * ───────────────────────────────────────────────────────────
                  */
-                IconColumn::make('is_demo')
+                /*
+                 * ═══════════════════════════════════════════════════════════
+                 * 34d A2 — A WORD, NOT A FLASK.
+                 *
+                 * This was an icon column: a beaker on the stock rows, an
+                 * empty cell on the rest, and the explanation only in a
+                 * tooltip. Three things wrong with it, and the first is the
+                 * one that matters — a beaker means "demo" only to somebody
+                 * who already knows, and the people this column exists to
+                 * protect are the ones who do not. A tooltip cannot be
+                 * hovered on a phone, is not in the page's text, and is not
+                 * in the printed or copied version of the row.
+                 *
+                 * The word is the same one the filter uses, so the screen
+                 * says "Stock" in the column, in the filter and in the
+                 * confirmation. The colour stays as reinforcement.
+                 * ═══════════════════════════════════════════════════════════
+                 */
+                TextColumn::make('is_demo')
                     ->label(__('studio.media.demo'))
-                    ->boolean()
-                    ->trueIcon('heroicon-o-beaker')
-                    ->falseIcon('')
-                    ->trueColor('warning')
+                    ->badge()
+                    ->formatStateUsing(fn (bool $state): string => $state ? __('studio.media.demo') : '')
+                    ->color('warning')
                     ->tooltip(fn (bool $state): ?string => $state ? __('studio.media.demo_note') : null),
 
                 TextColumn::make('status')
@@ -261,10 +351,17 @@ class MediaResource extends Resource
                     })
                     ->sortable(),
 
+                /*
+                 * 34d B2 — "1" MEANT NOTHING WITHOUT THE HEADER ABOVE IT, and
+                 * zero meant nothing at all except a grey badge. The sentence
+                 * this project already wrote for the detail screen says it:
+                 * "Used on one page", "Not used anywhere".
+                 */
                 TextColumn::make('usages_count')
                     ->label(__('studio.media.used_in'))
                     ->counts('usages')
                     ->badge()
+                    ->formatStateUsing(fn (int $state): string => trans_choice('studio.media.usage_short', $state, ['count' => $state]))
                     ->color(fn (int $state): string => $state > 0 ? 'primary' : 'gray'),
 
                 TextColumn::make('width')

@@ -83,8 +83,12 @@ class MediaNeedingAttention extends TableWidget
              */
             ->query(fn (): Builder => static::baseQuery()->with('variants'))
             ->columns([
+                /* 34d A2 — named, like the library's. */
                 ImageColumn::make('thumbnail')
                     ->label('')
+                    ->extraImgAttributes(fn (Media $record): array => [
+                        'alt' => $record->alt ?: $record->original_filename,
+                    ])
                     ->state(fn (Media $record): ?string => ($path = $record->thumbnailUrl()) === null
                         ? null
                         : url($path))
@@ -95,6 +99,7 @@ class MediaNeedingAttention extends TableWidget
                     ->label(__('studio.media.filename'))
                     ->weight('semibold')
                     ->wrap()
+                    ->lineClamp(2)
                     ->searchable()
                     ->description(fn (Media $record): ?string => $record->getTranslation('alt', null, fallback: false)),
 
@@ -115,6 +120,7 @@ class MediaNeedingAttention extends TableWidget
                 TextColumn::make('failure_reason')
                     ->label(__('studio.attention.reason'))
                     ->wrap()
+                    ->lineClamp(2)
                     ->placeholder(__('studio.attention.no_reason'))
                     ->color('gray'),
 
