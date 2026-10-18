@@ -417,23 +417,69 @@ class ArchiveTest extends TestCase
         $html = $this->get('/archive')->assertOk()->getContent();
 
         /*
-         * Every frame on the sheet came from a file with a credit. The three
-         * synthetic fixtures were the only media in the library with none,
-         * which is a better signature than their ids: a generated image has
-         * no photographer.
+         * ───────────────────────────────────────────────────────────────────
+         * TASK 36c A2 — THIS TEST ASSERTED NOTHING, AND THE REASON MATTERED
+         * MORE THAN THE FIX.
+         *
+         * It hunted for media with no credit — the signature of the three
+         * synthetic gradients that once leaked into a published gallery —
+         * and asserted their uuids were absent from the sheet. Planting
+         * $this->fail() in the loop showed it never ran: BOTH fixture
+         * builders always set a credit (DemoWorld writes 'A Photographer',
+         * MediaFactory writes a faker name), so the condition it was looking
+         * for could not exist in its own fixture. Vacuous since written.
+         *
+         * AND THE CLAIM WAS NOT ONE THE CODE MAKES. ArchiveController selects
+         * the media used by a PUBLISHED project and filters on nothing else —
+         * no credit condition anywhere. An uncredited image attached to a
+         * published story would reach the sheet, so manufacturing the missing
+         * fixture would have produced a failing test rather than a passing
+         * one, and the failure would have been the test's claim, not a bug.
+         *
+         * What the fix actually established — asserted by
+         * test_the_story_seeder_never_reaches_into_real_media — is that a
+         * seeder may only select is_demo media, so a synthetic image never
+         * gets attached in the first place.
+         *
+         * So this now asserts the reachable half of that, over a population
+         * that EXISTS: an uncredited, non-demo image in the library is not
+         * among the frames a published story uses, and does not appear on the
+         * sheet. The offender is created here deliberately, so the loop can
+         * never be empty again, and the count is asserted before the loop.
+         * ───────────────────────────────────────────────────────────────────
          */
-        $ids = \App\Models\Media::query()->whereNull('credit')->orWhere('credit', '')->pluck('id');
+        $synthetic = \App\Models\Media::factory()->real()->create([
+            'credit' => null,
+            'alt' => null,
+        ]);
 
-        foreach ($ids as $id) {
+        $uncredited = \App\Models\Media::query()
+            ->where(fn ($q) => $q->whereNull('credit')->orWhere('credit', ''))
+            ->pluck('id');
+
+        $this->assertContains(
+            $synthetic->id,
+            $uncredited->all(),
+            'the deliberately uncredited fixture was not found, so the loop below is empty again'
+        );
+
+        $leaked = [];
+
+        foreach ($uncredited as $id) {
             $media = \App\Models\Media::find($id);
 
             $this->assertNotNull($media);
-            $this->assertStringNotContainsString(
-                (string) $media->uuid,
-                $html,
-                "an uncredited image reached the public archive: media {$id}"
-            );
+
+            if (str_contains($html, (string) $media->uuid)) {
+                $leaked[] = $id;
+            }
         }
+
+        $this->assertSame(
+            [],
+            $leaked,
+            'an uncredited image reached the public archive: media '.implode(', ', $leaked)
+        );
     }
 
     // ----------------------------------------------------------------- 11

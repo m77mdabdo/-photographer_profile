@@ -139,10 +139,32 @@ class MotionTest extends TestCase
             'the reveal must clip the plate'
         );
 
-        foreach ($this->rulesTargeting($css, '.hero__image') as $rule) {
-            $this->assertStringNotContainsString('opacity', $rule, 'the LCP image is inside an opacity rule');
-            $this->assertStringNotContainsString('clip-path', $rule, 'the LCP image is inside a clip rule');
-        }
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * TASK 36c A2 — THIS LOOP ASSERTED NOTHING, AND COULD NOT.
+         *
+         * Established by planting $this->fail() as its first statement: the
+         * test still passed, so the body never ran. motion.css contains no
+         * rule targeting .hero__image at all, which is the desired state —
+         * and a loop that checks "every rule is acceptable" over a set that
+         * is empty by design is permanently vacuous.
+         *
+         * The claim in the docblock above was still true: adding an opacity
+         * rule would have made the loop run and fail. But the test asserted
+         * nothing on every run until that day, which is exactly the shape
+         * this task is sweeping for.
+         *
+         * So the population itself is asserted instead of its members. This
+         * always executes, it says something stronger — the LCP image is not
+         * targeted by a motion rule AT ALL, not merely spared opacity and
+         * clip-path — and it names the offender when it fails.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        $this->assertSame(
+            [],
+            $this->rulesTargeting($css, '.hero__image'),
+            'the LCP image is targeted by a motion rule'
+        );
     }
 
     // ----------------------------------------------------------------- 3
@@ -380,18 +402,31 @@ class MotionTest extends TestCase
          * not be in it — the archive would otherwise pay 31 kB for an
          * animation it deliberately does not run.
          */
+        /*
+         * TASK 36c A2 — the same shape as the hero rule above: $vendor is
+         * empty today, because the public entry statically imports no vendor
+         * chunk at all, so this loop has never run. Proved by planting a
+         * failure in it. The oversized chunks are collected and the EMPTY
+         * SET is asserted, which always executes and names any offender.
+         */
+        $oversized = [];
+
         foreach ($vendor as $key) {
             $bytes = strlen((string) gzencode(
                 (string) file_get_contents(public_path('build/'.$manifest[$key]['file'])),
                 9
             ));
 
-            $this->assertLessThan(
-                8 * 1024,
-                $bytes,
-                'the public entry statically imports a large vendor chunk: '.$manifest[$key]['file']
-            );
+            if ($bytes >= 8 * 1024) {
+                $oversized[] = sprintf('%s (%d bytes gzipped)', $manifest[$key]['file'], $bytes);
+            }
         }
+
+        $this->assertSame(
+            [],
+            $oversized,
+            'the public entry statically imports a large vendor chunk: '.implode(', ', $oversized)
+        );
 
         // core.js, which is what imports GSAP, is a chunk of its own.
         $this->assertArrayHasKey(

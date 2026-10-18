@@ -5,8 +5,13 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Enums\InquiryStatus;
+use App\Models\Article;
 use App\Models\Inquiry;
+use App\Models\Media;
+use App\Models\Project;
+use App\Support\HarnessTargets;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * The rows the browser harness needs in order to check a screen at all.
@@ -67,6 +72,9 @@ class HarnessFixtures extends Command
         if (Inquiry::query()->withTrashed()->exists()) {
             $this->info('An enquiry already exists; nothing to create.');
 
+            /* The names are still written: the harness needs them either way. */
+            $this->writeTargets();
+
             return self::SUCCESS;
         }
 
@@ -85,7 +93,31 @@ class HarnessFixtures extends Command
 
         $this->info('Created one fixture enquiry.');
 
+        $this->writeTargets();
+
         return self::SUCCESS;
+    }
+
+    /**
+     * Name the records the harness should measure.
+     *
+     * The choice lives in App\Support\HarnessTargets, which a test can reach
+     * — this command refuses to run outside the local environment, so the
+     * logic could not be asserted while it lived here. See that class for
+     * why the choice matters.
+     */
+    private function writeTargets(): void
+    {
+        $targets = HarnessTargets::write();
+
+        $this->info(sprintf(
+            'Named the harness targets: project %s (%s blocks), article %s, media %s, enquiry %s.',
+            $targets['project'] ?? '—',
+            $targets['project_blocks'] ?? '—',
+            $targets['article'] ?? '—',
+            $targets['media'] ?? '—',
+            $targets['enquiry'] ?? '—',
+        ));
     }
 
     private function remove(): int

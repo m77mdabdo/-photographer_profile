@@ -568,15 +568,41 @@ class StoryBuilderInPanelTest extends TestCase
                 'media' => [$images[0]->getKey()]],
         ]);
 
-        foreach ($this->project->blocks()->get() as $block) {
-            foreach (array_keys($block->rawData()) as $key) {
-                $this->assertDoesNotMatchRegularExpression(
-                    '/media|image|photo/i',
-                    (string) $key,
-                    "a media id reached the data column as \"$key\""
-                );
-            }
-        }
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * TASK 36c A2 — THIS ASSERTED NOTHING, AND THE TRUTH IS STRONGER
+         * THAN WHAT IT CLAIMED.
+         *
+         * It walked every block's raw data looking for a key matching
+         * /media|image|photo/. Planting $this->fail() in that loop showed it
+         * never ran, and the first repair — asserting the block population
+         * was non-empty — failed, which is how the real behaviour surfaced:
+         *
+         *     blocks stored: 0
+         *
+         * saveStory does not store the block with the smuggled keys stripped.
+         * It REFUSES it. So the test was checking that a surviving block had
+         * clean keys, when no block survives at all, and both of its loops
+         * were empty on every run since it was written.
+         *
+         * Asserted directly now, with no loop that can have no population:
+         * the refusal itself, and then the model-level guard below for the
+         * path that bypasses saveStory entirely. The key-scanning loop is
+         * gone — ProjectBlock::$data throwing is what actually enforces the
+         * shape, and that is what the exception below exercises.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        $this->assertSame(
+            0,
+            $this->project->blocks()->count(),
+            'a block carrying a media id in its data payload was stored rather than refused'
+        );
+
+        $this->assertSame(
+            0,
+            \App\Models\ProjectBlock::query()->count(),
+            'the smuggled block reached project_blocks under another project'
+        );
 
         // And the model refuses it outright if something bypasses SaveStory.
         $this->expectException(\InvalidArgumentException::class);

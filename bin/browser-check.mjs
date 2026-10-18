@@ -225,7 +225,12 @@ const ADMIN_PAGES = [
   {
     label: 'studio project edit',
     admin: true,
-    discover: { from: '/admin/projects', selector: 'a[href*="/admin/projects/"][href$="/edit"]' },
+    discover: {
+      from: '/admin/projects',
+      selector: 'a[href*="/admin/projects/"][href$="/edit"]',
+      named: 'project',
+      path: '/admin/projects/{id}/edit',
+    },
   },
   { label: 'studio project create', path: '/admin/projects/create', admin: true },
 
@@ -243,7 +248,12 @@ const ADMIN_PAGES = [
   {
     label: 'studio story builder',
     admin: true,
-    discover: { from: '/admin/projects', selector: 'a[href*="/admin/projects/"][href$="/story"]' },
+    discover: {
+      from: '/admin/projects',
+      selector: 'a[href*="/admin/projects/"][href$="/story"]',
+      named: 'project',
+      path: '/admin/projects/{id}/story',
+    },
   },
   { label: 'studio media', path: '/admin/media', admin: true },
   { label: 'studio categories', path: '/admin/categories', admin: true },
@@ -252,7 +262,12 @@ const ADMIN_PAGES = [
   {
     label: 'studio journal edit',
     admin: true,
-    discover: { from: '/admin/articles', selector: 'a[href*="/admin/articles/"][href$="/edit"]' },
+    discover: {
+      from: '/admin/articles',
+      selector: 'a[href*="/admin/articles/"][href$="/edit"]',
+      named: 'article',
+      path: '/admin/articles/{id}/edit',
+    },
   },
   { label: 'studio journal categories', path: '/admin/article-categories', admin: true },
   { label: 'studio pages', path: '/admin/pages', admin: true },
@@ -262,7 +277,12 @@ const ADMIN_PAGES = [
   {
     label: 'studio enquiry',
     admin: true,
-    discover: { from: '/admin/enquiries', selector: 'a[href*="/admin/enquiries/"]' },
+    discover: {
+      from: '/admin/enquiries',
+      selector: 'a[href*="/admin/enquiries/"]',
+      named: 'enquiry',
+      path: '/admin/enquiries/{id}',
+    },
   },
   { label: 'studio redirects', path: '/admin/redirects', admin: true },
   { label: 'studio users', path: '/admin/users', admin: true },
@@ -280,7 +300,12 @@ const ADMIN_PAGES = [
   {
     label: 'studio media detail',
     admin: true,
-    discover: { from: '/admin/media', selector: 'a[href*="/admin/media/"]' },
+    discover: {
+      from: '/admin/media',
+      selector: 'a[href*="/admin/media/"]',
+      named: 'media',
+      path: '/admin/media/{id}',
+    },
   },
 
   /*
@@ -412,6 +437,36 @@ async function takeCspViolations(page) {
 }
 
 const CREDENTIALS_PATH = 'storage/app/private/harness-admin.json'
+
+/*
+ * ───────────────────────────────────────────────────────────────────────────
+ * TASK 36c A3 — THE RECORDS THIS HARNESS MEASURES ARE NAMED, NOT GUESSED.
+ *
+ * Five targets below are DISCOVERED by clicking the first matching link on a
+ * list screen. Which record that is depends on the list's default sort, which
+ * depends on the data — so what those rows measure changes when the data
+ * changes, silently.
+ *
+ * The story-builder row proved the cost: it passed for as long as a project
+ * with NO BLOCKS sorted first, because an empty builder has no block cards,
+ * no drag handles and no outline. Twelve controls under the 44px minimum were
+ * never measured until a translation pass bumped updated_at.
+ *
+ * `php artisan harness:fixtures` now writes the ids it wants measured —
+ * the project with the most blocks, an article, a credited media, an enquiry
+ * — and discovery is the FALLBACK, which reports a note when it is used so
+ * that losing the named record is visible rather than silent.
+ * ───────────────────────────────────────────────────────────────────────────
+ */
+const TARGETS_PATH = 'storage/app/private/harness-targets.json'
+
+function namedTargets() {
+  try {
+    return JSON.parse(readFileSync(TARGETS_PATH, 'utf8'))
+  } catch (e) {
+    return {}
+  }
+}
 
 function artisan(...argv) {
   return execFileSync('php', ['artisan', ...argv], { encoding: 'utf8' }).trim()
@@ -1189,11 +1244,27 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir, expectsLocaleSwitche
 async function resolveAdminPaths(page) {
   const cache = new Map()
   const notes = []
+  const named = namedTargets()
 
   for (const target of ADMIN_PAGES) {
     if (!target.discover) continue
 
-    const { from, selector } = target.discover
+    const { from, selector, named: namedKey, path: pattern } = target.discover
+
+    /*
+     * A3: the named record first. No navigation, no sort order, no guess.
+     */
+    if (namedKey && pattern && named[namedKey]) {
+      target.path = pattern.replace('{id}', String(named[namedKey]))
+      continue
+    }
+
+    if (namedKey) {
+      notes.push(
+        `${target.label}: no named record for "${namedKey}" — falling back to whatever sorts first. ` +
+        'Run `php artisan harness:fixtures` so this row measures a known page.',
+      )
+    }
 
     if (!cache.has(from)) {
       await page.goto(BASE + from, { waitUntil: 'networkidle2' })
