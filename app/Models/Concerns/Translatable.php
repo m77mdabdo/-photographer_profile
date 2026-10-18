@@ -111,6 +111,64 @@ trait Translatable
     }
 
     /**
+     * ───────────────────────────────────────────────────────────────────────
+     * TASK 36b A2 — WHICH LOCALE THE VALUE ACTUALLY CAME FROM.
+     *
+     * getTranslation() returns a string and nothing else, so a caller cannot
+     * tell a translated value from a fallen-back one — and a caller that
+     * cannot tell cannot annotate. That is the whole mechanism behind the bug
+     * this fixes.
+     *
+     * SEEN IN A BROWSER on /ar/work/second-skin, the project excerpt:
+     *
+     *     <p class="project__excerpt">Eighteen frames … left exactly where it was.
+     *
+     * No lang, no dir, inside <html lang="ar" dir="rtl">. The Unicode
+     * bidirectional algorithm gives a neutral character — the full stop — the
+     * paragraph's base direction, so it renders at the visual LEFT of the
+     * line: ".left exactly where it was". Nothing is wrong with the text; the
+     * element simply never said which language it was in.
+     *
+     * This is the ONE place that answers the question. Everything that
+     * annotates — the <x-t> component for text, App\Support\Bidi for values
+     * that go inside an attribute — reads it from here, so there is a single
+     * definition of "this fell back" rather than one guess per template.
+     *
+     * Returns the locale asked for when the value is genuinely present, the
+     * default locale when the fallback supplied it, and null when there is no
+     * value in either.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public function translationLocale(string $key, ?string $locale = null): ?string
+    {
+        $map = $this->translations($key);
+        $locale ??= Locale::current();
+
+        $value = $map[$locale] ?? null;
+
+        if (is_string($value) && $value !== '') {
+            return $locale;
+        }
+
+        $default = $map[Locale::DEFAULT] ?? null;
+
+        return is_string($default) && $default !== '' ? Locale::DEFAULT : null;
+    }
+
+    /**
+     * Did this attribute fall back to another locale for the given one?
+     *
+     * The question a template asks, phrased the way a template asks it.
+     */
+    public function fellBack(string $key, ?string $locale = null): bool
+    {
+        $locale ??= Locale::current();
+        $from = $this->translationLocale($key, $locale);
+
+        return $from !== null && $from !== $locale;
+    }
+
+    /**
      * The raw locale => value map for an attribute.
      *
      * Tolerant on purpose. A value that is a plain string rather than a JSON

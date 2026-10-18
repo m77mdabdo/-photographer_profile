@@ -40,7 +40,9 @@
  */
 
 import { launch } from 'puppeteer-core'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { createHmac } from 'node:crypto'
 
@@ -1257,12 +1259,37 @@ async function run() {
    *
    * This is a harness that reports nothing at all when it falls over, so its
    * own stability is part of what it measures.
+   *
+   * ───────────────────────────────────────────────────────────────────────────
+   * AND A PROFILE OF ITS OWN, WHICH IS WHY IT USED TO FAIL WHEN THE DEVELOPER
+   * HAD CHROME OPEN.
+   *
+   * With no --user-data-dir, Chrome uses the default profile. Launched a
+   * second time against a profile another process already holds, the new
+   * binary does not start a browser: it hands the request to the running
+   * instance and exits. Puppeteer's pipe closes before the first page is
+   * created and the run dies with
+   *
+   *     ConnectionClosedError: Connection closed.
+   *     at CdpBrowser._createPageInContext
+   *
+   * — the SAME message as the dev-shm crash the flags above are about, from a
+   * completely different cause, which is why it took a process listing to
+   * tell them apart: during Task 36 a full run failed on its first target
+   * while 42 Chrome processes belonging to the developer's own browser were
+   * alive, and none of them had automation flags.
+   *
+   * A directory under the OS temp area, named for this process, so two
+   * concurrent runs do not collide either. It is removed on the way out.
    * ───────────────────────────────────────────────────────────────────────────
    */
+  const profileDir = mkdtempSync(join(tmpdir(), 'browser-check-'))
+
   const browser = await launch({
     executablePath: chromePath(),
     headless: true,
     args: [
+      `--user-data-dir=${profileDir}`,
       '--hide-scrollbars',
       '--disable-gpu',
       '--disable-dev-shm-usage',
@@ -1757,6 +1784,17 @@ async function run() {
       await browser.close()
     } catch (e) {
       // Nothing to do: the process we were asking to stop has stopped.
+    }
+
+    /*
+     * The throwaway profile. Not fatal if it cannot be removed — a few
+     * megabytes in the temp directory is not worth failing a run over — but
+     * leaving one behind per run would add up.
+     */
+    try {
+      rmSync(profileDir, { recursive: true, force: true })
+    } catch (e) {
+      // The OS will clear it.
     }
 
     // Always. A crashed run must not leave an admin account behind.
