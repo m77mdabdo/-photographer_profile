@@ -23,6 +23,8 @@ use App\Http\Middleware\EnsureCanonicalSlug;
 use App\Http\Middleware\SetLocale;
 use App\Support\Locale;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Events\DiagnosingHealth;
+use Illuminate\Support\Facades\Event;
 
 
 /*
@@ -372,3 +374,65 @@ Route::prefix('legacy')
         ));
     });
 
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * TASK 36 A6 — THE HEALTH CHECK, WHICH WAS LARAVEL'S ADVERTISEMENT.
+ *
+ * bootstrap/app.php passed health: '/up' to withRouting, which registers a
+ * route serving the framework's own resources/health-up.blade.php. The audit
+ * fetched it as a guest and got a page that:
+ *
+ *   - is titled "Laravel" on a bespoke studio's domain
+ *   - preconnects to fonts.bunny.net and loads a stylesheet from it
+ *   - loads a script from a public CDN
+ *
+ * All three are third-party requests from a URL anybody can hit, on a site
+ * whose Content-Security-Policy is default-src 'self' — so the page is also
+ * broken under this application's own policy, which is how little it was
+ * being looked at. The view is loaded by absolute path from inside the
+ * framework and cannot be overridden, so the route is replaced instead of
+ * the template.
+ *
+ * WHAT A HEALTH CHECK IS FOR, AND WHAT IT IS NOT. An uptime monitor needs to
+ * know the application boots and can answer; it does not need a page. This
+ * returns eleven bytes of text/plain, and the DiagnosingHealth event is still
+ * dispatched so that a listener added later can still fail the check by
+ * throwing — the one part of the framework's behaviour worth keeping.
+ *
+ * NOT CACHED, NOT INDEXED, and deliberately outside the locale prefix: it is
+ * not a page and has no Arabic.
+ *
+ * AND WITHOUT THE SESSION, which the first version of this route got wrong.
+ * routes/web.php is loaded inside the 'web' group, so the replacement started
+ * a session and set two cookies — measured, on the first request after the
+ * change. An uptime monitor polling once a minute would have written 1,440
+ * session rows a day to a table that already had 231 in it. The framework's
+ * own health route was registered outside every group; withoutMiddleware
+ * restores that while keeping the route where routes live.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+Route::withoutMiddleware([
+    \Illuminate\Session\Middleware\StartSession::class,
+    \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+    \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+    \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+    \Illuminate\Cookie\Middleware\EncryptCookies::class,
+])->get('/up', function () {
+    try {
+        Event::dispatch(new DiagnosingHealth);
+    } catch (\Throwable $e) {
+        if (app()->hasDebugModeEnabled()) {
+            throw $e;
+        }
+
+        report($e);
+
+        return response('unhealthy', 500)->header('Content-Type', 'text/plain; charset=utf-8');
+    }
+
+    return response('ok', 200)
+        ->header('Content-Type', 'text/plain; charset=utf-8')
+        ->header('Cache-Control', 'no-store')
+        ->header('X-Robots-Tag', 'noindex, nofollow');
+})->name('health');

@@ -74,11 +74,15 @@
                 worst of both.
                 ═══════════════════════════════════════════════════════════════
             --}}
+            {{--
+                No return-path prop: the front door is a private path, and
+                App\Support\ReturnPath keeps the whole URI for those — which
+                is what a password-reset link's ?email= needs.
+            --}}
             <x-locale-switch
                 block="auth-locale"
                 :legend="__('studio.locale.interface_legend')"
                 :label="__('studio.locale.interface')"
-                :keep-query="true"
             >
                 <x-slot:icon>
                     <x-heroicon-m-globe-alt />

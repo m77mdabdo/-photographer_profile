@@ -655,14 +655,40 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir, expectsLocaleSwitche
 
   if (!isAdmin) {
     /*
-     * The alternates have to be there on every page, because a page that
-     * omits them breaks the reciprocity the whole annotation depends on.
+     * ───────────────────────────────────────────────────────────────────────
+     * AN ADDRESS, OR NEITHER OF THE THINGS THAT NAME ONE.
+     *
+     * This asked only for the presence of x-default, on the grounds that a
+     * page which omits the alternates breaks the reciprocity the annotation
+     * depends on. True of a PAGE. Task 36 C3 established that an ERROR page
+     * is not one: it has no canonical address, nothing in the other locale to
+     * reciprocate with, and — because its address is whatever was asked for —
+     * a canonical and three alternates meant reflecting a caller-chosen
+     * string into a gzipped response that also carries the CSRF token.
+     *
+     * So the rule is stronger now rather than relaxed. Before, this could
+     * only catch a missing annotation. Now it also catches an error page that
+     * has grown one, and a page that has a canonical but no alternates or the
+     * reverse — the half-annotated state that is worse than either.
+     * ───────────────────────────────────────────────────────────────────────
      */
-    if (!document.querySelector('link[rel="alternate"][hreflang="x-default"]')) {
-      problems.push('no x-default hreflang alternate')
-    }
-
     const canonical = document.querySelector('link[rel="canonical"]')
+    const xDefault = document.querySelector('link[rel="alternate"][hreflang="x-default"]')
+
+    /*
+     * Read from the markup, not from the status code: puppeteer reports the
+     * document's status, but an error page rendered with a 200 — a soft 404 —
+     * must be judged by the same rule.
+     */
+    const isErrorPage = Boolean(document.querySelector('.error-page'))
+
+    if (isErrorPage) {
+      if (canonical) problems.push('an error page names a canonical address')
+      if (xDefault) problems.push('an error page carries hreflang alternates')
+    } else {
+      if (!xDefault) problems.push('no x-default hreflang alternate')
+      if (!canonical) problems.push('a page with alternates but no canonical')
+    }
 
     if (canonical) {
       /*

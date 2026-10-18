@@ -1,4 +1,19 @@
 @props(['seo' => null, 'structuredData' => null])
+@php
+    /*
+     * TASK 36 C3 — WHERE THE PREFERENCE FORMS COME BACK TO.
+     *
+     * Normally the page itself. On an error page there is no page: the address
+     * is whatever was asked for, so sending somebody back to it after they
+     * change the language returns them to the same 404 — and putting it in the
+     * body reflects a caller-chosen string into a gzipped response that also
+     * holds the CSRF token. Both switchers get the home page instead.
+     *
+     * Derived from the same flag that suppresses the canonical and the
+     * hreflang set, so the three cannot disagree.
+     */
+    $preferenceReturnTo = $seo?->addressless ? '/' : null;
+@endphp
 <!DOCTYPE html>
 {{--
     The resolved theme is written here, on the server, before the document is
@@ -41,7 +56,9 @@
         here makes it visible that the canonical is per-locale while the
         alternates are the set.
     --}}
-    <x-hreflang />
+    @unless ($seo?->addressless)
+        <x-hreflang />
+    @endunless
 
     {{--
         THE SITE'S OWN IDENTITY, on every page.
@@ -180,7 +197,7 @@
             they read anything else. The theme switch stays in the footer: a
             palette is a comfort, a language is comprehension.
         --}}
-        <x-locale-switch />
+        <x-locale-switch :return-to="$preferenceReturnTo" />
     </header>
 
     <main id="main" tabindex="-1">
@@ -236,7 +253,7 @@
         @endif
 
         <div class="site-footer__group">
-            <x-theme-switch :current="$theme" />
+            <x-theme-switch :current="$theme" :return-to="$preferenceReturnTo" />
         </div>
 
         <p class="site-footer__copyright">

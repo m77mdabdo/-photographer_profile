@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Project;
+use App\Support\ReturnPath;
 use App\Support\EditorialLayout;
 use App\Support\SeoData;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -56,7 +57,7 @@ class WorkController extends Controller
         }
 
         /** @var LengthAwarePaginator<int, Project> $projects */
-        $projects = $query->paginate(self::PER_PAGE)->withQueryString();
+        $projects = $query->paginate(self::PER_PAGE)->appends(ReturnPath::publicQuery(request()));
 
         /*
          * Every category that actually has published work in it. A filter

@@ -10,8 +10,11 @@
         public site's, and .sr-only is not in it.
       · x-filament::icon rather than <x-heroicon-…>, because the panel's
         middleware stack includes DisableBladeIconComponents.
-      · keepQuery, because a dashboard deep link carries tableFilters and
-        switching language on a filtered list must not quietly unfilter it.
+      · nothing about the return path. A dashboard deep link carries
+        tableFilters and switching language on a filtered list must not
+        quietly unfilter it — and App\Support\ReturnPath keeps the whole URI
+        for every path behind the login, so the prop this file used to pass
+        (keepQuery) said what was already true. One definition, not two.
 
     THIS IS THE INTERFACE LANGUAGE AND SAYS SO. The per-field tabs on a
     translatable form name the same two languages and mean something else: the
@@ -24,7 +27,6 @@
     sr="fi-sr-only"
     :legend="__('studio.locale.interface_legend')"
     :label="__('studio.locale.interface')"
-    :keep-query="true"
 >
     <x-slot:icon>
         <x-filament::icon icon="heroicon-m-globe-alt" />

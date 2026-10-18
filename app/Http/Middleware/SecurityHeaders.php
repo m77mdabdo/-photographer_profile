@@ -111,10 +111,16 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * THE FRONT DOOR IS NOT THE PANEL. /login, /forgot-password, /reset-password
  * and /two-factor-challenge are this project's own Blade and load no script
  * at all — `curl /login | grep '<script'` returns nothing — so they take the
- * strict policy with the rest of the public site. That is why the test below
+ * strict policy with the rest of the public site. That is why isPanel() below
  * asks about the PANEL PATH and not about Locale::isPrivatePath(), which the
  * first version of this class used and which would have handed the login page
  * 'unsafe-eval' for no reason.
+ *
+ * Every claim in this comment has an assertion in
+ * tests/Feature/Security/SecurityHeadersTest.php, and the one claim PHPUnit
+ * cannot make — that the pages still WORK under the policy — is made by
+ * bin/browser-check.mjs, which now listens for securitypolicyviolation on
+ * every target it visits.
  * ───────────────────────────────────────────────────────────────────────────
  * ═══════════════════════════════════════════════════════════════════════════
  */

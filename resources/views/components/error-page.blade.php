@@ -19,10 +19,17 @@
     $body = \App\Support\ErrorCopy::body($code);
 @endphp
 
+{{--
+    addressless: TASK 36 C3. An error page has no canonical address and no
+    reciprocal page in the other locale, and emitting either meant reflecting
+    the requested path seven times into a gzipped response that also carries
+    the CSRF token. See App\Support\SeoData::$addressless.
+--}}
 <x-layouts::public :seo="\App\Support\SeoData::make(
     title: $heading,
     description: $body,
     robots: 'noindex, nofollow',
+    addressless: true,
 )">
     <section class="error-page">
         {{-- The number stays a Western numeral in both locales: it is an HTTP

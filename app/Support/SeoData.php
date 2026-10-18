@@ -31,6 +31,33 @@ final readonly class SeoData
          * appended. This is the "override the whole title" escape hatch.
          */
         public bool $rawTitle = false,
+        /**
+         * ───────────────────────────────────────────────────────────────────
+         * TASK 36 C3 — A PAGE WITH NO ADDRESS WORTH NAMING.
+         *
+         * canonical: null means "the resolver decides", and the resolver
+         * decides url()->current(). On an error page that is the address that
+         * was ASKED FOR, which is a different thing: the 404 at
+         * /no-such-page-REFLECTME emitted
+         *
+         *   <link rel="canonical" href="…/no-such-page-REFLECTME">
+         *   <meta property="og:url" content="…/no-such-page-REFLECTME">
+         *   three hreflang alternates carrying the same path
+         *
+         * — seven copies of a string the caller chose, in a response that
+         * also carries the CSRF token and is gzipped. See App\Support\ReturnPath
+         * for why that combination matters.
+         *
+         * It is also simply wrong. A canonical names the one true address for
+         * a page's content; a 404 has no content and is already noindex. An
+         * hreflang set has to be reciprocal, and /ar/no-such-page-REFLECTME
+         * has nothing to reciprocate with.
+         *
+         * So this is a third state, distinct from "the resolver decides":
+         * emit no canonical, no og:url and no alternates at all.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        public bool $addressless = false,
     ) {}
 
     public static function make(
@@ -47,6 +74,7 @@ final readonly class SeoData
         ?string $ogType = null,
         ?string $twitterCard = null,
         bool $rawTitle = false,
+        bool $addressless = false,
     ): self {
         return new self(
             title: $title,
@@ -59,6 +87,7 @@ final readonly class SeoData
             ogType: $ogType,
             twitterCard: $twitterCard,
             rawTitle: $rawTitle,
+            addressless: $addressless,
         );
     }
 }

@@ -201,6 +201,36 @@ class ActivityLogServiceProvider extends ServiceProvider
     {
         Event::listen(Login::class, function (Login $event): void {
             Activity::record('signed_in', $event->user instanceof Model ? $event->user : null, [], $event->user->email ?? null);
+
+            /*
+             * ───────────────────────────────────────────────────────────────
+             * TASK 36 E1 — THE COLUMN THE PANEL SHOWS AND NOTHING FILLED.
+             *
+             * users.last_login_at has existed since Task 24's migration and
+             * UserResource has a "Last signed in" column reading it. Nothing
+             * ever wrote it: all seven rows in the development database were
+             * null, so the column showed its "never" placeholder for every
+             * user including the one looking at the screen.
+             *
+             * Written here rather than in a second listener, because this is
+             * already the one place that knows a sign-in happened.
+             *
+             * QUIETLY, AND WITHOUT TOUCHING updated_at. A sign-in is not an
+             * edit of the account: letting it bump updated_at would make
+             * every sign-in look like a change on the users list, and letting
+             * it fire model events would write a user_updated entry beside
+             * the signed_in one for a single event. $timestamps = false is
+             * the only thing that stops updated_at — save()'s options array
+             * has no say over it — and it is set on the instance the event
+             * carries, which is discarded at the end of the request.
+             * ───────────────────────────────────────────────────────────────
+             */
+            if ($event->user instanceof User) {
+                $user = $event->user;
+                $user->timestamps = false;
+                $user->forceFill(['last_login_at' => now()])->saveQuietly();
+                $user->timestamps = true;
+            }
         });
 
         Event::listen(Logout::class, function (Logout $event): void {

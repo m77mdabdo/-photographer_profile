@@ -28,7 +28,7 @@
 #
 # A SERVER THAT IGNORES .htaccess IGNORES THIS, which is why it is a second
 # line and not the first. The first line is the document root, and deployment
-# must point it at public/. See docs/deployment.md.
+# must point it at public/. See docs/operations/deployment.md.
 # ───────────────────────────────────────────────────────────────────────────
 
 # Apache 2.4

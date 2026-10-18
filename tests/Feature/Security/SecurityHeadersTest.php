@@ -95,6 +95,50 @@ class SecurityHeadersTest extends TestCase
         $response->assertHeader('X-Frame-Options', 'DENY');
     }
 
+    /**
+     * THE HEADERS ARE OUTERMOST, which is what makes the two assertions above
+     * true of EVERY response rather than of the ones that happen to reach a
+     * view. A response a middleware returns on its own — HandleRedirects
+     * answering a stored redirect without routing — is the case that was
+     * uncovered until the prepend order was fixed.
+     */
+    public function test_the_headers_are_on_a_response_a_middleware_returns_by_itself(): void
+    {
+        \App\Models\Redirect::query()->create([
+            'from_path' => '/old-name',
+            'to_path' => '/work',
+            'status' => 301,
+            'is_active' => true,
+        ]);
+
+        $response = $this->get('/old-name');
+
+        $response->assertStatus(301);
+        $response->assertHeader('X-Content-Type-Options', 'nosniff');
+        $response->assertHeader('X-Frame-Options', 'DENY');
+        $response->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+        $response->assertHeaderMissing('X-Powered-By');
+    }
+
+    /**
+     * And the order itself, read off the kernel. A comment in bootstrap/app.php
+     * claimed "outermost of all" while the kernel reported it fourth of four.
+     */
+    public function test_the_security_headers_middleware_is_first_in_the_global_stack(): void
+    {
+        $kernel = app(\Illuminate\Contracts\Http\Kernel::class);
+
+        $stack = (new \ReflectionClass($kernel))->getProperty('middleware')->getValue($kernel);
+
+        $this->assertSame(
+            SecurityHeaders::class,
+            $stack[0] ?? null,
+            'SecurityHeaders is no longer outermost, so a middleware that returns early '
+            .'can produce a response with no security headers on it. prepend() puts a '
+            .'middleware FIRST, so it has to be the LAST prepend in bootstrap/app.php.'
+        );
+    }
+
     public function test_hsts_is_sent_over_https_and_not_over_http(): void
     {
         $this->get('/')->assertHeaderMissing('Strict-Transport-Security');

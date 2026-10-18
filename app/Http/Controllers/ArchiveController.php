@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Media;
 use App\Models\Project;
 use App\Models\ProjectBlock;
+use App\Support\ReturnPath;
 use App\Support\SeoData;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\View\View;
@@ -61,7 +62,7 @@ class ArchiveController extends Controller
             ->orderBy('media.id');
 
         /** @var LengthAwarePaginator<int, Media> $frames */
-        $frames = $query->paginate(self::PER_PAGE)->withQueryString();
+        $frames = $query->paginate(self::PER_PAGE)->appends(ReturnPath::publicQuery($request));
 
         return view('archive.index', [
             'frames' => $frames,

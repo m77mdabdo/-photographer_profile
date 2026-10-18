@@ -119,4 +119,62 @@ class UninstalledFeatureTest extends TestCase
             ...$offenders,
         ]));
     }
+
+    // ── THE SAME DEFECT, IN LIVEWIRE'S COMPONENT ASSET ROUTES ─────────────
+
+    /**
+     * Livewire publishes a per-component asset route whether or not any
+     * component has assets, and threw ComponentNotFoundException — a 500 and
+     * a log line — for a name that does not exist. Found by walking every GET
+     * route as a guest.
+     */
+    public static function componentAssetRoutes(): array
+    {
+        return [
+            'a component script' => ['/js/nope.js'],
+            'a component stylesheet' => ['/css/nope.css'],
+            'a component global stylesheet' => ['/css/nope.global.css'],
+            'a name with a slash in it' => ['/js/../../etc/passwd.js'],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('componentAssetRoutes')]
+    public function test_an_unknown_livewire_component_asset_is_a_404(string $suffix): void
+    {
+        $prefix = \Livewire\Mechanisms\HandleRequests\EndpointResolver::prefix();
+
+        $this->get($prefix.$suffix)->assertNotFound();
+    }
+
+    /**
+     * AND THE REWRITE IS SCOPED. The same exception from a view that names a
+     * misspelled component must stay a loud failure, not become a missing
+     * page — otherwise this fix hides typos.
+     */
+    public function test_a_misspelled_component_in_a_view_is_not_turned_into_a_404(): void
+    {
+        $this->assertThrows(
+            fn () => \Illuminate\Support\Facades\Blade::render('<livewire:no-such-component />'),
+            \Livewire\Exceptions\ComponentNotFoundException::class,
+        );
+    }
+
+    /**
+     * The prefix is derived from APP_KEY, so it is read from Livewire rather
+     * than written down anywhere — including in the fix.
+     */
+    public function test_the_asset_prefix_is_installation_specific(): void
+    {
+        $prefix = \Livewire\Mechanisms\HandleRequests\EndpointResolver::prefix();
+
+        $this->assertMatchesRegularExpression('#^/livewire-[0-9a-f]{8}$#', $prefix);
+
+        config()->set('app.key', 'base64:'.base64_encode(str_repeat('z', 32)));
+
+        $this->assertNotSame(
+            $prefix,
+            \Livewire\Mechanisms\HandleRequests\EndpointResolver::prefix(),
+            'the Livewire endpoint prefix does not move with APP_KEY, so a literal would do'
+        );
+    }
 }

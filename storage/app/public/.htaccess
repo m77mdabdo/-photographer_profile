@@ -29,7 +29,7 @@
 #
 # A SERVER THAT IGNORES .htaccess IGNORES THIS. Under nginx the equivalent is
 # a location block for the storage path with no fastcgi_pass. See
-# docs/deployment.md.
+# docs/operations/deployment.md.
 # ───────────────────────────────────────────────────────────────────────────
 
 # Anything that could be a script is not downloadable, let alone runnable.

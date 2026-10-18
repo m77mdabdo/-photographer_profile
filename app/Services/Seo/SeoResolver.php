@@ -43,7 +43,7 @@ class SeoResolver
         return new SeoData(
             title: $title,
             description: $description,
-            canonical: $page->canonical ?? $this->canonical(),
+            canonical: $page->addressless ? null : ($page->canonical ?? $this->canonical()),
 
             // See robots() — outside production this is never index, follow.
             robots: $this->robots($page),
@@ -58,6 +58,14 @@ class SeoResolver
             twitterCard: $page->twitterCard ?? ($image !== null ? 'summary_large_image' : 'summary'),
 
             rawTitle: true,
+
+            /*
+             * Carried forward, because the LAYOUT reads it too: the hreflang
+             * set is emitted beside the canonical rather than inside the SEO
+             * component, and an addressless page must not have alternates
+             * either.
+             */
+            addressless: $page->addressless,
         );
     }
 

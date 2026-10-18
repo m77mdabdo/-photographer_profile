@@ -15,17 +15,26 @@
     'label' => null,
 
     /*
-     * Whether the return path keeps its query string. False on the public
-     * site, true behind the login — LocaleController makes the same
-     * distinction and explains it.
+     * TASK 36 C3 — AN EXPLICIT RETURN PATH, for the caller that knows better
+     * than the request does. The error page passes the home page, because
+     * coming back to an address that 404s is coming back to nothing.
      */
-    'keepQuery' => false,
+    'returnTo' => null,
 ])
 @php
     use App\Support\Locale;
+    use App\Support\ReturnPath;
 
     $current = Locale::current();
-    $returnTo = $keepQuery ? request()->getRequestUri() : request()->getPathInfo();
+
+    /*
+     * ONE DEFINITION OF "WHERE THE VISITOR WAS", shared with the theme
+     * switcher. This used to be a keepQuery prop deciding between the path
+     * and the raw request URI; ReturnPath makes the same public/private
+     * distinction in one place, and bounds what a public page echoes back.
+     * LocaleController makes the matching decision about where to redirect.
+     */
+    $returnTo ??= ReturnPath::current(request());
 @endphp
 {{--
     ───────────────────────────────────────────────────────────────────────────
