@@ -87,4 +87,80 @@ trait ProtectsEditedContent
 
         return (bool) $existing->getAttribute('is_demo');
     }
+
+    /**
+     * ───────────────────────────────────────────────────────────────────────
+     * TASK 36b C2 — ADD A LOCALE THAT IS MISSING, AND NOTHING ELSE.
+     *
+     * The 28 demo records were seeded in English only. Filling in their
+     * Arabic is not the same operation as the two above: the rows already
+     * exist, so createIfMissing leaves them alone, and a plain save would
+     * rewrite every locale including one an editor may have written.
+     *
+     * TWO CONDITIONS, BOTH REQUIRED:
+     *
+     *   1. The seeder must own the row — mayOverwrite(), which means the
+     *      is_demo flag it set itself and a row nobody has binned.
+     *   2. The attribute must have NO value in that locale. A field that
+     *      already says something in Arabic is somebody's work, and the
+     *      whole point of this trait is that a deploy never replaces it.
+     *
+     * WHAT THIS CANNOT DISTINGUISH, stated because it matters.
+     * Translatable::setTranslation UNSETS a locale whose value is empty, so
+     * "never translated" and "translated, then deliberately cleared to get
+     * the English fallback back" are the same stored document: no ar key.
+     * Measured, in the trait. An editor who clears an Arabic field on a demo
+     * record will therefore see it refilled by the next deploy. The
+     * alternative — never filling anything — leaves the Arabic site English
+     * forever, so this is the lesser of the two, and it is bounded to rows
+     * flagged is_demo. A row the studio has made its own is never touched.
+     *
+     * $requireOwnership = false IS FOR A TABLE WITH NO is_demo COLUMN, and
+     * `pages` is the only one. Filling an absent locale is the same kind of
+     * operation as createIfMissing — a locale that does not exist cannot have
+     * been edited, so there is nothing to lose — and the ownership flag exists
+     * to protect EXISTING values, of which there are none here. The caller
+     * has to ask for it explicitly and say why, because the one case above
+     * that this cannot distinguish is slightly worse on a legal page than on
+     * a demo project.
+     *
+     * @param  array<string, string>  $values  attribute => value in $locale
+     * @return int  how many attributes were actually filled
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    protected function fillMissingTranslations(
+        Model $record,
+        string $locale,
+        array $values,
+        bool $requireOwnership = true,
+    ): int {
+        if ($record->getAttribute('deleted_at') !== null) {
+            return 0;
+        }
+
+        if ($requireOwnership && ! $this->mayOverwrite($record)) {
+            return 0;
+        }
+
+        if (! method_exists($record, 'isTranslated') || ! method_exists($record, 'setTranslation')) {
+            return 0;
+        }
+
+        $filled = 0;
+
+        foreach ($values as $attribute => $value) {
+            if ($value === '' || $record->isTranslated($attribute, $locale)) {
+                continue;
+            }
+
+            $record->setTranslation($attribute, $locale, $value);
+            $filled++;
+        }
+
+        if ($filled > 0) {
+            $record->save();
+        }
+
+        return $filled;
+    }
 }

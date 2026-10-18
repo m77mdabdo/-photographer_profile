@@ -88,7 +88,19 @@ class BackfillTranslations extends Command
         ));
 
         if ($dry) {
+            /*
+             * TASK 36b — THE DRY RUN USED TO SKIP THE BLOCKS ENTIRELY.
+             *
+             * runBlocks() was called only on the real path, so --dry-run
+             * reported "0 values to move" on a database with eighteen
+             * plain-string block captions per project waiting to be
+             * converted. A dry run that does not describe what the real run
+             * will do is worse than no dry run, because it is believed.
+             */
+            [$blocks, $blockValues] = $backfill->runBlocks(dryRun: true);
+
             $this->newLine();
+            $this->line(sprintf('  Blocks: %d values across %d blocks would move.', $blockValues, $blocks));
             $this->line('  Dry run complete. Nothing was written.');
 
             return self::SUCCESS;

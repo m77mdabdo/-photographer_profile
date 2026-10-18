@@ -103,7 +103,8 @@ class Article extends Model
 
         static::saving(function (self $article): void {
             if ($article->isDirty('body')) {
-                $article->body_html = RichText::toHtml($article->body);
+                /* Every locale, not the active one. See RichText::syncHtmlLocales. */
+                RichText::syncHtmlLocales($article, 'body', 'body_html');
             }
         });
     }
@@ -178,6 +179,24 @@ class Article extends Model
      * then nothing. Never the title again — a description that repeats the
      * headline tells a reader nothing they did not already have.
      */
+    /**
+     * WHICH translatable field summary() read.
+     *
+     * TASK 36b B3. The derived summary is a string, and a string cannot be
+     * asked whether it fell back to another locale — so the template that
+     * renders it has to declare the locale of the field it CAME FROM. Two
+     * fields are possible and the method above chooses between them, so it
+     * is the only thing that can answer.
+     *
+     * Found by FallbackAnnotationTest: the journal index, the journal
+     * preview and the services index all printed a fallen-back summary with
+     * nothing to declare it.
+     */
+    public function summarySource(): string
+    {
+        return filled($this->excerpt) ? 'excerpt' : 'body';
+    }
+
     public function summary(int $length = 200): ?string
     {
         if (filled($this->excerpt)) {

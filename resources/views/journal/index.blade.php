@@ -35,7 +35,7 @@
                     <a href="{{ route('journal.category', $option) }}"
                        @class(['work-filter__option', 'is-current' => $category?->is($option)])
                        @if ($category?->is($option)) aria-current="page" @endif>
-                        {{ $option->name }}
+                        <x-t :of="$option" field="name" />
                     </a>
                 @endforeach
             </nav>
@@ -46,7 +46,7 @@
             <div class="work-empty">
                 <p class="work-empty__line">
                     @if ($category !== null)
-                        {{ \App\Support\SiteCopy::line('journal.empty_filtered', ['category' => $category->name]) }}
+                        {{ \App\Support\SiteCopy::line('journal.empty_filtered', ['category' => \App\Support\Fallback::isolate($category->name, $category, 'name')]) }}
                     @else
                         {{ \App\Support\SiteCopy::get('journal.empty') }}
                     @endif
@@ -83,18 +83,18 @@
                                     </time>
                                     @if ($article->category)
                                         <span aria-hidden="true">·</span>
-                                        {{ $article->category->name }}
+                                        <x-t :of="$article->category" field="name" />
                                     @endif
                                     <span aria-hidden="true">·</span>
                                     {{ $article->readingMinutes() }} {{ \App\Support\SiteCopy::get('shared.read_time_unit') }}
                                 </p>
 
                                 <h2 class="entry__title">
-                                    <a href="{{ route('journal.show', $article) }}">{{ $article->title }}</a>
+                                    <a href="{{ route('journal.show', $article) }}"><x-t :of="$article" field="title" /></a>
                                 </h2>
 
                                 @if ($summary = $article->summary(180))
-                                    <p class="entry__excerpt">{{ $summary }}</p>
+                                    <p class="entry__excerpt"{!! \App\Support\Fallback::attributes($article, $article->summarySource()) !!}>{{ $summary }}</p>
                                 @endif
                             </div>
                         </article>

@@ -61,11 +61,11 @@
 
                             <div class="offer-card__body">
                                 <h2 class="offer-card__name">
-                                    <a href="{{ route('services.show', $service) }}">{{ $service->name }}</a>
+                                    <a href="{{ route('services.show', $service) }}"><x-t :of="$service" field="name" /></a>
                                 </h2>
 
                                 @if ($summary = $service->summaryText(160))
-                                    <p class="offer-card__summary">{{ $summary }}</p>
+                                    <p class="offer-card__summary"{!! \App\Support\Fallback::attributes($service, $service->summaryTextSource()) !!}>{{ $summary }}</p>
                                 @endif
 
                                 {{--
@@ -78,7 +78,7 @@
                                     <p class="offer-card__price">
                                         {{ Settings::get('services.price_prefix') }} {{ $price }}
                                         @if ($service->price_note)
-                                            <span class="offer-card__price-note">{{ $service->price_note }}</span>
+                                            <span class="offer-card__price-note"><x-t :of="$service" field="price_note" /></span>
                                         @endif
                                     </p>
                                 @endif

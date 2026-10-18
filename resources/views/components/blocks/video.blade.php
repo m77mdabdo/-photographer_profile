@@ -20,7 +20,7 @@
             </span>
         </a>
         @if (filled($block->data['caption'] ?? null))
-            <figcaption class="block__caption">{{ $block->data['caption'] }}</figcaption>
+            <figcaption class="block__caption"{!! \App\Support\Fallback::declare($block->localeOf('caption')) !!}>{{ $block->data['caption'] }}</figcaption>
         @endif
     </figure>
 @endif

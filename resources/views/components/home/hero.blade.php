@@ -124,7 +124,7 @@
         {{-- The one primary action, carrying the colour taken from the photograph. --}}
         <div class="hero__aside">
             <a class="hero__link" href="{{ route('projects.show', $project) }}">
-                {{ $project->title }}
+                <x-t :of="$project" field="title" />
                 <span class="hero__link-rule" aria-hidden="true"></span>
             </a>
         </div>
@@ -135,13 +135,13 @@
                 <div><dt>{{ Settings::get('rail.year') }}</dt><dd>{{ $project->year }}</dd></div>
             @endif
             @if ($project->location)
-                <div><dt>{{ Settings::get('rail.place') }}</dt><dd>{{ $project->location }}</dd></div>
+                <div><dt>{{ Settings::get('rail.place') }}</dt><dd><x-t :of="$project" field="location" /></dd></div>
             @endif
             @if ($project->client)
-                <div><dt>{{ Settings::get('rail.client') }}</dt><dd>{{ $project->client }}</dd></div>
+                <div><dt>{{ Settings::get('rail.client') }}</dt><dd><x-t :of="$project" field="client" /></dd></div>
             @endif
             @if ($project->categories->isNotEmpty())
-                <div><dt>{{ Settings::get('rail.work') }}</dt><dd>{{ $project->categories->pluck('name')->implode(', ') }}</dd></div>
+                <div><dt>{{ Settings::get('rail.work') }}</dt><dd><x-t-join :items="$project->categories" field="name" separator=", " /></dd></div>
             @endif
         </dl>
     @endif

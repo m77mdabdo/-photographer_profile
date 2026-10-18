@@ -35,7 +35,7 @@
                             the client said.
                         --}}
                         <blockquote class="voice__quote">
-                            <p>{{ $testimonial->quote }}</p>
+                            <p><x-t :of="$testimonial" field="quote" /></p>
                         </blockquote>
 
                         <figcaption class="voice__who">
@@ -45,7 +45,7 @@
                                            img-class="voice__portrait" />
                             @endif
 
-                            <span class="voice__name">{{ $testimonial->attribution }}</span>
+                            <span class="voice__name"><x-t :of="$testimonial" field="attribution" /></span>
 
                             @if ($role = $testimonial->role)
                                 <span class="voice__role">{{ $role }}</span>

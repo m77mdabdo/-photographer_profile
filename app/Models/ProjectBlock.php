@@ -60,6 +60,52 @@ class ProjectBlock extends Model
     }
 
     /**
+     * ───────────────────────────────────────────────────────────────────────
+     * TASK 36b A1 — WHICH LOCALE A BLOCK VALUE RESOLVED TO.
+     *
+     * The accessor above collapses a locale map to one string, which is what
+     * twelve block views want and what makes a thirteenth correct by default.
+     * The cost is that the string arrives with no memory of where it came
+     * from, so a caption that fell back to English rendered bare inside an
+     * Arabic story — measured on /ar/work/salt-line, thirty undeclared Latin
+     * runs, the largest remaining block of English on the Arabic site.
+     *
+     * This answers the question the views need in order to declare it. The
+     * key path is variadic because some block data nests: a gallery strip
+     * keeps its alternative texts as descriptions.0, descriptions.1.
+     *
+     * Null when there is nothing to declare — the value is in the page's
+     * locale, or is absent, or was never a locale map at all.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public function localeOf(string|int ...$keys): ?string
+    {
+        $value = $this->rawData();
+
+        foreach ($keys as $key) {
+            if (! is_array($value) || ! array_key_exists($key, $value)) {
+                return null;
+            }
+
+            $value = $value[$key];
+        }
+
+        if (! is_array($value) || ! $this->isLocaleMap($value)) {
+            return null;
+        }
+
+        foreach ([Locale::current(), Locale::DEFAULT] as $locale) {
+            $candidate = $value[$locale] ?? null;
+
+            if (is_string($candidate) && $candidate !== '') {
+                return $locale;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * The stored document, every locale intact.
      *
      * @return array<string, mixed>

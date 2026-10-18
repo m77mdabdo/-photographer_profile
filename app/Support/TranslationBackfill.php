@@ -252,13 +252,13 @@ final class TranslationBackfill
      *
      * @return array{0: int, 1: int}
      */
-    public function runBlocks(): array
+    public function runBlocks(bool $dryRun = false): array
     {
         $blocks = 0;
         $values = 0;
 
         DB::table('project_blocks')->select(['id', 'type', 'data'])->orderBy('id')->chunk(200, function ($chunk) use (
-            &$blocks, &$values
+            &$blocks, &$values, $dryRun
         ): void {
             foreach ($chunk as $record) {
                 $type = BlockType::tryFrom((string) $record->type);
@@ -279,9 +279,11 @@ final class TranslationBackfill
                     continue;
                 }
 
-                DB::table('project_blocks')->where('id', $record->id)->update([
-                    'data' => json_encode($converted, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
-                ]);
+                if (! $dryRun) {
+                    DB::table('project_blocks')->where('id', $record->id)->update([
+                        'data' => json_encode($converted, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+                    ]);
+                }
 
                 $blocks++;
                 $values += $moved;

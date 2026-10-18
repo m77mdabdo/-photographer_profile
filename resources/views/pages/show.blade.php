@@ -9,10 +9,10 @@
     --}}
     <article class="document">
         <header class="document__header">
-            <h1 class="document__title">{{ $page->title }}</h1>
+            <h1 class="document__title"><x-t :of="$page" field="title" /></h1>
 
             @if ($page->standfirst)
-                <p class="document__standfirst">{{ $page->standfirst }}</p>
+                <p class="document__standfirst"><x-t :of="$page" field="standfirst" /></p>
             @endif
 
             @if ($page->updated_at)
@@ -24,7 +24,9 @@
         </header>
 
         {{-- Sanitiser output, and nothing else, for the same reasons as the journal. --}}
-        <div class="document__body">
+        {{-- TASK 36b A1: sanitised HTML cannot be wrapped by an escaping component, so the
+                 element it already has carries the declaration. See App\Support\Fallback. --}}
+        <div class="document__body"{!! \App\Support\Fallback::attributes($page, 'body_html') !!}>
             {!! $page->body_html !!}
         </div>
     </article>

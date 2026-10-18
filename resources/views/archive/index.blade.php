@@ -49,7 +49,7 @@
                         <li>
                             <a href="{{ route('archive.index', array_filter(['category' => $option->slug, 'year' => $year])) }}"
                                @class(['sheet-filter__option', 'is-current' => $category?->is($option)])
-                               @if ($category?->is($option)) aria-current="true" @endif>{{ $option->name }}</a>
+                               @if ($category?->is($option)) aria-current="true" @endif><x-t :of="$option" field="name" /></a>
                         </li>
                     @endforeach
                 </ul>

@@ -8,7 +8,7 @@
             </h1>
 
             @if ($category?->description)
-                <p class="work-index__standfirst">{{ $category->description }}</p>
+                <p class="work-index__standfirst"><x-t :of="$category" field="description" /></p>
             @endif
 
             <p class="work-index__count">
@@ -33,7 +33,7 @@
                     <a href="{{ route('work.category', $option) }}"
                        @class(['work-filter__option', 'is-current' => $category?->is($option)])
                        @if ($category?->is($option)) aria-current="page" @endif>
-                        {{ $option->name }}<span class="work-filter__count">{{ $option->projects_count }}</span>
+                        <x-t :of="$option" field="name" /><span class="work-filter__count">{{ $option->projects_count }}</span>
                     </a>
                 @endforeach
             </nav>
@@ -90,11 +90,11 @@
 
                                 <span class="work__caption">
                                     <span class="work__index" aria-hidden="true">{{ str_pad((string) ($projects->firstItem() + $index), 2, '0', STR_PAD_LEFT) }}</span>
-                                    <span class="work__name">{{ $project->title }}</span>
+                                    <span class="work__name"><x-t :of="$project" field="title" /></span>
 
                                     <span class="work__meta">
                                         @if ($project->categories->isNotEmpty())
-                                            {{ $project->categories->pluck('name')->implode(' · ') }}
+                                            <x-t-join :items="$project->categories" field="name" />
                                         @endif
                                         @if ($project->year) <span class="work__year">{{ $project->year }}</span> @endif
                                     </span>

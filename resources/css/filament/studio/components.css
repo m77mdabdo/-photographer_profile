@@ -122,7 +122,45 @@
 .focal__handle.is-dragging { background-color: rgba(184, 160, 126, 0.85); }
 .admin-button:disabled { opacity: 0.4; cursor: not-allowed; }
 .project-row.is-dragging, .category-row.is-dragging { opacity:.5; border-color:var(--accent); }
-.project-row__handle { cursor:grab; padding:var(--sp-2); color:var(--text-secondary); touch-action:none; }
+/*
+ * ───────────────────────────────────────────────────────────────────────────
+ * TASK 36b — THREE STORY-BUILDER CONTROLS UNDER THE 44px MINIMUM.
+ *
+ * Found by the browser harness, which had never measured them: its
+ * story-builder target opens whichever project the panel lists first, and
+ * until this task's seeding bumped updated_at on the demo records that was a
+ * project with NO blocks. An empty builder has no block cards, no drag
+ * handles and no outline, so twelve controls went unmeasured for as long as
+ * the row has existed — and the row passed.
+ *
+ * Attributed before being fixed: the same failure appears with every one of
+ * this task's code changes stashed, so it is the database that revealed it,
+ * not the code that caused it.
+ *
+ * The three, as the harness reported them at 1440:
+ *
+ *     1. Full-width image   21px   the JS-built outline entries
+ *     ⠿                     40px   the drag handle
+ *     ▾ Full-width          24px   the collapse toggle
+ *
+ * 44px is the standard every other surface in this panel was held to in
+ * Task 34d, and these are real pointer targets: one is dragged, one is
+ * tapped to collapse, and the outline is the navigation for a story of
+ * eighteen blocks.
+ *
+ * THE OUTLINE STAYS COMPACT TO READ. Its height comes from padding rather
+ * than from type size, so eighteen entries remain a scannable list at the
+ * same font size, inside the same max-height: 60vh scroll area.
+ * ───────────────────────────────────────────────────────────────────────────
+ */
+.project-row__handle {
+    cursor: grab;
+    padding: var(--sp-2);
+    color: var(--text-secondary);
+    touch-action: none;
+    min-width: 44px;
+    min-height: 44px;
+}
 .project-row__handle:focus-visible { color:var(--accent); }
 .form-section__heading { font-size:var(--fs-h3); }
 .form-actions { display:flex; gap:var(--sp-4); align-items:center; }
@@ -143,7 +181,15 @@
 .block-card--invalid { border-color: var(--danger); }
 .block-card__flag { color: var(--danger-text); font-weight: bold; }
 .block-card__errors { margin: 0; padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-7); list-style: disc; color: var(--danger-text); font-size: var(--fs-caption); }
-.block-card__toggle { display: inline-flex; gap: var(--sp-2); align-items: center; color: inherit; }
+/* 44px, for the same reason as the handle and the outline above. */
+.block-card__toggle {
+    display: inline-flex;
+    gap: var(--sp-2);
+    align-items: center;
+    color: inherit;
+    min-height: 44px;
+    padding-inline-end: var(--sp-2);
+}
 .block-card.is-collapsed .block-card__chevron { transform: rotate(-90deg); display: inline-block; }
 .block-card.is-rejecting { outline: 2px dashed var(--danger); outline-offset: 2px; }
 .block-media__item { cursor: grab; touch-action: none; }
@@ -156,6 +202,22 @@
 .outline { position: sticky; top: var(--sp-4); font-size: var(--fs-caption); }
 .outline__heading { font-size: var(--fs-meta); text-transform: uppercase; letter-spacing: var(--tracking-wide); color: var(--text-secondary); margin-bottom: var(--sp-3); }
 .outline__list { margin: 0; padding: 0; list-style: none; max-height: 60vh; overflow-y: auto; }
+.outline__item {
+    display: flex;
+    align-items: center;
+    inline-size: 100%;
+    min-height: 44px;
+    padding-block: var(--sp-2);
+    padding-inline: var(--sp-2);
+    background: none;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+}
+.outline__item:hover { color: var(--accent); }
+.outline__item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .outline__actions { display: flex; gap: var(--sp-3); margin-top: var(--sp-4); }
 .type-picker__group { margin-bottom: var(--sp-4); }
 .type-picker__label { font-size: var(--fs-meta); text-transform: uppercase; letter-spacing: var(--tracking-wide); color: var(--text-secondary); margin-bottom: var(--sp-2); }

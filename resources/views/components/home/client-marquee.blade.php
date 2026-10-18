@@ -29,9 +29,9 @@
                 @foreach ($clients as $client)
                     <li class="marquee__item">
                         @if ($client->url)
-                            <a href="{{ $client->url }}" rel="noopener">{{ $client->name }}</a>
+                            <a href="{{ $client->url }}" rel="noopener"><x-t :of="$client" field="name" /></a>
                         @else
-                            <span>{{ $client->name }}</span>
+                            <span><x-t :of="$client" field="name" /></span>
                         @endif
                     </li>
                 @endforeach
@@ -41,9 +41,9 @@
                 @foreach ($clients as $client)
                     <li class="marquee__item">
                         @if ($client->url)
-                            <a href="{{ $client->url }}" tabindex="-1" rel="noopener">{{ $client->name }}</a>
+                            <a href="{{ $client->url }}" tabindex="-1" rel="noopener"><x-t :of="$client" field="name" /></a>
                         @else
-                            <span>{{ $client->name }}</span>
+                            <span><x-t :of="$client" field="name" /></span>
                         @endif
                     </li>
                 @endforeach

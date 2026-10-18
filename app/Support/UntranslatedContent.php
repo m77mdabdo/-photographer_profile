@@ -85,11 +85,42 @@ final class UntranslatedContent
              * null, or an empty string. The third case matters: Settings and
              * the forms both write '' for a cleared field, and a cleared field
              * is untranslated rather than translated-to-nothing.
+             *
+             * ───────────────────────────────────────────────────────────────
+             * AND ONLY WHEN THERE IS SOMETHING TO TRANSLATE. Task 36b.
+             *
+             * This counted a column as missing whenever the target locale had
+             * no value, whatever the default locale held — so a column that is
+             * empty in BOTH was counted, which is not a translation gap. It is
+             * an unused field.
+             *
+             * Translatable::untranslatedAttributes has always had the right
+             * rule, and says why in its own comment: "An attribute that is
+             * empty in EVERY locale is not untranslated — it is unused...
+             * flagging it would make the admin's untranslated badge
+             * meaningless by making it universal." The per-record badge used
+             * that rule; this widget did not, so the two had disagreed since
+             * the widget was written.
+             *
+             * MEASURED, after translating the demo content: the badge said
+             * six records were waiting and this said nineteen. The extra
+             * thirteen were articles, services and pages whose Arabic is
+             * complete and whose seo_title and seo_description are empty in
+             * English too. An owner working down that list would open a record
+             * that is fully translated and find nothing to do, which is the
+             * exact failure this class exists to prevent.
+             * ───────────────────────────────────────────────────────────────
              */
             $sum = implode(' + ', array_map(
                 static fn (string $column): string => sprintf(
-                    "(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(`%s`, '$.%s')) IS NULL "
-                    ."OR JSON_UNQUOTE(JSON_EXTRACT(`%s`, '$.%s')) = '' THEN 1 ELSE 0 END)",
+                    '(CASE WHEN '
+                    ."JSON_UNQUOTE(JSON_EXTRACT(`%s`, '$.%s')) IS NOT NULL "
+                    ."AND JSON_UNQUOTE(JSON_EXTRACT(`%s`, '$.%s')) <> '' "
+                    .'AND ('
+                    ."JSON_UNQUOTE(JSON_EXTRACT(`%s`, '$.%s')) IS NULL "
+                    ."OR JSON_UNQUOTE(JSON_EXTRACT(`%s`, '$.%s')) = ''"
+                    .') THEN 1 ELSE 0 END)',
+                    $column, Locale::DEFAULT, $column, Locale::DEFAULT,
                     $column, $locale, $column, $locale,
                 ),
                 $columns,

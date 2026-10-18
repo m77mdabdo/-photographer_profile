@@ -1,6 +1,6 @@
 @props(['block', 'media', 'credits' => null, 'descriptions' => []])
 <section class="block block--credits">
-    <h2 class="block__heading">{{ $block->data['heading'] ?? 'Credits' }}</h2>
+    <h2 class="block__heading"{!! \App\Support\Fallback::declare($block->localeOf('heading')) !!}>{{ $block->data['heading'] ?? 'Credits' }}</h2>
 
     {{--
         Credits are handed in by the page, never read off $block->project.

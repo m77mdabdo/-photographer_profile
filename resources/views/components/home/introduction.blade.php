@@ -4,7 +4,7 @@
 
     <p class="intro__statement">
         @if ($project?->excerpt)
-            {{ $project->excerpt }}
+            <x-t :of="$project" field="excerpt" />
         @else
             {{ \App\Support\SiteCopy::get('home.introduction_text') }}
         @endif

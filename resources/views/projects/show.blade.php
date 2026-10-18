@@ -7,10 +7,10 @@
 
     <article class="project">
         <header class="project__header">
-            <h1 class="project__title">{{ $project->title }}</h1>
+            <h1 class="project__title"><x-t :of="$project" field="title" /></h1>
 
             @if ($project->subtitle)
-                <p class="project__subtitle">{{ $project->subtitle }}</p>
+                <p class="project__subtitle"><x-t :of="$project" field="subtitle" /></p>
             @endif
 
             <dl class="project__facts">
@@ -18,19 +18,19 @@
                     <dt>{{ \App\Support\SiteCopy::get('project.year_label') }}</dt><dd>{{ $project->year }}</dd>
                 @endif
                 @if ($project->client)
-                    <dt>{{ \App\Support\SiteCopy::get('project.client_label') }}</dt><dd>{{ $project->client }}</dd>
+                    <dt>{{ \App\Support\SiteCopy::get('project.client_label') }}</dt><dd><x-t :of="$project" field="client" /></dd>
                 @endif
                 @if ($project->location)
-                    <dt>{{ \App\Support\SiteCopy::get('project.location_label') }}</dt><dd>{{ $project->location }}</dd>
+                    <dt>{{ \App\Support\SiteCopy::get('project.location_label') }}</dt><dd><x-t :of="$project" field="location" /></dd>
                 @endif
                 @if ($project->categories->isNotEmpty())
                     <dt>{{ \App\Support\SiteCopy::get('project.categories_label') }}</dt>
-                    <dd>{{ $project->categories->pluck('name')->implode(', ') }}</dd>
+                    <dd><x-t-join :items="$project->categories" field="name" separator=", " /></dd>
                 @endif
             </dl>
 
             @if ($project->excerpt)
-                <p class="project__excerpt">{{ $project->excerpt }}</p>
+                <p class="project__excerpt"><x-t :of="$project" field="excerpt" /></p>
             @endif
         </header>
 

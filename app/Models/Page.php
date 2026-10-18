@@ -62,7 +62,8 @@ class Page extends Model
     {
         static::saving(function (self $page): void {
             if ($page->isDirty('body')) {
-                $page->body_html = RichText::toHtml($page->body);
+                /* Every locale, not the active one. See RichText::syncHtmlLocales. */
+                RichText::syncHtmlLocales($page, 'body', 'body_html');
             }
         });
 
@@ -151,6 +152,24 @@ class Page extends Model
     public function robots(): ?string
     {
         return $this->is_indexable ? null : 'noindex, follow';
+    }
+
+    /**
+     * WHICH translatable field summaryText() read.
+     *
+     * TASK 36b B3. The derived summary is a string, and a string cannot be
+     * asked whether it fell back to another locale — so the template that
+     * renders it has to declare the locale of the field it CAME FROM. Two
+     * fields are possible and the method above chooses between them, so it
+     * is the only thing that can answer.
+     *
+     * Found by FallbackAnnotationTest: the journal index, the journal
+     * preview and the services index all printed a fallen-back summary with
+     * nothing to declare it.
+     */
+    public function summaryTextSource(): string
+    {
+        return filled($this->standfirst) ? 'standfirst' : 'body';
     }
 
     public function summaryText(int $length = 200): ?string

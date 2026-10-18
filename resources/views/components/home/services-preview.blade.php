@@ -20,11 +20,11 @@
             @foreach ($services as $service)
                 <li class="services-strip__item" data-reveal-item>
                     <h3 class="services-strip__name">
-                        <a href="{{ route('services.show', $service) }}">{{ $service->name }}</a>
+                        <a href="{{ route('services.show', $service) }}"><x-t :of="$service" field="name" /></a>
                     </h3>
 
                     @if ($summary = $service->summaryText(110))
-                        <p class="services-strip__summary">{{ $summary }}</p>
+                        <p class="services-strip__summary"{!! \App\Support\Fallback::attributes($service, $service->summaryTextSource()) !!}>{{ $summary }}</p>
                     @endif
 
                     @if ($price = $service->priceFrom())

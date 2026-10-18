@@ -38,11 +38,11 @@
 
                             <span class="work__caption">
                                 <span class="work__index" aria-hidden="true">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
-                                <span class="work__name">{{ $project->title }}</span>
+                                <span class="work__name"><x-t :of="$project" field="title" /></span>
 
                                 <span class="work__meta">
                                     @if ($project->categories->isNotEmpty())
-                                        {{ $project->categories->pluck('name')->implode(' · ') }}
+                                        <x-t-join :items="$project->categories" field="name" />
                                     @endif
                                     @if ($project->year) <span class="work__year">{{ $project->year }}</span> @endif
                                 </span>

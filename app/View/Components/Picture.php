@@ -7,6 +7,7 @@ namespace App\View\Components;
 use App\Enums\MediaStatus;
 use App\Models\Media;
 use App\Models\MediaVariant;
+use App\Support\Fallback;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\Component;
@@ -55,7 +56,41 @@ class Picture extends Component
             return '';
         }
 
-        return $this->alt ?? $this->media?->alt ?? '';
+        if ($this->alt !== null) {
+            return $this->alt;
+        }
+
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * TASK 36b A2 — THE ATTRIBUTE CASE, AND WHY IT IS DIFFERENT.
+         *
+         * media.alt is translatable, so on an Arabic page it falls back to
+         * English like everything else. Unlike every other fallback on the
+         * page there is nowhere to put lang and dir: an attribute value
+         * cannot contain markup.
+         *
+         * So the direction travels with the characters instead. FSI … PDI is
+         * a bidi isolate made of two invisible code points — the markup-free
+         * equivalent of dir="auto" — which stops a right-to-left document
+         * reordering the English sentence a screen reader is about to read.
+         * See App\Support\Fallback::isolate().
+         *
+         * WHY alt AND NOT <title> OR THE META DESCRIPTION. This one is read
+         * inside THIS document, by assistive technology that inherits the
+         * page's direction. A tab title is drawn by the browser's own chrome
+         * in the browser's own direction, and a meta description is reordered
+         * by whatever page eventually shows it. Adding invisible code points
+         * to either would be two bytes of cost for nothing, in a string a
+         * machine parses. The isolate goes where a person reads it.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        $media = $this->media;
+
+        if ($media === null) {
+            return '';
+        }
+
+        return Fallback::isolate($media->alt, $media, 'alt') ?? '';
     }
 
     public function loading(): string

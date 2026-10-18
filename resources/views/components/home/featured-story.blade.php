@@ -10,10 +10,10 @@
 
         <div class="story__inner">
             <p class="story__eyebrow">{{ \App\Support\SiteCopy::get('home.featured_label') }}</p>
-            <h2 class="story__title" id="story-title">{{ $project->title }}</h2>
+            <h2 class="story__title" id="story-title"><x-t :of="$project" field="title" /></h2>
 
             @if ($project->excerpt)
-                <p class="story__excerpt">{{ $project->excerpt }}</p>
+                <p class="story__excerpt"><x-t :of="$project" field="excerpt" /></p>
             @endif
 
             <a class="story__link" href="{{ route('projects.show', $project) }}">

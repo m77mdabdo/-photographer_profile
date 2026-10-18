@@ -116,6 +116,193 @@ class BrowserHarnessTest extends TestCase
         }
     }
 
+    /**
+     * ───────────────────────────────────────────────────────────────────────
+     * TASK 36b — THE TARGET LIST, VERIFIED AGAINST THE ROUTER.
+     *
+     * The harness's paths were read off `php artisan route:list` by hand once
+     * — the rule G3 set after eighteen targets were found pointing at an
+     * admin that no longer existed — and a list checked by hand once is a
+     * list that was correct once. This checks it on every run, in BOTH
+     * directions:
+     *
+     *   a page with no target   — a public page nobody is looking at
+     *   a target with no route  — a row auditing a 404 under a page's name
+     *
+     * "A PAGE" IS DECIDED BY ASKING, not by a list of exemptions. Every
+     * parameterless public GET route is requested as a guest, and only the
+     * ones that answer 200 with HTML are required to have a target. That
+     * drops the redirects (/legacy/*, /en/*), the non-pages (/up, robots.txt)
+     * and anything behind the login without naming any of them, so the rule
+     * cannot rot as those change.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public function test_every_public_page_has_a_harness_target(): void
+    {
+        $targets = $this->harnessTargets();
+
+        $this->assertNotEmpty($targets, 'no targets could be parsed out of the harness');
+
+        $missing = [];
+        $checked = 0;
+
+        foreach (\Illuminate\Support\Facades\Route::getRoutes() as $route) {
+            if (! in_array('GET', $route->methods(), true)) {
+                continue;
+            }
+
+            $uri = '/'.trim($route->uri(), '/');
+
+            if (str_contains($uri, '{')) {
+                continue;
+            }
+
+            $response = $this->get($uri);
+
+            if ($response->getStatusCode() !== 200) {
+                continue;
+            }
+
+            if (! str_contains((string) $response->headers->get('Content-Type'), 'text/html')) {
+                continue;
+            }
+
+            $checked++;
+
+            /*
+             * A LOCALE-PREFIXED PAGE IS COVERED BY ITS UNPREFIXED TWIN. The
+             * harness does not list /ar/work beside /work; it takes
+             * --locale=ar and prefixes every target itself, which is how the
+             * matrix gets eight runs out of one list. So the prefix comes off
+             * before comparing — and Locale::pathFor is the same function the
+             * harness's own localised() mirrors.
+             */
+            $unprefixed = preg_replace('#^/(ar|en)(?=/|$)#', '', $uri) ?: '/';
+
+            if (! in_array($uri, array_column($targets, 'path'), true)
+                && ! in_array($unprefixed, array_column($targets, 'path'), true)) {
+                $missing[] = $uri;
+            }
+        }
+
+        $this->assertGreaterThan(
+            5,
+            $checked,
+            'almost nothing answered 200 as a guest, so this test is not looking at the site'
+        );
+
+        $this->assertSame(
+            [],
+            $missing,
+            "public pages with no browser-check target:\n  ".implode("\n  ", $missing)
+        );
+    }
+
+    /** And no target pointing at an address the router does not serve. */
+    public function test_no_harness_target_points_at_a_missing_route(): void
+    {
+        $routes = [];
+
+        foreach (\Illuminate\Support\Facades\Route::getRoutes() as $route) {
+            $routes[] = '/'.trim($route->uri(), '/');
+        }
+
+        $unmatched = [];
+
+        foreach ($this->harnessTargets() as $target) {
+            /*
+             * A target the harness itself marks optional is auditing
+             * something that has no route on purpose — /_errors/419 renders
+             * the expired-token page, and declares status 404 to say so.
+             */
+            if ($target['optional']) {
+                continue;
+            }
+
+            if (in_array($target['path'], $routes, true)) {
+                continue;
+            }
+
+            /*
+             * A target that names a record — /work/salt-line — matches the
+             * parameterised route it belongs to. Compared segment by segment
+             * so /archive never matches /ar.
+             */
+            if (! $this->matchesAnyRoute($target['path'], $routes)) {
+                $unmatched[] = $target['path'];
+            }
+        }
+
+        $this->assertSame(
+            [],
+            $unmatched,
+            "harness targets with no matching route — each audits a 404 under a page's name:\n  "
+            .implode("\n  ", $unmatched)
+        );
+    }
+
+    /**
+     * The harness's target list, as [path, optional].
+     *
+     * @return list<array{path: string, optional: bool}>
+     */
+    private function harnessTargets(): array
+    {
+        $source = (string) file_get_contents(base_path('bin/browser-check.mjs'));
+
+        /*
+         * Each target is an object literal. The path and the optional flag are
+         * read from the SAME literal rather than from two independent scans,
+         * or an optional flag would be attributed to the wrong path.
+         */
+        preg_match_all('/\{[^{}]*?path:\s*\x27([^\x27]+)\x27[^{}]*?\}/s', $source, $matches, PREG_SET_ORDER);
+
+        $targets = [];
+
+        foreach ($matches as $match) {
+            $targets[] = [
+                'path' => '/'.trim(explode('?', $match[1])[0], '/'),
+                'optional' => str_contains($match[0], 'optional: true'),
+            ];
+        }
+
+        return $targets;
+    }
+
+    /** @param list<string> $routes */
+    private function matchesAnyRoute(string $path, array $routes): bool
+    {
+        $segments = explode('/', trim($path, '/'));
+
+        foreach ($routes as $route) {
+            $routeSegments = explode('/', trim($route, '/'));
+
+            if (count($routeSegments) !== count($segments)) {
+                continue;
+            }
+
+            $fits = true;
+
+            foreach ($routeSegments as $index => $segment) {
+                if (str_starts_with($segment, '{')) {
+                    continue;
+                }
+
+                if ($segment !== $segments[$index]) {
+                    $fits = false;
+
+                    break;
+                }
+            }
+
+            if ($fits) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function test_the_harness_checks_the_things_it_claims_to(): void
     {
         $source = (string) file_get_contents(base_path('bin/browser-check.mjs'));

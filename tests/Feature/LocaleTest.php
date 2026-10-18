@@ -257,6 +257,30 @@ class LocaleTest extends TestCase
     /** dir and lang are server-rendered and correct, with no JavaScript. */
     public function test_dir_and_lang_follow_the_locale_without_javascript(): void
     {
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * CONTENT FIRST, AND TASK 36b IS WHY.
+         *
+         * This test fetched / and /ar against an EMPTY database. The rule
+         * below — every dir="ltr" must also declare lang="en" — then ran
+         * against a page with no reversing elements on it at all, so the
+         * foreach iterated zero times and asserted nothing.
+         *
+         * Proved by breaking it on purpose: with the fallback annotation
+         * emitting dir="ltr" and no lang, the exact defect this guards
+         * against, all twenty tests in this file still passed.
+         *
+         * The same shape as the blind spot Task 36b found in
+         * ArabicRenderTest: a check whose fixture makes the thing it checks
+         * impossible. So there is content now, untranslated on purpose, which
+         * is what produces a reversing element — and the count is asserted
+         * before the rule, because a vacuous loop must never pass again.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        $this->world->story('salt-line', DemoWorld::simpleScore(3), ['landscape'], year: 2025);
+        Article::factory()->create(['title' => 'The edit is the work']);
+        Service::factory()->create(['name' => 'Editorial commissions']);
+
         $english = $this->get('/')->assertOk()->getContent();
         $arabic = $this->get('/ar')->assertOk()->getContent();
 
@@ -287,6 +311,12 @@ class LocaleTest extends TestCase
         $body = explode('<body', $arabic)[1] ?? '';
 
         preg_match_all('/<[^>]*dir="ltr"[^>]*>/', $body, $reversed);
+
+        $this->assertNotEmpty(
+            $reversed[0],
+            'no element on the Arabic page reverses direction, so the rule below '
+            .'asserts nothing. The fixture above exists to produce one.'
+        );
 
         foreach ($reversed[0] as $element) {
             $this->assertMatchesRegularExpression(

@@ -6,17 +6,17 @@
                 <a href="{{ route('services.index') }}">{{ Settings::get('nav.services') }}</a>
             </p>
 
-            <h1 class="offering__title">{{ $service->name }}</h1>
+            <h1 class="offering__title"><x-t :of="$service" field="name" /></h1>
 
             @if ($service->summary)
-                <p class="offering__standfirst">{{ $service->summary }}</p>
+                <p class="offering__standfirst"><x-t :of="$service" field="summary" /></p>
             @endif
 
             @if ($price = $service->priceFrom())
                 <p class="offering__price">
                     {{ Settings::get('services.price_prefix') }} <strong>{{ $price }}</strong>
                     @if ($service->price_note)
-                        <span class="offering__price-note">{{ $service->price_note }}</span>
+                        <span class="offering__price-note"><x-t :of="$service" field="price_note" /></span>
                     @endif
                 </p>
             @endif
@@ -40,7 +40,7 @@
                 </div>
 
                 @if ($service->cover->caption)
-                    <figcaption>{{ $service->cover->caption }}</figcaption>
+                    <figcaption><x-t :of="$service->cover" field="caption" /></figcaption>
                 @endif
             </figure>
         @endif
@@ -51,7 +51,9 @@
             on the Service model — and is outside $fillable.
         --}}
         @if ($service->description_html)
-            <div class="offering__body">
+            {{-- TASK 36b A1: sanitised HTML cannot be wrapped by an escaping component, so the
+                 element it already has carries the declaration. See App\Support\Fallback. --}}
+        <div class="offering__body"{!! \App\Support\Fallback::attributes($service, 'description_html') !!}>
                 {!! $service->description_html !!}
             </div>
         @endif

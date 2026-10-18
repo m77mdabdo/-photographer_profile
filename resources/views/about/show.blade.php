@@ -30,8 +30,15 @@
             <div class="studio__body">
                 @if ($biography = Settings::get('about.biography'))
                     <div class="studio__prose">
+                        {{--
+                            TASK 36b — the biography is Arabic prose that names
+                            two Latin publications, and a settings value does
+                            not go through <x-t>. isolateForeign wraps the
+                            foreign runs so they keep their own direction; it
+                            returns the value untouched on an English page.
+                        --}}
                         @foreach (preg_split('/\R\s*\R/', trim($biography)) as $paragraph)
-                            <p>{{ $paragraph }}</p>
+                            <p>{{ \App\Support\Fallback::isolateForeign($paragraph) }}</p>
                         @endforeach
                     </div>
                 @endif
@@ -80,9 +87,9 @@
                     @foreach ($clients as $client)
                         <li>
                             @if ($client->url)
-                                <a href="{{ $client->url }}" rel="noopener">{{ $client->name }}</a>
+                                <a href="{{ $client->url }}" rel="noopener"><x-t :of="$client" field="name" /></a>
                             @else
-                                <span>{{ $client->name }}</span>
+                                <span><x-t :of="$client" field="name" /></span>
                             @endif
                         </li>
                     @endforeach

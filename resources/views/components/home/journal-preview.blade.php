@@ -27,16 +27,16 @@
                             </time>
                             @if ($article->category)
                                 <span aria-hidden="true">·</span>
-                                {{ $article->category->name }}
+                                <x-t :of="$article->category" field="name" />
                             @endif
                         </p>
 
                         <h3 class="journal-strip__name">
-                            <a href="{{ route('journal.show', $article) }}">{{ $article->title }}</a>
+                            <a href="{{ route('journal.show', $article) }}"><x-t :of="$article" field="title" /></a>
                         </h3>
 
                         @if ($summary = $article->summary(120))
-                            <p class="journal-strip__excerpt">{{ $summary }}</p>
+                            <p class="journal-strip__excerpt"{!! \App\Support\Fallback::attributes($article, $article->summarySource()) !!}>{{ $summary }}</p>
                         @endif
                     </article>
                 </li>

@@ -1,9 +1,9 @@
 @props(['block', 'media', 'credits' => null, 'descriptions' => []])
 <figure class="block block--quote">
     <blockquote class="block__quote">
-        <p>{{ $block->data['quote'] ?? '' }}</p>
+        <p{!! \App\Support\Fallback::declare($block->localeOf('quote')) !!}>{{ $block->data['quote'] ?? '' }}</p>
     </blockquote>
     @if (filled($block->data['attribution'] ?? null))
-        <figcaption class="block__attribution">— {{ $block->data['attribution'] }}</figcaption>
+        <figcaption class="block__attribution"{!! \App\Support\Fallback::declare($block->localeOf('attribution')) !!}>— {{ $block->data['attribution'] }}</figcaption>
     @endif
 </figure>

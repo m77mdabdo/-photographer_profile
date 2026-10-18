@@ -11,16 +11,16 @@
         <header class="piece__header">
             <p class="piece__eyebrow">
                 @if ($article->category)
-                    <a href="{{ route('journal.category', $article->category) }}">{{ $article->category->name }}</a>
+                    <a href="{{ route('journal.category', $article->category) }}"><x-t :of="$article->category" field="name" /></a>
                 @else
                     {{ Settings::get('nav.journal') }}
                 @endif
             </p>
 
-            <h1 class="piece__title">{{ $article->title }}</h1>
+            <h1 class="piece__title"><x-t :of="$article" field="title" /></h1>
 
             @if ($article->subtitle)
-                <p class="piece__standfirst">{{ $article->subtitle }}</p>
+                <p class="piece__standfirst"><x-t :of="$article" field="subtitle" /></p>
             @endif
 
             <p class="piece__byline">
@@ -52,7 +52,7 @@
                            img-class="piece__image" />
 
                 @if ($article->featured->caption)
-                    <figcaption>{{ $article->featured->caption }}</figcaption>
+                    <figcaption><x-t :of="$article->featured" field="caption" /></figcaption>
                 @endif
             </figure>
         @endif
@@ -68,7 +68,9 @@
             `body` is NEVER rendered. It is the author's Markdown source, and
             printing it here unescaped would undo the whole arrangement.
         --}}
-        <div class="piece__body">
+        {{-- TASK 36b A1: sanitised HTML cannot be wrapped by an escaping component, so the
+                 element it already has carries the declaration. See App\Support\Fallback. --}}
+        <div class="piece__body"{!! \App\Support\Fallback::attributes($article, 'body_html') !!}>
             {!! $article->body_html !!}
         </div>
 
@@ -77,7 +79,7 @@
                 <h2 class="piece__tags-title">{{ Settings::get('journal.tags_label') }}</h2>
                 <ul role="list">
                     @foreach ($article->tags as $tag)
-                        <li>{{ $tag->name }}</li>
+                        <li><x-t :of="$tag" field="name" /></li>
                     @endforeach
                 </ul>
             </footer>

@@ -88,6 +88,71 @@ final class RichText
      * The sanitised HTML for a Markdown source. Safe to render unescaped, and
      * safe only because it came from here.
      */
+    /**
+     * ───────────────────────────────────────────────────────────────────────
+     * TASK 36b C — RENDER THE SANITISED HTML FOR EVERY LOCALE, NOT FOR
+     * WHICHEVER ONE HAPPENED TO BE ACTIVE.
+     *
+     * The hook that calls this used to be one line:
+     *
+     *     if ($record->isDirty('<source>')) {
+     *         $record-><source>_html = RichText::toHtml($record-><source>);
+     *     }
+     *
+     * Both sides of that assignment go through the Translatable accessor and
+     * mutator, which read and write THE CURRENT LOCALE. So a save made while
+     * the application was in English rendered the English markdown and wrote
+     * it into the English slot — whatever locale had actually changed.
+     *
+     * MEASURED, on a service with an Arabic description written by a seeder:
+     * description_html had no ar value at all, and /ar/services/… rendered
+     * the English body under an Arabic heading. The same hook exists on
+     * Article::body_html and Page::body_html, so the journal and the legal
+     * pages had it too.
+     *
+     * An editor writing Arabic in the panel hit exactly this: the Arabic they
+     * typed was stored and never rendered. Nothing failed; the page simply
+     * showed the other language.
+     *
+     * So the locales are walked. A source locale with markdown gets HTML; a
+     * source locale that has been emptied has its HTML dropped with it, or
+     * the page would keep rendering a body the editor deleted.
+     * ───────────────────────────────────────────────────────────────────────
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $record
+     */
+    public static function syncHtmlLocales(object $record, string $source, string $target): void
+    {
+        if (! method_exists($record, 'translations') || ! method_exists($record, 'setTranslations')) {
+            return;
+        }
+
+        $markdown = $record->translations($source);
+        $html = [];
+
+        foreach (\App\Support\Locale::codes() as $code) {
+            $rendered = self::toHtml($markdown[$code] ?? null);
+
+            if ($rendered !== null) {
+                /*
+                 * TASK 36b — a foreign name, acronym or address inside this
+                 * locale's prose gets a bidi isolate, so it keeps its own
+                 * direction inside a right-to-left body. Done HERE, per
+                 * locale, because this is the one place that knows which
+                 * locale the markup it just rendered belongs to; a template
+                 * echoing body_html does not.
+                 *
+                 * The isolates live in the stored HTML, which is derived data
+                 * — `php artisan content:rerender-html` rebuilds all of it
+                 * from the markdown beside it.
+                 */
+                $html[$code] = \App\Support\Fallback::isolateForeignHtml($rendered, $code) ?? $rendered;
+            }
+        }
+
+        $record->setTranslations($target, $html);
+    }
+
     public static function toHtml(?string $markdown): ?string
     {
         $markdown = trim((string) $markdown);

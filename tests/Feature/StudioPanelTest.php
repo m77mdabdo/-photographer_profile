@@ -421,8 +421,52 @@ class StudioPanelTest extends TestCase
          *
          * The JS hash is untouched for the sixth time running.
          */
-        $this->assertSame('assets/public-B_UZ_0bO.css', $publicCss, 'the public stylesheet changed');
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * REPINNED IN TASK 36b, FOR TWENTY-SEVEN BYTES, AND THE CAUSE IS
+         * WORTH WRITING DOWN BECAUSE IT WILL HAPPEN AGAIN.
+         *
+         * 78,159 -> 78,186 bytes. The entire difference is one rule:
+         *
+         *     .isolate{isolation:isolate}
+         *
+         * Nothing uses it. It is there because `@source '../views/**'` hands
+         * every Blade file to Tailwind's extractor, the extractor takes any
+         * word-shaped token as a candidate class, and this task's templates
+         * now contain the word "isolate" — in Fallback::isolateForeign() and
+         * in the comments explaining what a bidi isolate is.
+         *
+         * Established by building BOTH trees and diffing the output rather
+         * than by guessing: the committed tree still produces the old hash
+         * exactly, the selector SETS are identical, and the only textual
+         * difference is that one rule.
+         *
+         * It is recorded rather than engineered away. The alternative is
+         * choosing method names and writing prose around the list of words
+         * Tailwind happens to use for utilities, which is a worse trade than
+         * twenty-seven bytes.
+         *
+         * THE SIZE IS ASSERTED ALONGSIDE THE HASH from now on. A hash tells
+         * you the bundle changed; it cannot tell you whether it changed by a
+         * rule or by a kilobyte, and this pin has been updated three times
+         * without anybody being able to see which. The ceiling is the real
+         * guard — the Filament assertion below is the other — and it is set
+         * just above the current size so a prose word costs nothing and a
+         * leaked framework fails.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        $this->assertSame('assets/public-BtQsJGFp.css', $publicCss, 'the public stylesheet changed');
         $this->assertSame('assets/public-B-FzqxLO.js', $publicJs, 'the public entry changed');
+
+        $cssBytes = (int) filesize(public_path('build/'.$publicCss));
+
+        $this->assertSame(78_186, $cssBytes, 'the public stylesheet is a different size');
+
+        $this->assertLessThan(
+            90_000,
+            $cssBytes,
+            'the public stylesheet has grown by more than a rule or two; something has leaked into it'
+        );
 
         // And the panel's theme is its own entry, not part of either.
         $this->assertArrayHasKey('resources/css/filament/studio/theme.css', $manifest);
