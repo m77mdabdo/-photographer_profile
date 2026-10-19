@@ -446,6 +446,18 @@ class StudioPanelTest extends TestCase
          * Tailwind happens to use for utilities, which is a worse trade than
          * twenty-seven bytes.
          *
+         * ───────────────────────────────────────────────────────────────────
+         * UPDATED IN TASK 38 A11, and this is what the size assertion is for.
+         *
+         * The Arabic mono token now stands a figures-only cut of JetBrains
+         * Mono in front of the text stack, so the bundle's bytes moved and
+         * the hash with them. The SIZE says by how much: 78,420 bytes against
+         * 78,186, a difference of +234 — one @font-face rule and one
+         * declaration, which is what that change should cost. A hash alone
+         * would have said only "it changed", which is the thing this note was
+         * written about.
+         * ───────────────────────────────────────────────────────────────────
+         *
          * THE SIZE IS ASSERTED ALONGSIDE THE HASH from now on. A hash tells
          * you the bundle changed; it cannot tell you whether it changed by a
          * rule or by a kilobyte, and this pin has been updated three times
@@ -455,12 +467,12 @@ class StudioPanelTest extends TestCase
          * leaked framework fails.
          * ───────────────────────────────────────────────────────────────────
          */
-        $this->assertSame('assets/public-BtQsJGFp.css', $publicCss, 'the public stylesheet changed');
+        $this->assertSame('assets/public-DP3m6ftW.css', $publicCss, 'the public stylesheet changed');
         $this->assertSame('assets/public-B-FzqxLO.js', $publicJs, 'the public entry changed');
 
         $cssBytes = (int) filesize(public_path('build/'.$publicCss));
 
-        $this->assertSame(78_186, $cssBytes, 'the public stylesheet is a different size');
+        $this->assertSame(78_420, $cssBytes, 'the public stylesheet is a different size');
 
         $this->assertLessThan(
             90_000,

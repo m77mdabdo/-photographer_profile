@@ -127,21 +127,94 @@ class ArabicFontsTest extends TestCase
     }
 
     /**
-     * ADR 0003's rule, which a new text face does not change: a monospace is
-     * a Latin device and Arabic set in one is less legible, not more
-     * technical. --font-mono resolves to the text stack under [lang='ar'].
+     * ───────────────────────────────────────────────────────────────────────
+     * TASK 38 A11 — THIS TEST USED TO ASSERT THE DEFECT.
+     *
+     * It was test_the_mono_role_is_unchanged, and it read:
+     *
+     *     $this->assertStringContainsString('--font-mono: var(--font-sans);', $arabicBlock);
+     *     $this->assertStringNotContainsString("--font-mono: 'IBM", $arabicBlock);
+     *
+     * That declaration is what removed JetBrains Mono from the Arabic page
+     * altogether, so every figure, date and dimension on half the site was
+     * painted in Inter Tight — the proportional body face — while ADR 0003
+     * required them to stay JetBrains Mono in both languages. Fifty-five
+     * mono-role elements on /, zero on /ar.
+     *
+     * The test passed on that for four tasks and would have FAILED on the
+     * fix. A test that asserts the implementation cannot detect a bug in the
+     * implementation.
+     *
+     * WHAT REPLACES IT IS NOT HERE, and that is the point rather than an
+     * omission. The only thing that can answer this question is the face the
+     * browser actually PAINTED, which needs CDP
+     * CSS.getPlatformFontsForNode — getComputedStyle returns the declared
+     * stack and document.fonts.check() answers "could this family be used".
+     * Both call the broken page healthy. So the assertion lives in
+     * bin/browser-check.mjs, which already opens a browser, already runs once
+     * per locale, and already has a Chrome DevTools session; see
+     * paintedMonoCheck() there.
+     *
+     * This test guards that it cannot quietly disappear, the same way
+     * BrowserHarnessTest guards the rest of the harness's claims.
+     * ───────────────────────────────────────────────────────────────────────
      */
-    public function test_the_mono_role_is_unchanged(): void
+    public function test_the_mono_role_is_checked_by_painted_face(): void
     {
+        $harness = (string) file_get_contents(base_path('bin/browser-check.mjs'));
+
+        $this->assertStringContainsString(
+            'CSS.getPlatformFontsForNode',
+            $harness,
+            'the harness no longer asks which face actually painted the text, '
+            .'which is the only question that catches the mono-role defect'
+        );
+
+        $this->assertStringContainsString(
+            'paintedMonoCheck',
+            $harness,
+            'the painted-face check is gone from the harness'
+        );
+
+        foreach (['JetBrains Mono', 'IBM Plex Sans Arabic'] as $face) {
+            $this->assertStringContainsString(
+                $face,
+                $harness,
+                "the harness no longer names {$face} as an expected painted face"
+            );
+        }
+
+        /*
+         * And the token itself must still carry BOTH faces in one stack,
+         * because that is the mechanism the painted check relies on: per-glyph
+         * fallback across a single stack, rather than a branch on the
+         * document's language. This is a structural guard on the mechanism,
+         * not a substitute for the rendered assertion above.
+         */
         $arabicBlock = $this->arabicBlockOf((string) file_get_contents(base_path('resources/css/tokens.css')));
 
-        $this->assertStringContainsString('--font-mono: var(--font-sans);', $arabicBlock);
-        $this->assertStringNotContainsString("--font-mono: 'IBM", $arabicBlock);
+        /*
+         * COMMENTS STRIPPED FIRST, and the first version of this test failed
+         * because they were not. tokens.css now QUOTES the old declaration in
+         * the note explaining why it changed, so "the file does not contain
+         * --font-mono: var(--font-sans);" was false while the behaviour was
+         * right. A small illustration of why this whole test moved to the
+         * painted face: source text answers a question about the source, and
+         * a comment is source too.
+         */
+        $declarations = (string) preg_replace('#/\*.*?\*/#s', '', $arabicBlock);
 
-        // And the Latin stack still begins with JetBrains Mono for everybody.
         $this->assertMatchesRegularExpression(
-            "/--font-mono:\s*'JetBrains Mono'/",
-            (string) file_get_contents(base_path('resources/css/tokens.css')),
+            "/--font-mono:\s*'JetBrains Mono Figures',\s*var\(--font-sans\)\s*;/",
+            $declarations,
+            'the Arabic mono stack no longer puts the Latin face ahead of the Arabic one, '
+            .'so the split is by locale again rather than by glyph'
+        );
+
+        $this->assertStringNotContainsString(
+            '--font-mono: var(--font-sans);',
+            $declarations,
+            'the Arabic mono token is back to replacing the whole stack'
         );
     }
 

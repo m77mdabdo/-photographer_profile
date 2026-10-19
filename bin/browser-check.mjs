@@ -541,6 +541,196 @@ function totp(secret, atMs = Date.now()) {
  * request succeeded.
  * ═══════════════════════════════════════════════════════════════════════════
  */
+/*
+ * ───────────────────────────────────────────────────────────────────────────
+ * TASK 38 A11 — WHICH FACE ACTUALLY PAINTED THE GLYPHS.
+ *
+ * This replaces ArabicFontsTest::test_the_mono_role_is_unchanged, which
+ * asserted the CSS declaration
+ *
+ *     --font-mono: var(--font-sans);
+ *
+ * inside the [lang='ar'] block. That declaration IS the defect: it removed
+ * JetBrains Mono from the Arabic page entirely, so every figure, date and
+ * dimension on half the site was set in Inter Tight, the proportional body
+ * face. The test passed on the bug for four tasks and would have FAILED on
+ * the fix — a test that asserts the implementation cannot detect a bug in the
+ * implementation.
+ *
+ * So the question is asked of the rendered page instead, and specifically
+ * through CDP's CSS.getPlatformFontsForNode, because nothing available inside
+ * the page can answer it. getComputedStyle returns the STACK the element
+ * declares, not the face the browser chose from it; document.fonts.check()
+ * answers "could this family be used", which on a machine with the family
+ * installed locally is yes whether the site shipped it or not. Both say the
+ * Arabic page is fine. Only the painted face says otherwise.
+ *
+ * TWO RUNS, ONE PER LOCALE, because the rule is about content and not about
+ * language: ADR 0003 requires that numerals, dates, EXIF and dimensions stay
+ * JetBrains Mono in BOTH languages, AND that Arabic words never land in a
+ * Latin monospace. A single global token cannot express both; per-glyph
+ * fallback across one stack can, and this is what checks that it does.
+ *
+ * The probes are DISCOVERED rather than named: the first mono-role leaf
+ * holding only digits, and the first holding only letters. A list of
+ * selectors would go stale the first time the hero was recomposed, which
+ * Part A is about to do.
+ * ───────────────────────────────────────────────────────────────────────────
+ */
+async function paintedMonoCheck(page, expectedDir, isAdmin) {
+  const problems = []
+
+  /*
+   * PUBLIC PAGES ONLY, and the first version was not — it failed every studio
+   * row in both languages, for two different reasons that both came down to
+   * scope.
+   *
+   * ADR 0003's mono rule is about resources/css/tokens.css, which governs the
+   * public site. The panel is Filament's own typography through
+   * resources/css/filament/studio/theme.css and reads none of those tokens,
+   * so it has no mono role for this to be true or false about. In Arabic the
+   * panel had no mono-role element at all; in English it had one whose
+   * computed stack named JetBrains Mono but which was never rendered, so CDP
+   * correctly reported no painted font and the check read that as a defect.
+   *
+   * Scoping it is not narrowing the guarantee. The guarantee was always about
+   * the public site, and that is where the defect was.
+   */
+  if (isAdmin) return problems
+
+  let found
+  try {
+    await page.evaluate(() => document.fonts.ready)
+
+    found = await page.evaluate(() => {
+      let digits = null
+      let words = null
+
+      for (const el of document.querySelectorAll('*')) {
+        if (el.children.length) continue
+
+        const text = (el.textContent || '').trim()
+        if (!text) continue
+
+        const style = getComputedStyle(el)
+        if (!/JetBrains Mono/.test(style.fontFamily)) continue
+
+        /*
+         * AND IT MUST ACTUALLY BE PAINTED. CSS.getPlatformFontsForNode
+         * returns an EMPTY list for a node the browser never laid out, which
+         * reads identically to "painted in the wrong face" — a hidden element
+         * carrying the right stack would be reported as a defect, and a
+         * hidden element carrying the wrong one would be missed. Both are the
+         * instrument failing to distinguish two causes of one symptom.
+         */
+        if (style.visibility === 'hidden' || !el.getClientRects().length) continue
+
+        if (!digits && /^\d+$/.test(text)) {
+          el.setAttribute('data-painted-probe', 'digits')
+          digits = text
+        }
+
+        /*
+         * \p{L}, NOT [^\d\W]. JavaScript's \w is ASCII-only even under the
+         * /u flag, so \W MATCHES every Arabic letter and the first version of
+         * this probe could not find an Arabic word at all. The words branch
+         * below would simply never have run on /ar — the check would have
+         * passed on a page where every Arabic label was in a system
+         * monospace, which is the defect it exists to catch.
+         */
+        if (!words && /^[\p{L}\s]{3,}$/u.test(text)) {
+          el.setAttribute('data-painted-probe', 'words')
+          words = text
+        }
+
+        if (digits && words) break
+      }
+
+      return { digits, words }
+    })
+  } catch (e) {
+    return [`painted-font probe failed: ${e.message}`]
+  }
+
+  /*
+   * NOTHING FOUND IS ITSELF THE FAILURE, and it is the exact shape the bug
+   * took: before the fix there were fifty-five mono-role elements on / and
+   * ZERO on /ar, because the token had replaced the stack. A silent pass here
+   * would be the harness agreeing that half the site has no mono role.
+   */
+  if (!found.digits && !found.words) {
+    /*
+     * THE PANEL IS EXEMPT, and the first version of this was not — it failed
+     * all twenty-eight studio rows in Arabic on exactly this line. Filament
+     * sets its own typography and reads none of the tokens in
+     * resources/css/tokens.css, so the panel has no mono role to check and a
+     * page with no mono-role element is the correct state there rather than
+     * a missing one.
+     *
+     * On a PUBLIC page it is the failure itself. Before this fix there were
+     * fifty-five mono-role elements on / and zero on /ar, so "nothing found"
+     * is the precise shape the defect took and must not pass quietly.
+     */
+    if (!isAdmin) {
+      problems.push('no element on this page resolves to the mono stack at all')
+    }
+
+    return problems
+  }
+
+  let session
+  try {
+    session = await page.createCDPSession()
+    await session.send('DOM.enable')
+    await session.send('CSS.enable')
+
+    const { root } = await session.send('DOM.getDocument', { depth: -1 })
+
+    for (const kind of ['digits', 'words']) {
+      if (!found[kind]) continue
+
+      const { nodeId } = await session.send('DOM.querySelector', {
+        nodeId: root.nodeId,
+        selector: `[data-painted-probe="${kind}"]`,
+      })
+
+      if (!nodeId) continue
+
+      const { fonts } = await session.send('CSS.getPlatformFontsForNode', { nodeId })
+      const painted = fonts.map((f) => f.familyName)
+
+      if (kind === 'digits') {
+        // Latin in both languages. ADR 0003.
+        if (!painted.includes('JetBrains Mono')) {
+          problems.push(
+            `figures in a mono-role element painted in ${painted.join(', ') || 'nothing'} `
+            + `rather than JetBrains Mono ("${found.digits}")`
+          )
+        }
+      } else if (expectedDir === 'rtl') {
+        // Arabic words take the Arabic text face, never a Latin monospace.
+        if (!painted.includes('IBM Plex Sans Arabic')) {
+          problems.push(
+            `Arabic words in a mono-role element painted in ${painted.join(', ') || 'nothing'} `
+            + `rather than IBM Plex Sans Arabic ("${found.words}")`
+          )
+        }
+      } else if (!painted.includes('JetBrains Mono')) {
+        problems.push(
+          `Latin words in a mono-role element painted in ${painted.join(', ') || 'nothing'} `
+          + `rather than JetBrains Mono ("${found.words}")`
+        )
+      }
+    }
+  } catch (e) {
+    problems.push(`painted-font check failed: ${e.message}`)
+  } finally {
+    if (session) await session.detach().catch(() => {})
+  }
+
+  return problems
+}
+
 const SUBMIT = 'form:not([data-locale-switcher]) button[type="submit"]'
 
 async function loginAsDisposableAdmin(page, credentials) {
@@ -787,9 +977,28 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir, expectsLocaleSwitche
   const wordmarkEl = document.querySelector('.hero__wordmark')
 
   if (wordmarkEl) {
-    const style = getComputedStyle(wordmarkEl)
+    /*
+     * ───────────────────────────────────────────────────────────────────────
+     * COUNTED FROM THE TEXT'S OWN LINE BOXES, NOT FROM THE ELEMENT'S HEIGHT.
+     *
+     * This divided the bounding box's height by the line height, which is a
+     * fair proxy for an upright block and nonsense for a rotated one. Task 38
+     * Part A rotates the Arabic wordmark ninety degrees, so its axis-aligned
+     * box became 169x612 for a single 612px line — and the harness reported
+     * the one-line wordmark as having wrapped onto five.
+     *
+     * A Range over the element's contents returns one rect per LINE BOX,
+     * which is the thing being counted, and is unaffected by any transform on
+     * the element or its ancestors. Measured on the rotated wordmark: one
+     * rect, which is the truth the height-based proxy could not see.
+     * ───────────────────────────────────────────────────────────────────────
+     */
     const box = wordmarkEl.getBoundingClientRect()
-    const lines = Math.round(box.height / (parseFloat(style.fontSize) * 0.8))
+
+    const range = document.createRange()
+    range.selectNodeContents(wordmarkEl)
+
+    const lines = range.getClientRects().length
 
     if (lines > 1) {
       problems.push(`the wordmark wrapped onto ${lines} lines: "${wordmarkEl.textContent.trim()}"`)
@@ -1106,11 +1315,33 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir, expectsLocaleSwitche
    * on this page asks for a face, does that face actually arrive? A declared
    * family nobody uses is waste, not a defect, and is not this check's job.
    */
-  const families = ['Archivo', 'JetBrains Mono', 'Inter Tight', 'Rubik', 'IBM Plex Sans Arabic']
+  const families = [
+    'Archivo', 'JetBrains Mono', 'JetBrains Mono Figures', 'Inter Tight', 'Rubik', 'IBM Plex Sans Arabic',
+  ]
   const requested = new Set()
 
+  /*
+   * ───────────────────────────────────────────────────────────────────────
+   * MATCHED AS WHOLE FAMILY NAMES, NOT AS SUBSTRINGS. Task 38 A11.
+   *
+   * This read `stack.includes(family)`, which was true of every family whose
+   * name is a prefix of another's. A11 added 'JetBrains Mono Figures' — the
+   * same face subset to the figures an Arabic page draws with it — and every
+   * Arabic page immediately reported "fonts requested but not applied:
+   * JetBrains Mono": the substring matched, so the harness demanded the FULL
+   * Latin face be loaded on a page that correctly never downloads it.
+   *
+   * 48 of 100 checks per viewport, in Arabic only, with no crash markers —
+   * which is how a real failure is told from the browser dying.
+   *
+   * The computed value is a comma-separated list of family names, quoted when
+   * they contain spaces. Splitting it is the whole fix.
+   * ───────────────────────────────────────────────────────────────────────
+   */
   for (const el of document.querySelectorAll('*')) {
     const stack = getComputedStyle(el).fontFamily
+      .split(',')
+      .map((name) => name.trim().replace(/^["']|["']$/g, ''))
 
     for (const family of families) {
       if (stack.includes(family)) requested.add(family)
@@ -1769,6 +2000,10 @@ async function run() {
           )
             problems = problems.concat(audit.problems)
             stats = audit
+
+            problems = problems.concat(
+              await paintedMonoCheck(activePage, EXPECTED_DIR, target.admin === true)
+            )
 
             // --- 6. referenced stylesheets and fonts return 200 --------------
             const assets = await activePage.evaluate(() =>

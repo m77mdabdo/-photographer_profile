@@ -75,6 +75,47 @@
 
 /* ---------------- JetBrains Mono — labels and technical data ------------ */
 
+/*
+ * ───────────────────────────────────────────────────────────────────────────
+ * TASK 38 A11 — THE SAME FACE, CUT DOWN TO WHAT AN ARABIC PAGE DRAWS WITH IT.
+ *
+ * A11 put JetBrains Mono back in front of the Arabic mono stack so that
+ * figures, dates and dimensions stay monospaced in both languages, as ADR
+ * 0003 requires. Measured, that cost /ar the whole 40 kB Latin subset for the
+ * sake of ten digits: +39.7 kB, +0.32s FCP and +0.29s LCP on the mobile
+ * preset, on the slower of the two locales and against a budget already over.
+ *
+ * An Arabic page needs figures and punctuation from this face and nothing
+ * else — its words go to IBM Plex Sans Arabic, and Part 0 made the client
+ * names Arabic too. So it gets a subset of exactly that: 37 mapped
+ * codepoints, 5,360 bytes against 40,480.
+ *
+ * THE FAMILY NAME INSIDE THE FILE IS STILL 'JetBrains Mono'. pyftsubset keeps
+ * the name table, so this is the same face by every measure that matters —
+ * the glyphs are identical outlines and CDP reports the painted face as
+ * JetBrains Mono, which is what bin/browser-check.mjs asserts. Only the CSS
+ * family differs, because two @font-face rules cannot share a name and differ
+ * in src.
+ *
+ * ENGLISH IS UNTOUCHED and still gets the full subset below: its mono role
+ * carries words — the navigation, "Featured Frame", the attribution line —
+ * and cutting those would be a real regression rather than a saving.
+ *
+ * Built with:
+ *   pyftsubset jetbrains-mono-latin.woff2 --flavor=woff2 \
+ *     --unicodes="U+0020-0040,U+00D7,U+2013-2014,U+2212" \
+ *     --layout-features= --no-hinting --desubroutinize
+ * ───────────────────────────────────────────────────────────────────────────
+ */
+@font-face {
+    font-family: 'JetBrains Mono Figures';
+    font-style: normal;
+    font-weight: 100 800;
+    font-display: swap;
+    src: url('/fonts/jetbrains-mono-figures.woff2') format('woff2');
+    unicode-range: U+0020-0040, U+00D7, U+2013-2014, U+2212;
+}
+
 @font-face {
     font-family: 'JetBrains Mono';
     font-style: normal;

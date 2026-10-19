@@ -284,11 +284,75 @@
      * a Latin typographic device: its job here is the look of a technical
      * label, and in Arabic that look costs legibility.
      *
-     * Figures are unaffected — they are Latin either way, and the pages that
-     * genuinely need tabular alignment ask for font-variant-numeric rather
-     * than for this face.
+     * ───────────────────────────────────────────────────────────────────────
+     * TASK 38 A11 — AND THE SENTENCE THAT USED TO END THIS NOTE WAS WRONG.
+     *
+     * It read: "Figures are unaffected — they are Latin either way, and the
+     * pages that genuinely need tabular alignment ask for
+     * font-variant-numeric rather than for this face."
+     *
+     * Latin either way, yes. In JetBrains Mono, no. The declaration was
+     *
+     *     --font-mono: var(--font-sans);
+     *
+     * and --font-sans under [lang='ar'] is 'IBM Plex Sans Arabic', 'Inter
+     * Tight', … — a stack that does not contain JetBrains Mono at all. So a
+     * figure on an Arabic page fell through IBM Plex's Arabic-only
+     * unicode-range and landed in INTER TIGHT, the proportional body face.
+     *
+     * Measured with CDP CSS.getPlatformFontsForNode, which reports the face
+     * that actually painted a run rather than the stack the element declares:
+     *
+     *     .hero__stage-number    en: JetBrains Mono    ar: Inter Tight
+     *
+     * The same digits, monospaced in one language and proportional in the
+     * other — split by LOCALE, which is the one thing ADR 0003 forbids. A
+     * scan of the rendered pages found FOURTEEN mono-role elements on / and
+     * ZERO on /ar: the token had removed the face from half the site.
+     *
+     * TWO INTENTS, AND A SINGLE GLOBAL TOKEN CANNOT EXPRESS EITHER ALONE:
+     *
+     *   1. numerals, dates, EXIF and dimensions stay JetBrains Mono in BOTH
+     *      languages — the rule this file already states two paragraphs up
+     *   2. Arabic words never land in a Latin monospace — the rule the
+     *      declaration above was written to satisfy, and did
+     *
+     * THE MECHANISM IS THE ONE THIS FILE ALREADY USES TWICE. Font fallback is
+     * per GLYPH, and every face here carries a unicode-range. --font-display
+     * and --font-sans both put the Arabic face AHEAD of the Latin one in a
+     * single stack and let the browser choose per character; the mono token
+     * was the only one that branched on the document's language instead.
+     *
+     * So it stops branching. JetBrains Mono first — its unicode-range is
+     * Latin, so it claims the digits and nothing else — then the text stack,
+     * which begins with IBM Plex Sans Arabic, whose range is Arabic, so it
+     * claims the words. Neither can
+     * claim the other's characters, so the split is by CONTENT and the two
+     * intents hold at once without either being decided here.
+     *
+     * EVERYTHING BEHIND THE FIGURES FACE IS THE TEXT STACK, UNCHANGED, and
+     * that is measured rather than tidy. A first version spelled the stack
+     * out as 'IBM Plex Sans Arabic', 'Mono Fallback', ui-monospace… — so while
+     * IBM Plex was still loading, Arabic words fell to the local monospace
+     * stand-in (it carries no unicode-range and matches every codepoint) and
+     * reflowed when the real face landed. CLS on /ar/work at 390, after
+     * scrolling: 0.1386 on every run, attributed to the .work-filter__option
+     * labels narrowing by up to 21px at 80ms. With var(--font-sans) behind
+     * the figures face, Arabic words load through exactly the chain they had
+     * before A11, and the same page reads 0.0014–0.0016 against 0.0008 with
+     * the token reverted.
+     *
+     * THE COST, AND WHAT IT WAS CUT TO. The first version of this named
+     * 'JetBrains Mono' and pulled the whole 40 kB Latin subset onto every
+     * Arabic page to draw ten digits: +39.7 kB, +0.32s FCP, +0.29s LCP on the
+     * mobile preset — on the slower locale, against a budget already over.
+     *
+     * 'JetBrains Mono Figures' is that same face subset to the 37 codepoints
+     * an Arabic page actually draws with it, 5,360 bytes. Same outlines, same
+     * name table, so the painted face is still JetBrains Mono. See fonts.css.
+     * ───────────────────────────────────────────────────────────────────────
      */
-    --font-mono: var(--font-sans);
+    --font-mono: 'JetBrains Mono Figures', var(--font-sans);
 
     /*
      * ═══════════════════════════════════════════════════════════════════════
@@ -308,8 +372,14 @@
      *
      * The mono token above is deliberately NOT remapped to an Arabic
      * monospace: ADR 0003 decided that a monospace is a Latin device and that
-     * Arabic set in one is less legible, not more technical. --font-mono
-     * resolves to the text stack, which now begins with a real Arabic face.
+     * Arabic set in one is less legible, not more technical. Arabic words in
+     * a mono-role element are set in IBM Plex Sans Arabic — the text face —
+     * exactly as before.
+     *
+     * What changed in 38 A11 is only that the token reaches that face by
+     * standing BEHIND JetBrains Mono in one stack rather than by replacing
+     * it. Arabic words render identically; Latin figures stop being
+     * collateral.
      * ═══════════════════════════════════════════════════════════════════════
      */
     --font-display: 'Rubik', 'Archivo', 'Archivo Fallback', 'Arial Narrow', Arial, sans-serif;

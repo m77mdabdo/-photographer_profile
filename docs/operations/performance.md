@@ -10,7 +10,7 @@ being English-only.
 | public JS | 49.13 kB of 60 gzipped | the same assets — asserted, not assumed |
 | public CSS | 13.0 kB of 35 gzipped | the same assets — asserted, not assumed |
 | CLS | 0.0000 home and work | 0.0000 home and work |
-| TBT | 0 ms | **30 ms** |
+| TBT | 0 ms | 0 ms |
 | LCP | **2.5 s** / score 97 | **2.9 s** / score 94 |
 
 **CLS on a project page at 390 is 0.3152–0.3336 after scrolling**, in both
@@ -18,7 +18,8 @@ locales, bimodal at roughly one run in three, under production config.
 Lighthouse reports 0 because it never scrolls to the bottom. Pre-existing at
 `5a51e08`. Part D owns it (D4, D5). See the CLS section below.
 
-**TBT is not zero site-wide**, and was reported as such for four tasks.
+**TBT is 0 ms in both locales.** An earlier draft of this table read 30 ms for
+Arabic; that was a single run, and six runs across both locales read 0.
 
 `MotionTest::test_both_locales_ask_for_the_same_build_assets` is what makes the
 first two rows say "the same" rather than hope it. The manifest walk beside it
@@ -130,7 +131,7 @@ unchanged. Part 0 first reported 1.06 s and read it as an improvement; it was a
 different instrument on a different server, and the site had not got faster.
 
 Arabic is measured too and is not the same: `/ar` 2.9 s / score 94 against `/`
-2.5 s / 97, and `/ar` carries 30 ms TBT where `/` has 0.
+2.5 s / 97. TBT is 0 ms in both.
 
 ## CLS: scroll the page, or the number is about the top of it
 
