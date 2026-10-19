@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\Article;
+use App\Models\ArticleCategory;
+use App\Models\Category;
+use App\Models\Client;
 use App\Models\Page;
 use App\Models\Project;
 use App\Models\Service;
+use App\Models\Tag;
 use App\Support\Fallback;
 use Database\Seeders\Concerns\ProtectsEditedContent;
 use Illuminate\Database\Eloquent\Model;
@@ -105,6 +109,9 @@ class DemoArabicSeeder extends Seeder
         $filled += $this->services();
         $filled += $this->articles();
         $filled += $this->pages();
+        $filled += $this->taxonomy();
+        $filled += $this->clients();
+        $filled += $this->projectClients();
 
         $this->command?->info("Arabic: {$filled} attributes filled.");
     }
@@ -119,6 +126,28 @@ class DemoArabicSeeder extends Seeder
     {
         /** @var Model|null $record */
         $record = $model::query()->whereRaw('JSON_UNQUOTE(JSON_EXTRACT(slug, "$.en")) = ?', [$slug])->first();
+
+        if ($record === null) {
+            return 0;
+        }
+
+        return $this->fillMissingTranslations($record, 'ar', $values, $requireOwnership);
+    }
+
+    /**
+     * The same thing for a record with no slug.
+     *
+     * `clients` is one translatable column — the name — so there is nothing
+     * else to find it by. Matched on the English name, which is unique in
+     * the library and is what an owner would recognise in this file.
+     *
+     * @param  class-string<Model>  $model
+     * @param  array<string, string>  $values
+     */
+    private function fillByName(string $model, string $name, array $values, bool $requireOwnership = true): int
+    {
+        /** @var Model|null $record */
+        $record = $model::query()->whereRaw('JSON_UNQUOTE(JSON_EXTRACT(name, "$.en")) = ?', [$name])->first();
 
         if ($record === null) {
             return 0;
@@ -711,6 +740,238 @@ class DemoArabicSeeder extends Seeder
                 للأسئلة عن هذه الشروط، أو لطلب إذنٍ باستخدام صورة، اكتب إلى {$email}.
                 MD,
         ], requireOwnership: false);
+
+        return $filled;
+    }
+
+    // ── TAXONOMY ──────────────────────────────────────────────────────────
+
+    /**
+     * ═══════════════════════════════════════════════════════════════════════
+     * TASK 38 0.3 — THE NAMES THE 37b AUDIT FOUND IN ENGLISH ON /ar.
+     *
+     * Nine series, four journal subjects and ten tags. The audit saw the
+     * symptom in a browser — /ar/work/category/editorial served an English
+     * <h1> — and the dashboard could not see it at all, because the worklist
+     * walked four models out of twelve. 0.2 fixed the instrument; this is the
+     * content it was blind to.
+     *
+     * requireOwnership: false ON ALL THREE, and the reason is a column rather
+     * than a judgement: categories, article_categories and tags have no
+     * `is_demo` column, so mayOverwrite() has nothing to read and refuses
+     * every row. fillMissingTranslations still never touches an attribute
+     * that already has an Arabic value, which is the protection that matters
+     * here — these are shared taxonomy rather than demo content, and an owner
+     * who renames a series keeps their rename.
+     *
+     * NO SLUGS, for the reason given at the top of this class: an Arabic slug
+     * is a live URL and that is the owner's decision with the redirect
+     * machinery behind it. /ar/work/category/editorial keeps its address and
+     * changes its heading.
+     *
+     * THE LABELS ARE BARE NOUNS, matching the English, which is terse by
+     * design — "Street", not "Street photography". Two needed a term rather
+     * than a translation and both are the settled Arabic art-historical one:
+     * STILL LIFE is "طبيعة صامتة", and PORTRAIT is "بورتريه", which is what
+     * the Arabic photographic press uses and is more recognisable to a reader
+     * than "وجوه" would be.
+     * ═══════════════════════════════════════════════════════════════════════
+     */
+    private function taxonomy(): int
+    {
+        $filled = 0;
+
+        $series = [
+            'editorial' => ['تحريري', 'أعمالٌ بتكليفٍ من المجلّات والعلامات.'],
+            'portrait' => ['بورتريه', 'أشخاصٌ، على مَهَل.'],
+            'landscape' => ['مناظر طبيعيّة', 'مكانٌ وطَقْس.'],
+            'documentary' => ['توثيقي', 'تحقيقاتٌ مطوّلة.'],
+            'fashion' => ['أزياء', ''],
+            'architecture' => ['عمارة', ''],
+            'travel' => ['سفر', ''],
+            'still-life' => ['طبيعة صامتة', ''],
+            'street' => ['شارع', ''],
+        ];
+
+        foreach ($series as $slug => [$name, $description]) {
+            $filled += $this->fill(Category::class, $slug, [
+                'name' => $name,
+                'description' => $description,
+            ], requireOwnership: false);
+        }
+
+        $subjects = [
+            'process' => ['طريقة العمل', 'كيف تُصنَع الصور فعلًا، من أوّلها إلى آخرها.'],
+            'printing' => ['الطباعة', 'غرفة التحميض، والورق، والجدل حولهما.'],
+            'equipment' => ['العُدّة', 'كاميراتٌ وعدساتٌ استحقّت مكانها، وأخرى لم تستحقّه.'],
+            'commissions' => ['التكليفات', 'ملاحظاتٌ من أعمالٍ بتكليف، وما علّمته.'],
+        ];
+
+        foreach ($subjects as $slug => [$name, $description]) {
+            $filled += $this->fill(ArticleCategory::class, $slug, [
+                'name' => $name,
+                'description' => $description,
+            ], requireOwnership: false);
+        }
+
+        /*
+         * The tags are lower case in English because they are tags and not
+         * titles. Arabic has no case, so the equivalent register is a bare
+         * noun with no definite article — which is also what keeps them
+         * reading as labels rather than as headings.
+         */
+        $tags = [
+            'editing' => 'تحرير',
+            'process' => 'منهج',
+            'light' => 'ضوء',
+            'portrait' => 'بورتريه',
+            'printing' => 'طباعة',
+            'darkroom' => 'غرفة تحميض',
+            'equipment' => 'عُدّة',
+            'commissions' => 'تكليفات',
+            'editorial' => 'تحريري',
+            'place' => 'مكان',
+        ];
+
+        foreach ($tags as $slug => $name) {
+            $filled += $this->fill(Tag::class, $slug, ['name' => $name], requireOwnership: false);
+        }
+
+        return $filled;
+    }
+
+    // ── CLIENTS ───────────────────────────────────────────────────────────
+
+    /**
+     * ═══════════════════════════════════════════════════════════════════════
+     * TRANSLITERATED, NOT TRANSLATED — and that distinction is the point.
+     *
+     * TranslatableSchema already anticipated this: "clients.name and
+     * projects.client hold brand names, and Arabic editorial routinely
+     * transliterates them." A masthead is not a phrase to be rendered into
+     * Arabic; it is a name to be written in Arabic script, so an Arabic
+     * sentence does not break into Latin in the middle. "Aperture Quarterly"
+     * does not become "فصليّة الفتحة" — it becomes "أبرتشر كوارترلي".
+     *
+     * WHAT THIS CHANGES ON THE PAGE. Until now the hero's client line and
+     * every project's "لـ" field carried a Latin run inside Arabic prose,
+     * which App\Support\Fallback::isolateForeign had to wrap in a bidi
+     * isolate at render time to keep its punctuation in place. With an Arabic
+     * value there is no foreign run to isolate, and the isolate disappears
+     * from the markup on its own — the mechanism is still there for the
+     * clients an owner has not transliterated yet.
+     *
+     * ONE FLAG FOR THE OWNER, and it is not a technical one: these nine are
+     * demo records. A REAL client's name in Arabic script is that client's
+     * decision, not the studio's, and should be confirmed with each of them
+     * before launch. The transliterations below are defensible and are not
+     * authoritative.
+     *
+     * "Withdrawn Commission" is not a brand. It is the fixture that exercises
+     * the withdrawn state, so it is rendered as the phrase it is.
+     * ═══════════════════════════════════════════════════════════════════════
+     */
+    private function clients(): int
+    {
+        $filled = 0;
+
+        $clients = [
+            'Aperture Quarterly' => 'أبرتشر كوارترلي',
+            'Meridian Press' => 'ميريديان برِس',
+            'Nord & Vale' => 'نورد آند فيل',
+            'The Gentlewoman' => 'ذي جنتلوومان',
+            'Studio Halcyon' => 'استوديو هالسيون',
+            'Ferrous Editions' => 'فيروس إديشنز',
+            'Blue Hour Journal' => 'بلو أوَر جورنال',
+            'Atelier Rive' => 'أتيليه ريف',
+            'Withdrawn Commission' => 'تكليفٌ مسحوب',
+        ];
+
+        foreach ($clients as $name => $arabic) {
+            $filled += $this->fillByName(Client::class, $name, ['name' => $arabic]);
+        }
+
+        return $filled;
+    }
+
+    /**
+     * ═══════════════════════════════════════════════════════════════════════
+     * THE SAME BRAND, WRITTEN THE SAME WAY IN BOTH PLACES.
+     *
+     * A client's name lives in two columns. `clients.name` is the list on the
+     * about page; `projects.client` is the credit in the hero rail and on
+     * every project page. Task 36b filled the second with the Latin name
+     * inside a bidi isolate — "⁨Nord & Vale⁩" — which was right under the
+     * decision in force then: keep brand names Latin and make them survive an
+     * RTL paragraph.
+     *
+     * 0.3 transliterated the first. Rendering /ar after that showed the same
+     * brand twice on one site in two scripts — "نورد آند فيل" in the client
+     * list, "⁨Nord & Vale⁩" in the rail three sections above it. That is not
+     * two defensible choices; it is one choice made twice.
+     *
+     * SO THIS COMPLETES THE 0.3 DECISION rather than adding a new one, and
+     * the rule is the same one: a brand name is written in Arabic script,
+     * phonetically, because an Arabic sentence should not break into Latin to
+     * name someone. "Self-initiated" is untouched — it is a description and
+     * was already translated as one.
+     *
+     * ─── IT OVERWRITES, WHICH NOTHING ELSE IN THIS SEEDER DOES. ───
+     *
+     * fillMissingTranslations refuses a value that is already there, and that
+     * refusal is what makes this seeder safe to re-run against a site an
+     * owner has edited. These values ARE already there, so this one pass has
+     * to replace them — and it is allowed to replace EXACTLY ONE THING: the
+     * string 36b generated, which is the English name between U+2068 and
+     * U+2069 and nothing else.
+     *
+     * Anything an owner has typed differs from that by at least one byte and
+     * is left alone. The guard is the whole safety of this method: without it
+     * a re-run would quietly revert an owner's own transliteration to this
+     * file's.
+     *
+     * FLAGGED FOR THE OWNER, because it reverses a Task 36b decision: if you
+     * would rather client names stayed Latin on the Arabic site, both halves
+     * come out together — this method and the clients() map above — and the
+     * isolate machinery in App\Support\Fallback is still there to carry them.
+     * ═══════════════════════════════════════════════════════════════════════
+     */
+    private function projectClients(): int
+    {
+        $names = [
+            'Aperture Quarterly' => 'أبرتشر كوارترلي',
+            'Meridian Press' => 'ميريديان برِس',
+            'Nord & Vale' => 'نورد آند فيل',
+            'The Gentlewoman' => 'ذي جنتلوومان',
+            'Studio Halcyon' => 'استوديو هالسيون',
+            'Harbour Trust' => 'هاربر ترَست',
+            'Civic Archive' => 'سيفيك أركايف',
+        ];
+
+        $filled = 0;
+
+        foreach (Project::query()->get() as $project) {
+            if ($project->getAttribute('deleted_at') !== null || ! $this->mayOverwrite($project)) {
+                continue;
+            }
+
+            $english = $project->getTranslation('client', 'en', fallback: false);
+
+            if ($english === null || ! array_key_exists($english, $names)) {
+                continue;
+            }
+
+            $current = $project->getTranslation('client', 'ar', fallback: false);
+
+            // ONLY the string 36b generated. See the note above.
+            if ($current !== $this->latin($english)) {
+                continue;
+            }
+
+            $project->setTranslation('client', 'ar', $names[$english]);
+            $project->save();
+            $filled++;
+        }
 
         return $filled;
     }

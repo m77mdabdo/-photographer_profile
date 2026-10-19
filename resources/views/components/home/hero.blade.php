@@ -141,7 +141,7 @@
                 <div><dt>{{ Settings::get('rail.client') }}</dt><dd><x-t :of="$project" field="client" /></dd></div>
             @endif
             @if ($project->categories->isNotEmpty())
-                <div><dt>{{ Settings::get('rail.work') }}</dt><dd><x-t-join :items="$project->categories" field="name" separator=", " /></dd></div>
+                <div><dt>{{ Settings::get('rail.work') }}</dt><dd><x-t-join :items="$project->categories" field="name" separator="comma" /></dd></div>
             @endif
         </dl>
     @endif

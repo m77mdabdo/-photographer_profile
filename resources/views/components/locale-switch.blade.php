@@ -101,8 +101,43 @@
                     aria-pressed="{{ $code === $current ? 'true' : 'false' }}">
                 {{ Locale::native($code) }}
 
-                <span class="{{ $sr }}">
-                    ({{ Locale::translatedName($code) }}@if ($label !== null), {{ $label }}@endif@if ($code === $current), {{ __('studio.controls.current') }}@endif)
+                {{--
+                    ───────────────────────────────────────────────────────────
+                    TASK 38 0.1 — TWO DEFECTS ON THIS ONE LINE, both found by
+                    TranslatableJoinTest's scan for a Latin comma between two
+                    Arabic runs, which reported "(العربية, الحالية)" on /ar.
+
+                    THE COMMA WAS TYPED INTO THE TEMPLATE. On an Arabic page
+                    this read "(العربية, اللغة, الحالية)" with U+002C between
+                    Arabic words. Locale::separator() exists so that a template
+                    never has to know which comma a locale uses, and this was
+                    the one template still choosing for itself.
+
+                    AND THE LANGUAGE WAS WRONG. The button carries lang of the
+                    locale it SWITCHES TO, which is correct for its visible
+                    text — "العربية" and "English" are each in their own
+                    language. This label is not: translatedName() returns the
+                    name of that language IN THE PAGE'S language, so on /ar the
+                    English button announced "الإنجليزية، اللغة" inside
+                    lang="en". A screen reader would read Arabic words with an
+                    English voice, which is the same defect the <x-t> component
+                    exists to prevent, arriving from the opposite direction.
+
+                    So the label declares the page, explicitly, rather than
+                    inheriting a declaration meant for its sibling.
+                    ───────────────────────────────────────────────────────────
+                --}}
+                @php
+                    $parts = array_values(array_filter([
+                        Locale::translatedName($code),
+                        $label,
+                        $code === $current ? __('studio.controls.current') : null,
+                    ], static fn (?string $part): bool => $part !== null && $part !== ''));
+                @endphp
+                <span class="{{ $sr }}"
+                      lang="{{ Locale::html($current) }}"
+                      dir="{{ Locale::direction($current) }}">
+                    ({{ implode(Locale::separator('comma', $current), $parts) }})
                 </span>
             </button>
         @endforeach

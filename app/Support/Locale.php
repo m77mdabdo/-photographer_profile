@@ -51,7 +51,7 @@ final class Locale
      * server-rendered and must be right on the first byte — there is no
      * second chance to set the writing direction.
      *
-     * @var array<string, array{name: string, native: string, dir: string, html: string, og: string}>
+     * @var array<string, array{name: string, native: string, dir: string, html: string, og: string, comma: string}>
      */
     private const LOCALES = [
         'en' => [
@@ -60,6 +60,7 @@ final class Locale
             'dir' => 'ltr',
             'html' => 'en',
             'og' => 'en_GB',
+            'comma' => ', ',
         ],
         'ar' => [
             'name' => 'Arabic',
@@ -67,6 +68,7 @@ final class Locale
             'dir' => 'rtl',
             'html' => 'ar',
             'og' => 'ar_AR',
+            'comma' => '، ',
         ],
     ];
 
@@ -132,6 +134,70 @@ final class Locale
     public static function openGraph(?string $code = null): string
     {
         return self::LOCALES[$code ?? self::current()]['og'] ?? 'en_GB';
+    }
+
+    /**
+     * ───────────────────────────────────────────────────────────────────────
+     * TASK 38 0.1 — THE PUNCTUATION THAT JOINS A LIST, PER LOCALE.
+     *
+     * Here rather than in lang/{locale}/studio.php, and that is a judgement
+     * worth stating. A lang file holds interface copy — words an owner might
+     * reword. This is not copy: U+060C ARABIC COMMA is a property of the
+     * script, the way `dir` and `html` above are. An owner cannot
+     * meaningfully "translate" it into something else, and routing it through
+     * the translator would make it overridable by a person whose next
+     * reasonable-looking choice — a Latin comma, because it is the one on the
+     * keyboard — is the defect this exists to remove.
+     *
+     * TWO KINDS, AND ONLY ONE OF THEM IS LANGUAGE.
+     *
+     *   comma   PUNCTUATION. U+002C in Latin script, U+060C in Arabic. Two
+     *           different characters with different shapes — the Arabic comma
+     *           is raised and mirrored — and using the Latin one in Arabic
+     *           prose is the same category of error as a Latin question mark
+     *           in Arabic prose.
+     *
+     *   middot  A DESIGN MARK, identical in both: U+00B7 between two ordinary
+     *           spaces. It is bidi-neutral, it carries no language, and it is
+     *           the mark the metadata rows have used since Task 13.
+     *           Localising it would be a change to the design rather than a
+     *           correction, and the design is the owner's.
+     *
+     * THE SPACE AFTER THE COMMA IS AN ORDINARY SPACE, not U+00A0. A list may
+     * wrap onto a second line, and the place to break it is after a comma and
+     * never before the next item; a non-breaking space forbids exactly the
+     * break you want. An earlier draft of this used U+00A0 and a three-
+     * category list at 390 pushed its last item off the line rather than
+     * wrapping it.
+     * ───────────────────────────────────────────────────────────────────────
+     *
+     * @param  'comma'|'middot'  $kind
+     */
+    public static function separator(string $kind, ?string $code = null): string
+    {
+        return match ($kind) {
+            'middot' => ' · ',
+            'comma' => self::LOCALES[$code ?? self::current()]['comma'] ?? ', ',
+
+            /*
+             * LOUD, BECAUSE SILENCE HERE LOOKED LIKE A WORKING PAGE.
+             *
+             * The first version returned the comma for anything it did not
+             * recognise. <x-t-join>'s separator prop had just changed from a
+             * literal to a kind name, and an existing test still passed
+             * " · " — which fell through to that default and rendered an
+             * ARABIC COMMA where the test expected a middot. It failed on the
+             * assertion rather than on the mistake, which cost a detour
+             * through the component to work out that the prop, not the
+             * component, was wrong.
+             *
+             * A template asking for a mark that does not exist is a typo, and
+             * the useful moment to say so is immediately.
+             */
+            default => throw new \InvalidArgumentException(
+                "Unknown list separator [{$kind}]. Use 'comma' or 'middot'."
+            ),
+        };
     }
 
     /** The language's own name, for the switcher. Always in that language. */

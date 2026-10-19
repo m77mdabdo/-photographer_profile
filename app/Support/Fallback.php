@@ -88,6 +88,65 @@ final class Fallback
     }
 
     /**
+     * ───────────────────────────────────────────────────────────────────────
+     * TASK 38 0.1 — ONE TRANSLATABLE VALUE, RENDERED. The whole decision.
+     *
+     * This moved out of resources/views/components/t.blade.php because a
+     * SECOND component needed the same answer. <x-t-join> renders a list of
+     * translatable names, and to place the separator correctly it has to know
+     * each item's source locale BEFORE it renders any of them — which means
+     * it cannot simply nest <x-t> and hope. Two copies of the branch would
+     * have been two chances to disagree, and the 36b report already recorded
+     * what that costs: the per-record translation badge and the dashboard
+     * widget used two different definitions of "missing" for five tasks.
+     *
+     * $declare = false IS FOR A CALLER THAT HAS ALREADY DECLARED THE RUN.
+     * When every item in a list shares one foreign locale, the list is wrapped
+     * once and the items inside need no lang of their own — repeating it on
+     * each child would be redundant markup saying the same thing the parent
+     * says. The isolate is NOT applied in that branch either, for the same
+     * reason it is not applied to a fallback: the element around it already
+     * carries the direction.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public static function render(Model $model, string $field, ?string $locale = null, bool $declare = true): string
+    {
+        /*
+         * Two different locales, and conflating them was a bug in 36b.
+         * $locale picks WHICH translation to fetch; from() measures against
+         * the DOCUMENT's locale, which is what needs declaring.
+         */
+        $value = $model->getTranslation($field, $locale);
+
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        $from = self::from($model, $field, $locale);
+
+        if ($from === null) {
+            /*
+             * A value that IS in the page's language can still contain a
+             * foreign name, an acronym or an address. isolateForeign wraps
+             * those runs; it returns the value untouched on a left-to-right
+             * page and for a value that is mostly Latin.
+             */
+            return e(self::isolateForeign($value));
+        }
+
+        if (! $declare) {
+            return e($value);
+        }
+
+        return sprintf(
+            '<span lang="%s" dir="%s">%s</span>',
+            e(Locale::html($from)),
+            e(Locale::direction($from)),
+            e($value),
+        );
+    }
+
+    /**
      * The two attributes to add to an element that already exists.
      *
      * Returns a leading space and nothing else when there is nothing to

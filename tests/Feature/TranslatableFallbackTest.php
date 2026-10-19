@@ -242,7 +242,7 @@ class TranslatableFallbackTest extends TestCase
         ];
 
         $rendered = Blade::render(
-            '<x-t-join :items="$items" field="title" separator=" · " />',
+            '<x-t-join :items="$items" field="title" separator="middot" />',
             ['items' => $items],
         );
 
@@ -252,16 +252,52 @@ class TranslatableFallbackTest extends TestCase
 
         // The translated item is NOT wrapped.
         $this->assertStringNotContainsString('<span lang="ar"', $rendered);
+
+        /*
+         * ───────────────────────────────────────────────────────────────────
+         * STRENGTHENED IN TASK 38 0.1, NOT RELAXED.
+         *
+         * This test passed `separator=" · "`, a literal. The prop is a kind
+         * name now — the mark a list takes depends on the locale of the run
+         * it lands in, and a template cannot know that — so the literal was
+         * updated to the kind it was asking for.
+         *
+         * AND TWO ASSERTIONS WERE ADDED while it was open, both about the
+         * case this test is uniquely positioned to check: a MIXED list, one
+         * item translated and one fallen back. That is the case a two-line
+         * fix to 0.1 would have broken, and the only assertion here was that
+         * a middot appeared somewhere in the output.
+         * ───────────────────────────────────────────────────────────────────
+         */
+        $this->assertSame(
+            'تصنيف · <span lang="en" dir="ltr">Documentary</span>',
+            $rendered,
+            'A mixed list is not wrapped as a run, and the item order is the list order.'
+        );
+        $this->assertSame(
+            1,
+            substr_count($rendered, 'lang='),
+            'Exactly the fallen-back item declares itself.'
+        );
     }
 
     public function test_a_joined_list_puts_no_separator_after_the_last_item(): void
     {
         app()->setLocale('ar');
 
-        $rendered = trim(Blade::render(
-            '<x-t-join :items="$items" field="title" separator=" · " />',
+        /*
+         * STRENGTHENED IN 38 0.1: the literal became a kind name, and the
+         * trim() came off. The component emits no surrounding whitespace at
+         * all now — it builds the list in PHP and echoes it, rather than
+         * looping in Blade and leaving a newline per iteration — so a
+         * one-item list is exactly its one value. trim() would have hidden
+         * that, and the newline it used to hide is what HTML collapses into
+         * a space that moves inline elements.
+         */
+        $rendered = Blade::render(
+            '<x-t-join :items="$items" field="title" separator="middot" />',
             ['items' => [$this->project(['ar' => 'واحد'])]],
-        ));
+        );
 
         $this->assertSame('واحد', $rendered);
     }

@@ -107,9 +107,16 @@ class UntranslatedContent extends TableWidget
                     ->label(__('studio.untranslated.kind'))
                     ->badge()
                     ->color('gray')
-                    ->formatStateUsing(fn (string $state): string => __(
-                        'studio.untranslated.type.'.str($state)->classBasename()->lower()->toString()
-                    ))
+                    /*
+                     * TASK 38 0.2 — the lang file OVERRIDES the name, it does
+                     * not supply it. Discovery walks twelve models now and
+                     * will walk the thirteenth without being asked, so a
+                     * missing entry here must read as a word rather than as
+                     * "studio.untranslated.type.testimonial". The entries that
+                     * exist are the ones where the class name is the wrong
+                     * word for an owner — Article is "Journal".
+                     */
+                    ->formatStateUsing(fn (string $state): string => self::kind($state))
                     ->visibleFrom('md')
                     ->sortable(),
 
@@ -153,21 +160,92 @@ class UntranslatedContent extends TableWidget
             ->fromSub(Finder::query(self::locale()), 'untranslated');
     }
 
-    /** Where this row is edited, resolved through its resource. */
+    /**
+     * What to call this kind of record.
+     *
+     * The lang file is consulted first and the class name is the fallback, so
+     * a model nobody has written a label for still reads as English rather
+     * than as a translation key.
+     */
+    private static function kind(string $class): string
+    {
+        $key = 'studio.untranslated.type.'.str($class)->classBasename()->lower()->toString();
+
+        return __($key) === $key
+            ? str($class)->classBasename()->headline()->toString()
+            : __($key);
+    }
+
+    /**
+     * ───────────────────────────────────────────────────────────────────────
+     * WHERE THIS ROW IS EDITED, FOUND RATHER THAN LISTED. Task 38 0.2.
+     *
+     * This was a match over four resource classes, which returned null for
+     * everything else. With the model set discovered rather than hardcoded
+     * that would have made eight of the twelve kinds unclickable — a worklist
+     * whose rows cannot be acted on, which is the same defect as not listing
+     * them.
+     *
+     * So the panel is asked. Filament already knows every registered resource
+     * and the model each one is for; the first resource whose model matches,
+     * which the current user may view and which has an edit page, is the
+     * destination. A model with no resource — nothing today, but the settings
+     * are edited on a custom page and will be one — yields no link, and the
+     * row still carries the count, which is the honest answer rather than a
+     * link to nowhere.
+     * ───────────────────────────────────────────────────────────────────────
+     */
     private function editUrl(Model $record): ?string
     {
-        $resource = match ($record->type) {
-            \App\Models\Project::class => \App\Filament\Resources\Projects\ProjectResource::class,
-            \App\Models\Article::class => \App\Filament\Resources\Articles\ArticleResource::class,
-            \App\Models\Service::class => \App\Filament\Resources\Services\ServiceResource::class,
-            \App\Models\Page::class => \App\Filament\Resources\Pages\PageResource::class,
-            default => null,
-        };
+        $resource = self::resourceFor((string) $record->type);
 
-        if ($resource === null || ! $resource::canViewAny()) {
+        if ($resource === null) {
             return null;
         }
 
-        return $resource::getUrl('edit', ['record' => $record->record_id]);
+        /*
+         * SIX OF THE TWELVE RESOURCES HAVE NO EDIT PAGE, and that was the
+         * second thing discovery turned up. Categories, tags, clients,
+         * journal subjects, media and testimonials are edited in a modal on
+         * their list page, so Resource::getUrl('edit') does not exist for
+         * them — asking for it throws rather than returning null.
+         *
+         * Filament v5.10.1 has no URL binding for a table action (checked in
+         * filament/tables: no #[Url] on the mounted-action state), so the
+         * modal cannot be deep-linked and the list page is the closest
+         * honest destination. Stated here because the next person to read
+         * this will wonder why half the links land on a list.
+         */
+        foreach (['edit', 'index'] as $page) {
+            if ($resource::hasPage($page)) {
+                return $page === 'edit'
+                    ? $resource::getUrl('edit', ['record' => $record->record_id])
+                    : $resource::getUrl('index');
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The viewable resource for a model class, if the panel has one.
+     *
+     * @return class-string<\Filament\Resources\Resource>|null
+     */
+    private static function resourceFor(string $model): ?string
+    {
+        foreach (\Filament\Facades\Filament::getCurrentOrDefaultPanel()?->getResources() ?? [] as $resource) {
+            if ($resource::getModel() !== $model || ! $resource::canViewAny()) {
+                continue;
+            }
+
+            if (! $resource::hasPage('edit') && ! $resource::hasPage('index')) {
+                continue;
+            }
+
+            return $resource;
+        }
+
+        return null;
     }
 }

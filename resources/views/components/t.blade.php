@@ -86,27 +86,11 @@
 --}}
 @php
     /*
-     * Two different locales, and conflating them was a bug. $locale picks
-     * WHICH translation to fetch; App\Support\Fallback measures against the
-     * DOCUMENT's locale, which is what needs declaring. See the note above.
+     * TASK 38 0.1 — the branch itself now lives in App\Support\Fallback, so
+     * that <x-t-join> can reach the same decision without nesting this
+     * component. The output is byte-for-byte what it was; see that class for
+     * why it had to move, and the notes above for why it is echoed from
+     * inside a PHP block rather than written as a Blade echo.
      */
-    $value = $of->getTranslation($field, $locale);
-    $from = \App\Support\Fallback::from($of, $field, $locale);
-
-    echo match (true) {
-        $value === null || $value === '' => '',
-        /*
-         * TASK 36b — a value that IS in the page's language can still contain
-         * a foreign name, an acronym or an address. isolateForeign wraps those
-         * runs; it returns the value untouched on a left-to-right page and for
-         * a value that is mostly Latin, which the element already declares.
-         */
-        $from === null => e(\App\Support\Fallback::isolateForeign($value)),
-        default => sprintf(
-            '<span lang="%s" dir="%s">%s</span>',
-            e(\App\Support\Locale::html($from)),
-            e(\App\Support\Locale::direction($from)),
-            e($value),
-        ),
-    };
+    echo \App\Support\Fallback::render($of, $field, $locale);
 @endphp

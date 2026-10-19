@@ -25,7 +25,7 @@
                 @endif
                 @if ($project->categories->isNotEmpty())
                     <dt>{{ \App\Support\SiteCopy::get('project.categories_label') }}</dt>
-                    <dd><x-t-join :items="$project->categories" field="name" separator=", " /></dd>
+                    <dd><x-t-join :items="$project->categories" field="name" separator="comma" /></dd>
                 @endif
             </dl>
 

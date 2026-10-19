@@ -201,6 +201,120 @@ class SeederSafetyTest extends TestCase
     }
 
     /**
+     * ───────────────────────────────────────────────────────────────────────
+     * TASK 38 0.3 — THE ONE SEEDER PASS THAT OVERWRITES, AND ITS GUARD.
+     *
+     * DemoArabicSeeder::projectClients() replaces an Arabic value that is
+     * already there, which nothing else in any seeder does. It exists because
+     * 0.3 transliterated clients.name while Task 36b had filled
+     * projects.client with the Latin name in a bidi isolate, and the same
+     * brand rendering two ways on one page is one decision made twice rather
+     * than two defensible choices.
+     *
+     * THE STATIC SCAN ABOVE CANNOT SEE IT. That scan looks for
+     * updateOrCreate, upsert and DB::table()->update(); this pass is
+     * setTranslation() followed by save(), which is the shape the scan misses
+     * and is noted in Part 0's report as a gap. So the guarantee is asserted
+     * behaviourally here instead of being trusted.
+     *
+     * THE GUARANTEE: it replaces EXACTLY the string 36b generated — the
+     * English name between U+2068 and U+2069 — and nothing else. An owner who
+     * has typed their own Arabic keeps it through any number of re-runs.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public function test_reseeding_replaces_the_generated_client_credit_but_never_an_owners(): void
+    {
+        /*
+         * BOTH STATES ARE CONSTRUCTED HERE rather than seeded, and the first
+         * draft of this test did seed them and asserted nothing as a result:
+         * the generated credit only ever exists BETWEEN the two passes of
+         * DemoArabicSeeder, so by the time the seeder returns there is none
+         * left to find and the fixture search came back null. Building them
+         * also lets the owner's value be a DIFFERENT transliteration of a
+         * name the seeder knows, so "left alone" cannot be mistaken for
+         * "happened to agree".
+         */
+        $generated = new Project(['title' => 'A credited commission']);
+        $generated->slug = 'a-credited-commission';
+        // A demo row: the pass refuses anything else, which is ProtectsEditedContent
+        // doing its job and was the first reason this test failed.
+        $generated->is_demo = true;
+        $generated->setTranslation('client', 'en', 'Nord & Vale');
+        $generated->setTranslation('client', 'ar', "\u{2068}Nord & Vale\u{2069}");
+        $generated->save();
+
+        $owned = new Project(['title' => 'Another credited commission']);
+        $owned->slug = 'another-credited-commission';
+        $owned->is_demo = true;
+        $owned->setTranslation('client', 'en', 'Meridian Press');
+        $owned->setTranslation('client', 'ar', 'مِريديان الصحفيّة');
+        $owned->save();
+
+        $this->seed(\Database\Seeders\DemoArabicSeeder::class);
+
+        $after = $generated->fresh()->getTranslation('client', 'ar', fallback: false);
+
+        $this->assertStringNotContainsString(
+            "\u{2068}",
+            (string) $after,
+            'The generated Latin credit was not replaced.'
+        );
+        $this->assertMatchesRegularExpression(
+            '/^\p{Arabic}/u',
+            (string) $after,
+            'The replacement is not in Arabic script.'
+        );
+
+        $this->assertSame(
+            'مِريديان الصحفيّة',
+            $owned->fresh()->getTranslation('client', 'ar', fallback: false),
+            "The seeder overwrote an owner's own transliteration."
+        );
+
+        // And a second run changes neither.
+        $this->seed(\Database\Seeders\DemoArabicSeeder::class);
+
+        $this->assertSame($after, $generated->fresh()->getTranslation('client', 'ar', fallback: false));
+        $this->assertSame('مِريديان الصحفيّة', $owned->fresh()->getTranslation('client', 'ar', fallback: false));
+    }
+
+    /**
+     * And the credit matches the client list, which is the whole reason that
+     * pass exists: the same brand rendered two ways on one page.
+     */
+    public function test_a_clients_name_reads_the_same_in_both_places(): void
+    {
+        $client = Client::query()->create([
+            'name' => 'Nord & Vale',
+            'url' => 'https://nordvale.example',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+        // is_demo is not mass assignable — set after, or the pass refuses it.
+        $client->is_demo = true;
+        $client->save();
+
+        $project = new Project(['title' => 'A credited commission']);
+        $project->slug = 'a-credited-commission';
+        $project->is_demo = true;
+        $project->setTranslation('client', 'en', 'Nord & Vale');
+        $project->setTranslation('client', 'ar', "\u{2068}Nord & Vale\u{2069}");
+        $project->save();
+
+        $this->seed(\Database\Seeders\DemoArabicSeeder::class);
+
+        $inTheList = $client->fresh()->getTranslation('name', 'ar', fallback: false);
+        $inTheCredit = $project->fresh()->getTranslation('client', 'ar', fallback: false);
+
+        $this->assertNotNull($inTheList, 'The client list was not transliterated at all.');
+        $this->assertSame(
+            $inTheList,
+            $inTheCredit,
+            'Nord & Vale is written one way in the client list and another in its project credit.'
+        );
+    }
+
+    /**
      * A project the studio published must not be forced back to draft.
      */
     public function test_reseeding_cannot_unpublish_a_project(): void
