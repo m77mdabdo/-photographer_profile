@@ -495,3 +495,100 @@
     --vignette-opacity-min: 0;
     --vignette-opacity-max: 0;
 }
+
+/* ===================================================================
+ * A SECTION IN THE OTHER REGISTER — Task 38 Part C.
+ *
+ * The two registers above are a visitor PREFERENCE: the page is ink or
+ * paper because the visitor (or their system) chose. A section can now ask
+ * to be set in the OTHER register — not "dark" or "paper" in absolute
+ * terms, but the inverse of whatever the page is. That is the C1 decision,
+ * and the reason is the visitor who chose on purpose:
+ *
+ *   a dark-mode visitor sees an ink page with paper bands through it
+ *   a light-mode visitor sees a paper page with ink bands through it
+ *
+ * Either way their choice still sets the ground the page starts and ends
+ * on, the header, the footer and most of the length between. An absolute
+ * "this section is dark" would show a light-mode visitor the very thing
+ * they switched off, at full height; an inverse band is rhythm, and it
+ * reads as rhythm in both.
+ *
+ * WHAT A BAND RE-BINDS is exactly the set the light block reassigns — the
+ * semantic aliases, the scrim, the optical weights and the grain — so that
+ * every component inside is already correct without knowing it is in a
+ * band. The scrim travelling with it is what keeps the Task 13 arithmetic
+ * true inside a section (C2): text over a photograph in a paper band sits
+ * on a paper scrim, and in an ink band on an ink one. The vignette is NOT
+ * re-bound; see components/register.css.
+ * =================================================================== */
+
+/* Ink page (the default, or an explicit dark choice): the band is paper. */
+.register--inverse {
+    --bg: var(--c-paper-warm);
+    --bg-elevated: var(--c-paper-warm-soft);
+    --text-primary: var(--c-ink-warm);
+    --text-secondary: var(--c-gray-stone);
+    --border: var(--c-line-ink);
+    --accent: var(--c-accent-deep);
+    --on-accent: var(--c-paper);
+
+    --scrim-rgb: var(--c-paper-warm-rgb);
+    --scrim-top: 0.10;
+    --scrim-mid: 0.04;
+    --scrim-bottom: 0.55;
+
+    --wght-display: 860;
+    --wght-mid: 660;
+    --wght-mono: 500;
+
+    --grain-opacity: 0.022;
+    --grain-blend: multiply;
+}
+
+/* Paper page, by system setting or by choice: the band is ink. */
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme]) .register--inverse {
+        --bg: var(--c-ink);
+        --bg-elevated: var(--c-ink-soft);
+        --text-primary: var(--c-paper);
+        --text-secondary: var(--c-gray-warm);
+        --border: var(--c-line);
+        --accent: var(--c-accent);
+        --on-accent: var(--c-ink);
+
+        --scrim-rgb: var(--c-ink-rgb);
+        --scrim-top: 0.15;
+        --scrim-mid: 0.05;
+        --scrim-bottom: 0.88;
+
+        --wght-display: 800;
+        --wght-mid: 620;
+        --wght-mono: 440;
+
+        --grain-opacity: 0.028;
+        --grain-blend: overlay;
+    }
+}
+
+:root[data-theme='light'] .register--inverse {
+    --bg: var(--c-ink);
+    --bg-elevated: var(--c-ink-soft);
+    --text-primary: var(--c-paper);
+    --text-secondary: var(--c-gray-warm);
+    --border: var(--c-line);
+    --accent: var(--c-accent);
+    --on-accent: var(--c-ink);
+
+    --scrim-rgb: var(--c-ink-rgb);
+    --scrim-top: 0.15;
+    --scrim-mid: 0.05;
+    --scrim-bottom: 0.88;
+
+    --wght-display: 800;
+    --wght-mid: 620;
+    --wght-mono: 440;
+
+    --grain-opacity: 0.028;
+    --grain-blend: overlay;
+}

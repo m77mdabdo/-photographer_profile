@@ -680,8 +680,42 @@
     justify-items: start;
 }
 
-/* Also demoted — an eyebrow labels, it does not invite a click. */
-.story__eyebrow { color: var(--text-secondary); }
+/*
+ * ═══════════════════════════════════════════════════════════════════════
+ * TASK 38 C2 — THE SCRIM GUARANTEE NOW HOLDS WHERE THE TEXT IS.
+ *
+ * The ::after scrim above reaches --scrim-bottom only at the frame's last
+ * pixel row, and the text sits 36–80% of the way down it. Measured by
+ * tests/Support/register-contrast.mjs against the worst-case pixel (white
+ * under ink, black under paper), at each element's least-covered row, on
+ * HEAD's dark page: the eyebrow 1.06:1, the title 4.23:1, the excerpt
+ * 1.97:1. The guarantee stated in tokens.css was true at a row no text
+ * occupies. Now 16.1–17.3:1 under ink and 7.7–9.3:1 under paper.
+ *
+ * So the text block carries its own scrim, at the full bottom alpha from
+ * its first line down, ramping in over the inner block's top padding so
+ * there is no edge. It bleeds sideways to the frame; .story's overflow:
+ * hidden clips it, so it adds nothing to the page's scrollable width.
+ *
+ * AND NO GREY OVER A PHOTOGRAPH. --text-secondary cannot reach 4.5:1 at
+ * any alpha the scrim allows: --c-gray-warm against a 0.88 ink scrim over
+ * white is about 4.2:1, and --c-gray-stone against a 0.55 paper scrim over
+ * black about 1.8:1. Over a photograph the eyebrow and excerpt are set in the primary
+ * colour; their demotion is carried by size and position instead.
+ * ═══════════════════════════════════════════════════════════════════════
+ */
+.story__inner::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline: -100vmax;
+    z-index: -1;
+    background: linear-gradient(to bottom,
+        rgb(var(--scrim-rgb) / 0),
+        rgb(var(--scrim-rgb) / var(--scrim-bottom)) var(--sp-9));
+}
+
+.story__eyebrow { color: var(--text-primary); }
 
 .story__title {
     font-variation-settings: 'wght' var(--wght-display);
@@ -692,7 +726,7 @@
     max-width: 18ch;
 }
 
-.story__excerpt { font-size: var(--fs-body); color: var(--text-secondary); max-width: var(--container-text); }
+.story__excerpt { font-size: var(--fs-body); color: var(--text-primary); max-width: var(--container-text); }
 
 /* ---------------- 5. Contact sheet -------------------------------------- */
 

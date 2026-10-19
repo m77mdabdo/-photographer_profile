@@ -485,7 +485,17 @@ class HomepageTest extends TestCase
 
         // Specifically, it was removed from the index numerals and eyebrows.
         $this->assertMatchesRegularExpression('/\.work__index \{[^}]*--text-secondary/s', $css);
-        $this->assertMatchesRegularExpression('/\.story__eyebrow \{ color: var\(--text-secondary\)/', $css);
+        /*
+         * The eyebrow used to be asserted as `color: var(--text-secondary)`.
+         * Task 38 C2 measured that grey over the featured photograph at
+         * 1.06:1 against the worst-case pixel — it cannot clear 4.5:1 at any
+         * alpha the scrim allows — and moved it to the primary colour. What
+         * this test is for is that the ACCENT stays off it, so that is what
+         * it asserts now; the colour itself is asserted on the render by
+         * tests/Support/register-contrast.mjs.
+         */
+        $this->assertDoesNotMatchRegularExpression('/\.story__eyebrow \{[^}]*--accent/s', $css);
+        $this->assertDoesNotMatchRegularExpression('/\.story__eyebrow \{[^}]*--hero-accent/s', $css);
     }
 
     public function test_the_vertical_rhythm_is_not_one_repeated_interval(): void
@@ -1200,6 +1210,84 @@ class HomepageTest extends TestCase
 
             foreach (['Aperture Quarterly', 'Meridian Press', 'Nord & Vale', 'Studio Halcyon'] as $name) {
                 $this->assertStringNotContainsString($name, $source, basename($view));
+            }
+        }
+    }
+
+    /**
+     * Task 38 Part C — the home page alternates registers down its length.
+     *
+     * Asserted on the rendered DOM rather than the template, because the
+     * thing that went wrong the first time was not in the template: with no
+     * testimonials, two fixed-position bands met and read as one block. So
+     * this checks the property itself — after the marquee, the sections that
+     * render strictly alternate page / band, no two bands touch, and no band
+     * is empty — with the full set of content and with a section missing.
+     */
+    public function test_the_sections_alternate_registers_down_the_page(): void
+    {
+        $this->populate();
+
+        $this->assertAlternates($this->mainChildren($this->get('/')->assertOk()->getContent()), 'with every section');
+
+        // Without testimonials — the case that broke fixed positions.
+        \App\Models\Testimonial::query()->delete();
+
+        $this->assertAlternates($this->mainChildren($this->get('/')->assertOk()->getContent()), 'without testimonials');
+    }
+
+    public function test_an_empty_site_draws_no_bands(): void
+    {
+        foreach ($this->mainChildren($this->get('/')->assertOk()->getContent()) as $node) {
+            if (str_contains(' '.$node->getAttribute('class').' ', ' register ')) {
+                $this->assertNotSame('', trim($node->textContent), 'an empty register band rendered on an empty site');
+            }
+        }
+    }
+
+    /** @return list<\DOMElement> */
+    private function mainChildren(string $html): array
+    {
+        $doc = new \DOMDocument;
+        @$doc->loadHTML('<?xml encoding="utf-8"?>'.$html);
+        $main = $doc->getElementById('main');
+        $this->assertNotNull($main);
+
+        $out = [];
+        foreach ($main->childNodes as $node) {
+            if ($node instanceof \DOMElement) {
+                $out[] = $node;
+            }
+        }
+
+        return $out;
+    }
+
+    /** @param list<\DOMElement> $nodes */
+    private function assertAlternates(array $nodes, string $case): void
+    {
+        $isBand = fn (\DOMElement $n) => str_contains(' '.$n->getAttribute('class').' ', ' register ');
+
+        // Everything after the opening — the hero, and the marquee when there
+        // are clients to show — takes part in the alternation.
+        $start = null;
+        foreach ($nodes as $i => $n) {
+            if (preg_match('/(^| )(hero|marquee)( |$)/', $n->getAttribute('class'))) {
+                $start = $i + 1;
+            }
+        }
+        $this->assertNotNull($start, "{$case}: the hero did not render, so the alternation has no anchor");
+
+        $sequence = array_map($isBand, array_slice($nodes, $start));
+        $this->assertGreaterThanOrEqual(4, count($sequence), "{$case}: too few sections rendered to alternate");
+
+        foreach ($sequence as $i => $band) {
+            $this->assertSame($i % 2 === 0, $band, "{$case}: section ".($i + 1).' after the marquee is in the wrong register');
+        }
+
+        foreach (array_slice($nodes, $start) as $n) {
+            if ($isBand($n)) {
+                $this->assertNotSame('', trim($n->textContent).$n->getElementsByTagName('img')->length, "{$case}: an empty band rendered");
             }
         }
     }

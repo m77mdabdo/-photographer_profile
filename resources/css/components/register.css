@@ -1,0 +1,45 @@
+/*
+ * The register band — Task 38 Part C.
+ *
+ * A full-width ground for a section set in the other register (the tokens
+ * are re-bound in tokens.css). The section inside keeps its own measure;
+ * the band only supplies the ground, so no section had to learn to be
+ * full-bleed.
+ *
+ * THE GRAIN AND THE VIGNETTE (C4). Both page layers are fixed to the
+ * viewport at --z-media, above unpositioned content, and both are set for
+ * the PAGE's register. Left alone, an ink vignette would darken the corners
+ * of a paper band — the "bad scan" the light register switches the vignette
+ * off to avoid — and overlay grain would all but vanish against paper.
+ *
+ * So the band rises one step above those layers and draws its own grain
+ * from its own register's tokens: multiply on paper, overlay on ink, the
+ * same two settings the page uses. It draws no vignette. The vignette is a
+ * viewport-edge device belonging to the page; a paper band correctly has
+ * none, and an ink band on a paper page is too short a span of ink for an
+ * edge-darkening to read as anything but a smudge at its corners.
+ *
+ * flow-root contains the margins of the section inside, so its own rhythm
+ * becomes the band's padding rather than collapsing out of it and leaving
+ * the page's ground showing at the band's edges.
+ */
+.register {
+    position: relative;
+    z-index: calc(var(--z-media) + 1);
+    isolation: isolate;
+    display: flow-root;
+    background-color: var(--bg);
+    color: var(--text-primary);
+}
+
+.register::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: var(--z-media);
+    pointer-events: none;
+    background-image: var(--grain-image);
+    background-size: 160px 160px;
+    opacity: var(--grain-opacity);
+    mix-blend-mode: var(--grain-blend);
+}

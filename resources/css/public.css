@@ -74,6 +74,7 @@
 @import './tokens.css';
 @import './base.css';
 @import './components/texture.css';
+@import './components/register.css';
 @import './components/picture.css';
 @import './components/layout.css';
 @import './components/motion.css';
