@@ -1,11 +1,28 @@
 # Browser-level checks
 
 ```
-php artisan serve            # in one terminal
-npm run check:browser        # in another
+php artisan serve                            # in one terminal
+npm run check:browser                        # in another — English, 400 checks
+npm run check:browser -- --locale=ar         # Arabic, another 400
 ```
 
-Optional: `npm run check:browser -- --base=https://staging.example.com --only=/work`
+**A full run is both languages: 800 checks.** Reporting 400 is reporting half the
+site. Task 38 Part 0 did exactly that and described the matrix as English-only,
+because this page did not mention the flag — so it is here now. `--locale=ar`
+runs the whole public matrix against the Arabic prefix and asserts
+`dir="rtl"`; the panel is checked under it too, since the panel's language
+comes from the session rather than the URL.
+
+Other flags:
+
+| flag | what it does |
+| --- | --- |
+| `--locale=ar` | the whole matrix against the Arabic prefix |
+| `--base=https://staging.example.com` | somewhere other than the dev server |
+| `--only=/work` | one page, while you are fixing it |
+| `--viewport=390` | one column of the matrix, for a machine under memory pressure |
+| `--public-only` | skip the panel |
+| `--reduced-motion` | the whole matrix under `prefers-reduced-motion: reduce` |
 
 Exit code 0 if everything passed, 1 if anything failed, 2 if no Chrome was found.
 

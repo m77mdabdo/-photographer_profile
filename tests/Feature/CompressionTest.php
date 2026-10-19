@@ -197,4 +197,95 @@ class CompressionTest extends TestCase
         $this->assertStringNotContainsString('immutable', $fontRule[1]);
         $this->assertStringNotContainsString('31536000', $fontRule[1]);
     }
+
+    /**
+     * ───────────────────────────────────────────────────────────────────────
+     * TASK 38 — THE MEASURING PROXY AGREES WITH WHAT WE ACTUALLY DEPLOY.
+     *
+     * bin/gzip-proxy.mjs stands in for mod_deflate when Lighthouse measures
+     * LCP, because `php artisan serve` hands static files out raw and would
+     * report a compression defect the real deployment does not have. Task 35
+     * set this project's LCP budget through exactly such a proxy and did not
+     * commit it, so the measurement behind the budget was unreproducible for
+     * three tasks.
+     *
+     * A proxy that compresses MORE than the deployment makes the site look
+     * faster than it is, which is the direction a budget must never drift in.
+     * So the two lists are compared here rather than kept in step by memory.
+     *
+     * `text/` is allowed to be a prefix superset of the .htaccess's four
+     * text types: matching more of text/* cannot under-compress relative to
+     * the list. Everything else must be named.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public function test_the_measuring_proxy_compresses_what_the_server_is_told_to(): void
+    {
+        $proxy = (string) file_get_contents(base_path('bin/gzip-proxy.mjs'));
+        $htaccess = (string) file_get_contents(public_path('.htaccess'));
+
+        preg_match('/const COMPRESSIBLE = \/(.+?)\/\n/', $proxy, $found);
+        $this->assertNotEmpty($found, 'bin/gzip-proxy.mjs no longer declares COMPRESSIBLE.');
+
+        /*
+         * `#` as the delimiter, not `/`. The JavaScript literal escapes its
+         * slashes as \/ ; unescaping them and then wrapping the result in /…/
+         * ends the pattern at the first media type and PHP warns "Unknown
+         * modifier '|'" — which the first version of this test did, reporting
+         * every type as a MISS and blaming the proxy.
+         */
+        $pattern = '#'.str_replace('\\/', '/', $found[1]).'#';
+
+        preg_match_all('/AddOutputFilterByType DEFLATE (.+)/', $htaccess, $lines);
+        $this->assertNotEmpty($lines[1], 'public/.htaccess no longer lists any DEFLATE types.');
+
+        $types = [];
+
+        foreach ($lines[1] as $line) {
+            foreach (preg_split('/\s+/', trim($line)) ?: [] as $type) {
+                if ($type !== '') {
+                    $types[] = $type;
+                }
+            }
+        }
+
+        $this->assertGreaterThan(5, count($types), 'Too few types parsed to be asserting anything.');
+
+        foreach ($types as $type) {
+            $this->assertMatchesRegularExpression(
+                $pattern,
+                $type,
+                "public/.htaccess compresses {$type} but the measuring proxy does not, "
+                .'so a measurement through it understates what the deployment sends.'
+            );
+        }
+
+        /* And it must not compress what the server is told to leave alone. */
+        foreach (['image/jpeg', 'image/avif', 'image/webp', 'font/woff2', 'application/zip'] as $binary) {
+            $this->assertDoesNotMatchRegularExpression(
+                $pattern,
+                $binary,
+                "The measuring proxy compresses {$binary}, which the deployment does not."
+            );
+        }
+    }
+
+    /**
+     * And it uses the same floor, so it cannot report a saving on a body the
+     * application would have sent raw.
+     */
+    public function test_the_measuring_proxy_uses_the_middleware_floor(): void
+    {
+        $proxy = (string) file_get_contents(base_path('bin/gzip-proxy.mjs'));
+
+        preg_match('/const FLOOR = (\d+)/', $proxy, $found);
+        $this->assertNotEmpty($found, 'bin/gzip-proxy.mjs no longer declares FLOOR.');
+
+        $middleware = new \ReflectionClass(\App\Http\Middleware\CompressResponse::class);
+
+        $this->assertSame(
+            $middleware->getConstant('MINIMUM_BYTES'),
+            (int) $found[1],
+            'The measuring proxy and CompressResponse disagree about the smallest body worth compressing.'
+        );
+    }
 }
