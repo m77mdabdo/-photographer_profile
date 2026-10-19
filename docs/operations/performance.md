@@ -1,17 +1,76 @@
 # The five budgets, and how to measure them
 
-Every task from 38 onward reports these five at the end of every part. This page
-is what "reports them" means, because the same page measured two ways differs by
-a factor of four and a regression is only visible against a method that does not
-move.
+Every task from 38 onward reports these five at the end of every part, **per
+locale**. A single figure for a bilingual site is a figure for whichever
+language was measured, and three of these five were stated site-wide while
+being English-only.
 
-| budget | limit | measured by |
+| budget | English | Arabic |
 | --- | --- | --- |
-| public JS | 60 kB gzipped, GSAP included | `MotionTest`, against the built manifest |
-| public CSS | 35 kB gzipped | the Vite build's own gzip figure |
-| CLS | 0.0000 | a browser, **scrolled to the bottom** |
-| TBT | 0 ms | Lighthouse, mobile preset |
-| LCP | 2.0 s mobile | Lighthouse, mobile preset, on the rig below |
+| public JS | 49.13 kB of 60 gzipped | the same assets — asserted, not assumed |
+| public CSS | 13.0 kB of 35 gzipped | the same assets — asserted, not assumed |
+| CLS | 0.0000 home and work | 0.0000 home and work |
+| TBT | 0 ms | **30 ms** |
+| LCP | **2.5 s** / score 97 | **2.9 s** / score 94 |
+
+**CLS on a project page at 390 is 0.3152–0.3336 after scrolling**, in both
+locales, bimodal at roughly one run in three, under production config.
+Lighthouse reports 0 because it never scrolls to the bottom. Pre-existing at
+`5a51e08`. Part D owns it (D4, D5). See the CLS section below.
+
+**TBT is not zero site-wide**, and was reported as such for four tasks.
+
+`MotionTest::test_both_locales_ask_for_the_same_build_assets` is what makes the
+first two rows say "the same" rather than hope it. The manifest walk beside it
+counts the payload including dynamic imports but assumes the English module
+set; the two together cover both languages, and either alone does not.
+
+**The fonts are the one thing that legitimately differs, and they are in
+neither budget.** Measured at 390 on the rig below:
+
+| | files | on the wire |
+| --- | ---: | ---: |
+| English | 3 | 117.98 kB |
+| Arabic | 4 | **142.90 kB** |
+
+Arabic drops JetBrains Mono and adds Rubik and IBM Plex Sans Arabic; both
+locales fetch Archivo and Inter Tight, because ADR 0005 puts **Western
+numerals** on Arabic pages and digits fall outside every Arabic face's
+`unicode-range`. That is correct, not waste — but it is 24.92 kB more on the
+language whose LCP is already the slower of the two, and no budget line
+currently covers it.
+
+## Before any measurement, in this order
+
+**1. Print the machine's reclaimable memory beside the figures, and say which
+kind of number yours is.** Task 35 measured with 4.3–5.1 GB reclaimable; Task
+38 had 0.8 GB. Numbers taken under pressure reproduce the METHOD and confirm
+no regression — they are not a new budget. Say which.
+
+```
+vm_stat | awk '/Pages free/{f=$3}/Pages inactive/{i=$3}/Pages speculative/{s=$3}
+  END{gsub(/\./,"",f);gsub(/\./,"",i);gsub(/\./,"",s);
+  printf "reclaimable: %.1f GB\n",(f+i+s)*4096/1024/1024/1024}'
+```
+
+**2. Confirm the served page before believing any number.** HTTP 200, asset
+URLs pointing at the proxy, and `content-encoding: gzip` on the HTML *and* on
+the CSS and JS. This list exists because a 502 body measured 0.21 s and a
+half-compressed page measured faster than the real one — both in one sitting,
+and both looked like good news.
+
+**3. State whether the number is a measurement or a comparison.** A comparison
+across two machine states is not a measurement.
+
+## A standing rule: read the source before the documentation
+
+`bin/browser-check.mjs` has taken `--locale=ar` since Task 34c, at line 123.
+`docs/operations/browser-checks.md` listed two of its five flags. So four
+tasks ran half the matrix and called it the matrix, and Task 38 Part 0
+reported 400/400 for a run that is 800.
+
+When a tool behaves differently from what you expect, read what it does before
+reading what it says it does.
 
 ## The rig
 
@@ -105,3 +164,29 @@ measurement that could not have seen it.
 `npm run check:browser` asserts geometry, decoded images, console errors and
 failed requests. It does not measure the five budgets and never has. A full run
 is **both languages — 800 checks**; see [browser-checks.md](browser-checks.md).
+
+## An open finding the font numbers turned up
+
+Measured with CDP `CSS.getPlatformFontsForNode`, which reports the face that
+actually painted a run rather than the element's declared stack:
+
+| element | English | Arabic |
+| --- | --- | --- |
+| `.hero__stage-number` | JetBrains Mono | **Inter Tight** |
+
+`resources/css/fonts.css` states the intent as two things at once — "numerals,
+dates, EXIF and dimensions are Latin in both languages and stay JetBrains
+Mono, and tokens.css maps `--font-mono` to the TEXT stack under `[lang='ar']`
+so Arabic words never land in a Latin monospace". The second half is
+implemented; the first is not, because the token is global. Anything using
+`--font-mono` on an Arabic page loses JetBrains Mono, numerals included, and
+the digits fall through IBM Plex Sans Arabic's Arabic-only `unicode-range` to
+the proportional body face. The same digits are monospaced in English and
+proportional in Arabic — split by locale, which is what the rule forbids.
+
+`ArabicFontsTest::test_the_mono_role_is_unchanged` asserts the mechanism
+(`--font-mono: var(--font-sans);` inside the Arabic block) rather than the
+outcome, so it passes on this. Any replacement should assert the painted face,
+not the token.
+
+Part E owns it (E3). Pre-existing at `5a51e08`.

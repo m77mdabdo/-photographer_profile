@@ -298,6 +298,69 @@ class MotionTest extends TestCase
      * Printed as well as asserted, because a budget nobody can see is a budget
      * nobody maintains.
      */
+    /**
+     * ───────────────────────────────────────────────────────────────────────
+     * AMENDMENT 2 — THE BUDGET IS PER LOCALE, SO IT IS ASSERTED PER LOCALE.
+     *
+     * The budget test below walks the MANIFEST. That is the right way to
+     * count a payload including dynamic imports, and it has one blind spot
+     * built into it: it assumes the module set the ENGLISH homepage asks for.
+     * Nothing checked that /ar asks for the same one, so a locale-specific
+     * entry or an extra chunk on the Arabic page would have sailed past a
+     * green budget — and the figure would have been "the homepage's", meaning
+     * whichever homepage was measured.
+     *
+     * That is the shape of error Amendment 2 was written about: three of the
+     * five budgets were stated site-wide while being English-only.
+     *
+     * So the two documents are compared. Equal asset sets plus the manifest
+     * walk below equals a budget that covers both languages; either alone
+     * does not.
+     * ───────────────────────────────────────────────────────────────────────
+     */
+    public function test_both_locales_ask_for_the_same_build_assets(): void
+    {
+        $assetsIn = function (string $path): array {
+            $html = $this->get($path)->assertOk()->getContent();
+
+            preg_match_all('#/build/[A-Za-z0-9/._-]+#', (string) $html, $found);
+
+            $assets = array_values(array_unique($found[0]));
+            sort($assets);
+
+            return $assets;
+        };
+
+        $english = $assetsIn('/');
+        $arabic = $assetsIn('/ar');
+
+        $this->assertNotEmpty($english, 'No build assets on the English homepage — run npm run build.');
+
+        $this->assertSame(
+            $english,
+            $arabic,
+            'The two locales load different build assets, so a single JS or CSS figure '
+            .'describes only the language it was measured in.'
+        );
+
+        /*
+         * And the one thing that legitimately DOES differ is the font, which
+         * is deliberate and is not in the JS or CSS budget: unicode-range
+         * means an English visitor fetches no Arabic face and the reverse.
+         * Asserted here so that "the assets are identical" is not read as
+         * "the page weight is identical", which it is not — measured at 390,
+         * Arabic pulls 142.90 kB of woff2 against English's 117.98 kB.
+         */
+        $this->assertStringContainsString(
+            'rel="preload" href="/fonts/archivo-latin.woff2"',
+            (string) $this->get('/')->getContent(),
+        );
+        $this->assertStringContainsString(
+            'rel="preload" href="/fonts/rubik-arabic.woff2"',
+            (string) $this->get('/ar')->getContent(),
+        );
+    }
+
     public function test_the_homepage_javascript_is_within_budget(): void
     {
         $manifest = $this->manifest();
