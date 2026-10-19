@@ -467,12 +467,12 @@ class StudioPanelTest extends TestCase
          * leaked framework fails.
          * ───────────────────────────────────────────────────────────────────
          */
-        $this->assertSame('assets/public-DP3m6ftW.css', $publicCss, 'the public stylesheet changed');
+        $this->assertSame('assets/public-DT-njVq9.css', $publicCss, 'the public stylesheet changed');
         $this->assertSame('assets/public-B-FzqxLO.js', $publicJs, 'the public entry changed');
 
         $cssBytes = (int) filesize(public_path('build/'.$publicCss));
 
-        $this->assertSame(78_420, $cssBytes, 'the public stylesheet is a different size');
+        $this->assertSame(80_135, $cssBytes, 'the public stylesheet is a different size');
 
         $this->assertLessThan(
             90_000,

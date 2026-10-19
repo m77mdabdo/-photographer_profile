@@ -1089,3 +1089,255 @@
     border: var(--rule-hair) solid var(--border);
     display: inline-block;
 }
+
+/* =======================================================================
+ * TASK 38 PART A — THE ARABIC HERO. ADR 0003 COMPOSITION A, THE VERTICAL
+ * INTERLOCK.
+ *
+ * The English hero's device is an opaque plate occluding the middle of one
+ * word: you read PHOT⟦plate⟧APHER and your eye supplies the rest. ADR 0003
+ * rendered that in Arabic and recorded why it cannot transfer — Arabic drops
+ * short vowels, so there is no redundancy to spend on reconstruction, and the
+ * plate cuts through a connecting stroke, leaving two stubs that are not how
+ * any Arabic letter ends. Measured on HEAD before this rule existed, the
+ * plate covered 567x243px of the wordmark at 1440 and 401x197px at 1024.
+ *
+ * Composition A replaces the occlusion with an EDGE relationship. The wordmark
+ * runs down the leading edge of the plate at full display size as one
+ * unbroken line; the photograph takes the remaining width. Nothing is hidden.
+ *
+ * ── THE BLOCK ROTATES. THE TEXT DOES NOT. ──
+ *
+ * `writing-mode: vertical-*` is the obvious reach and the wrong one here: it
+ * makes the BOX vertical and then has to decide what to do with each glyph,
+ * and the only orientation that keeps Arabic joined is a whole-run rotation
+ * that this file would then be relying on as a side effect. A transform says
+ * what it means. The element stays `horizontal-tb`, keeps one text node, and
+ * is rotated as a rendered line — so the joins are the same joins the
+ * horizontal line has, because they ARE that line.
+ *
+ * -90deg and not +90deg: CSS rotates clockwise, so +90 would send the start
+ * of a right-to-left line to the bottom and the word would read upwards.
+ *
+ * ── THE NUMBERS, AND WHERE THEY CAME FROM ──
+ *
+ * --wordmark-advance: 0.499 is Rubik's MEASURED mean advance per character
+ * for this studio name, read in the browser off the shipped face at the
+ * shipped weight — `أنس فريد` sets 399.17px wide at 100px over 8 characters.
+ * Archivo's equivalent is 0.56, which is why the English size formula cannot
+ * be reused. If the studio is renamed this stays correct: it is per character.
+ *
+ * --wordmark-leading: 1.1 because ADR 0003 D5 demonstrated that the English
+ * 0.80 CLIPS — at 0.80 the shadda and the descending bowls leave the line
+ * box. The Latin `padding-bottom: 0.10em` compensation is tuned for Latin
+ * descenders and does not cover Arabic marks, so it goes.
+ * ======================================================================= */
+
+/*
+ * NO BOX ANYWHERE BY DEFAULT. The <h1> stays a direct grid item of .hero in
+ * English and at narrow widths, so nothing about those layouts changes.
+ */
+.hero__wordmark-block { display: contents; }
+
+/*
+ * ── THE TYPOGRAPHY APPLIES AT EVERY WIDTH, THE COMPOSITION DOES NOT ──
+ *
+ * These two were written inside the min-width: 900px block with the rotation,
+ * which left the Arabic wordmark on a phone still set at `line-height: 0.80`
+ * with a Latin descender pad — the exact combination ADR 0003 D5 demonstrated
+ * CLIPS the shadda and the descending bowls. The composition is a decision
+ * about wide screens; the leading is a fact about the script.
+ */
+[lang='ar'] .hero__wordmark {
+    line-height: var(--wordmark-leading, 1.1);
+    padding-bottom: 0;
+}
+
+[lang='ar'] .hero {
+    /* Rubik, measured. See the note above. */
+    --wordmark-advance: 0.499;
+    --wordmark-leading: 1.1;
+}
+
+@media (min-width: 900px) {
+    [lang='ar'] .hero {
+
+        /*
+         * How far down the plate the word may run. The plate spans grid rows
+         * 2/7 of a hero that is `100svh - header` tall; 68svh keeps the line
+         * inside that span at every viewport height this site is designed
+         * for, and the min() below stops it growing a band so wide that the
+         * photograph stops dominating.
+         */
+        --wordmark-run: 68svh;
+        --wordmark-size: min(
+            calc(var(--wordmark-run) / (var(--wordmark-chars) * var(--wordmark-advance))),
+            13vw
+        );
+
+        /* The band the rotated line occupies across the page. */
+        --wordmark-band: calc(var(--wordmark-size) * var(--wordmark-leading));
+
+        /*
+         * THE GAP. Task 34d reached 32px by measuring, after two values tuned
+         * against screenshots were wrong, and the eye is doing the same job
+         * here: reading a word that ends where a photograph begins. Below
+         * this the two read as one collided object rather than as an
+         * interlock. tests/Support/hero-interlock.mjs asserts it.
+         */
+        --wordmark-gap: 32px;
+    }
+
+    /*
+     * Out of the grid, because a nowrap line this long would otherwise widen
+     * the column it sits in — `repeat(12, 1fr)` is minmax(auto, 1fr), and the
+     * auto minimum is the line's unrotated width. The hero is already
+     * `position: relative` for the plate.
+     */
+    [lang='ar'] .hero__wordmark-block {
+        display: block;
+        position: absolute;
+        z-index: var(--z-base);
+        inline-size: var(--wordmark-run);
+        /*
+         * PINNED TO THE LEADING EDGE, WHICH IS inline-START.
+         *
+         * Written as inline-END first, which is the mistake worth leaving
+         * recorded: in a right-to-left document inline-end resolves to the
+         * LEFT. The band landed on the wrong side of the page and the plate's
+         * margin — also written as inline-end — pushed the photograph away
+         * from the side the word was not on. Both read correctly in English
+         * and were wrong in the only language this rule runs in.
+         *
+         * Rotated about the corner it is pinned by, then pushed back along
+         * its own length by half, so the line is centred on the hero's middle
+         * rather than hanging from it. translateX is +50% and not -50%:
+         * after the rotation the element's local +x points UP the page, so a
+         * negative value sent the whole band below the fold — measured at
+         * 805px to 1417px in an 804px hero.
+         */
+        inset-block-start: 50%;
+        inset-inline-start: var(--gutter);
+        transform-origin: 100% 0;
+        transform: rotate(-90deg) translate(50%, -100%);
+    }
+
+    [lang='ar'] .hero__wordmark {
+        margin: 0;
+        /*
+         * The Latin descender compensation goes. ADR 0003 D5 demonstrated
+         * that 0.80 clips the shadda and the descending bowls; 0.10em of
+         * padding tuned for Latin does not cover an Arabic mark.
+         */
+        padding-bottom: 0;
+        font-size: var(--wordmark-size);
+        line-height: var(--wordmark-leading);
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    /*
+     * ── THE PHOTOGRAPH TAKES THE REMAINING WIDTH ──
+     *
+     * The band is carried by the hero's own leading padding, so the whole
+     * twelve-column grid is laid out in what is left and every other element
+     * in the hero keeps its column arithmetic unchanged. The band sits in
+     * that padding; the gap is the difference between the two.
+     *
+     * THE PLATE KEEPS ITS ORIENTATION-DERIVED SPAN AND LOSES ITS OFFSET, and
+     * that is a deliberate reading of two instructions that pull against each
+     * other. A4 says the plate keeps "the plate's orientation-derived
+     * column"; A1 says the photograph "takes the remaining width". The column
+     * is two things — a SPAN (eight of twelve for a landscape, five for a
+     * portrait, six for a square) and a START (column 2, 6, 4). The span is
+     * the part that is derived from the photograph and it is kept exactly.
+     * The start is not: it exists to centre the plate over a centred wordmark
+     * so that it can occlude it, and in this composition the wordmark is
+     * neither centred nor occluded, so a mid-grid offset would just be 598px
+     * of dead space between the word and the picture — measured, before this
+     * rule replaced it.
+     */
+    [lang='ar'] .hero {
+        padding-inline-start: calc(
+            var(--gutter) + var(--wordmark-band) + var(--wordmark-gap)
+        );
+    }
+
+    [lang='ar'] .hero--landscape .hero__plate { grid-column: 1 / span 8; }
+    [lang='ar'] .hero--portrait  .hero__plate { grid-column: 1 / span 5; }
+    [lang='ar'] .hero--square    .hero__plate { grid-column: 1 / span 6; }
+
+    /*
+     * ── AND THE VOICE FOLLOWS THE PLATE ──
+     *
+     * The statement and the attribution are placed against the plate's far
+     * side, and the English rules put them there by naming the column the
+     * plate does NOT occupy — column 10 for a landscape, columns 1-5 for a
+     * portrait. Anchoring the plate at column 1 above made the portrait case
+     * name the same five columns twice: measured, the voice landed at
+     * 716-1199 and so did the plate, and the statement rendered ON the
+     * photograph rather than beside it. ADR 0003 recorded the English
+     * composition "mirroring badly" in Arabic; this is the same fault
+     * arriving from the other direction, and it is why the empty third of
+     * the screen in the first render was empty.
+     *
+     * Each starts where its plate stops. The gap is the existing
+     * --hero-plate-gap, which is the relationship these elements already had
+     * with the photograph and not a new number.
+     */
+    [lang='ar'] .hero--landscape .hero__voice,
+    [lang='ar'] .hero--landscape .hero__aside {
+        grid-column: 9 / -1;
+        padding-inline-start: var(--hero-plate-gap);
+        padding-inline-end: 0;
+    }
+
+    [lang='ar'] .hero--portrait .hero__voice,
+    [lang='ar'] .hero--portrait .hero__aside {
+        grid-column: 6 / -1;
+        padding-inline-start: var(--hero-plate-gap);
+        padding-inline-end: 0;
+    }
+
+    [lang='ar'] .hero--square .hero__voice,
+    [lang='ar'] .hero--square .hero__aside {
+        grid-column: 7 / -1;
+        padding-inline-start: var(--hero-plate-gap);
+        padding-inline-end: 0;
+    }
+}
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════
+ * A2 — NARROW WIDTHS: THE STACK IS KEPT, AND THAT IS A CHOICE.
+ *
+ * Two defensible options. The reference abandons its occlusion entirely on a
+ * phone — full-bleed photograph, wordmark over it at full width, the
+ * statement moved above. Ours already stacks below 900: the plate drops
+ * beneath the word and the word is shown whole, which Task 34d confirmed by
+ * rendering that `أنس فريد` reads complete there.
+ *
+ * THE STACK IS KEPT, for a reason specific to this composition rather than a
+ * preference. The vertical interlock trades WIDTH for HEIGHT: it needs enough
+ * height to run a display-size line down, and enough width to give up a band
+ * without the photograph collapsing. At 390 there is neither — 68svh of run
+ * would set the word at about 66px, a third of its stacked size, and the band
+ * would take nearly half the measure. The word would be smaller and the
+ * picture narrower in exchange for a device that only reads at scale.
+ *
+ * Carrying the reference's full-bleed treatment instead would mean putting
+ * the wordmark back ON the photograph, which is the occlusion problem again
+ * with a softer edge: a light frame and the word is gone.
+ *
+ * WHAT CHANGES IS THE CLEARANCE. Measured, the stacked wordmark sat 11px from
+ * the plate at 768 and 17px at 390 — under the 32px floor Task 34d
+ * established by measuring, so the two read as collided rather than stacked.
+ * The floor is applied here explicitly instead of being whatever the row gap
+ * happened to leave.
+ * ═══════════════════════════════════════════════════════════════════════
+ */
+@media (max-width: 899px) {
+    [lang='ar'] .hero__wordmark {
+        margin-block-end: var(--wordmark-gap, 32px);
+    }
+}

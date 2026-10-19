@@ -72,7 +72,32 @@
         The photograph occludes its middle by sitting above it in the stacking
         order. Nothing about the word itself is fragmented to achieve that.
     --}}
-    <h1 class="hero__wordmark" id="hero-title">{{ $wordmark }}</h1>
+    {{--
+        THE WRAPPER EXISTS FOR ONE REASON AND IT IS NOT STYLING. Task 38 A1.
+
+        The Arabic composition rotates the wordmark's block ninety degrees.
+        That rotation cannot live on the <h1> itself: hero-develop animates
+        the wordmark with GSAP's yPercent, which writes the whole transform
+        matrix, so a `transform: rotate(-90deg)` in the stylesheet is erased
+        the moment the intro timeline touches it — measured as
+        `matrix(1, 0, 0, 1, 0, 15.517)`, a pure translation, with the word
+        still lying horizontally across the plate.
+
+        Moving the rotation into the timeline would make the composition
+        depend on JavaScript, which the brief forbids and which would leave an
+        Arabic visitor with no script looking at the broken occlusion.
+
+        So the block that rotates is this element, and the <h1> inside it is
+        untouched: still one text node, still one heading, still selectable
+        and copy-pasteable as one word, still announced once. In English this
+        wrapper has `display: contents` and therefore no box at all — the <h1>
+        remains a direct grid item of .hero and the English geometry is
+        byte-identical, which tests/Support/hero-interlock.mjs and the A3
+        measurement both check.
+    --}}
+    <div class="hero__wordmark-block">
+        <h1 class="hero__wordmark" id="hero-title">{{ $wordmark }}</h1>
+    </div>
 
     {{--
         The technical block. The sequence label always stands; the exposure
