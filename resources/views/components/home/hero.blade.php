@@ -1,4 +1,9 @@
 @props(['project' => null, 'accent' => ['dark' => null, 'light' => null]])
+{{--
+    $split: where an Arabic name is cut by the plate, from App\Support\HeroSplit.
+    Null means the name has no single word boundary, and the hero takes the
+    vertical interlock (.hero--vertical) instead.
+--}}
 @php
     use App\Support\Settings;
 
@@ -47,6 +52,16 @@
      * exposure line at all rather than a row of dashes — see ExposureLine.
      */
     $exposure = $image?->exposureLine();
+
+    $split = \App\Support\Locale::direction() === 'rtl'
+        ? \App\Support\HeroSplit::for((string) $wordmark, $orientation)
+        : null;
+
+    $composition = match (true) {
+        \App\Support\Locale::direction() !== 'rtl' => null,
+        $split !== null => 'hero--split',
+        default => 'hero--vertical',
+    };
 @endphp
 {{--
     data-motion is how an element opts into the registry. The registry scans
@@ -57,10 +72,11 @@
     initial state lives in motion.css behind the `.motion` class, which the
     server never writes.
 --}}
-<section @class(['hero', 'hero--'.$orientation, 'hero--empty' => $image === null])
+<section @class(['hero', 'hero--'.$orientation, 'hero--empty' => $image === null, $composition => $composition !== null])
          data-motion="hero-develop parallax rule"
          aria-labelledby="hero-title"
          style="--wordmark-chars: {{ mb_strlen($wordmark) }};
+                @if ($split) @foreach ($split as $k => $v) --{{ $k }}: {{ $v }}; @endforeach @endif
                 @if ($accent['dark']) --hero-accent-dark: {{ $accent['dark'] }}; @endif
                 @if ($accent['light']) --hero-accent-light: {{ $accent['light'] }}; @endif">
 

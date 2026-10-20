@@ -1194,7 +1194,7 @@
 }
 
 @media (min-width: 900px) {
-    [lang='ar'] .hero {
+    .hero--vertical {
 
         /*
          * How far down the plate the word may run. The plate spans grid rows
@@ -1228,7 +1228,7 @@
      * auto minimum is the line's unrotated width. The hero is already
      * `position: relative` for the plate.
      */
-    [lang='ar'] .hero__wordmark-block {
+    .hero--vertical .hero__wordmark-block {
         display: block;
         position: absolute;
         z-index: var(--z-base);
@@ -1256,7 +1256,7 @@
         transform: rotate(-90deg) translate(50%, -100%);
     }
 
-    [lang='ar'] .hero__wordmark {
+    .hero--vertical .hero__wordmark {
         margin: 0;
         /*
          * The Latin descender compensation goes. ADR 0003 D5 demonstrated
@@ -1291,15 +1291,15 @@
      * of dead space between the word and the picture — measured, before this
      * rule replaced it.
      */
-    [lang='ar'] .hero {
+    .hero--vertical {
         padding-inline-start: calc(
             var(--gutter) + var(--wordmark-band) + var(--wordmark-gap)
         );
     }
 
-    [lang='ar'] .hero--landscape .hero__plate { grid-column: 1 / span 8; }
-    [lang='ar'] .hero--portrait  .hero__plate { grid-column: 1 / span 5; }
-    [lang='ar'] .hero--square    .hero__plate { grid-column: 1 / span 6; }
+    .hero--vertical.hero--landscape .hero__plate { grid-column: 1 / span 8; }
+    .hero--vertical.hero--portrait  .hero__plate { grid-column: 1 / span 5; }
+    .hero--vertical.hero--square    .hero__plate { grid-column: 1 / span 6; }
 
     /*
      * ── AND THE VOICE FOLLOWS THE PLATE ──
@@ -1319,25 +1319,123 @@
      * --hero-plate-gap, which is the relationship these elements already had
      * with the photograph and not a new number.
      */
-    [lang='ar'] .hero--landscape .hero__voice,
-    [lang='ar'] .hero--landscape .hero__aside {
+    .hero--vertical.hero--landscape .hero__voice,
+    .hero--vertical.hero--landscape .hero__aside {
         grid-column: 9 / -1;
         padding-inline-start: var(--hero-plate-gap);
         padding-inline-end: 0;
     }
 
-    [lang='ar'] .hero--portrait .hero__voice,
-    [lang='ar'] .hero--portrait .hero__aside {
+    .hero--vertical.hero--portrait .hero__voice,
+    .hero--vertical.hero--portrait .hero__aside {
         grid-column: 6 / -1;
         padding-inline-start: var(--hero-plate-gap);
         padding-inline-end: 0;
     }
 
-    [lang='ar'] .hero--square .hero__voice,
-    [lang='ar'] .hero--square .hero__aside {
+    .hero--vertical.hero--square .hero__voice,
+    .hero--vertical.hero--square .hero__aside {
         grid-column: 7 / -1;
         padding-inline-start: var(--hero-plate-gap);
         padding-inline-end: 0;
+    }
+}
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════
+ * TASK 38 PART A, SECOND PASS — THE CUT AT THE WORD BOUNDARY.
+ *
+ * The owner saw the finished English hero and asked for the Arabic to be the
+ * SAME composition: the same wordmark at the same extreme size, crossed by
+ * the same plate. One change, made by the script rather than by taste: the
+ * plate covers the space between the two words, never a letter, because the
+ * space is the only break a cursive script allows. "أنس" whole on one side
+ * of the photograph, "فريد" whole on the other.
+ *
+ * THE MECHANISM, and why it needs no script and no second text node:
+ *
+ *   text-align-last: justify  a one-line paragraph is its own last line, so
+ *                             the first word is set against the inline-start
+ *                             edge, the second against the inline-end edge,
+ *                             and the only space stretches across the middle.
+ *                             The <h1> is still one text node; it does not
+ *                             know the plate is there.
+ *   the plate's column        derived from the name in the component: its
+ *                             span is the photograph's, its START is chosen so
+ *                             each side's share of the free columns is in
+ *                             proportion to its word's set width
+ *                             (--side-start / --side-end, in columns, to a
+ *                             fraction).
+ *   the size                  the largest at which each word fits its own
+ *                             side with --split-clear to spare, and never
+ *                             larger than the English 30vh cap. Measured in
+ *                             container units, so it is a fraction of the
+ *                             hero's own content width and not the viewport's.
+ *
+ * --word-start and --word-end are each word's SET WIDTH in em, computed on the
+ * server from the font's positional forms (App\Support\WordmarkMetrics, made
+ * by bin/wordmark-metrics.py). A character count was tried first and was
+ * wrong in both directions at once: "أنس" sets at 0.646em per character (the
+ * س is wide) and "فريد" at 0.480, so at the size the count chose, "أنس" ran
+ * 14px under the plate. The table reproduces the browser to three decimals.
+ *
+ * --split-clear is the room between a word and the plate's edge, in the
+ * word's own em: 0.18em, about the width of the space the plate replaces.
+ * tests/Support/hero-interlock.mjs reads every character's rendered box
+ * against the plate rather than trusting any of this arithmetic.
+ * ═══════════════════════════════════════════════════════════════════════
+ */
+@media (min-width: 900px) {
+    .hero--split {
+        container-type: inline-size;
+        --split-clear: 0.18;
+        --hero-col: calc(100cqi / 12);
+        --wordmark-size: min(
+            30vh,
+            calc(var(--hero-col) * var(--side-start) / (var(--word-start) + var(--split-clear))),
+            calc(var(--hero-col) * var(--side-end) / (var(--word-end) + var(--split-clear)))
+        );
+    }
+
+    .hero--split .hero__wordmark {
+        text-align: justify;
+        text-align-last: justify;
+        white-space: nowrap;
+    }
+
+    /*
+     * Placed by measure rather than by grid line, because its start is a
+     * fraction of a column (see the component). The span is still the
+     * photograph's own: five, six or eight columns, as in English.
+     */
+    .hero--split .hero__plate {
+        grid-column: 1 / -1;
+        justify-self: start;
+        inline-size: calc(var(--hero-col) * var(--plate-span));
+        margin-inline-start: calc(var(--hero-col) * var(--side-start));
+    }
+
+    /*
+     * The voice and the link sit beyond the plate on the side with more room,
+     * exactly as the English rules place them by orientation — but the plate
+     * has moved, so they are placed against where it now ends.
+     */
+    .hero--split .hero__voice,
+    .hero--split .hero__aside {
+        grid-column: var(--voice-start) / -1;
+        padding-inline-start: var(--hero-plate-gap);
+        padding-inline-end: 0;
+    }
+
+    /*
+     * NOT PULLED UP UNDER THE WORD. The English statement tucks 0.23 of the
+     * wordmark's size up beneath it, which works because Latin capitals stop
+     * at the baseline. Arabic descends: the tail of the ي in "فريد" landed in
+     * the statement's first line on the first render, two texts on top of
+     * each other. Here the statement starts where the word's ink ends.
+     */
+    .hero--split .hero__voice {
+        margin-top: 0;
     }
 }
 

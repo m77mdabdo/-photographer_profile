@@ -1,27 +1,27 @@
 /*
- * TASK 38 A5 — THE ACCEPTANCE TEST THE HARNESS CANNOT BE.
+ * TASK 38 PART A — THE ACCEPTANCE TEST THE HARNESS CANNOT BE.
  *
- * ADR 0003 D1 established by rendering that the English hero's device — an
- * opaque plate occluding the middle of one word — does not transfer to Arabic.
- * Arabic drops short vowels, so a reader cannot reconstruct the hidden half,
- * and the plate cuts through a connecting stroke rather than between letters.
+ * SECOND PASS. The first version of this file asserted that in Arabic the
+ * plate touched no part of the wordmark, because the first composition (the
+ * vertical interlock, d7c3d7d) ran the word down the plate's edge. The owner
+ * has since asked for the Arabic hero to be the ENGLISH composition — the
+ * plate crossing the wordmark — cut at the word boundary instead of
+ * mid-word. That composition REQUIRES intersection, so the assertion is now:
  *
- * Composition A replaces the occlusion with an EDGE relationship: the wordmark
- * runs down the leading edge of the plate and the photograph takes the rest of
- * the width. The whole claim of that composition is therefore one geometric
- * fact, and this is it:
+ *     AT WIDE WIDTHS THE PLATE CROSSES THE WORDMARK, AND EVERY CHARACTER IT
+ *     COVERS IS WHITESPACE — so every visible fragment is a complete word.
  *
- *     IN ARABIC, NO PART OF THE WORDMARK'S BOX INTERSECTS THE PLATE'S BOX.
+ * HOW IT MEASURES WITHOUT TOUCHING THE DOM. document.createRange() over one
+ * character offset at a time gives each character's rendered box while the
+ * <h1> stays the single text node it must be. Splitting the text to measure
+ * it would break the rule the measurement exists to protect.
  *
- * The browser harness cannot be this test. It asserts that nothing is clipped,
- * that text is present and that elements are not flush against each other —
- * all of which an occluded wordmark satisfies, because occlusion is not
- * clipping and the plate is deliberately flush. The hero was broken in Arabic
- * for twenty tasks at 800/800.
+ * Below 900 the hero stacks (A5's decision), so there the plate must clear
+ * the word by the 32px floor Task 34d measured, and that part is unchanged.
  *
- * Reports the overlap IN PIXELS rather than a boolean, because "they overlap"
- * does not tell you whether the composition is wrong or the gap is a pixel
- * out, and this ran against HEAD first precisely to produce those numbers.
+ * Reports the covered characters and the clearances in pixels, not a
+ * boolean: "it fails" does not say whether the plate is on a letter or a
+ * pixel too wide.
  *
  * Usage: node tests/Support/hero-interlock.mjs [base] [--json]
  */
@@ -44,20 +44,16 @@ const BASE = args.find((a) => !a.startsWith('--')) || 'http://127.0.0.1:8000'
 const AS_JSON = args.includes('--json')
 
 const VIEWPORTS = [1440, 1024, 768, 390]
-
-/* The gap below which an edge relationship reads as a collision. Task 34d
- * measured 32px for the English hero's link against a photographic edge; the
- * same floor applies here, because the eye is doing the same job. */
+const WIDE = 900
 const MIN_GAP = 32
 
-const chrome = CHROME_CANDIDATES.find(Boolean)
 const dir = mkdtempSync(join(tmpdir(), 'hero-interlock-'))
-
 const browser = await launch({
-  executablePath: chrome,
+  executablePath: CHROME_CANDIDATES[0],
   headless: 'shell',
   userDataDir: dir,
   args: ['--no-sandbox', '--disable-dev-shm-usage', '--force-device-scale-factor=1'],
+  protocolTimeout: 90000,
 })
 
 const rows = []
@@ -72,54 +68,93 @@ try {
       await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: theme }])
       await page.goto(`${BASE}/ar`, { waitUntil: 'networkidle2' })
       await page.evaluate(() => document.fonts.ready)
+      // The intro timeline moves the wordmark; measure where it settles.
+      await new Promise((r) => setTimeout(r, 2500))
 
-      const measured = await page.evaluate(() => {
-        const wordmark = document.querySelector('.hero__wordmark')
+      const m = await page.evaluate(() => {
+        const h1 = document.querySelector('.hero__wordmark')
         const plate = document.querySelector('.hero__plate')
+        if (!h1 || !plate) return null
 
-        if (!wordmark || !plate) return null
+        const text = h1.firstChild
+        const oneTextNode = h1.childNodes.length === 1 && text.nodeType === Node.TEXT_NODE
 
-        const box = (el) => {
-          const r = el.getBoundingClientRect()
-          return { top: r.top, right: r.right, bottom: r.bottom, left: r.left, width: r.width, height: r.height }
+        const p = plate.getBoundingClientRect()
+        const overlap = (a, b) => ({
+          x: Math.min(a.right, b.right) - Math.max(a.left, b.left),
+          y: Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top),
+        })
+
+        const chars = []
+        if (oneTextNode) {
+          for (let i = 0; i < text.data.length; i++) {
+            const r = document.createRange()
+            r.setStart(text, i)
+            r.setEnd(text, i + 1)
+            const b = r.getBoundingClientRect()
+            if (!b.width && !b.height) continue
+            const o = overlap(b, p)
+            chars.push({ ch: text.data[i], space: /\s/.test(text.data[i]), covered: o.x > 0.5 && o.y > 0.5, left: b.left, right: b.right })
+          }
         }
 
-        const w = box(wordmark)
-        const p = box(plate)
+        const word = h1.getBoundingClientRect()
+        const lineCrossed = overlap(word, p)
 
-        /* Signed overlap per axis: positive means the boxes share that span. */
-        const x = Math.min(w.right, p.right) - Math.max(w.left, p.left)
-        const y = Math.min(w.bottom, p.bottom) - Math.max(w.top, p.top)
+        // Clearance between each visible run of letters and the plate's edges.
+        const letters = chars.filter((c) => !c.space)
+        const leftOfPlate = letters.filter((c) => c.right <= p.left + 0.5)
+        const rightOfPlate = letters.filter((c) => c.left >= p.right - 0.5)
+        const clearLeft = leftOfPlate.length ? p.left - Math.max(...leftOfPlate.map((c) => c.right)) : null
+        const clearRight = rightOfPlate.length ? Math.min(...rightOfPlate.map((c) => c.left)) - p.right : null
 
         return {
-          lang: document.documentElement.lang,
-          dir: document.documentElement.dir,
-          wordmark: w,
-          plate: p,
-          overlapX: x,
-          overlapY: y,
-          /* They intersect only when BOTH axes overlap. */
-          intersects: x > 0 && y > 0,
-          /*
-           * THE GAP IS ALONG WHICHEVER AXIS SEPARATES THEM, and the first
-           * version of this only looked horizontally. Below 900 the hero
-           * stacks, so the two boxes are apart VERTICALLY and overlap
-           * horizontally — which that version reported as a 0px gap and so
-           * as flush, when the real separation was eleven pixels. Reporting
-           * the wrong axis is reporting the wrong number confidently.
-           */
-          gap: x > 0 && y > 0 ? 0 : Math.max(x <= 0 ? -x : 0, y <= 0 ? -y : 0),
+          oneTextNode,
+          crossesLine: lineCrossed.x > 0 && lineCrossed.y > 0,
+          coveredLetters: chars.filter((c) => c.covered && !c.space).map((c) => c.ch).join(''),
+          coveredSpaces: chars.filter((c) => c.covered && c.space).length,
+          clearLeft,
+          clearRight,
+          // the stacked case: vertical separation between the word and plate
+          stackGap: lineCrossed.y <= 0 ? -lineCrossed.y : 0,
+          offscreen: chars.some((c) => c.left < -0.5 || c.right > innerWidth + 0.5),
         }
       })
 
       await ctx.close()
 
-      if (!measured) {
-        rows.push({ width, theme, error: 'hero wordmark or plate not found' })
+      if (!m) {
+        rows.push({ width, theme, ok: false, verdict: 'hero wordmark or plate not found' })
         continue
       }
 
-      rows.push({ width, theme, ...measured })
+      let ok
+      let verdict
+      if (!m.oneTextNode) {
+        ok = false
+        verdict = 'the <h1> is no longer one text node'
+      } else if (width >= WIDE) {
+        if (!m.crossesLine) {
+          ok = false
+          verdict = 'the plate does not cross the wordmark — not the English composition'
+        } else if (m.coveredLetters) {
+          ok = false
+          verdict = `the plate covers letters "${m.coveredLetters}" — a word is cut`
+        } else if (m.offscreen) {
+          ok = false
+          verdict = 'a letter is off the screen'
+        } else {
+          ok = true
+          verdict = `cut at the word boundary — clear ${Math.round(m.clearLeft)}px | ${Math.round(m.clearRight)}px`
+        }
+      } else {
+        ok = !m.crossesLine && m.stackGap >= MIN_GAP
+        verdict = m.crossesLine
+          ? `stacked hero, but the plate crosses the word (letters "${m.coveredLetters}")`
+          : `stacked, ${Math.round(m.stackGap)}px ${m.stackGap >= MIN_GAP ? '>=' : '<'} ${MIN_GAP}px`
+      }
+
+      rows.push({ width, theme, ok, verdict, ...m })
     }
   }
 } finally {
@@ -130,29 +165,12 @@ try {
 if (AS_JSON) {
   console.log(JSON.stringify(rows, null, 2))
 } else {
-  console.log('\n  A5 — ARABIC HERO: WORDMARK vs PLATE\n')
-  console.log('    width  theme  lang/dir   overlap x     overlap y   gap    verdict')
-
+  console.log('\n  A — ARABIC HERO: EVERY VISIBLE FRAGMENT IS A WHOLE WORD\n')
   for (const r of rows) {
-    if (r.error) {
-      console.log(`    ${String(r.width).padEnd(6)} ${r.theme.padEnd(6)} ${r.error}`)
-      continue
-    }
-
-    const verdict = r.intersects
-      ? `OCCLUDED by ${Math.round(r.overlapX)}x${Math.round(r.overlapY)}px`
-      : r.gap < MIN_GAP
-        ? `FLUSH (${Math.round(r.gap)}px < ${MIN_GAP}px)`
-        : 'clear'
-
-    console.log(
-      `    ${String(r.width).padEnd(6)} ${r.theme.padEnd(6)} ${(r.lang + '/' + r.dir).padEnd(10)} `
-      + `${String(Math.round(r.overlapX)).padStart(9)}   ${String(Math.round(r.overlapY)).padStart(9)}   `
-      + `${String(Math.round(r.gap)).padStart(4)}   ${verdict}`
-    )
+    console.log(`    ${String(r.width).padEnd(6)} ${r.theme.padEnd(6)} ${r.ok ? 'pass' : 'FAIL'}  ${r.verdict}`)
   }
-
-  const bad = rows.filter((r) => r.error || r.intersects || r.gap < MIN_GAP)
-  console.log(`\n    ${rows.length - bad.length}/${rows.length} viewport-theme combinations clear\n`)
-  process.exit(bad.length ? 1 : 0)
+  const passed = rows.filter((r) => r.ok).length
+  console.log(`\n    ${passed}/${rows.length} viewport-theme combinations pass\n`)
 }
+
+process.exit(rows.every((r) => r.ok) ? 0 : 1)

@@ -515,3 +515,75 @@ The plate keeps its orientation-derived SPAN; it loses only its mid-grid START,
 which existed to centre the plate over a centred wordmark so it could occlude
 it. CLS stays 0.0000 on `/` and 0.0006 on `/ar`, and the hero image keeps
 `fetchpriority="high"` and no `loading` attribute.
+
+---
+
+## Addendum, Task 38 Part A second pass — the English composition, cut at the word
+
+**Status:** accepted, supersedes the Composition A addendum above for two-word names
+**Date:** 2026-10-20
+**Decided by:** the owner, having seen the finished English hero: the Arabic
+should be the *same* composition, not a different one that works.
+
+### What shipped
+
+At widths ≥ 900 the Arabic wordmark is set exactly as the English one is — one
+line, display face, at the hero's extreme size — and crossed by the same plate
+in the same orientation-derived span. The one change is where the plate falls:
+**over the space between the two words.** English cuts mid-word because Latin
+letters are unjoined and every fragment is still a letterform; Arabic is
+cursive and its only break is between words, so "أنس" stands whole on one
+side of the photograph and "فريد" whole on the other.
+
+### Mechanism
+
+- The `<h1>` is one text node. It is set `text-align-last: justify`, so a
+  one-line, two-word name puts each word against one edge and stretches the
+  only space across the middle. The plate is a layer above; the text does not
+  know it is there.
+- **The plate's place is derived from the name** (A2). The component splits
+  the settings value into words and shares the columns the plate leaves free
+  between the two sides in proportion to each word's *set width* — to a
+  fraction of a column. The type is the largest size at which each word fits
+  its own side with 0.18em to spare, capped at the English 30vh.
+- **Set widths come from the font**, not from a character count.
+  `bin/wordmark-metrics.py` reads each Arabic letter's isolated, initial,
+  medial and final advances out of `rubik-arabic.woff2` (GSUB init/medi/fina)
+  into `App\Support\WordmarkMetrics`, and the server applies Arabic joining to
+  pick each letter's form. It reproduces the browser to three decimals
+  (أنس 1.939em vs 1.938 measured; فريد 1.922 vs 1.920). A character count was
+  tried first and misjudged the two words in opposite directions — أنس sets at
+  0.646em per character, فريد at 0.480 — and put "أنس" 14px under the plate.
+  No script runs, so the plate is never moved after first paint.
+
+### Measured
+
+`tests/Support/hero-interlock.mjs` now asserts that the plate crosses the
+wordmark and that every character it covers is whitespace, reading each
+character's box with `document.createRange()` so the `<h1>` is never split to
+be measured. On d7c3d7d (the vertical interlock) it fails at 1440 and 1024:
+"the plate does not cross the wordmark". Now 8/8: clear of the plate by
+33–39px at 1440 and 24–28px at 1024, stacked 56px clear at 768 and 390.
+Type 185.8px at 1440 against the English 224px — the most two words and a
+portrait plate can share 1360px.
+
+The English hero is unchanged at 1440, 1024, 768 and 390 in both themes:
+at most 1/255 on one channel, zero pixels off by more than 8.
+
+### One word, or more than two (A3)
+
+One word has no gap to cut at, and three or more words have several, which a
+single justified line cannot weight unequally while staying one text node.
+Both keep the vertical interlock above, now scoped to `.hero--vertical`
+rather than deleted. `HeroCompositionTest` asserts which name takes which.
+
+### Narrow widths (A5): the stack, still
+
+Below 900 the hero stacks and "أنس فريد" reads whole above the photograph. The
+reference's phone layout — full-bleed photograph, wordmark over it — was
+declined for the same reason as before: a word set over a photograph is at the
+mercy of the frame behind it, and the cut-at-the-gap composition needs both
+words *beside* the plate, which 390px cannot hold at any size worth setting.
+
+A7 (parallax) exists; A8 (scroll prompt) and A9 (index rows) remain declined
+for the reasons above.
