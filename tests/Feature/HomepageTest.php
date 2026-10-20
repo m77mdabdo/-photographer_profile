@@ -1291,4 +1291,24 @@ class HomepageTest extends TestCase
             }
         }
     }
+
+    /**
+     * Task 38 E2 — the numbered grid's rows are the services records. The
+     * numerals follow the record count: five services read 01-05, never
+     * padded to six, and more than six stops at six.
+     */
+    public function test_the_numbered_grid_scales_with_the_services(): void
+    {
+        \App\Models\Service::factory()->count(5)->sequence(fn ($s) => ['sort_order' => $s->index])->create();
+
+        $html = (string) $this->get('/')->assertOk()->getContent();
+        preg_match_all('#<span class="services-strip__number" aria-hidden="true">(\d+)</span>#', $html, $m);
+        $this->assertSame(['01', '02', '03', '04', '05'], $m[1]);
+
+        \App\Models\Service::factory()->count(3)->create();
+        \Illuminate\Support\Facades\Cache::flush();
+
+        preg_match_all('#<span class="services-strip__number" aria-hidden="true">(\d+)</span>#', (string) $this->get('/')->getContent(), $m);
+        $this->assertSame(['01', '02', '03', '04', '05', '06'], $m[1]);
+    }
 }

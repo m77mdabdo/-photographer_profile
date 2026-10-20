@@ -394,6 +394,17 @@
     padding: var(--sp-11) var(--gutter) 0;
 }
 
+.services-strip__header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--sp-3) var(--sp-6);
+    padding-bottom: var(--sp-4);
+    margin-bottom: var(--sp-7);
+    border-bottom: var(--rule-hair) solid var(--border);
+}
+
 .services-strip__title {
     font-family: var(--font-mono);
     font-variation-settings: 'wght' var(--wght-mono);
@@ -401,7 +412,6 @@
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
     color: var(--text-secondary);
-    margin-bottom: var(--sp-7);
 }
 
 .services-strip__list {
@@ -414,8 +424,22 @@
 }
 
 .services-strip__item {
-    padding-top: var(--sp-5);
+    display: grid;
+    align-content: start;
+    padding-top: var(--sp-4);
     border-top: var(--rule-hair) solid var(--border);
+}
+
+/* The numeral: the row's position, large, in the mono face's figures — the
+   one element that gives the grid its order at a glance, in either script. */
+.services-strip__number {
+    font-family: var(--font-mono);
+    font-variation-settings: 'wght' var(--wght-mono);
+    font-size: var(--fs-h1);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+    margin-bottom: var(--sp-5);
 }
 
 .services-strip__name {
@@ -444,28 +468,32 @@
 }
 
 .services-strip__price {
-    margin-top: var(--sp-3);
+    margin-top: var(--sp-4);
     font-family: var(--font-mono);
     font-size: var(--fs-meta);
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
-    color: var(--text-secondary);
-    opacity: 0.8;
+    color: var(--accent);
 }
 
+/* The accent label at the end of the row: the one link in the header. */
 .services-strip__cta {
-    display: inline-grid;
-    gap: var(--sp-2);
-    justify-items: start;
+    display: inline-flex;
+    align-items: center;
     min-height: 44px;
-    align-content: center;
-    margin-top: var(--sp-8);
     text-decoration: none;
     font-family: var(--font-mono);
-    font-size: var(--fs-small);
+    font-size: var(--fs-meta);
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
-    color: var(--text-primary);
+    color: var(--accent);
+}
+
+.services-strip__cta:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+.services-strip__cta:focus-visible {
+    outline: var(--rule-strong) solid var(--accent);
+    outline-offset: 4px;
 }
 
 /* ---------------- Narrow -------------------------------------------------- */

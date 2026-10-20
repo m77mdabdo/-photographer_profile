@@ -467,6 +467,8 @@ class StudioPanelTest extends TestCase
          * Task 38 Part A, second pass: 83,049 (+798) — the Arabic hero cut at
          * its word boundary; the vertical interlock kept as its fallback.
          * Task 38 Part D: 83,440 (+391) — the staggered row and its labels.
+         * Task 38 Part E: 84,431 (+991) — the numbered services grid, its
+         * label row, and the spec table.
          *
          * THE SIZE IS ASSERTED ALONGSIDE THE HASH from now on. A hash tells
          * you the bundle changed; it cannot tell you whether it changed by a
@@ -477,12 +479,12 @@ class StudioPanelTest extends TestCase
          * leaked framework fails.
          * ───────────────────────────────────────────────────────────────────
          */
-        $this->assertSame('assets/public-D_Ydt_Kg.css', $publicCss, 'the public stylesheet changed');
+        $this->assertSame('assets/public-JSNNI2UO.css', $publicCss, 'the public stylesheet changed');
         $this->assertSame('assets/public-Dc8p32X2.js', $publicJs, 'the public entry changed');
 
         $cssBytes = (int) filesize(public_path('build/'.$publicCss));
 
-        $this->assertSame(83_440, $cssBytes, 'the public stylesheet is a different size');
+        $this->assertSame(84_431, $cssBytes, 'the public stylesheet is a different size');
 
         $this->assertLessThan(
             90_000,

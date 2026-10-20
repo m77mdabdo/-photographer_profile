@@ -116,6 +116,13 @@ final class SiteCopy
         ['key' => 'rail.place', 'value' => 'Place', 'ar' => 'المكان', 'type' => 'string', 'group' => 'hero'],
         ['key' => 'rail.client', 'value' => 'For', 'ar' => 'لـ', 'type' => 'string', 'group' => 'hero'],
         ['key' => 'rail.work', 'value' => 'Series', 'ar' => 'المتتالية', 'type' => 'string', 'group' => 'hero'],
+        // Task 38 E1 — the spec table's labels. Values are the picture's own EXIF.
+        ['key' => 'spec.camera', 'value' => 'Camera', 'ar' => 'الكاميرا', 'type' => 'string', 'group' => 'hero'],
+        ['key' => 'spec.lens', 'value' => 'Lens', 'ar' => 'العدسة', 'type' => 'string', 'group' => 'hero'],
+        ['key' => 'spec.focal_length', 'value' => 'Focal length', 'ar' => 'البعد البؤري', 'type' => 'string', 'group' => 'hero'],
+        ['key' => 'spec.aperture', 'value' => 'Aperture', 'ar' => 'فتحة العدسة', 'type' => 'string', 'group' => 'hero'],
+        ['key' => 'spec.shutter', 'value' => 'Shutter', 'ar' => 'سرعة الغالق', 'type' => 'string', 'group' => 'hero'],
+        ['key' => 'spec.iso', 'value' => 'ISO', 'ar' => 'الحساسية', 'type' => 'string', 'group' => 'hero'],
         ['key' => 'marquee.label', 'value' => 'Selected Clients', 'ar' => 'عملاء مختارون', 'type' => 'string', 'group' => 'hero'],
 
         /*

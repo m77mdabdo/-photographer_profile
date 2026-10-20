@@ -7,6 +7,14 @@
 .project__facts { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-2) var(--sp-5); font-size: var(--fs-small); margin-bottom: var(--sp-6); }
 .project__facts dt { color: var(--text-secondary); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-size: var(--fs-meta); }
 .project__facts dd { margin: 0; }
+
+/* Task 38 E1 — the spec table: camera data as key/value rows on hairlines.
+   Absent entirely when the picture carries no EXIF (components/spec). */
+.spec { display: grid; margin-block: 0 var(--sp-6); font-size: var(--fs-small); }
+.spec__row { display: flex; justify-content: space-between; gap: var(--sp-5); padding-block: var(--sp-2); border-top: var(--rule-hair) solid var(--border); }
+.spec__row:last-child { border-bottom: var(--rule-hair) solid var(--border); }
+.spec__label { color: var(--text-secondary); }
+.spec__value { margin: 0; font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: end; }
 .project__excerpt { font-size: var(--fs-body); color: var(--text-secondary); }
 .project__story { display: flex; flex-direction: column; gap: var(--sp-11); }
 .project__credits { max-width: var(--container-text); margin: var(--sp-12) auto 0; padding-inline: var(--gutter); }

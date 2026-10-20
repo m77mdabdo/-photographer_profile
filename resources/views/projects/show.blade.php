@@ -29,6 +29,14 @@
                 @endif
             </dl>
 
+            {{--
+                Task 38 E1: the cover's camera data, or nothing at all. The
+                cover and not the hero, because the cover is already loaded
+                for this page and the hero is not: reading it cost a query on
+                every project page (WorkIndexTest pins the count).
+            --}}
+            <x-spec :media="$project->cover" />
+
             @if ($project->excerpt)
                 <p class="project__excerpt"><x-t :of="$project" field="excerpt" /></p>
             @endif

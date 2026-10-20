@@ -73,14 +73,17 @@ class HomeController extends Controller
                 ->get(),
 
             /*
-             * The four most prominent services. No images are loaded — the
-             * strip is typographic — so this is one flat select.
+             * The services, as the numbered grid (Task 38 E2): every published
+             * record in the owner's order, up to six, so five services read
+             * 01-05 and nothing is padded. It was four — the grid then numbered
+             * four of five and dropped the fifth without saying so. No images
+             * are loaded; the grid is typographic, so this is one flat select.
              */
             'services' => Service::query()
                 ->published()
                 ->orderBy('sort_order')
                 ->orderBy('name')
-                ->limit(4)
+                ->limit(6)
                 ->get(),
 
             'clients' => Client::active()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'url']),
