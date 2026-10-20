@@ -118,6 +118,31 @@ const state = (page) => page.evaluate(() => {
   }
 })
 
+/*
+ * B2 — the unlit state's contrast, against the statement's own ground, in
+ * both themes (the statement sits in a register band, so the two themes are
+ * the two registers). The unlit colour is the text colour composited at
+ * --statement-unlit over that ground.
+ */
+for (const theme of ['dark', 'light']) {
+  const { page, ctx } = await open('/', { theme })
+  const m = await page.evaluate(() => {
+    const el = document.querySelector('.statement')
+    const rgb = (s) => (s.match(/[\d.]+/g) || []).map(Number).slice(0, 3)
+    const lum = ([r, g, b]) => { const f = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4 }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b) }
+    let n = el
+    let ground = null
+    while (n) { const c = getComputedStyle(n).backgroundColor; const v = (c.match(/[\d.]+/g) || []).map(Number); if (v.length === 3 || v[3] === 1) { ground = v.slice(0, 3); break } n = n.parentElement }
+    const text = rgb(getComputedStyle(el).color)
+    const a = parseFloat(getComputedStyle(el).getPropertyValue('--statement-unlit'))
+    const mix = text.map((c, i) => c * a + ground[i] * (1 - a))
+    const [x, y] = [lum(mix), lum(ground)].sort((p, q) => q - p)
+    return { a, ratio: (x + 0.05) / (y + 0.05), ground: `rgb(${ground.join(',')})` }
+  })
+  check(theme, `unlit at ${m.a} against its ground clears 3:1`, m.ratio >= 3, `${m.ratio.toFixed(2)}:1 on ${m.ground}`)
+  await ctx.close()
+}
+
 for (const locale of ['/', '/ar']) {
   const tag = locale === '/' ? 'en' : 'ar'
 
@@ -156,6 +181,10 @@ for (const locale of ['/', '/ar']) {
     check(tag, 'half-way: some words lit, some unlit', lit > 0 && dim > 0, `${lit} lit, ${dim} unlit of ${half.count}`)
     check(tag, 'unlit is --statement-unlit, never 0', Math.min(...half.opacities) >= half.unlit - 0.001 && half.unlit > 0,
       `min ${Math.min(...half.opacities).toFixed(3)}, token ${half.unlit}`)
+
+    // B1 — a ramp, not a step: the lit edge spans several words at once.
+    const ramping = half.opacities.filter((o) => o > half.unlit + 0.02 && o < 0.98).length
+    check(tag, 'the lit edge is a ramp: >= 2 words mid-transition', ramping >= 2, `${ramping} words between unlit and lit`)
 
     // Reading order. On the first line, the first word is the line's
     // start: leftmost in English, rightmost in Arabic — and it is lit.

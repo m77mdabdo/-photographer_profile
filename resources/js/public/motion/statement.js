@@ -32,9 +32,15 @@
  *            the screen when its last word lit, so the sentence finished
  *            lighting after its own beginning had left. Ending at 65% keeps
  *            the whole sentence in view at the moment it completes.
- *   easing   linear in scroll, one word at a time: word i is fully lit when
- *            progress reaches (i + 1) / n. Scrub smoothing 0.3 s, so a flick
- *            of the wheel does not strobe.
+ *   easing   linear in scroll, as a RAMP two words wide rather than a step.
+ *            The 2932x1520 recording measured the lit edge as a soft gradient
+ *            ~360px across a ~2760px line — 193 → 115 → 65 → 44 in lightness
+ *            — so two or three words are mid-transition at once. Here each
+ *            word's light runs over RAMP = 2 words of progress, which overlaps
+ *            its neighbours by one word on each side: the word ahead is half
+ *            lit as this one finishes. A first version stepped one word at a
+ *            time, and read as a typewriter rather than as light moving.
+ *            Scrub smoothing 0.3 s, so a flick of the wheel does not strobe.
  *
  * ORDER. Words light in DOM order, which is reading order — so in Arabic the
  * first word lit is the rightmost one, and a line lights from the right.
@@ -114,6 +120,9 @@ function split(statement, gsap) {
 
   gsap.set(words, { opacity: unlit })
 
+  // How many words wide the lit edge is. See the note at the top.
+  const RAMP = 2
+
   const tween = gsap.to({ p: 0 }, {
     p: 1,
     ease: 'none',
@@ -125,9 +134,11 @@ function split(statement, gsap) {
       invalidateOnRefresh: true,
     },
     onUpdate() {
-      const p = this.targets()[0].p * n
+      // Progress runs over n + RAMP words so that the last word, too, gets
+      // its whole ramp before the scrub ends: at p = 1 every word is lit.
+      const p = this.targets()[0].p * (n + RAMP)
       for (let i = 0; i < n; i++) {
-        const lit = Math.min(1, Math.max(0, p - i))
+        const lit = Math.min(1, Math.max(0, (p - i) / RAMP))
         words[i].style.opacity = String(unlit + (1 - unlit) * lit)
       }
     },
