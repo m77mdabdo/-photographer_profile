@@ -34,6 +34,7 @@ const MODULES = {
   'parallax': () => import('./parallax'),
   'reveal': () => import('./reveal'),
   'rule': () => import('./rule'),
+  'statement': () => import('./statement'),
 }
 
 /**

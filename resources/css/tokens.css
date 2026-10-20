@@ -110,6 +110,12 @@
     --grain-opacity: 0.028;
     --grain-blend: overlay;
 
+    /* The unlit words of a scrubbed statement (Task 38 B1/B2): the lowest
+       opacity at which primary text still clears 3:1, the large-text floor,
+       against its own ground. Computed, not observed: 0.36 on ink and 0.47
+       on paper are the thresholds, and these sit just above them. */
+    --statement-unlit: 0.38;
+
     /* The vignette breathes; the amplitude is deliberately below perception. */
     --vignette-rgb: var(--c-ink-rgb);
     --vignette-opacity-min: 0.82;
@@ -431,6 +437,7 @@
 
         --grain-opacity: 0.022;
         --grain-blend: multiply;
+        --statement-unlit: 0.48;
 
         --vignette-rgb: var(--c-ink-rgb);
         --vignette-opacity-min: 0;
@@ -484,6 +491,7 @@
      */
     --grain-opacity: 0.022;
     --grain-blend: multiply;
+    --statement-unlit: 0.48;
 
     /*
      * The vignette is switched off, not weakened. A darkened edge on paper
@@ -544,6 +552,7 @@
 
     --grain-opacity: 0.022;
     --grain-blend: multiply;
+    --statement-unlit: 0.48;
 }
 
 /* Paper page, by system setting or by choice: the band is ink. */
@@ -568,6 +577,7 @@
 
         --grain-opacity: 0.028;
         --grain-blend: overlay;
+        --statement-unlit: 0.38;
     }
 }
 
@@ -591,4 +601,5 @@
 
     --grain-opacity: 0.028;
     --grain-blend: overlay;
+    --statement-unlit: 0.38;
 }

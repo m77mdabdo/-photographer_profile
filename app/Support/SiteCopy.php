@@ -225,6 +225,12 @@ final class SiteCopy
         // --- home: the sections below the hero ----------------------------
         ['key' => 'home.introduction_label', 'value' => 'Introduction', 'ar' => 'تعريف', 'type' => 'string', 'group' => 'home'],
         ['key' => 'home.introduction_text', 'value' => 'Work made slowly, in series, and shown the same way.', 'ar' => 'أعمال تُصنع على مهل، في متتاليات، وتُعرض بالطريقة نفسها.', 'type' => 'text', 'group' => 'home'],
+        // Task 38 B4 — the scrubbed statement's accent rule, per locale. "last"
+        // sets the sentence's final word in the accent; "none" turns it off.
+        // Not empty for off: an emptied setting falls back to English and
+        // then to this default, so an empty field could never mean "off".
+        // Not copy: a switch the owner holds.
+        ['key' => 'home.statement_accent', 'value' => 'last', 'ar' => 'last', 'type' => 'string', 'group' => 'home'],
         ['key' => 'home.selected_heading', 'value' => 'Work, in series', 'ar' => 'أعمال في متتاليات', 'type' => 'string', 'group' => 'home'],
         ['key' => 'home.featured_label', 'value' => 'At length', 'ar' => 'بتفصيل', 'type' => 'string', 'group' => 'home'],
         ['key' => 'home.featured_cta', 'value' => 'Read the story', 'ar' => 'اقرأ الحكاية', 'type' => 'string', 'group' => 'home'],

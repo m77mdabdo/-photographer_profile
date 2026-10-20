@@ -221,7 +221,7 @@ class MotionTest extends TestCase
         Service::factory()->create();
 
         $expectations = [
-            '/' => ['hero-develop', 'parallax', 'reveal', 'rule'],
+            '/' => ['hero-develop', 'parallax', 'reveal', 'rule', 'statement'],
             '/journal' => ['reveal'],
             '/services' => ['reveal', 'rule'],
             '/archive' => [],

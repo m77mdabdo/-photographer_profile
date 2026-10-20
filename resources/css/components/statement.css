@@ -1,0 +1,21 @@
+/*
+ * The scrubbed statement — Task 38 Part B. Behaviour in motion/statement.js.
+ *
+ * Nothing in this file changes how the paragraph looks until the script has
+ * split it: there is no initial opacity here, no hidden state waiting on
+ * JavaScript, and nothing under `.motion`. A visitor without the script, or
+ * with reduced motion, reads the server's paragraph at full contrast.
+ *
+ * The word spans are inline and add no box of their own, so the split copy
+ * sets exactly as the paragraph did (B3).
+ */
+.statement__word {
+    /* Opacity only. A transform here would move a word off the line it
+       shares with its neighbours, which is the one thing a reading effect
+       must not do. */
+    will-change: opacity;
+}
+
+.statement__accent {
+    color: var(--accent);
+}

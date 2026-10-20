@@ -461,6 +461,9 @@ class StudioPanelTest extends TestCase
          * Task 38 Part A: 80,135 (+1,715) — the Arabic hero composition.
          * Task 38 Part C: 82,023 (+1,888) — the inverse register token sets,
          * the band, and the story's text-block scrim. 13,818 gzipped.
+         * Task 38 Part B: 82,251 (+228) — the statement's word and accent
+         * rules and its unlit token. The entry moved too: the registry gained
+         * one line, `statement`, whose module is its own lazy chunk.
          *
          * THE SIZE IS ASSERTED ALONGSIDE THE HASH from now on. A hash tells
          * you the bundle changed; it cannot tell you whether it changed by a
@@ -471,12 +474,12 @@ class StudioPanelTest extends TestCase
          * leaked framework fails.
          * ───────────────────────────────────────────────────────────────────
          */
-        $this->assertSame('assets/public-r6nJ8ceq.css', $publicCss, 'the public stylesheet changed');
-        $this->assertSame('assets/public-B-FzqxLO.js', $publicJs, 'the public entry changed');
+        $this->assertSame('assets/public-Ckqydunl.css', $publicCss, 'the public stylesheet changed');
+        $this->assertSame('assets/public-BC7t1J-z.js', $publicJs, 'the public entry changed');
 
         $cssBytes = (int) filesize(public_path('build/'.$publicCss));
 
-        $this->assertSame(82_023, $cssBytes, 'the public stylesheet is a different size');
+        $this->assertSame(82_251, $cssBytes, 'the public stylesheet is a different size');
 
         $this->assertLessThan(
             90_000,
