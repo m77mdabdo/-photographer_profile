@@ -20,6 +20,34 @@
 .block__pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); }
 .block__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); }
 @media (max-width: 700px) { .block__pair, .block__grid { grid-template-columns: 1fr; } }
+
+/*
+ * Task 38 Part D — the three-image row, staggered.
+ *
+ * Each frame carries a small mono label with its position in the row, and
+ * from 900px up the second and third frames drop to different depths, so the
+ * row reads as three prints laid down by hand rather than three cells of a
+ * table. The offsets are vertical only — margin-block-start inside a grid
+ * cell — so they lengthen the row and can never widen it (D5: the /work
+ * overflow in Task 22 was a grid that could not shrink). Below 900 the
+ * offsets are off, and below 700 the row is the full-width stack it was.
+ *
+ * The label is a position, not copy: "01", "02", "03", Western digits in both
+ * languages (ADR 0005), set in the mono face's figures. It is aria-hidden —
+ * a screen reader already meets the images in order.
+ */
+.block__grid-item { display: grid; gap: var(--sp-2); align-content: start; margin: 0; }
+.block__index {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+}
+@media (min-width: 900px) {
+    .block__grid-item:nth-child(2) { margin-block-start: var(--sp-9); }
+    .block__grid-item:nth-child(3) { margin-block-start: var(--sp-6); }
+}
 .block--split { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-7); align-items: center; }
 @media (max-width: 900px) { .block--split { grid-template-columns: 1fr; } }
 .block__heading { font-size: var(--fs-h2); margin-bottom: var(--sp-4); }
