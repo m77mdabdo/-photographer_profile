@@ -16,3 +16,32 @@
     z-index: calc(var(--z-media) + 2);
 }
 
+/*
+ * Text arriving in bands (Part 3). The original's text goes transparent
+ * while its copies are displaced over it, so its box, line breaks, selection,
+ * links and accessible text never change; the copies take the colour back.
+ */
+.arrive-src,
+.arrive-src * {
+    -webkit-text-fill-color: transparent;
+}
+
+.arrive-bands {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.arrive-bands[hidden] { display: none; }
+
+.arrive-src .arrive-bands,
+.arrive-src .arrive-bands * {
+    -webkit-text-fill-color: currentcolor;
+}
+
+.arrive-band {
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    will-change: transform;
+}

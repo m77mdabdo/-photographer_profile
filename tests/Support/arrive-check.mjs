@@ -143,6 +143,60 @@ for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
   }
 }
 
+/*
+ * TEXT (Part 3): the closing heading on home and the first block heading on a
+ * project page, in both languages.
+ */
+for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
+  for (const [path, sel] of [['/', '.closing__title'], ['/work/salt-line', '.block__heading']]) {
+    for (const width of [1440, 390]) {
+      const page = await open(prefix + path, { width })
+      const placeText = (p) => page.evaluate((sel, p) => {
+        const el = document.querySelector(sel); const vh = innerHeight
+        scrollTo({ top: el.getBoundingClientRect().top + scrollY - (vh * 0.92 - p * vh * 0.5), behavior: 'instant' })
+      }, sel, p)
+      const state = () => page.evaluate((sel) => {
+        const el = document.querySelector(sel)
+        const o = el.querySelector(':scope > .arrive-bands')
+        const bands = o ? [...o.children] : []
+        const lineH = parseFloat(getComputedStyle(el).lineHeight) || parseFloat(getComputedStyle(el).fontSize) * 1.2
+        return {
+          exists: !!o,
+          hidden: o ? o.hidden : true,
+          src: el.classList.contains('arrive-src'),
+          n: bands.length,
+          offsets: bands.map((b) => (b.style.transform.match(/-?[\d.]+/) || ['0'])[0]).map(Number),
+          ariaHidden: o?.getAttribute('aria-hidden'),
+          inert: o?.inert,
+          origHidden: el.closest('[aria-hidden="true"]') !== null,
+          // The browser normalises the clip string ("inset(12px 0px calc(100% - 24px))"),
+          // so read the two lengths out of whatever form it returns.
+          minBand: Math.min(...bands.map((b) => { const m = b.style.clipPath.match(/inset\(([\d.]+)px[^c]*calc\(100% - ([\d.]+)px\)/); return m ? +m[2] - +m[1] : -1 })),
+          arabicText: /^ar\b/i.test(el.closest('[lang]')?.getAttribute('lang') || ''),
+          lineH,
+          totalBandNodes: document.querySelectorAll('.arrive-band').length,
+        }
+      }, sel)
+      await placeText(0.5); await wait(250); const mid = await state()
+      const y = await page.evaluate(() => scrollY)
+      await placeText(1.3); await wait(250); const done = await state()
+      await page.evaluate((y) => scrollTo({ top: y, behavior: 'instant' }), y); await wait(250); const back = await state()
+      const where = `${sel} ${path} ${width}`
+      if (!mid.exists) { check(tag, `${where}: text arrival present`, false, 'no overlay'); await page.close(); continue }
+      check(tag, `${where}: bands displaced mid-way`, mid.src && !mid.hidden && mid.offsets.some((o) => Math.abs(o) > 2), `${mid.n} bands, max offset ${Math.max(...mid.offsets.map(Math.abs)).toFixed(1)}px`)
+      check(tag, `${where}: resolved shows the original alone`, !done.src && done.hidden)
+      check(tag, `${where}: same position, same offsets`, JSON.stringify(back.offsets) === JSON.stringify(mid.offsets))
+      check(tag, `${where}: copies aria-hidden and inert, original read`, mid.ariaHidden === 'true' && mid.inert === true && !mid.origHidden)
+      // By the TEXT's language, not the page's: an untranslated heading on an
+      // Arabic page is Latin text and takes Latin bands.
+      if (mid.arabicText) check(tag, `${where}: Arabic text in whole-line bands`, mid.minBand >= mid.lineH * 0.8, `smallest band ${mid.minBand.toFixed(1)}px, line ${mid.lineH.toFixed(1)}px`)
+      else check(tag, `${where}: Latin text in 12px bands`, mid.minBand > 0 && mid.minBand <= 12.01, `smallest band ${mid.minBand.toFixed(1)}px`)
+      check(tag, `${where}: band nodes on the page`, mid.totalBandNodes < 400, `${mid.totalBandNodes} band elements`)
+      await page.close()
+    }
+  }
+}
+
 await browser.close()
 
 let failed = 0

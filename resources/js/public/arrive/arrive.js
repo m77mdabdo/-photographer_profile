@@ -131,9 +131,161 @@ function drawImages(vh) {
 }
 
 
+/* ───────────────────────────────────────────────────────────────────────────
+ * TEXT — horizontal bands that slide into alignment (Part 3).
+ *
+ * A heading, or the paragraph that opens its section, is cut into bands; each
+ * band is displaced sideways by its own amount, and the displacements
+ * converge to zero over the same scroll window as the photographs.
+ *
+ * THE ORIGINAL STAYS WHERE IT IS. Its text is made transparent, not hidden,
+ * so its box, its line breaks, its selection, its links and what a screen
+ * reader reads are all untouched; the bands are copies laid over it in an
+ * overlay that is aria-hidden and inert (so a copied link is never a second
+ * tab stop). When the block resolves, the overlay is hidden and the original
+ * shows — the resolved state is the page itself, not a copy of it.
+ *
+ * LATIN is cut every 12 CSS px, as the recording shows: a band through a
+ * Latin letter leaves a letter that still reads as one mid-animation.
+ * ARABIC is cut along its LINE BOXES and nothing finer. A 12 px band through
+ * a cursive line severs its joins, and displaced it reads as broken script
+ * rather than as text arriving — rendered and looked at before deciding; see
+ * the report. Whole lines sliding into place keep every join intact and are
+ * the same gesture at the only grain the script allows.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+let texts = []
+
+function isArabic(el) {
+  const lang = el.closest('[lang]')?.getAttribute('lang') || ''
+  return /^ar\b/i.test(lang)
+}
+
+function collectTexts() {
+  const vh = innerHeight
+  const out = []
+  const seen = new Set()
+  const add = (el) => {
+    if (!el || seen.has(el)) return
+    if (!el.textContent.trim()) return
+    if (el.getBoundingClientRect().top < vh) return     // on screen at load: paints whole
+    seen.add(el)
+    out.push(el)
+  }
+
+  for (const h of document.querySelectorAll('main h2, main h3')) {
+    if (h.closest('.hero, .story, .statement, .sr-only, [data-arrive-skip], .marquee')) continue
+    if (h.classList.contains('sr-only')) continue
+    if (parseFloat(getComputedStyle(h).fontSize) < 22) continue
+    add(h)
+
+    // The paragraph that opens the section: the heading's next sibling if it
+    // is one, or the first paragraph inside it if it is a body container.
+    const next = h.nextElementSibling
+    const para = next?.tagName === 'P' ? next : next?.querySelector?.(':scope > p')
+    // A paragraph with something to read — not a count or a one-word note.
+    if (para && !para.closest('.statement') && para.textContent.trim().length >= 40) add(para)
+  }
+
+  return out.map((el, i) => ({ el, seed: 1000 + i, overlay: null, bands: [], active: false }))
+}
+
+function bandsFor(el, arabic) {
+  const cs = getComputedStyle(el)
+  const r = el.getBoundingClientRect()
+  const top = r.top + parseFloat(cs.borderTopWidth)
+  const height = el.clientHeight
+
+  if (!arabic) {
+    const out = []
+    for (let y = 0; y < height; y += TILE) out.push([y, Math.min(height, y + TILE)])
+    return out
+  }
+
+  // One band per rendered line: group the text's client rects by line.
+  const range = document.createRange()
+  range.selectNodeContents(el)
+  const lines = []
+  for (const q of range.getClientRects()) {
+    if (q.width < 1) continue
+    const t = q.top - top
+    const b = q.bottom - top
+    const line = lines.find((l) => Math.abs(l[0] - t) < 4 || (t < l[1] - 2 && b > l[0] + 2))
+    if (line) { line[0] = Math.min(line[0], t); line[1] = Math.max(line[1], b) } else lines.push([t, b])
+  }
+  lines.sort((a, b) => a[0] - b[0])
+  // Extend each band to meet the next, so nothing between lines is lost.
+  return lines.map((l, i) => [i === 0 ? 0 : (lines[i - 1][1] + l[0]) / 2, i === lines.length - 1 ? height : (l[1] + lines[i + 1][0]) / 2])
+}
+
+function build(item) {
+  const el = item.el
+  const cs = getComputedStyle(el)
+  const arabic = isArabic(el)
+  const size = parseFloat(cs.fontSize)
+  const amplitude = Math.max(16, Math.min(56, size * 0.6))
+
+  if (cs.position === 'static') el.style.position = 'relative'
+
+  const overlay = document.createElement('span')
+  overlay.className = 'arrive-bands'
+  overlay.setAttribute('aria-hidden', 'true')
+  overlay.inert = true
+
+  const source = [...el.childNodes].filter((n) => n !== item.overlay)
+  item.bands = bandsFor(el, arabic).map(([t, b], i) => {
+    const band = document.createElement('span')
+    band.className = 'arrive-band'
+    band.style.padding = cs.padding
+    band.style.clipPath = `inset(${t}px 0 calc(100% - ${b}px) 0)`
+    for (const n of source) {
+      const c = n.cloneNode(true)
+      if (c.nodeType === 1) { c.removeAttribute('id'); c.querySelectorAll?.('[id]').forEach((x) => x.removeAttribute('id')) }
+      band.append(c)
+    }
+    overlay.append(band)
+    return { band, d: (rand(item.seed, i) * 2 - 1) * amplitude }
+  })
+
+  el.append(overlay)
+  item.overlay = overlay
+}
+
+function teardown(item) {
+  item.overlay?.remove()
+  item.overlay = null
+  item.bands = []
+  item.el.classList.remove('arrive-src')
+  item.active = false
+}
+
+function drawTexts(vh) {
+  for (const item of texts) {
+    const r = item.el.getBoundingClientRect()
+    const e = ease(progress(r, vh))
+
+    if (e >= 1) {
+      if (item.active) { item.el.classList.remove('arrive-src'); item.overlay.hidden = true; item.active = false }
+      continue
+    }
+
+    if (!item.overlay) build(item)
+    if (!item.active) { item.el.classList.add('arrive-src'); item.overlay.hidden = false; item.active = true }
+
+    // Off screen there is nothing to see; keep the displaced state cheap.
+    if (r.bottom < -50 || r.top > vh + 50) continue
+    for (const b of item.bands) b.band.style.transform = `translateX(${(b.d * (1 - e)).toFixed(2)}px)`
+  }
+}
+
+function rebuildTexts() {
+  for (const item of texts) teardown(item)
+}
+
 function tick() {
   frame = 0
-  drawImages(innerHeight)
+  if (ctx) drawImages(innerHeight)
+  drawTexts(innerHeight)
 }
 
 function schedule() {
@@ -141,20 +293,24 @@ function schedule() {
 }
 
 function onResize() {
-  sizeCanvas()
+  if (canvas) sizeCanvas()
+  rebuildTexts()
   schedule()
 }
 
 export function start() {
   images = collectImages()
-  if (images.length === 0) return stop
+  texts = collectTexts()
+  if (images.length === 0 && texts.length === 0) return stop
 
-  canvas = document.createElement('canvas')
-  canvas.className = 'arrive-canvas'
-  canvas.setAttribute('aria-hidden', 'true')
-  document.body.append(canvas)
-  ctx = canvas.getContext('2d')
-  sizeCanvas()
+  if (images.length) {
+    canvas = document.createElement('canvas')
+    canvas.className = 'arrive-canvas'
+    canvas.setAttribute('aria-hidden', 'true')
+    document.body.append(canvas)
+    ctx = canvas.getContext('2d')
+    sizeCanvas()
+  }
 
   addEventListener('scroll', schedule, { passive: true })
   addEventListener('resize', onResize, { passive: true })
@@ -170,4 +326,6 @@ export function stop() {
   canvas?.remove()
   canvas = ctx = null
   images = []
+  for (const item of texts) teardown(item)
+  texts = []
 }
