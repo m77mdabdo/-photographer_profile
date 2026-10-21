@@ -148,7 +148,8 @@ for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
  * project page, in both languages.
  */
 for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
-  for (const [path, sel] of [['/', '.closing__title'], ['/work/salt-line', '.block__heading']]) {
+  // On home, whichever heading arrives at this width: sizes differ between 1440 and 390.
+  for (const [path, sel] of [['/', 'main :has(> .arrive-bands)'], ['/work/salt-line', '.block__heading']]) {
     for (const width of [1440, 390]) {
       const page = await open(prefix + path, { width })
       const placeText = (p) => page.evaluate((sel, p) => {
@@ -177,6 +178,14 @@ for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
           totalBandNodes: document.querySelectorAll('.arrive-band').length,
         }
       }, sel)
+      const present = await page.evaluate((sel) => !!document.querySelector(sel), sel)
+      if (!present) {
+        // Not a failure: at this width nothing on the page is at display size.
+        const n = await page.evaluate(() => document.querySelectorAll('.arrive-bands').length)
+        check(tag, `${sel} ${path} ${width}: text arrivals on the page`, true, `${n} — no heading at display size at this width`)
+        await page.close()
+        continue
+      }
       await placeText(0.5); await wait(250); const mid = await state()
       const y = await page.evaluate(() => scrollY)
       await placeText(1.3); await wait(250); const done = await state()
@@ -192,6 +201,47 @@ for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
       if (mid.arabicText) check(tag, `${where}: Arabic text in whole-line bands`, mid.minBand >= mid.lineH * 0.8, `smallest band ${mid.minBand.toFixed(1)}px, line ${mid.lineH.toFixed(1)}px`)
       else check(tag, `${where}: Latin text in 12px bands`, mid.minBand > 0 && mid.minBand <= 12.01, `smallest band ${mid.minBand.toFixed(1)}px`)
       check(tag, `${where}: band nodes on the page`, mid.totalBandNodes < 400, `${mid.totalBandNodes} band elements`)
+      await page.close()
+    }
+  }
+}
+
+/*
+ * 6.4 ON EVERY PAGE TYPE: whatever carries fetchpriority="high" paints whole.
+ * Scrolled top to bottom, sampling the canvas over it and checking it never
+ * sits inside a text arrival.
+ */
+const ALL = ['/', '/work', '/work/salt-line', '/archive', '/journal', '/journal/the-edit-is-the-work', '/services', '/services/editorial-commissions', '/about', '/contact']
+for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
+  for (const path of ALL) {
+    for (const width of [1440, 390]) {
+      const page = await open(prefix === '/ar' && path === '/' ? '/ar' : prefix + path, { width })
+      const r = await page.evaluate(async () => {
+        const lcp = [...document.querySelectorAll('[fetchpriority="high"]')]
+        if (!lcp.length) return { n: 0 }
+        let maxCover = 0
+        let inBands = false
+        const c = document.querySelector('.arrive-canvas')
+        for (let y = 0; y <= document.documentElement.scrollHeight; y += Math.round(innerHeight / 3)) {
+          scrollTo({ top: y, behavior: 'instant' })
+          await new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res)))
+          for (const el of lcp) {
+            if (el.closest('.arrive-src, .arrive-bands')) inBands = true
+            const b = el.getBoundingClientRect()
+            if (!c || b.bottom <= 0 || b.top >= innerHeight) continue
+            const k = c.width / innerWidth
+            const x = Math.max(0, Math.round(b.left * k)), yy = Math.max(0, Math.round(b.top * k))
+            const w = Math.min(c.width - x, Math.round(b.width * k)), h = Math.min(c.height - yy, Math.round(Math.min(b.bottom, innerHeight) * k) - yy)
+            if (w <= 0 || h <= 0) continue
+            const d = c.getContext('2d').getImageData(x, yy, w, h).data
+            let n = 0
+            for (let i = 3; i < d.length; i += 4) if (d[i] > 0) n++
+            maxCover = Math.max(maxCover, n / (d.length / 4))
+          }
+        }
+        return { n: lcp.length, maxCover, inBands }
+      })
+      if (r.n) check(tag, `6.4 ${path} ${width}: fetchpriority=high paints whole`, r.maxCover === 0 && !r.inBands, `max canvas cover ${(r.maxCover * 100).toFixed(2)}%, in bands: ${r.inBands}`)
       await page.close()
     }
   }

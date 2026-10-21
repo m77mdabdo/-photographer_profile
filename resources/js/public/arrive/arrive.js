@@ -176,7 +176,9 @@ function collectTexts() {
   for (const h of document.querySelectorAll('main h2, main h3')) {
     if (h.closest('.hero, .story, .statement, .sr-only, [data-arrive-skip], .marquee')) continue
     if (h.classList.contains('sr-only')) continue
-    if (parseFloat(getComputedStyle(h).fontSize) < 22) continue
+    // Display size: 18px and up. Mono section labels (~11px) stay still;
+    // at 22px home had no arrival at all on a phone.
+    if (parseFloat(getComputedStyle(h).fontSize) < 18) continue
     add(h)
 
     // The paragraph that opens the section: the heading's next sibling if it
