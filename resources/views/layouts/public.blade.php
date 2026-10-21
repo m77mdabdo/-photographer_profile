@@ -35,7 +35,7 @@
 <html lang="{{ \App\Support\Locale::html() }}" dir="{{ \App\Support\Locale::direction() }}"@if ($theme->attribute()) data-theme="{{ $theme->attribute() }}"@endif>
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
     {{--
         FIRST, BEFORE ANYTHING ELSE.
@@ -157,6 +157,29 @@
     --}}
     <div class="texture" aria-hidden="true"></div>
     <div class="vignette" aria-hidden="true"></div>
+
+    {{--
+        THE PERSISTENT CONTACT LINK — Task 38 G1, phones and tablets only.
+
+        The reference keeps a pill in the trailing bottom corner of every
+        mobile screen. Ours is the studio's own invitation, closing.cta — the
+        same words the home page ends on, so nothing new is said — pointing at
+        the contact page, and absent ON the contact pages, where it would
+        point at the page the visitor is already on.
+
+        It is placed early in the source but after the skip link's target is
+        defined, so it is one ordinary link in the tab order: a link, not a
+        button, because it goes somewhere. components/layout.css reserves its
+        height at the foot of every page so it can never sit on the enquiry
+        form's submit button or the pager, and keeps it clear of the iOS home
+        indicator.
+    --}}
+    {{-- Both languages: the Arabic routes are named ar.contact.*, and the
+         first version matched only contact.* and so showed the pill on the
+         Arabic contact page, pointing at itself. --}}
+    @unless (request()->routeIs('contact.*', 'ar.contact.*'))
+        <a class="contact-pill" href="{{ route('contact.show') }}">{{ \App\Support\SiteCopy::get('closing.cta') }}</a>
+    @endunless
 
     {{-- First focusable element on the page, visible only once focused. --}}
     <a class="skip-link" href="#main">{{ __('studio.a11y.skip') }}</a>

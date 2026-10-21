@@ -214,3 +214,60 @@ main:focus {
     color: var(--text-primary);
     border-color: var(--border);
 }
+
+
+/*
+ * The persistent contact link — Task 38 G1.
+ *
+ * Below 900 only: on a desktop the header's own contact link is always in
+ * view, and a floating pill would be furniture with no job.
+ *
+ *   44px tall at least, in the accent, in the trailing bottom corner
+ *   (inset-inline-end: left in Arabic).
+ *   Clear of the iOS home indicator: the safe-area inset is added to its
+ *   offset, which works because the viewport meta says viewport-fit=cover.
+ *   It NEVER COVERS CONTENT: the page reserves its height plus its offset at
+ *   the foot of <body>, so the last thing on any page — the enquiry form's
+ *   submit button, the pager, the footer's last line — can always be
+ *   scrolled clear of it. Measured by tests/Support/pill-check.mjs.
+ */
+.contact-pill { display: none; }
+
+@media (max-width: 899px) {
+    .contact-pill {
+        position: fixed;
+        z-index: var(--z-nav);
+        inset-inline-end: var(--gutter);
+        inset-block-end: calc(var(--sp-4) + env(safe-area-inset-bottom, 0px));
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-block-size: 44px;
+        /*
+         * A floor on its width, with the label centred inside it. Measured:
+         * at 390 in Arabic the pill widened 87 -> 97px when the Arabic face
+         * swapped in, and since it is anchored at its trailing (left) edge,
+         * that moved its start corner — a layout shift (CLS 0.0007 on /ar).
+         * A label that fits inside this floor never changes the box, whatever
+         * face is drawing it; a longer label set by the owner simply grows.
+         */
+        min-inline-size: 9rem;
+        padding-inline: var(--sp-5);
+        border-radius: 999px;
+        background-color: var(--accent);
+        color: var(--on-accent);
+        font-family: var(--font-mono);
+        font-size: var(--fs-meta);
+        letter-spacing: var(--tracking-wide);
+        text-decoration: none;
+    }
+
+    .contact-pill:focus-visible {
+        outline: var(--rule-strong) solid var(--text-primary);
+        outline-offset: 3px;
+    }
+
+    body:has(> .contact-pill) {
+        padding-block-end: calc(44px + 2 * var(--sp-4) + env(safe-area-inset-bottom, 0px));
+    }
+}
