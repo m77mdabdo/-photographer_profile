@@ -105,7 +105,7 @@ for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
         const f = (v) => (v == null ? '—' : (v * 100).toFixed(1) + '%')
         check(tag, `${path} ${width}: fills as it scrolls in`, c20 > c60 && c60 > c150, `${f(c20)} → ${f(c60)} → ${f(c150)}`)
         check(tag, `${path} ${width}: holds when scrolling stops`, Math.abs(c60 - c60held) < 0.002, `${f(c60)} then ${f(c60held)} after 700 ms`)
-        check(tag, `${path} ${width}: returns when scrolling back`, Math.abs(c60back - c60fresh) < 0.0005 && Math.abs(c60 - c60back) < 0.01 && c0 > c60,
+        check(tag, `${path} ${width}: returns when scrolling back`, Math.abs(c60back - c60fresh) < 0.0005 && Math.abs(c60 - c60back) < 0.0005 && c0 > c60,
           `${f(c60back)} back at 0.6 (fresh draw ${f(c60fresh)}), ${f(c0)} at 0`)
       }
 
@@ -144,63 +144,35 @@ for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
 }
 
 /*
- * TEXT (Part 3): the closing heading on home and the first block heading on a
- * project page, in both languages.
+ * TEXT — the SAME dissolve over a heading (Task 42 correction of Task 41
+ * Part 3): coverage over the heading's box falls as it scrolls in, holds when
+ * scrolling stops, and returns when scrolling back; and nothing is copied or
+ * displaced — no overlay in the DOM, no transform on the text.
  */
 for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
-  // On home, whichever heading arrives at this width: sizes differ between 1440 and 390.
-  for (const [path, sel] of [['/', 'main :has(> .arrive-bands)'], ['/work/salt-line', '.block__heading']]) {
+  for (const path of ['/', '/work/salt-line']) {
     for (const width of [1440, 390]) {
-      const page = await open(prefix + path, { width })
-      const placeText = (p) => page.evaluate((sel, p) => {
-        const el = document.querySelector(sel); const vh = innerHeight
-        scrollTo({ top: el.getBoundingClientRect().top + scrollY - (vh * 0.92 - p * vh * 0.5), behavior: 'instant' })
-      }, sel, p)
-      const state = () => page.evaluate((sel) => {
-        const el = document.querySelector(sel)
-        const o = el.querySelector(':scope > .arrive-bands')
-        const bands = o ? [...o.children] : []
-        const lineH = parseFloat(getComputedStyle(el).lineHeight) || parseFloat(getComputedStyle(el).fontSize) * 1.2
-        return {
-          exists: !!o,
-          hidden: o ? o.hidden : true,
-          src: el.classList.contains('arrive-src'),
-          n: bands.length,
-          offsets: bands.map((b) => (b.style.transform.match(/-?[\d.]+/) || ['0'])[0]).map(Number),
-          ariaHidden: o?.getAttribute('aria-hidden'),
-          inert: o?.inert,
-          origHidden: el.closest('[aria-hidden="true"]') !== null,
-          // The browser normalises the clip string ("inset(12px 0px calc(100% - 24px))"),
-          // so read the two lengths out of whatever form it returns.
-          minBand: Math.min(...bands.map((b) => { const m = b.style.clipPath.match(/inset\(([\d.]+)px[^c]*calc\(100% - ([\d.]+)px\)/); return m ? +m[2] - +m[1] : -1 })),
-          arabicText: /^ar\b/i.test(el.closest('[lang]')?.getAttribute('lang') || ''),
-          lineH,
-          totalBandNodes: document.querySelectorAll('.arrive-band').length,
-        }
-      }, sel)
-      const present = await page.evaluate((sel) => !!document.querySelector(sel), sel)
-      if (!present) {
-        // Not a failure: at this width nothing on the page is at display size.
-        const n = await page.evaluate(() => document.querySelectorAll('.arrive-bands').length)
-        check(tag, `${sel} ${path} ${width}: text arrivals on the page`, true, `${n} — no heading at display size at this width`)
-        await page.close()
-        continue
-      }
-      await placeText(0.5); await wait(250); const mid = await state()
-      const y = await page.evaluate(() => scrollY)
-      await placeText(1.3); await wait(250); const done = await state()
-      await page.evaluate((y) => scrollTo({ top: y, behavior: 'instant' }), y); await wait(250); const back = await state()
-      const where = `${sel} ${path} ${width}`
-      if (!mid.exists) { check(tag, `${where}: text arrival present`, false, 'no overlay'); await page.close(); continue }
-      check(tag, `${where}: bands displaced mid-way`, mid.src && !mid.hidden && mid.offsets.some((o) => Math.abs(o) > 2), `${mid.n} bands, max offset ${Math.max(...mid.offsets.map(Math.abs)).toFixed(1)}px`)
-      check(tag, `${where}: resolved shows the original alone`, !done.src && done.hidden)
-      check(tag, `${where}: same position, same offsets`, JSON.stringify(back.offsets) === JSON.stringify(mid.offsets))
-      check(tag, `${where}: copies aria-hidden and inert, original read`, mid.ariaHidden === 'true' && mid.inert === true && !mid.origHidden)
-      // By the TEXT's language, not the page's: an untranslated heading on an
-      // Arabic page is Latin text and takes Latin bands.
-      if (mid.arabicText) check(tag, `${where}: Arabic text in whole-line bands`, mid.minBand >= mid.lineH * 0.8, `smallest band ${mid.minBand.toFixed(1)}px, line ${mid.lineH.toFixed(1)}px`)
-      else check(tag, `${where}: Latin text in 12px bands`, mid.minBand > 0 && mid.minBand <= 12.01, `smallest band ${mid.minBand.toFixed(1)}px`)
-      check(tag, `${where}: band nodes on the page`, mid.totalBandNodes < 400, `${mid.totalBandNodes} band elements`)
+      const page = await open(prefix === '/ar' && path === '/' ? '/ar' : prefix + path, { width })
+      const found = await page.evaluate(() => {
+        const vh = innerHeight
+        window.__target = [...document.querySelectorAll('main h2, main h3')].find((h) => parseFloat(getComputedStyle(h).fontSize) >= 18 && h.getBoundingClientRect().top > vh * 1.3 && !h.closest('.hero, .story, .sr-only'))
+        return window.__target ? `${window.__target.tagName.toLowerCase()} "${window.__target.textContent.trim().slice(0, 24)}"` : null
+      })
+      const where = `${path} ${width} text`
+      if (!found) { check(tag, `${where}: a heading below the fold`, true, 'none at display size at this width'); await page.close(); continue }
+      await placeAt(page, 0.2); await wait(250); const c20 = await coverage(page)
+      await placeAt(page, 0.6); await wait(250); const c60 = await coverage(page)
+      const y60 = await page.evaluate(() => scrollY)
+      await wait(700); const c60held = await coverage(page)
+      await placeAt(page, 1.5); await wait(250); const c150 = await coverage(page)
+      await page.evaluate((y) => scrollTo({ top: y, behavior: 'instant' }), y60); await wait(250)
+      const c60back = await coverage(page)
+      const dom = await page.evaluate(() => ({ copies: document.querySelectorAll('.arrive-bands, .arrive-band, .arrive-src').length, transform: getComputedStyle(window.__target).transform }))
+      const f = (v) => (v == null ? '—' : (v * 100).toFixed(1) + '%')
+      check(tag, `${where}: ${found} dissolves in`, c20 > c60 && c60 > c150, `${f(c20)} → ${f(c60)} → ${f(c150)}`)
+      check(tag, `${where}: holds when scrolling stops`, Math.abs(c60 - c60held) < 0.002, `${f(c60)} then ${f(c60held)}`)
+      check(tag, `${where}: returns when scrolling back`, Math.abs(c60 - c60back) < 0.0005, `${f(c60back)} back at 0.6`)
+      check(tag, `${where}: nothing copied or displaced`, dom.copies === 0 && dom.transform === 'none', `${dom.copies} copies, transform ${dom.transform}`)
       await page.close()
     }
   }

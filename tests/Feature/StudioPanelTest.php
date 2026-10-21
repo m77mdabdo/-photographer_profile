@@ -477,6 +477,7 @@ class StudioPanelTest extends TestCase
          * Task 41 Part 3 — the text band rules: 87,416.
          * Task 41 Part 7 — header targets, Inter fallback: 87,781.
          * Task 41 Part 7 — header targets, fallback metrics: 88,449.
+         * Task 42 item 1 — one dissolve for images and text: 88,118.
          *
          * THE SIZE IS ASSERTED ALONGSIDE THE HASH from now on. A hash tells
          * you the bundle changed; it cannot tell you whether it changed by a
@@ -487,12 +488,12 @@ class StudioPanelTest extends TestCase
          * leaked framework fails.
          * ───────────────────────────────────────────────────────────────────
          */
-        $this->assertSame('assets/public-CYnyhUEK.css', $publicCss, 'the public stylesheet changed');
-        $this->assertSame('assets/public-CnvqnhMQ.js', $publicJs, 'the public entry changed');
+        $this->assertSame('assets/public-BbStm3-y.css', $publicCss, 'the public stylesheet changed');
+        $this->assertSame('assets/public-hDlRWuM_.js', $publicJs, 'the public entry changed');
 
         $cssBytes = (int) filesize(public_path('build/'.$publicCss));
 
-        $this->assertSame(88_449, $cssBytes, 'the public stylesheet is a different size');
+        $this->assertSame(88_118, $cssBytes, 'the public stylesheet is a different size');
 
         $this->assertLessThan(
             90_000,

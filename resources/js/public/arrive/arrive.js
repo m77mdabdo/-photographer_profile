@@ -1,43 +1,49 @@
 /*
- * ARRIVALS — Task 41. How photographs and text arrive as they scroll into
- * view. No GSAP: one requestAnimationFrame loop reading positions, drawing
- * into one canvas and writing one transform per text band.
+ * ARRIVALS — Task 41, corrected in Task 42. How photographs and text arrive
+ * as they scroll into view: ONE dissolve, over a picture or over a block of
+ * text alike, and a word-lighting layer on statements above it. No GSAP: one
+ * requestAnimationFrame loop reading positions and drawing into one canvas.
+ *
+ * THE DISSOLVE. A field — a photograph, or a heading and the paragraph that
+ * opens its section — is covered by a grid of 12 CSS px tiles in its own
+ * ground colour. As the field scrolls in, tiles lift in a scattered order
+ * (each at its own seeded threshold, swept by an eased progress), with a 2px
+ * gutter between them; once the field is whole the grid lingers faintly and
+ * goes. The tile is a fixed physical size, so a small field has few tiles and
+ * a large one many, and all of them are drawn into one canvas: one node per
+ * page however many tiles.
+ *
+ * Over text this is a TEXTURE OVER THE BLOCK, not a cut through it: nothing
+ * is displaced, so a word is either covered by a square or shown whole, and
+ * in Arabic every join and every dot stays where it is. Task 41 first built
+ * text as sliding bands, from a misread of the reference; that code is gone.
  *
  * WHY NOT THE MOTION REGISTRY. The registry imports GSAP before any module
- * runs, and it switches itself off after the first page of a session (see
- * components/motion-boot). An arrival is not an intro to be seen once: it is
- * how every image on every page comes in, every time. So this layer is
- * separate, is loaded by public.js, and is refused only by
- * prefers-reduced-motion — in which case nothing here is ever created.
+ * runs and switches itself off after the first page of a session. Arrivals
+ * are how every page reads, every time, so this layer is loaded by public.js
+ * and refused only by prefers-reduced-motion, in which case nothing here is
+ * ever created.
  *
- * WHY NOT CSS ALONE. animation-timeline: view() can carry the scroll link but
- * not the effect: a CSS mask cannot threshold a noise texture per tile (masks
- * composite, they do not threshold), and a sprite of mask frames repeats down
- * the picture. So the scroll link is read here, once per frame, and the rest
- * is drawing.
- *
- * SCROLL-LINKED, NOT TRIGGERED. Every frame, each element's progress is
+ * SCROLL-LINKED, NOT TRIGGERED. Every frame, each field's progress is
  * computed from where it is on screen and nothing else. Stop scrolling and it
- * stops; scroll back and it goes back. There is no state to get out of step.
+ * stops; scroll back and it goes back.
  *
  * WHAT IS NEVER TOUCHED. The page's LCP element (fetchpriority="high"), the
- * hero, and anything already on screen when the page loads: those paint whole
- * and stay whole. With JavaScript off, or reduced motion, this file does
- * nothing and every image and line of text is simply there.
+ * hero, and anything already on screen when the page loads: those paint whole.
  */
 
-const TILE = 12            // CSS px — the recording's 24 device px at 2x
-const START = 0.92         // progress 0 when the element's top is at 92% of the viewport
+const TILE = 12            // CSS px — the recording's 24 device px at 2x, 12.3-13 px at 456
+const GUTTER = 2           // px of the field's ground between tiles
+const START = 0.92         // progress 0 when the field's top is at 92% of the viewport
 const SPAN = 0.5           // ...and 1 half a viewport of scrolling later
-const GRID_TAIL = 0.22     // the grid stays for this much more progress, fading
+const GRID_TAIL = 0.22     // the grid lingers for this much more progress, fading
 
 // Ease-in-out, close to the measured curve (0.8% · 8.5% · 35% · 65% · 77%).
 const ease = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 
 // A stable pseudo-random value per index, so a tile's threshold never moves.
-// (A full integer mix: the first version multiplied in floating point, and
-// rows of tiles came out visibly correlated — the top of a picture filled
-// last.)
+// (A full integer mix: a first version multiplied in floating point and rows
+// of tiles came out correlated.)
 const rand = (seed, i) => {
   let t = (Math.imul(seed, 0x9e3779b1) ^ Math.imul(i + 1, 0x85ebca6b)) >>> 0
   t = Math.imul(t ^ (t >>> 16), 0x7feb352d)
@@ -47,23 +53,46 @@ const rand = (seed, i) => {
 
 const progress = (rect, vh) => (vh * START - rect.top) / (vh * SPAN)
 
-let images = []
+let fields = []
 let canvas = null
 let ctx = null
 let frame = 0
 let dpr = 1
 
-function collectImages() {
+const SKIP = '.hero, .story__frame, .story__inner, [data-arrive-skip], .voice, .marquee, .sr-only'
+
+/*
+ * Photographs below the fold, and text: headings at display size (18px and
+ * up — mono section labels at ~11px stay still) with the paragraph that
+ * opens their section, and every statement. Anything on screen at load
+ * paints whole.
+ */
+function collectFields() {
   const vh = innerHeight
-  return [...document.querySelectorAll('main img')]
-    .filter((img) => {
-      if (img.getAttribute('fetchpriority') === 'high') return false
-      if (img.closest('.hero, .story__frame, [data-arrive-skip], .voice')) return false
-      const r = img.getBoundingClientRect()
-      if (r.top < vh) return false            // on screen at load: paints whole
-      return true
-    })
-    .map((img, i) => ({ img, seed: i + 1, ground: null }))
+  const out = []
+  const seen = new Set()
+  const add = (el, kind) => {
+    if (!el || seen.has(el) || el.closest(SKIP)) return
+    if (el.getAttribute('fetchpriority') === 'high') return
+    const r = el.getBoundingClientRect()
+    if (r.top < vh || r.width < 1) return
+    seen.add(el)
+    out.push({ el, kind, seed: out.length + 1, ground: null })
+  }
+
+  for (const img of document.querySelectorAll('main img')) add(img, 'image')
+
+  for (const h of document.querySelectorAll('main h2, main h3')) {
+    if (h.closest(SKIP) || parseFloat(getComputedStyle(h).fontSize) < 18) continue
+    add(h, 'text')
+    const next = h.nextElementSibling
+    const para = next?.tagName === 'P' ? next : next?.querySelector?.(':scope > p')
+    if (para && para.textContent.trim().length >= 40) add(para, 'text')
+  }
+
+  for (const s of document.querySelectorAll('[data-arrive~="statement"]')) add(s, 'text')
+
+  return out
 }
 
 function sizeCanvas() {
@@ -72,218 +101,71 @@ function sizeCanvas() {
   canvas.height = Math.round(innerHeight * dpr)
 }
 
-function groundOf(img) {
-  // The frame's own placeholder ground, which band registers re-bind, so a
-  // tile is the colour the empty frame would have been in that section.
-  const v = getComputedStyle(img).getPropertyValue('--bg-elevated').trim()
+/*
+ * The colour a tile is: over a photograph, the frame's own placeholder ground
+ * (--bg-elevated); over text, the section's ground (--bg). Both are tokens
+ * that register bands re-bind, so a tile is the right colour in either theme
+ * and in a band of the other register.
+ */
+function groundOf(item) {
+  const cs = getComputedStyle(item.el)
+  const v = cs.getPropertyValue(item.kind === 'image' ? '--bg-elevated' : '--bg').trim()
   return v || getComputedStyle(document.body).backgroundColor
 }
 
-function drawImages(vh) {
+function drawFields(vh) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   ctx.clearRect(0, 0, innerWidth, vh)
 
-  for (const item of images) {
-    const r = item.img.getBoundingClientRect()
+  for (const item of fields) {
+    const r = item.el.getBoundingClientRect()
     if (r.bottom < 0 || r.top > vh || r.width < 1) continue
 
     const p = progress(r, vh)
     if (p >= 1 + GRID_TAIL) continue          // whole, and the grid has gone
 
-    item.ground ??= groundOf(item.img)
+    item.ground ??= groundOf(item)
     const e = ease(p)
-    const cols = Math.ceil(r.width / TILE)
-    const rows = Math.ceil(r.height / TILE)
+
+    // EVERY EDGE ON A WHOLE DEVICE PIXEL. A field at a fractional position
+    // (top 558.19px) left tile edges and the clip anti-aliased, and those
+    // partial pixels came out differently depending on what the canvas drew
+    // before — the same scroll position gave 21.7% or 20.5% coverage. Snapped,
+    // a pixel is either covered or not, and a position gives one frame.
+    const snap = (v) => Math.round(v * dpr) / dpr
+    const L = snap(r.left), T = snap(r.top), R = snap(r.right), B = snap(r.bottom)
+    const cols = Math.ceil((R - L) / TILE)
+    const rows = Math.ceil((B - T) / TILE)
 
     ctx.save()
     ctx.beginPath()
-    ctx.rect(r.left, r.top, r.width, r.height)
+    ctx.rect(L, T, R - L, B - T)
     ctx.clip()
+    ctx.fillStyle = item.ground
 
-    // Tiles still dark: those whose threshold the eased progress has not
+    // Tiles still covered: those whose threshold the eased progress has not
     // passed. Scattered, because each tile's threshold is its own.
     if (e < 1) {
-      ctx.fillStyle = item.ground
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
-          if (rand(item.seed, y * cols + x) >= e) {
-            ctx.fillRect(r.left + x * TILE, r.top + y * TILE, TILE, TILE)
-          }
+          if (rand(item.seed, y * cols + x) >= e) ctx.fillRect(L + x * TILE, T + y * TILE, TILE, TILE)
         }
       }
     }
 
-    // The grid: over the picture while it fills, then fading out.
-    const gridAlpha = p <= 1 ? 0.55 : 0.55 * (1 - (p - 1) / GRID_TAIL)
-    if (gridAlpha > 0 && p > 0) {
+    // The gutter: solid while the field fills, easing to faint as it
+    // completes, then lingering and fading over GRID_TAIL.
+    const gridAlpha = p <= 0 ? 0 : p < 1 ? 1 - 0.6 * e : 0.4 * (1 - (p - 1) / GRID_TAIL)
+    if (gridAlpha > 0) {
       ctx.globalAlpha = gridAlpha
-      ctx.strokeStyle = item.ground
-      ctx.lineWidth = 1
-      ctx.beginPath()
-      for (let x = 1; x < cols; x++) { const px = Math.round(r.left + x * TILE) + 0.5; ctx.moveTo(px, r.top); ctx.lineTo(px, r.bottom) }
-      for (let y = 1; y < rows; y++) { const py = Math.round(r.top + y * TILE) + 0.5; ctx.moveTo(r.left, py); ctx.lineTo(r.right, py) }
-      ctx.stroke()
+      for (let x = 1; x < cols; x++) ctx.fillRect(L + x * TILE - GUTTER / 2, T, GUTTER, B - T)
+      for (let y = 1; y < rows; y++) ctx.fillRect(L, T + y * TILE - GUTTER / 2, R - L, GUTTER)
       ctx.globalAlpha = 1
     }
 
     ctx.restore()
   }
 }
-
-
-/* ───────────────────────────────────────────────────────────────────────────
- * TEXT — horizontal bands that slide into alignment (Part 3).
- *
- * A heading, or the paragraph that opens its section, is cut into bands; each
- * band is displaced sideways by its own amount, and the displacements
- * converge to zero over the same scroll window as the photographs.
- *
- * THE ORIGINAL STAYS WHERE IT IS. Its text is made transparent, not hidden,
- * so its box, its line breaks, its selection, its links and what a screen
- * reader reads are all untouched; the bands are copies laid over it in an
- * overlay that is aria-hidden and inert (so a copied link is never a second
- * tab stop). When the block resolves, the overlay is hidden and the original
- * shows — the resolved state is the page itself, not a copy of it.
- *
- * LATIN is cut every 12 CSS px, as the recording shows: a band through a
- * Latin letter leaves a letter that still reads as one mid-animation.
- * ARABIC is cut along its LINE BOXES and nothing finer. A 12 px band through
- * a cursive line severs its joins, and displaced it reads as broken script
- * rather than as text arriving — rendered and looked at before deciding; see
- * the report. Whole lines sliding into place keep every join intact and are
- * the same gesture at the only grain the script allows.
- * ─────────────────────────────────────────────────────────────────────────── */
-
-let texts = []
-
-function isArabic(el) {
-  const lang = el.closest('[lang]')?.getAttribute('lang') || ''
-  return /^ar\b/i.test(lang)
-}
-
-function collectTexts() {
-  const vh = innerHeight
-  const out = []
-  const seen = new Set()
-  const add = (el) => {
-    if (!el || seen.has(el)) return
-    if (!el.textContent.trim()) return
-    if (el.getBoundingClientRect().top < vh) return     // on screen at load: paints whole
-    seen.add(el)
-    out.push(el)
-  }
-
-  for (const h of document.querySelectorAll('main h2, main h3')) {
-    if (h.closest('.hero, .story, .statement, .sr-only, [data-arrive-skip], .marquee')) continue
-    if (h.classList.contains('sr-only')) continue
-    // Display size: 18px and up. Mono section labels (~11px) stay still;
-    // at 22px home had no arrival at all on a phone.
-    if (parseFloat(getComputedStyle(h).fontSize) < 18) continue
-    add(h)
-
-    // The paragraph that opens the section: the heading's next sibling if it
-    // is one, or the first paragraph inside it if it is a body container.
-    const next = h.nextElementSibling
-    const para = next?.tagName === 'P' ? next : next?.querySelector?.(':scope > p')
-    // A paragraph with something to read — not a count or a one-word note.
-    if (para && !para.closest('.statement') && para.textContent.trim().length >= 40) add(para)
-  }
-
-  return out.map((el, i) => ({ el, seed: 1000 + i, overlay: null, bands: [], active: false }))
-}
-
-function bandsFor(el, arabic) {
-  const cs = getComputedStyle(el)
-  const r = el.getBoundingClientRect()
-  const top = r.top + parseFloat(cs.borderTopWidth)
-  const height = el.clientHeight
-
-  if (!arabic) {
-    const out = []
-    for (let y = 0; y < height; y += TILE) out.push([y, Math.min(height, y + TILE)])
-    return out
-  }
-
-  // One band per rendered line: group the text's client rects by line.
-  const range = document.createRange()
-  range.selectNodeContents(el)
-  const lines = []
-  for (const q of range.getClientRects()) {
-    if (q.width < 1) continue
-    const t = q.top - top
-    const b = q.bottom - top
-    const line = lines.find((l) => Math.abs(l[0] - t) < 4 || (t < l[1] - 2 && b > l[0] + 2))
-    if (line) { line[0] = Math.min(line[0], t); line[1] = Math.max(line[1], b) } else lines.push([t, b])
-  }
-  lines.sort((a, b) => a[0] - b[0])
-  // Extend each band to meet the next, so nothing between lines is lost.
-  return lines.map((l, i) => [i === 0 ? 0 : (lines[i - 1][1] + l[0]) / 2, i === lines.length - 1 ? height : (l[1] + lines[i + 1][0]) / 2])
-}
-
-function build(item) {
-  const el = item.el
-  const cs = getComputedStyle(el)
-  const arabic = isArabic(el)
-  const size = parseFloat(cs.fontSize)
-  const amplitude = Math.max(16, Math.min(56, size * 0.6))
-
-  if (cs.position === 'static') el.style.position = 'relative'
-
-  const overlay = document.createElement('span')
-  overlay.className = 'arrive-bands'
-  overlay.setAttribute('aria-hidden', 'true')
-  overlay.inert = true
-
-  const source = [...el.childNodes].filter((n) => n !== item.overlay)
-  item.bands = bandsFor(el, arabic).map(([t, b], i) => {
-    const band = document.createElement('span')
-    band.className = 'arrive-band'
-    band.style.padding = cs.padding
-    band.style.clipPath = `inset(${t}px 0 calc(100% - ${b}px) 0)`
-    for (const n of source) {
-      const c = n.cloneNode(true)
-      if (c.nodeType === 1) { c.removeAttribute('id'); c.querySelectorAll?.('[id]').forEach((x) => x.removeAttribute('id')) }
-      band.append(c)
-    }
-    overlay.append(band)
-    return { band, d: (rand(item.seed, i) * 2 - 1) * amplitude }
-  })
-
-  el.append(overlay)
-  item.overlay = overlay
-}
-
-function teardown(item) {
-  item.overlay?.remove()
-  item.overlay = null
-  item.bands = []
-  item.el.classList.remove('arrive-src')
-  item.active = false
-}
-
-function drawTexts(vh) {
-  for (const item of texts) {
-    const r = item.el.getBoundingClientRect()
-    const e = ease(progress(r, vh))
-
-    if (e >= 1) {
-      if (item.active) { item.el.classList.remove('arrive-src'); item.overlay.hidden = true; item.active = false }
-      continue
-    }
-
-    if (!item.overlay) build(item)
-    if (!item.active) { item.el.classList.add('arrive-src'); item.overlay.hidden = false; item.active = true }
-
-    // Off screen there is nothing to see; keep the displaced state cheap.
-    if (r.bottom < -50 || r.top > vh + 50) continue
-    for (const b of item.bands) b.band.style.transform = `translateX(${(b.d * (1 - e)).toFixed(2)}px)`
-  }
-}
-
-function rebuildTexts() {
-  for (const item of texts) teardown(item)
-}
-
 
 /* ───────────────────────────────────────────────────────────────────────────
  * STATEMENTS — words light as the sentence scrolls through (Task 38 Part B,
@@ -368,8 +250,7 @@ function restoreStatements() {
 
 function tick() {
   frame = 0
-  if (ctx) drawImages(innerHeight)
-  drawTexts(innerHeight)
+  if (ctx) drawFields(innerHeight)
   if (statements.length) drawStatements(innerHeight)
 }
 
@@ -379,17 +260,17 @@ function schedule() {
 
 function onResize() {
   if (canvas) sizeCanvas()
-  rebuildTexts()
   schedule()
 }
 
 export function start() {
-  images = collectImages()
-  texts = collectTexts()
+  // Statements are split first, so a statement's field measures the box its
+  // word-lit copy will occupy (it is the same box: nothing moves).
   statements = [...document.querySelectorAll('[data-arrive~="statement"]')].map(splitStatement)
-  if (images.length === 0 && texts.length === 0 && statements.length === 0) return stop
+  fields = collectFields()
+  if (fields.length === 0 && statements.length === 0) return stop
 
-  if (images.length) {
+  if (fields.length) {
     canvas = document.createElement('canvas')
     canvas.className = 'arrive-canvas'
     canvas.setAttribute('aria-hidden', 'true')
@@ -411,8 +292,6 @@ export function stop() {
   if (frame) cancelAnimationFrame(frame)
   canvas?.remove()
   canvas = ctx = null
-  images = []
-  for (const item of texts) teardown(item)
-  texts = []
+  fields = []
   restoreStatements()
 }
