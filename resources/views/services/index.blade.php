@@ -7,7 +7,8 @@
             <h1 class="offer__title" id="offer-title">{{ Settings::get('services.heading') }}</h1>
 
             @if ($standfirst = Settings::get('services.standfirst'))
-                <p class="offer__standfirst">{{ $standfirst }}</p>
+                {{-- Task 41 5.2: the services page's statement, from the setting. --}}
+                <x-statement class="offer__standfirst">{{ $standfirst }}</x-statement>
             @endif
 
             {{--

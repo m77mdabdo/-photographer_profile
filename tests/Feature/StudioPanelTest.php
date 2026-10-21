@@ -486,7 +486,7 @@ class StudioPanelTest extends TestCase
          * ───────────────────────────────────────────────────────────────────
          */
         $this->assertSame('assets/public-Mlb_arcg.css', $publicCss, 'the public stylesheet changed');
-        $this->assertSame('assets/public-PRoKBAgw.js', $publicJs, 'the public entry changed');
+        $this->assertSame('assets/public-O_yHqqNa.js', $publicJs, 'the public entry changed');
 
         $cssBytes = (int) filesize(public_path('build/'.$publicCss));
 

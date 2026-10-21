@@ -8,9 +8,8 @@
     the link goes to the enquiry form.
 --}}
 <section class="closing" aria-labelledby="closing-title">
-    <h2 class="closing__title" id="closing-title">
-        {{ Settings::get('closing.title') }}
-    </h2>
+    {{-- Task 41 5.2: the home page's second statement, the line it ends on. --}}
+    <x-statement tag="h2" class="closing__title" id="closing-title">{{ Settings::get('closing.title') }}</x-statement>
 
     <a class="closing__link" href="{{ route('contact.show') }}">
         {{ Settings::get('closing.cta') }}

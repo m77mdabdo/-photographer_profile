@@ -1,4 +1,4 @@
-@props(['block', 'credits' => null, 'descriptions' => null, 'lead' => false])
+@props(['block', 'credits' => null, 'descriptions' => null, 'lead' => false, 'statement' => false])
 @php
     // The enum value maps one-to-one onto a component file name, so adding a
     // block type means adding a view — never editing a switch.
@@ -15,4 +15,5 @@
                      :descriptions="$descriptions"
                      {{-- The first block on the page that actually holds an
                           image owns the LCP; every other picture stays lazy. --}}
-                     :lead="$lead" />
+                     :lead="$lead"
+                     :statement="$statement" />

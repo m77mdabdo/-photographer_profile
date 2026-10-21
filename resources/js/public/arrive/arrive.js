@@ -282,10 +282,93 @@ function rebuildTexts() {
   for (const item of texts) teardown(item)
 }
 
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * STATEMENTS — words light as the sentence scrolls through (Task 38 Part B,
+ * moved here in Task 41 Part 5).
+ *
+ * It ran on GSAP's ScrollTrigger inside the motion registry, which meant two
+ * things the Task 41 audit found: every page carrying one fetched GSAP, and
+ * the registry switches itself off after the first page of a session, so the
+ * effect only ever ran on a visitor's first page. Here it is the same effect
+ * — the same split at whitespace, the same accent rule, the same two-word
+ * ramp, the same scroll window — on the loop the arrivals already run.
+ *
+ * The server sends a plain paragraph at full contrast; everything below is
+ * done to a paragraph that already reads, and undone by stop().
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+const RAMP = 2   // the lit edge is two words wide
+
+let statements = []
+
+function splitStatement(el) {
+  const original = [...el.childNodes].map((n) => n.cloneNode(true))
+  const visual = document.createElement('span')
+  visual.className = 'statement__visual'
+  visual.setAttribute('aria-hidden', 'true')
+
+  const words = []
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+  for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+    const owner = text.parentElement.closest('[lang]')
+    const scoped = owner && owner !== el && el.contains(owner) ? owner : null
+    for (const part of text.textContent.split(/(\s+)/)) {
+      if (part === '') continue
+      if (/^\s+$/.test(part)) { visual.append(document.createTextNode(part)); continue }
+      const word = document.createElement('span')
+      word.className = 'statement__word'
+      word.textContent = part
+      if (scoped) { word.lang = scoped.lang; if (scoped.dir) word.dir = scoped.dir }
+      visual.append(word)
+      words.push(word)
+    }
+  }
+
+  // The accent rule is the owner's (home.statement_accent, per locale): the
+  // LAST word, the one the scrub resolves onto.
+  if (el.dataset.accent === 'last' && words.length > 1) words[words.length - 1].classList.add('statement__accent')
+
+  const spoken = document.createElement('span')
+  spoken.className = 'sr-only'
+  spoken.append(...original.map((n) => n.cloneNode(true)))
+
+  el.replaceChildren(spoken, visual)
+  el.classList.add('statement--scrubbed')
+
+  const unlit = parseFloat(getComputedStyle(el).getPropertyValue('--statement-unlit')) || 0.4
+  return { el, original, words, unlit, last: -1 }
+}
+
+function drawStatements(vh) {
+  for (const s of statements) {
+    const r = s.el.getBoundingClientRect()
+    // From the statement's top entering the viewport to its bottom at 65%.
+    const p = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.35 + r.height)))
+    if (p === s.last) continue
+    s.last = p
+    const n = s.words.length
+    const at = p * (n + RAMP)
+    for (let i = 0; i < n; i++) {
+      const lit = Math.min(1, Math.max(0, (at - i) / RAMP))
+      s.words[i].style.opacity = String(s.unlit + (1 - s.unlit) * lit)
+    }
+  }
+}
+
+function restoreStatements() {
+  for (const s of statements) {
+    s.el.replaceChildren(...s.original)
+    s.el.classList.remove('statement--scrubbed')
+  }
+  statements = []
+}
+
 function tick() {
   frame = 0
   if (ctx) drawImages(innerHeight)
   drawTexts(innerHeight)
+  if (statements.length) drawStatements(innerHeight)
 }
 
 function schedule() {
@@ -301,7 +384,8 @@ function onResize() {
 export function start() {
   images = collectImages()
   texts = collectTexts()
-  if (images.length === 0 && texts.length === 0) return stop
+  statements = [...document.querySelectorAll('[data-arrive~="statement"]')].map(splitStatement)
+  if (images.length === 0 && texts.length === 0 && statements.length === 0) return stop
 
   if (images.length) {
     canvas = document.createElement('canvas')
@@ -328,4 +412,5 @@ export function stop() {
   images = []
   for (const item of texts) teardown(item)
   texts = []
+  restoreStatements()
 }

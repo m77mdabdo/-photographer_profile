@@ -70,8 +70,14 @@
                 </h2>
 
                 <div class="studio__prose">
+                    {{-- Task 41 5.2: the approach opens with a statement — its
+                         first paragraph, from the setting; the rest reads plainly. --}}
                     @foreach (preg_split('/\R\s*\R/', trim($approach)) as $paragraph)
-                        <p>{{ $paragraph }}</p>
+                        @if ($loop->first)
+                            <x-statement class="studio__statement">{{ $paragraph }}</x-statement>
+                        @else
+                            <p>{{ $paragraph }}</p>
+                        @endif
                     @endforeach
                 </div>
             </section>

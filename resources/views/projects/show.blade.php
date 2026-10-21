@@ -71,13 +71,17 @@
         @php($leadBlockId = $project->blocks->first(fn ($b) => $b->blockMedia->isNotEmpty())?->id)
 
         <div class="project__story">
+            {{-- Task 41 5.1: a quotation is a statement unless the block before it was. --}}
+            @php($previousWasStatement = false)
             @foreach ($project->blocks as $block)
+                @php($isStatement = $block->type === \App\Enums\BlockType::Quote && ! $previousWasStatement)
+                @php($previousWasStatement = $isStatement)
                 @if ($block->id === $leadBlockId)
                     <div class="project__lead" style="view-transition-name: project-lead">
                         <x-block :block="$block" :credits="$project->credits" :lead="true" />
                     </div>
                 @else
-                    <x-block :block="$block" :credits="$project->credits" :lead="false" />
+                    <x-block :block="$block" :credits="$project->credits" :lead="false" :statement="$isStatement" />
                 @endif
             @endforeach
         </div>
