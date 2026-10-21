@@ -26,6 +26,26 @@ import { start } from './public/motion/registry'
 
 function boot() {
   start().catch(() => settle())
+  arrive()
+}
+
+/*
+ * Arrivals (Task 41): how images and text come in as they scroll into view.
+ * A separate layer from the registry above, with no GSAP, and refused only by
+ * reduced motion — not by "already seen this session", because it is how
+ * every page reads, not an intro. If the visitor turns reduced motion on
+ * mid-visit, everything it made is removed.
+ */
+function arrive() {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)')
+  if (reduce.matches) return
+
+  import('./public/arrive/arrive.js')
+    .then(({ start: begin, stop }) => {
+      begin()
+      reduce.addEventListener('change', (e) => { if (e.matches) stop() }, { once: true })
+    })
+    .catch(() => {})
 }
 
 /*

@@ -473,6 +473,7 @@ class StudioPanelTest extends TestCase
          * and the transition's pseudo-element rules. Its opt-in is inline by
          * CSP hash and its script a separate entry, so neither is in here.
          * Task 38 Part G: 86,961 — the persistent contact link below 900.
+         * Task 41 Part 2 — the arrival canvas rule: 87,085.
          *
          * THE SIZE IS ASSERTED ALONGSIDE THE HASH from now on. A hash tells
          * you the bundle changed; it cannot tell you whether it changed by a
@@ -483,12 +484,12 @@ class StudioPanelTest extends TestCase
          * leaked framework fails.
          * ───────────────────────────────────────────────────────────────────
          */
-        $this->assertSame('assets/public-CpfuO3vd.css', $publicCss, 'the public stylesheet changed');
-        $this->assertSame('assets/public-Dc8p32X2.js', $publicJs, 'the public entry changed');
+        $this->assertSame('assets/public-n1qQgWo1.css', $publicCss, 'the public stylesheet changed');
+        $this->assertSame('assets/public-BGSfw8OK.js', $publicJs, 'the public entry changed');
 
         $cssBytes = (int) filesize(public_path('build/'.$publicCss));
 
-        $this->assertSame(86_961, $cssBytes, 'the public stylesheet is a different size');
+        $this->assertSame(87_085, $cssBytes, 'the public stylesheet is a different size');
 
         $this->assertLessThan(
             90_000,
