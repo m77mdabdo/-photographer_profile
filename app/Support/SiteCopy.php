@@ -114,7 +114,9 @@ final class SiteCopy
          */
         ['key' => 'rail.year', 'value' => 'Year', 'ar' => 'السنة', 'type' => 'string', 'group' => 'hero'],
         ['key' => 'rail.place', 'value' => 'Place', 'ar' => 'المكان', 'type' => 'string', 'group' => 'hero'],
-        ['key' => 'rail.client', 'value' => 'For', 'ar' => 'لـ', 'type' => 'string', 'group' => 'hero'],
+        // Task 41 7.4: «لصالح», not «لـ». The prefix on its own rendered as a
+        // bare letter on the rail — a label with no word in it.
+        ['key' => 'rail.client', 'value' => 'For', 'ar' => 'لصالح', 'type' => 'string', 'group' => 'hero'],
         ['key' => 'rail.work', 'value' => 'Series', 'ar' => 'المتتالية', 'type' => 'string', 'group' => 'hero'],
         // Task 38 E1 — the spec table's labels. Values are the picture's own EXIF.
         ['key' => 'spec.camera', 'value' => 'Camera', 'ar' => 'الكاميرا', 'type' => 'string', 'group' => 'hero'],

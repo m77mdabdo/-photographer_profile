@@ -231,6 +231,23 @@ class FontMetricsTest extends TestCase
         $measured = $this->measure(array_values(array_unique($files)));
 
         foreach ($available as $family => [$webfont, $fallback]) {
+            /*
+             * TASK 41 7.5 — INTER FALLBACK IS MATCHED BY WIDTH, NOT X-HEIGHT.
+             *
+             * This assertion is about the guarantee in this class's title, "no
+             * layout shift on swap", and for Inter Tight the x-height ratio
+             * (105.27%) passed while the guarantee failed: Inter Tight is
+             * narrower than Inter, so text set ~9% wider in the fallback and a
+             * project subtitle wrapped to two lines, then one, moving the story
+             * 34px (CLS 0.0166-0.0319). It is now matched by WIDTH, 97.5%,
+             * set against the site's own copy and its two measured line breaks, and the guarantee is asserted
+             * on the render by tests/Support/font-swap-check.mjs. The two other
+             * faces stay on x-height; neither showed a shift.
+             */
+            if ($family === 'Inter Fallback') {
+                continue;
+            }
+
             $webX = $measured[$webfont]['xHeight'] ?? null;
             $fallbackX = $measured[$fallback]['xHeight'] ?? null;
 

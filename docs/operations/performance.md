@@ -13,10 +13,11 @@ being English-only.
 | TBT | 0 ms | 0 ms |
 | LCP | **2.5 s** / score 97 | **2.9 s** / score 94 |
 
-**CLS on a project page at 390 is 0.3152–0.3336 after scrolling**, in both
-locales, bimodal at roughly one run in three, under production config.
-Lighthouse reports 0 because it never scrolls to the bottom. Pre-existing at
-`5a51e08`. Part D owns it (D4, D5). See the CLS section below.
+**The 0.3152–0.3336 strip collapse below did not reproduce in 32 runs** on
+the production rig in Task 38 D (stepped scroll and jump-to-bottom, three
+project pages with strips). Part D did not touch the strip, so it did not fix
+it: why it stopped is not established. Project pages' remaining CLS was a font
+swap, fixed in Task 41 7.5.
 
 **TBT is 0 ms in both locales.** An earlier draft of this table read 30 ms for
 Arabic; that was a single run, and six runs across both locales read 0.
@@ -154,7 +155,8 @@ Attributed, with `PerformanceObserver` reporting `sources`: `UL.block__strip`
 collapses from 293px to 24px while its `PICTURE` goes 0→209px and
 `FIGCAPTION.block__caption` 0→22px, at ~3.7s — the horizontal image strip has no
 reserved box until its pictures load. Identical on HEAD at `5a51e08`, so it
-predates Task 38. **Part D owns the fix** (D4, the strip; D5, the 390 layout).
+predates Task 38. It has not reproduced since (0 in 32 runs, Task 38 D), and no
+change to the strip explains that.
 
 Until then, every part reports CLS **after scrolling the page to the bottom**,
 and reports the project page honestly rather than quoting 0.0000 from a

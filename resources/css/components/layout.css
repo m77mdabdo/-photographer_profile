@@ -77,6 +77,52 @@
  * current page. It is dimmed below the links instead, which is what
  * "not available" should look like.
  */
+/*
+ * TASK 41 7.1 — A 44 x 44 TARGET FOR EVERY HEADER LINK ON A TOUCH SCREEN.
+ *
+ * Measured at 390: the six links were 15px tall and as narrow as 17px, the
+ * wordmark 33px, and the language switch's two buttons 49 x 27 and 37 x 27 —
+ * the harness had a 44px check on that switch, but only for the panel's
+ * copy of it. Each now gets a 44 x 44 box below 900; the text inside is
+ * the same size and the list is the same visible list, with the same links,
+ * working with JS off — no disclosure menu. The words keep their spacing:
+ * the space between them became part of the targets.
+ * bin/browser-check.mjs asserts it on every public page (7.2).
+ */
+@media (max-width: 899px) {
+    .site-header__mark {
+        display: inline-flex;
+        align-items: center;
+        min-block-size: 44px;
+    }
+
+    /*
+     * The box grows outward from the text: each link takes half the old
+     * 24px gap as its own inline padding, so the words sit as far apart as
+     * they did while the space between them is now part of a target. The list
+     * is pulled back by the same amount so the first link's text still starts
+     * at the gutter. (A first version shrank the gap instead, and wide links
+     * ended up 8px apart.)
+     */
+    .site-nav__list {
+        gap: 0;
+        margin-inline: calc(-1 * var(--sp-5) / 2);
+    }
+
+    .site-nav__list a {
+        padding-inline: calc(var(--sp-5) / 2);
+    }
+
+    .site-nav__list a,
+    .locale-switch__option {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-block-size: 44px;
+        min-inline-size: 44px;
+    }
+}
+
 .site-nav__list span[aria-disabled] {
     color: var(--text-secondary);
     opacity: 0.4;

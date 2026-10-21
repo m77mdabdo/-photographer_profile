@@ -114,7 +114,9 @@ class ArabicFontsTest extends TestCase
 
         // The Latin faces stay BEHIND them, for the Latin runs inside Arabic.
         $this->assertStringContainsString("'Rubik', 'Archivo'", $arabicBlock);
-        $this->assertStringContainsString("'IBM Plex Sans Arabic', 'Inter Tight'", $arabicBlock);
+        // Task 41 7.5: the Arabic stand-in sits between the two real faces; its
+        // effect is asserted on the render by tests/Support/font-swap-check.mjs.
+        $this->assertStringContainsString("'IBM Plex Sans Arabic', 'Arabic Fallback', 'Inter Tight'", $arabicBlock);
 
         // And the panel names the display role --font-serif, so it restates it.
         $theme = (string) file_get_contents(base_path('resources/css/filament/studio/theme.css'));

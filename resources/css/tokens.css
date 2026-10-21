@@ -389,7 +389,7 @@
      * ═══════════════════════════════════════════════════════════════════════
      */
     --font-display: 'Rubik', 'Archivo', 'Archivo Fallback', 'Arial Narrow', Arial, sans-serif;
-    --font-sans: 'IBM Plex Sans Arabic', 'Inter Tight', 'Inter Fallback', -apple-system, 'Segoe UI', system-ui, sans-serif;
+    --font-sans: 'IBM Plex Sans Arabic', 'Arabic Fallback', 'Inter Tight', 'Inter Fallback', -apple-system, 'Segoe UI', system-ui, sans-serif;
 }
 
 

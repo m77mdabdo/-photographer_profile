@@ -180,13 +180,82 @@
     line-gap-override: 0%;
 }
 
+/*
+ * TASK 41 7.5 — MATCHED TO INTER TIGHT, WHICH IS THE FACE THIS SITE SHIPS.
+ *
+ * size-adjust was 105.3%, a figure for Inter. Inter Tight is narrower:
+ * measured over 797 characters of the site's own copy, it sets at 96.6% of
+ * Arial's width at weight 400. So while the real face loaded, text set ~9%
+ * wider than it would end up, and a project subtitle that fits one line in
+ * Inter Tight wrapped to two in the fallback (67px -> 33px when the font
+ * landed), moving everything under it 34px: CLS 0.0166-0.0319 on project
+ * pages, English only (Arabic's text face is IBM Plex).
+ *
+ * 97.5%, not the 96.6% average: no one scale is exact for every sentence, so
+ * the value was chosen against the two real line breaks it has to keep —
+ * that subtitle at 390, and the project excerpt at 1440, which at 96.6% set
+ * on two lines in the fallback and three in Inter Tight. 97.5% holds both;
+ * 96.6% loses the excerpt, 98.5% and above lose the subtitle. The overrides
+ * are rescaled with it — Chrome multiplies them by size-adjust — so ascent
+ * and descent stay 0.969 and 0.241 em, exactly as before.
+ */
 @font-face {
     font-family: 'Inter Fallback';
     src: local('Arial'), local('Helvetica Neue'), local('Helvetica');
-    size-adjust: 105.3%;
-    ascent-override: 92.0%;
-    descent-override: 22.9%;
+    size-adjust: 97.5%;
+    ascent-override: 99.4%;
+    descent-override: 24.7%;
     line-gap-override: 0%;
+    /*
+     * LATIN ONLY. Arial carries Arabic glyphs on macOS and Windows, and this
+     * face sits in the Arabic text stack behind IBM Plex, so without a range
+     * it was also the stand-in for ARABIC while IBM Plex loaded — at a scale
+     * chosen for Latin. Re-tuning it for Inter Tight above moved Arabic too:
+     * the /ar/work filter rewrapped on swap, CLS 0.0014 -> 0.0355 at 390.
+     * Arabic now has its own stand-in, below.
+     */
+    unicode-range: U+0000-002F, U+003A-024F, U+0259, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+        U+0300-036F, U+1E00-1EFF, U+2000-206F, U+20A0-20C0, U+2100-214F,
+        U+2190-2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/*
+ * ...and its DIGITS, scaled apart from its words (Task 41 7.5). Text widths
+ * want 96.6%, but `ch` is the width of the "0" glyph, and --container-text is
+ * 65ch: at 96.6% Arial's "0" is 7% narrower than Inter Tight's (0.556 against
+ * 0.578 em), so every ch-measured column narrowed while the font loaded — the
+ * project header went 656 -> 706px on swap at 1440, CLS 0.0080 (0.0025 on the
+ * old value). A second rule for the same family, over the digits only, gives
+ * the "0" Inter Tight's exact width; the overrides keep the same 0.969 / 0.241
+ * em ascent and descent.
+ */
+@font-face {
+    font-family: 'Inter Fallback';
+    src: local('Arial'), local('Helvetica Neue'), local('Helvetica');
+    size-adjust: 104%;
+    ascent-override: 93.2%;
+    descent-override: 23.2%;
+    line-gap-override: 0%;
+    unicode-range: U+0030-0039;
+}
+
+/*
+ * The Arabic stand-in while IBM Plex Sans Arabic loads (Task 41 7.5).
+ * Arial's Arabic, scaled to IBM Plex's width: measured over 875 characters of
+ * the site's Arabic copy, IBM Plex sets at 111.1% of Arial. The vertical
+ * overrides are IBM Plex's own hhea (1.085 / 0.415 em) divided by that scale,
+ * since Chrome multiplies them by size-adjust. Same range as IBM Plex, so it
+ * never touches a Latin character.
+ */
+@font-face {
+    font-family: 'Arabic Fallback';
+    src: local('Arial'), local('Geeza Pro');
+    size-adjust: 111.1%;
+    ascent-override: 97.7%;
+    descent-override: 37.4%;
+    line-gap-override: 0%;
+    unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF,
+        U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
 }
 
 @font-face {

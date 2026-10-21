@@ -1223,6 +1223,39 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir, expectsLocaleSwitche
     }
   }
 
+  /*
+   * ───────────────────────────────────────────────────────────────────────────
+   * TASK 41 7.2 — AND THE PUBLIC HEADER, WHICH THE CHECK ABOVE NEVER SAW.
+   *
+   * The touch-target check was written for the panel (Task 33 D2) and gated
+   * `if (isAdmin)`. On public pages the only size the harness measured was
+   * the locale switcher's two buttons. So it passed 800/800 while every
+   * public page carried six header links 14px tall and as narrow as 17px at
+   * 390 — the control a visitor on a phone uses first.
+   *
+   * At touch widths (under 900) every link and button in the public header
+   * must be 44 x 44: both dimensions, because a 14px-tall link is missed by a
+   * thumb however wide it is, and a 17px-wide one however tall.
+   * ───────────────────────────────────────────────────────────────────────────
+   */
+  if (!isAdmin && window.innerWidth < 900) {
+    const small = []
+
+    for (const el of document.querySelectorAll('.site-header a, .site-header button')) {
+      const r = el.getBoundingClientRect()
+
+      if (r.width === 0 || r.height === 0) continue
+      if (r.width >= 44 && r.height >= 44) continue
+
+      const name = (el.textContent || '').trim().slice(0, 18) || el.getAttribute('aria-label') || el.tagName.toLowerCase()
+      small.push(`${name} ${Math.round(r.width)}x${Math.round(r.height)}`)
+    }
+
+    if (small.length) {
+      problems.push(`${small.length} header target(s) under 44x44: ${small.slice(0, 7).join(', ')}`)
+    }
+  }
+
   // --- 4b. form controls are labelled and focusable -------------------------
   /*
    * Only meaningful where there is a form, and this is the page the whole
