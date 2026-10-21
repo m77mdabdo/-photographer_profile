@@ -1,4 +1,7 @@
 <x-layouts::public :seo="$seo">
+@push('head')
+    <x-page-transition />
+@endpush
     <section class="work-index" aria-labelledby="work-title">
         <header class="work-index__header">
             <p class="work-index__eyebrow">{{ \App\Support\SiteCopy::get('nav.work') }}</p>

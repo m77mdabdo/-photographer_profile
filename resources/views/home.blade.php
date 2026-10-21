@@ -1,4 +1,7 @@
 <x-layouts::public :seo="$seo">
+@push('head')
+    <x-page-transition />
+@endpush
     <x-home.hero :project="$hero" :accent="$heroAccent" />
 
     <x-home.client-marquee :clients="$clients" />

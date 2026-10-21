@@ -44,6 +44,14 @@ export default defineConfig({
                 'resources/js/public.js',
 
                 /*
+                 * The page transition's few lines of script (Task 38 Part F),
+                 * linked only by the pages that opt in. Its stylesheet rules
+                 * are in the main bundle and its opt-in is inline by CSP
+                 * hash: a separate stylesheet was a render-blocking request.
+                 */
+                'resources/js/transition.js',
+
+                /*
                  * THE PANEL'S THEME IS A FOURTH, SEPARATE ENTRY.
                  *
                  * Filament compiles its own Tailwind build from this file.

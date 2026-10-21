@@ -1,0 +1,89 @@
+/*
+ * The page transition — Task 38 Part F.
+ *
+ * A cross-document View Transition. That mechanism was chosen because it is
+ * the only one that meets F1 by construction: the browser has ALREADY loaded,
+ * parsed and painted the destination page — server-rendered, complete, live
+ * — before any of this runs, and the effect is a set of pseudo-elements
+ * layered on top of it. Nothing here can hide content: if the browser lacks
+ * View Transitions, if this stylesheet fails to load, or if JavaScript is
+ * off, a link is an ordinary link to an ordinary page.
+ *
+ * THE OPT-IN IS NOT IN THIS FILE: it is App\Support\PageTransition::RULE,
+ * inline in the head of the pages that take part, allowed by CSP hash. These
+ * rules only style the pseudo-elements a transition creates, so in the main
+ * bundle they cost nothing on a page that never transitions.
+ *
+ * WHO OPTS IN. Both documents must, so the rule is written only into the
+ * pages a project is reached from (home, work) and from the project page
+ * itself. Everything else on the site navigates as it always has — the
+ * archive included, which a note in its template records as getting no
+ * motion by decision.
+ *
+ * REDUCED MOTION REMOVES IT: the opt-in is inside the media query, so for a
+ * visitor who asks for less motion there is no transition at all — not a
+ * shorter one.
+ *
+ * THE SEQUENCE, 850 ms in all (F2 says why not the reference's 2.4 s):
+ *
+ *     0–300    the page being left fades to its own ground       cover
+ *   250–550    the destination's label rises in                  label
+ *   300–800    the destination's lead picture is unmasked        reveal
+ *              bottom to top
+ *   500–850    a hairline draws in the destination's own accent  rule
+ *              from the leading edge
+ *
+ * Each named element is a real element of the DESTINATION page, so the label
+ * is its own category line and the rule its own accent (F3, F4); the
+ * transition invents nothing.
+ */
+
+/*
+ * The cover: the page left behind goes to the page's OWN ground — ink for a
+ * visitor in the dark theme, paper for one in the light. The reference covers
+ * to black; doing that here would flash a light-theme visitor with the
+ * register they chose not to see, on every arrival. --bg, not a palette
+ * colour, so the theme governs (ThemeTest holds every stylesheet to that).
+ */
+::view-transition {
+    background-color: var(--bg);
+}
+
+::view-transition-old(root) {
+    animation: vt-cover-out 300ms var(--ease-editorial, ease) both;
+}
+
+::view-transition-new(root) {
+    animation: vt-cover-in 300ms var(--ease-editorial, ease) 250ms both;
+}
+
+::view-transition-new(project-label) {
+    animation: vt-label-in 300ms var(--ease-editorial, ease) 250ms both;
+}
+
+::view-transition-new(project-lead) {
+    animation: vt-reveal 500ms var(--ease-editorial, ease) 300ms both;
+}
+
+::view-transition-new(project-rule) {
+    animation: vt-draw 350ms var(--ease-editorial, ease) 500ms both;
+    transform-origin: left center;
+}
+
+/* From the leading edge, which in Arabic is the right. */
+:root[dir='rtl']::view-transition-new(project-rule) {
+    transform-origin: right center;
+}
+
+/* The outgoing snapshots of the named elements simply leave with the page. */
+::view-transition-old(project-label),
+::view-transition-old(project-lead),
+::view-transition-old(project-rule) {
+    animation: vt-cover-out 300ms var(--ease-editorial, ease) both;
+}
+
+@keyframes vt-cover-out { to { opacity: 0; } }
+@keyframes vt-cover-in { from { opacity: 0; } }
+@keyframes vt-label-in { from { opacity: 0; transform: translateY(8px); } }
+@keyframes vt-reveal { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes vt-draw { from { transform: scaleX(0); } }

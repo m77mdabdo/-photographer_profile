@@ -3,6 +3,20 @@
 .project { padding-bottom: var(--sp-12); }
 .project__header { max-width: var(--container-text); margin-inline: auto; padding: var(--sp-11) var(--gutter) var(--sp-9); }
 .project__title { font-size: var(--fs-display-l); margin-bottom: var(--sp-4); }
+
+/* Task 38 F: the project's own label and its accent rule. Visible always;
+   the page transition animates them when it runs. The label's hierarchy is
+   size and colour, not case, which is inert in Arabic (E3). */
+.project__label { margin-bottom: var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-meta); letter-spacing: var(--tracking-wide); color: var(--text-secondary); }
+.project__header { --project-accent: var(--project-accent-dark, var(--accent)); }
+:root[data-theme='light'] .project__header { --project-accent: var(--project-accent-light, var(--accent)); }
+@media (prefers-color-scheme: light) { :root:not([data-theme]) .project__header { --project-accent: var(--project-accent-light, var(--accent)); } }
+/* F6 moves focus to the heading on arrival so a screen reader starts there.
+   A heading is not a control, so it wears no focus ring for it — measured
+   on the first render as a box around the title after every arrival. Only
+   the script gives it tabindex="-1", so nothing else loses its outline. */
+main h1[tabindex='-1']:focus { outline: none; }
+.project__rule { display: block; inline-size: var(--sp-11); block-size: var(--rule-strong); margin-block: 0 var(--sp-5); background-color: var(--project-accent); }
 .project__subtitle { font-size: var(--fs-h3); color: var(--text-secondary); margin-bottom: var(--sp-6); }
 .project__facts { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-2) var(--sp-5); font-size: var(--fs-small); margin-bottom: var(--sp-6); }
 .project__facts dt { color: var(--text-secondary); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-size: var(--fs-meta); }

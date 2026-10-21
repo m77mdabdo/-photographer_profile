@@ -145,6 +145,10 @@
     @endif
 
     @vite(['resources/css/public.css', 'resources/js/public.js'])
+
+    {{-- Per-page assets. Today only the page transition (Task 38 Part F),
+         linked by the pages that opt into it. --}}
+    @stack('head')
 </head>
 <body>
     {{--

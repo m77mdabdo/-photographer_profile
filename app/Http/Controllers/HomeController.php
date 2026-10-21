@@ -130,12 +130,7 @@ class HomeController extends Controller
          * which is why a low-key portrait with one strong colour in it no
          * longer yields near-black.
          */
-        $source = $hero?->cover?->accentSource() ?? $hero?->hero?->accentSource();
-
-        return [
-            'dark' => AccentColor::derive($source, '#0b0b0c'),
-            'light' => AccentColor::derive($source, '#f4f1ea'),
-        ];
+        return AccentColor::pairForProject($hero);
     }
 
     /**

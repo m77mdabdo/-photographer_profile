@@ -1,4 +1,7 @@
 <x-layouts::public :seo="$seo" :structured-data="$structuredData ?? null">
+@push('head')
+    <x-page-transition />
+@endpush
     @if ($preview)
         <p class="preview-banner" role="status">
             {{ \App\Support\SiteCopy::get('project.preview_warning') }}
@@ -6,8 +9,21 @@
     @endif
 
     <article class="project">
-        <header class="project__header">
+        {{--
+            Task 38 Part F. Three of this page's own elements are named for
+            the page transition, so it animates the destination rather than
+            anything invented: the label is the project's categories, the
+            rule draws in the accent its photograph gives (F3, F4), and the
+            lead picture is the one unmasked. With no transition they are
+            simply a label and a rule.
+        --}}
+        <header class="project__header"
+                style="@if ($accent['dark']) --project-accent-dark: {{ $accent['dark'] }}; @endif @if ($accent['light']) --project-accent-light: {{ $accent['light'] }}; @endif">
+            @if ($project->categories->isNotEmpty())
+                <p class="project__label" style="view-transition-name: project-label"><x-t-join :items="$project->categories" field="name" separator="comma" /></p>
+            @endif
             <h1 class="project__title"><x-t :of="$project" field="title" /></h1>
+            <span class="project__rule" aria-hidden="true" style="view-transition-name: project-rule"></span>
 
             @if ($project->subtitle)
                 <p class="project__subtitle"><x-t :of="$project" field="subtitle" /></p>
@@ -56,8 +72,13 @@
 
         <div class="project__story">
             @foreach ($project->blocks as $block)
-                <x-block :block="$block" :credits="$project->credits"
-                         :lead="$block->id === $leadBlockId" />
+                @if ($block->id === $leadBlockId)
+                    <div class="project__lead" style="view-transition-name: project-lead">
+                        <x-block :block="$block" :credits="$project->credits" :lead="true" />
+                    </div>
+                @else
+                    <x-block :block="$block" :credits="$project->credits" :lead="false" />
+                @endif
             @endforeach
         </div>
 

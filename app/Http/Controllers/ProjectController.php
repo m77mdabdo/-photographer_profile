@@ -63,6 +63,9 @@ class ProjectController extends Controller
             'project' => $project,
             'preview' => $preview,
 
+            // Task 38 F4: the page transition's rule draws in this.
+            'accent' => \App\Support\AccentColor::pairForProject($project),
+
             /*
              * CreativeWork with every photograph the page shows as an
              * ImageObject carrying the credit and copyright held on its own

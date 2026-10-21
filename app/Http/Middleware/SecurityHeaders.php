@@ -212,7 +212,9 @@ class SecurityHeaders
          * a browser IGNORE 'unsafe-inline' — so adding one here would silently
          * re-break every panel screen.
          */
-        $style = $isPanel ? "'self' 'unsafe-inline'" : "'self'";
+        // The public surface allows one inline style by hash: the page
+        // transition's opt-in (App\Support\PageTransition says why inline).
+        $style = $isPanel ? "'self' 'unsafe-inline'" : "'self' ".\App\Support\PageTransition::hash();
 
         return implode('; ', [
             "default-src 'self'",

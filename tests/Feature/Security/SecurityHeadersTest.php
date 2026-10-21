@@ -250,8 +250,17 @@ class SecurityHeadersTest extends TestCase
         $this->assertStringContainsString("'self'", $script);
         $this->assertStringContainsString("'nonce-", $script);
 
-        // Inline style ELEMENTS are refused on the public site too.
-        $this->assertSame("'self'", $this->directive($policy, 'style-src'));
+        /*
+         * Inline style ELEMENTS are refused on the public site — all but one,
+         * named by its hash: the page transition's opt-in (Task 38 Part F,
+         * App\Support\PageTransition). Exactly that hash, so this still fails
+         * on 'unsafe-inline', on a second hash, or on the opt-in's bytes
+         * drifting from what the policy names.
+         */
+        $this->assertSame(
+            "'self' ".\App\Support\PageTransition::hash(),
+            $this->directive($policy, 'style-src')
+        );
 
         // And the things that are off everywhere.
         $this->assertSame("'none'", $this->directive($policy, 'object-src'));

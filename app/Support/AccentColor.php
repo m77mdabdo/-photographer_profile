@@ -113,6 +113,23 @@ final class AccentColor
      * the result has stopped being the photograph's colour. Exposed so the
      * palette selector can prefer sources that need less of that journey.
      */
+    /**
+     * The accent pair for a project's photograph, one per register — the
+     * same derivation the home hero has always used, shared so a project
+     * page's own rule (Task 38 F4) draws in the colour its photograph gives.
+     *
+     * @return array{dark: ?string, light: ?string}
+     */
+    public static function pairForProject(?\App\Models\Project $project): array
+    {
+        $source = $project?->cover?->accentSource() ?? $project?->hero?->accentSource();
+
+        return [
+            'dark' => self::derive($source, '#0b0b0c'),
+            'light' => self::derive($source, '#f4f1ea'),
+        ];
+    }
+
     public static function maxLightnessShift(): float
     {
         return self::MAX_LIGHTNESS_SHIFT;
