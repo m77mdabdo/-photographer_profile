@@ -64,16 +64,12 @@
     };
 @endphp
 {{--
-    data-motion is how an element opts into the registry. The registry scans
-    for these names and dynamically imports ONLY the modules a page actually
-    uses — the journal downloads neither of these.
-
-    Both names are listed here and nothing is hidden by their presence: every
-    initial state lives in motion.css behind the `.motion` class, which the
-    server never writes.
+    The hero carries no motion attribute. Task 42 removed the intro that
+    clip-path animated this plate (it held the LCP image and ran only on a
+    session's first page); the only movement left is the desktop parallax,
+    which the arrive layer finds by class and leaves at identity at rest.
 --}}
 <section @class(['hero', 'hero--'.$orientation, 'hero--empty' => $image === null, $composition => $composition !== null])
-         data-motion="hero-develop parallax rule"
          aria-labelledby="hero-title"
          style="--wordmark-chars: {{ mb_strlen($wordmark) }};
                 @if ($split) @foreach ($split as $k => $v) --{{ $k }}: {{ $v }}; @endforeach @endif

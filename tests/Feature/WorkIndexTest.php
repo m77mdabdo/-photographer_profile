@@ -266,11 +266,12 @@ class WorkIndexTest extends TestCase
      *
      * Each frame carries its position, isolated left-to-right so an Arabic
      * paragraph cannot reorder "01 / 03" into "03 / 01" (it did, on the first
-     * render). And the row carries NO motion: giving it the reveal pulled GSAP
-     * onto every project page, +33.4 kB and +0.09-0.15 s LCP, measured. A
-     * project page loads no motion module, and this keeps it that way.
+     * render). The row has no entrance of its own — giving it the GSAP reveal
+     * once cost +33.4 kB and +0.09-0.15 s LCP — and that reveal is gone with
+     * the registry (Task 42); its frames arrive under the dissolve like every
+     * other photograph, which tests/Support/arrive-check.mjs measures.
      */
-    public function test_the_three_image_row_is_labelled_and_loads_no_motion(): void
+    public function test_the_three_image_row_is_labelled(): void
     {
         $this->world->story('the-long-one', DemoWorld::fullScore(), ['editorial']);
 
@@ -281,7 +282,6 @@ class WorkIndexTest extends TestCase
             $this->assertStringContainsString('<bdi dir="ltr">'.$label.'</bdi>', $html);
         }
         $this->assertSame(3, substr_count($html, 'class="block__index" aria-hidden="true"'));
-        $this->assertStringNotContainsString('data-motion=', $html, 'a project page opted into a motion module');
     }
 
     public function test_the_short_story_holds_at_three_frames(): void

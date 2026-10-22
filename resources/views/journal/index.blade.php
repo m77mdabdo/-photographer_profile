@@ -1,6 +1,6 @@
 @php use App\Support\Settings; @endphp
 <x-layouts::public :seo="$seo">
-    <section class="journal" data-motion="reveal" aria-labelledby="journal-title">
+    <section class="journal" aria-labelledby="journal-title">
         <header class="journal__header">
             <p class="journal__eyebrow">{{ Settings::get('nav.journal') }}</p>
 
@@ -60,7 +60,7 @@
         @else
             <ol class="entries" role="list">
                 @foreach ($articles as $article)
-                    <li class="entry" data-reveal-item>
+                    <li class="entry">
                         <article>
                             @if ($article->featured)
                                 <a class="entry__frame" href="{{ route('journal.show', $article) }}" tabindex="-1" aria-hidden="true">

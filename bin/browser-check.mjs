@@ -1282,14 +1282,13 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir, expectsLocaleSwitche
   /*
    * THE ONE THING A MOTION BUG LOOKS LIKE: invisible content.
    *
-   * Every failure path in the motion modules ends with the gating class
-   * removed and every element visible. This checks the outcome rather than
-   * the mechanism — if anything a reveal or a sequence touched is still
-   * transparent, clipped away or shifted off its place by the time the page
-   * has settled, it is a bug whatever the cause.
+   * Arrivals draw on one canvas over content that is itself never hidden
+   * (resources/js/public/arrive). This checks the outcome rather than the
+   * mechanism — if a part of the hero is transparent or clipped away by
+   * the time the page has settled, it is a bug whatever the cause.
    */
   for (const element of document.querySelectorAll(
-    '[data-motion], [data-reveal-item], .hero__plate, .hero__wordmark, .hero__voice, .hero__stages'
+    '.hero__plate, .hero__wordmark, .hero__voice, .hero__stages'
   )) {
     const style = getComputedStyle(element)
     const box = element.getBoundingClientRect()
@@ -1306,29 +1305,21 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir, expectsLocaleSwitche
     }
   }
 
-  // Nothing is left mid-reveal.
-  const pending = document.querySelectorAll('[data-reveal-pending]').length
-
-  if (pending > 0) {
-    problems.push(`${pending} section(s) never revealed`)
-  }
-
-  // And the transient progress rule was cleaned up.
-  if (document.querySelector('.motion-progress')) {
-    problems.push('the progress indicator was left in the document')
-  }
-
   if (isReducedMotion) {
     /*
-     * REFUSED MEANS REFUSED. Not a shorter sequence — none at all. The gating
-     * class is the whole mechanism, so its presence is the assertion.
+     * REFUSED MEANS REFUSED. Not a shorter arrival — none at all: no canvas,
+     * no split statement, no transform on the hero image.
      */
-    if (document.documentElement.classList.contains('motion')) {
-      problems.push('the motion class was written despite prefers-reduced-motion')
+    if (document.querySelector('.arrive-canvas')) {
+      problems.push('the arrival canvas exists despite prefers-reduced-motion')
     }
 
-    if (document.documentElement.classList.contains('motion-hero-done')) {
-      problems.push('a hero sequence ran despite prefers-reduced-motion')
+    if (document.querySelector('.statement__word')) {
+      problems.push('a statement was split into words despite prefers-reduced-motion')
+    }
+
+    if (document.querySelector('.hero__image')?.style.transform) {
+      problems.push('the hero image carries a transform despite prefers-reduced-motion')
     }
   }
 
@@ -2001,22 +1992,6 @@ async function run() {
                 { timeout: 15000, polling: 200 }
               )
               .catch(() => {})
-
-            /*
-           * Let the hero sequence finish before judging what is hidden.
-           *
-           * The choreography is 875ms and the reveal deadline is 3s; auditing
-           * before either has run would report a page mid-animation as broken.
-           * This waits for the real signals and falls back to a bound.
-           */
-          await page
-            .waitForFunction(
-              () =>
-                document.querySelectorAll('[data-reveal-pending]').length === 0 &&
-                !document.querySelector('.motion-progress'),
-              { timeout: 4000, polling: 200 }
-            )
-            .catch(() => {})
 
           const audit = await activePage.evaluate(
             inPageAudit,

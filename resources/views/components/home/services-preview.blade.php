@@ -21,7 +21,7 @@
         so the numeral is large, the label is small and secondary, and the
         accent marks the one thing that acts or costs.
     --}}
-    <section class="services-strip" data-motion="reveal rule" aria-labelledby="services-strip-title">
+    <section class="services-strip" aria-labelledby="services-strip-title">
         <header class="services-strip__header">
             <h2 class="services-strip__title" id="services-strip-title">
                 {{ Settings::get('services.home_heading') }}
@@ -32,7 +32,7 @@
         </header>
         <ol class="services-strip__list" role="list">
             @foreach ($services as $service)
-                <li class="services-strip__item" data-reveal-item>
+                <li class="services-strip__item">
                     <span class="services-strip__number" aria-hidden="true">{{ sprintf('%02d', $loop->iteration) }}</span>
                     <h3 class="services-strip__name">
                         <a href="{{ route('services.show', $service) }}"><x-t :of="$service" field="name" /></a>

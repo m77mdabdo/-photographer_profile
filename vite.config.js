@@ -44,14 +44,6 @@ export default defineConfig({
                 'resources/js/public.js',
 
                 /*
-                 * The page transition's few lines of script (Task 38 Part F),
-                 * linked only by the pages that opt in. Its stylesheet rules
-                 * are in the main bundle and its opt-in is inline by CSP
-                 * hash: a separate stylesheet was a render-blocking request.
-                 */
-                'resources/js/transition.js',
-
-                /*
                  * THE PANEL'S THEME IS A FOURTH, SEPARATE ENTRY.
                  *
                  * Filament compiles its own Tailwind build from this file.
@@ -113,24 +105,6 @@ export default defineConfig({
                         return;
                     }
 
-                    /*
-                     * SCROLLTRIGGER GETS ITS OWN CHUNK.
-                     *
-                     * It is 18 kB gzipped and exactly one module needs it —
-                     * the hero parallax, which imports it on demand. Grouping
-                     * it with GSAP core under one name made Rollup merge the
-                     * two, and the entry's STATIC import of core then dragged
-                     * ScrollTrigger onto every page: the journal and the
-                     * archive would each have paid 45 kB for a scrub they
-                     * never run.
-                     *
-                     * Named separately, it stays a dynamic chunk and only a
-                     * page carrying data-motion="parallax" fetches it.
-                     */
-                    if (id.includes('gsap/ScrollTrigger')) {
-                        return 'gsap-scrolltrigger';
-                    }
-
                     const seen = new Set();
                     const stack = [id];
                     let reachedPublic = false;
@@ -161,8 +135,8 @@ export default defineConfig({
                          * which reads as "the admin and the public site both
                          * use this" when in fact only one does.
                          *
-                         * ScrollTrigger is exactly that case: imported on
-                         * demand by the parallax module and by nothing else.
+                         * (ScrollTrigger was that case until Task 42 removed
+                         * GSAP from the public site.)
                          */
                         for (const importer of [...info.importers, ...info.dynamicImporters]) {
                             if (importer.includes('/resources/js/admin') || importer.includes('/resources/css/admin')) {

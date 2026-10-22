@@ -11,8 +11,9 @@
     It also has no hero, no single focal image and no narrative order, so there
     is nothing here for a sequence to be ABOUT.
 
-    So: no data-motion attribute, no chunk downloaded, and the archive keeps
-    the 1.3 kB entry and nothing else. The page it was before this task.
+    So it carries no staggered reveal. (Task 41's dissolve is a different
+    thing — one canvas, no per-frame tweens — and does run here, as on every
+    page: photographs below the fold arrive under it.)
 --}}
 <x-layouts::public :seo="$seo">
     <section class="sheet-page" aria-labelledby="archive-title">

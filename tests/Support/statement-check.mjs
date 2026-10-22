@@ -1,7 +1,7 @@
 /*
  * TASK 38 PART B — THE SCRUBBED STATEMENT, ASSERTED ON THE RENDER.
  *
- * Each claim in motion/statement.js and components/statement.blade.php is a
+ * Each claim in arrive/arrive.js (statements) and components/statement.blade.php is a
  * claim about what a browser shows, so each is checked in one:
  *
  *   B2  JS off: a plain paragraph, full opacity, no word spans

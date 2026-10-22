@@ -37,15 +37,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
-    {{--
-        FIRST, BEFORE ANYTHING ELSE.
-
-        Decides whether motion is allowed and writes one class name, before the
-        stylesheet and before the first paint. See the component for why this
-        cannot live in the module.
-    --}}
-    <x-motion-boot />
-
     <x-seo :page="$seo" />
 
     {{--
@@ -127,7 +118,7 @@
         @vite emits the module with type="module", which is deferred by
         definition — it cannot delay parsing, layout or the first paint, and
         the hero photograph is painted and eligible for LCP before a byte of
-        GSAP is executed.
+        the arrive layer is executed.
     --}}
     {{--
         THE FAVICON, WHICH THIS SITE DID NOT HAVE.
@@ -144,11 +135,17 @@
         <link rel="apple-touch-icon" href="{{ $favicon['url'] }}">
     @endif
 
-    @vite(['resources/css/public.css', 'resources/js/public.js'])
-
-    {{-- Per-page assets. Today only the page transition (Task 38 Part F),
-         linked by the pages that opt into it. --}}
+    {{--
+        Per-page head content. Today only the page transition (Task 38 Part F)
+        on the pages that opt into it: an inline opt-in and an inline
+        pagereveal handler. BEFORE THE STYLESHEET, deliberately: a classic
+        script after a stylesheet link waits for that stylesheet to load
+        before it runs, and holds the parser while it waits. Measured on
+        /work/salt-line with it after: LCP 2.48-2.64 s against 2.19-2.49 s.
+    --}}
     @stack('head')
+
+    @vite(['resources/css/public.css', 'resources/js/public.js'])
 </head>
 <body>
     {{--

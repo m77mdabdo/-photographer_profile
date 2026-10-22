@@ -5,9 +5,9 @@
     offsets cannot widen the page).
 
     NO ENTRANCE ANIMATION, and that was measured rather than assumed (D2/D3).
-    The first version gave the row the existing reveal (motion/reveal.js).
-    Project pages carried no data-motion before it, so that one attribute
-    pulled GSAP and the reveal module onto every project page: +33.4 kB, and
+    The first version gave the row the then-existing GSAP reveal (removed in
+    Task 42). Project pages carried no motion attribute before it, so that one
+    attribute pulled GSAP and the reveal module onto every project page: +33.4 kB, and
     LCP on /work/salt-line from 2.41-2.42 s to 2.50-2.56 s on the mobile
     preset. A row that arrives with a fade is not worth a slower first frame
     on every story, so the row arrives as it is.

@@ -608,11 +608,11 @@ class LocaleTest extends TestCase
     /**
      * NO NEW JAVASCRIPT, IN EITHER LOCALE.
      *
-     * The site does ship JavaScript now — the motion module, built in the
-     * previous task — so "zero script tags" stopped being the contract. The
+     * The site does ship JavaScript now — the arrivals and the page
+     * transition — so "zero script tags" stopped being the contract. The
      * contract that survives, and the one this task must not break, is that
      * locale support added NONE of it: the switcher is a form, the direction
-     * is an attribute, and an Arabic page carries exactly the same three
+     * is an attribute, and an Arabic page carries exactly the same
      * permitted script forms an English one does.
      */
     public function test_locale_support_added_no_javascript(): void

@@ -20,9 +20,18 @@ use Tests\TestCase;
  *
  * A browser cannot be run here, so what these tests can prove is everything
  * that must be true before a single byte of JavaScript executes: that the
- * server hides nothing, that the LCP image is untouched, that the right
- * modules are asked for, and that the payload is inside its budget. The
- * choreography itself is measured by the browser harness.
+ * server hides nothing, that the LCP image is untouched, that nothing is
+ * registered for a system that no longer exists, and that the payload is
+ * inside its budget. The arrivals themselves are measured in a browser:
+ * tests/Support/arrive-check.mjs, statement-check.mjs and
+ * second-view-check.mjs.
+ *
+ * TASK 42 ITEM 2 REWROTE THIS FILE. It used to assert the GSAP registry —
+ * its bootstrap, its module map, its chunks — and every one of those
+ * assertions passed while the registry refused to start on every page after
+ * a session's first. A test of the wiring could not see that the wiring was
+ * switched off. The registry is gone; what is left here is what the server
+ * sends.
  */
 class MotionTest extends TestCase
 {
@@ -62,10 +71,10 @@ class MotionTest extends TestCase
     /**
      * WITH JAVASCRIPT DISABLED THE HERO RENDERS COMPLETE.
      *
-     * This is the contract the whole feature rests on. Every initial hidden
-     * state lives in motion.css behind a `.motion` class that only an inline
-     * script writes — so a visitor with JavaScript off receives a finished
-     * page, and there is nothing in the server's HTML for them to be missing.
+     * This is the contract the whole feature rests on. The arrivals draw on a
+     * canvas over content that is never itself hidden — so a visitor with
+     * JavaScript off receives a finished page, and there is nothing in the
+     * server's HTML for them to be missing.
      */
     public function test_the_server_sends_no_hidden_initial_state(): void
     {
@@ -110,7 +119,12 @@ class MotionTest extends TestCase
      * Chrome does not count an element with opacity: 0 toward Largest
      * Contentful Paint, and does not count one that has not painted. The hero
      * image therefore carries fetchpriority="high", no loading attribute, and
-     * is not a target of any opacity rule — the reveal clips its CONTAINER.
+     * is not a target of any motion rule.
+     *
+     * Its one movement is the desktop parallax (arrive.js), a scroll-linked
+     * transform that is identity at rest — so the frame Chrome records as the
+     * LCP is the untransformed image, and at 390 it never moves at all.
+     * arrive-check.mjs asserts that the dissolve never covers it.
      */
     public function test_the_hero_image_is_never_animated_or_deferred(): void
     {
@@ -126,18 +140,8 @@ class MotionTest extends TestCase
         // Nothing in the server HTML dims it.
         $this->assertStringNotContainsString('opacity', $image);
 
-        /*
-         * And the stylesheet never animates it either. The hero's initial
-         * states name .hero__plate and .hero__wordmark; if a future edit adds
-         * .hero__image to an opacity rule, this fails.
-         */
-        $css = file_get_contents(resource_path('css/components/motion.css'));
-
-        $this->assertMatchesRegularExpression(
-            '/\.motion[^{]*\.hero__plate\s*\{[^}]*clip-path/',
-            $css,
-            'the reveal must clip the plate'
-        );
+        $css = file_get_contents(resource_path('css/components/motion.css'))
+            .file_get_contents(resource_path('css/components/arrive.css'));
 
         /*
          * ───────────────────────────────────────────────────────────────────
@@ -170,120 +174,32 @@ class MotionTest extends TestCase
     // ----------------------------------------------------------------- 3
 
     /**
-     * REDUCED MOTION PRODUCES NO SEQUENCE AND NO INDICATOR.
+     * NOTHING IS REGISTERED FOR A SYSTEM THAT NO LONGER EXISTS.
      *
-     * The bootstrap refuses before anything else runs, so the gating class is
-     * never written and no initial state ever applies. Asserted here on the
-     * script's own source, because the decision is made before any code this
-     * suite can execute.
+     * Task 42 item 2: the GSAP registry switched itself off after a session's
+     * first page, and its registrations — data-motion="hero-develop parallax
+     * reveal rule" — went on looking live in every template. The brief's
+     * words: do not leave a disabled system in the tree with live-looking
+     * registrations in it. So no template names one and the module directory
+     * is gone. That what remains RUNS on a second page view is asserted in a
+     * browser, by tests/Support/second-view-check.mjs.
      */
-    public function test_reduced_motion_is_refused_at_the_bootstrap(): void
+    public function test_no_template_registers_motion_and_the_registry_is_gone(): void
     {
-        $boot = file_get_contents(resource_path('views/components/motion-boot.blade.php'));
+        $registrations = [];
 
-        // The very first thing it does, before the session check.
-        $this->assertMatchesRegularExpression(
-            '/prefers-reduced-motion: reduce.*?\)\.matches\)\s*return;/s',
-            $boot,
-            'the bootstrap does not refuse reduced motion first'
-        );
+        foreach (\Illuminate\Support\Facades\File::allFiles(resource_path('views')) as $view) {
+            // Comments stripped first: a note explaining the removal is not a registration.
+            $markup = (string) preg_replace('/\{\{--.*?--\}\}/s', '', $view->getContents());
 
-        /*
-         * And a belt for those braces: the stylesheet neutralises every
-         * initial state under a reduced-motion query, so even a bug that
-         * wrote the class could not produce motion.
-         */
-        $css = file_get_contents(resource_path('css/components/motion.css'));
-
-        $this->assertStringContainsString('@media (prefers-reduced-motion: reduce)', $css);
-
-        $guard = substr($css, (int) strpos($css, '@media (prefers-reduced-motion: reduce)'));
-
-        foreach (['.hero__plate', '.hero__wordmark', '.motion-progress', 'data-reveal-pending'] as $target) {
-            $this->assertStringContainsString($target, $guard, "{$target} is not neutralised under reduced motion");
-        }
-    }
-
-    // ----------------------------------------------------------------- 4
-
-    /**
-     * THE REGISTRY ONLY IMPORTS WHAT A PAGE USES.
-     *
-     * The homepage declares a hero sequence, a parallax, reveals and link
-     * rules. The journal declares reveals alone, and the archive — the
-     * heaviest page — declares nothing at all.
-     */
-    public function test_each_page_opts_into_only_the_motion_it_needs(): void
-    {
-        $this->world->story('salt-line', DemoWorld::simpleScore(4), ['landscape'], year: 2025);
-        Project::query()->first()?->forceFill(['is_featured' => true])->save();
-        Article::factory()->create();
-        Service::factory()->create();
-
-        $expectations = [
-            '/' => ['hero-develop', 'parallax', 'reveal', 'rule'],
-            '/journal' => ['reveal'],
-            '/services' => ['reveal', 'rule'],
-            '/archive' => [],
-        ];
-
-        foreach ($expectations as $url => $expected) {
-            $html = $this->get($url)->assertOk()->getContent();
-
-            preg_match_all('/data-motion="([^"]+)"/', $html, $matches);
-
-            $found = [];
-
-            foreach ($matches[1] as $value) {
-                foreach (preg_split('/\s+/', $value) as $name) {
-                    if ($name !== '') $found[$name] = true;
-                }
-            }
-
-            $found = array_keys($found);
-            sort($found);
-            sort($expected);
-
-            $this->assertSame($expected, $found, "{$url} opts into the wrong motion modules");
-        }
-    }
-
-    /** Every name in the markup has a module behind it, and vice versa. */
-    public function test_every_declared_motion_name_has_a_module(): void
-    {
-        $registry = file_get_contents(resource_path('js/public/motion/registry.js'));
-
-        preg_match_all("/'([a-z-]+)': \(\) => import\('\.\/([a-z-]+)'\)/", $registry, $matches);
-
-        $registered = $matches[1];
-
-        $this->assertNotEmpty($registered, 'the registry has no modules');
-
-        // Each one resolves to a file that exists.
-        foreach ($matches[2] as $file) {
-            $this->assertFileExists(resource_path("js/public/motion/{$file}.js"));
-        }
-
-        // And every name used in a template is registered.
-        $used = [];
-
-        foreach (glob(resource_path('views/**/*.blade.php')) ?: [] as $view) {
-            preg_match_all('/data-motion="([^"]+)"/', (string) file_get_contents($view), $found);
-
-            foreach ($found[1] as $value) {
-                foreach (preg_split('/\s+/', $value) as $name) {
-                    if ($name !== '') $used[$name] = $view;
-                }
+            if (preg_match('/\sdata-(?:motion|reveal-item)[\s=>]/', $markup)) {
+                $registrations[] = $view->getRelativePathname();
             }
         }
 
-        foreach ($used as $name => $view) {
-            $this->assertContains(
-                $name,
-                $registered,
-                "{$view} declares data-motion=\"{$name}\" but the registry has no such module"
-            );
-        }
+        $this->assertSame([], $registrations, 'a template registers motion with no module behind it');
+        $this->assertDirectoryDoesNotExist(resource_path('js/public/motion'));
+        $this->assertFileDoesNotExist(resource_path('views/components/motion-boot.blade.php'));
     }
 
     // ----------------------------------------------------------------- 5
@@ -291,9 +207,9 @@ class MotionTest extends TestCase
     /**
      * THE HOMEPAGE JS PAYLOAD IS UNDER BUDGET.
      *
-     * 60 kB gzipped, GSAP included. Measured against the real built manifest —
-     * the entry, its static imports, every chunk the homepage's data-motion
-     * names pull in, and ScrollTrigger, which the parallax fetches on demand.
+     * 60 kB gzipped. Measured against the real built manifest — the entry,
+     * its static imports, and the arrive layer it imports on demand. GSAP
+     * used to be most of this figure; Task 42 removed it.
      *
      * Printed as well as asserted, because a budget nobody can see is a budget
      * nobody maintains.
@@ -370,12 +286,9 @@ class MotionTest extends TestCase
         $this->assertNotNull($entry, 'the public entry is not in the manifest — run npm run build');
 
         /*
-         * Everything the homepage downloads, worst case, walked TRANSITIVELY.
-         *
-         * A one-level walk missed GSAP entirely and reported 18 kB: the entry
-         * no longer imports GSAP directly — the registry reaches it through
-         * core.js, which is itself a dynamic chunk — so following only the
-         * entry's own imports counts the scenery and not the set.
+         * Everything the homepage downloads, worst case, walked TRANSITIVELY
+         * through static and dynamic imports alike. (A one-level walk once
+         * missed GSAP entirely and reported 18 kB.)
          */
         $files = [];
 
@@ -386,37 +299,18 @@ class MotionTest extends TestCase
 
             $files[] = $manifest[$key]['file'];
 
-            foreach ($manifest[$key]['imports'] ?? [] as $import) {
+            foreach ([...($manifest[$key]['imports'] ?? []), ...($manifest[$key]['dynamicImports'] ?? [])] as $import) {
                 $collect($import);
             }
         };
 
         $collect('resources/js/public.js');
 
-        // The motion core, which is what actually pulls GSAP in.
-        $collect('resources/js/public/motion/core.js');
-
-        foreach (['hero-develop', 'parallax', 'reveal', 'rule'] as $name) {
-            $key = "resources/js/public/motion/{$name}.js";
-
-            $this->assertArrayHasKey($key, $manifest, "{$name} is not a separate chunk — code splitting broke");
-
-            $collect($key);
-        }
-
-        // ScrollTrigger, dynamically imported by the parallax.
-        $this->assertArrayHasKey(
-            'node_modules/gsap/ScrollTrigger.js',
-            $manifest,
-            'ScrollTrigger is not a separate chunk'
-        );
-
-        $collect('node_modules/gsap/ScrollTrigger.js');
-
-        // The walk must have reached GSAP, or the number below means nothing.
-        $this->assertTrue(
-            (bool) array_filter($files, static fn (string $f): bool => str_contains($f, 'vendor-public')),
-            'the walk never reached GSAP — the budget figure would be fiction'
+        // The walk must have reached the arrive layer, or the number below means nothing.
+        $this->assertContains(
+            $manifest['resources/js/public/arrive/arrive.js']['file'] ?? null,
+            $files,
+            'the walk never reached the arrive layer — the budget figure would be fiction'
         );
 
         $total = 0;
@@ -445,58 +339,23 @@ class MotionTest extends TestCase
     }
 
     /**
-     * And a page with NO motion pays almost nothing: the entry alone, because
-     * GSAP itself is behind a dynamic import the registry only reaches when
-     * there is something to animate.
+     * AND NO BUILT ASSET CONTAINS GSAP. Read from the files themselves, not
+     * from package.json: a dependency can be removed from the manifest of
+     * dependencies and still be compiled into a stale chunk.
      */
-    public function test_a_page_without_motion_does_not_download_gsap(): void
+    public function test_no_built_asset_contains_gsap(): void
     {
-        $manifest = $this->manifest();
+        $offenders = [];
 
-        $entry = $manifest['resources/js/public.js'];
+        foreach ($this->manifest() as $chunk) {
+            $contents = (string) file_get_contents(public_path('build/'.$chunk['file']));
 
-        $vendor = array_filter(
-            $entry['imports'] ?? [],
-            static fn (string $key): bool => str_contains($key, 'vendor')
-        );
-
-        /*
-         * The entry MAY statically import a small shared chunk, but GSAP must
-         * not be in it — the archive would otherwise pay 31 kB for an
-         * animation it deliberately does not run.
-         */
-        /*
-         * TASK 36c A2 — the same shape as the hero rule above: $vendor is
-         * empty today, because the public entry statically imports no vendor
-         * chunk at all, so this loop has never run. Proved by planting a
-         * failure in it. The oversized chunks are collected and the EMPTY
-         * SET is asserted, which always executes and names any offender.
-         */
-        $oversized = [];
-
-        foreach ($vendor as $key) {
-            $bytes = strlen((string) gzencode(
-                (string) file_get_contents(public_path('build/'.$manifest[$key]['file'])),
-                9
-            ));
-
-            if ($bytes >= 8 * 1024) {
-                $oversized[] = sprintf('%s (%d bytes gzipped)', $manifest[$key]['file'], $bytes);
+            if (str_contains($contents, 'GreenSock') || str_contains($contents, 'ScrollTrigger')) {
+                $offenders[] = $chunk['file'];
             }
         }
 
-        $this->assertSame(
-            [],
-            $oversized,
-            'the public entry statically imports a large vendor chunk: '.implode(', ', $oversized)
-        );
-
-        // core.js, which is what imports GSAP, is a chunk of its own.
-        $this->assertArrayHasKey(
-            'resources/js/public/motion/core.js',
-            $manifest,
-            'motion core is not split out — every page would download GSAP'
-        );
+        $this->assertSame([], $offenders, 'a built asset still contains GSAP');
     }
 
     // ----------------------------------------------------------------- 6
@@ -504,10 +363,8 @@ class MotionTest extends TestCase
     /**
      * THE SETTLED HERO IS THE SAME HTML EITHER WAY.
      *
-     * The server sends one thing. Whether the sequence plays is decided in the
-     * browser and leaves no trace in the markup — GSAP's clearProps removes
-     * every inline style it wrote, and the gating class lives on <html>, not
-     * on the hero.
+     * The server sends one thing. Whether anything arrives is decided in the
+     * browser and leaves no trace in the markup.
      */
     public function test_the_hero_markup_is_identical_whether_or_not_motion_runs(): void
     {
@@ -519,10 +376,7 @@ class MotionTest extends TestCase
 
         $this->assertSame($first, $second);
 
-        // The hero carries the opt-in attribute and nothing else about motion.
-        $this->assertStringContainsString('data-motion="hero-develop parallax rule"', $first);
-        $this->assertStringNotContainsString('motion-hero-done', $first);
-        $this->assertStringNotContainsString('data-reveal-pending', $first);
+        $this->assertStringNotContainsString('data-motion', $first);
         $this->assertStringNotContainsString('opacity', $first);
     }
 
@@ -557,7 +411,7 @@ class MotionTest extends TestCase
          * eleven, and the two index pages at the one or three selects their
          * own rows need. What matters is not the absolute number but that
          * introducing motion did not change it. Motion adds one
-         * <script> tag and one class name to the response; it touches no
+         * <script> tag to the response; it touches no
          * model, no setting and no cache, so if any of these move, something
          * other than motion moved them.
          */

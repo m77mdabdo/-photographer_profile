@@ -38,7 +38,7 @@ class PageTransitionTest extends TestCase
         $html = (string) $this->get($url)->assertOk()->getContent();
 
         return str_contains($html, '<style>'.\App\Support\PageTransition::RULE.'</style>')
-            && (bool) preg_match('#transition-[\w-]+\.js#', $html);
+            && str_contains($html, ' data-page-transition>'.\App\Support\PageTransition::SCRIPT.'</script>');
     }
 
     /** Both documents must opt in: the pages a project is reached from, and the project. */

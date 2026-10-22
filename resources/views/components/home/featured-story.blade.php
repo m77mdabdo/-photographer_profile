@@ -1,7 +1,7 @@
 @props(['project' => null])
 @if ($project)
     @php($image = $project->hero ?? $project->cover)
-    <section class="story" data-motion="reveal" aria-labelledby="story-title">
+    <section class="story" aria-labelledby="story-title">
         @if ($image)
             <div class="story__frame">
                 <x-picture :media="$image" sizes="100vw" img-class="story__image" />

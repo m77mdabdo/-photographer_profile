@@ -25,8 +25,9 @@ use Tests\TestCase;
  * optimism. Both are asserted here, because an accepted risk whose premise
  * has quietly changed is worse than an open one:
  *
- *   1. puppeteer-core is a devDependency and the ONLY runtime dependency is
- *      gsap. Nothing in that chain is compiled into a bundle, shipped to a
+ *   1. puppeteer-core is a devDependency and there is NO runtime dependency
+ *      (gsap was the only one, until Task 42 removed the motion registry
+ *      that imported it). Nothing in that chain is compiled into a bundle, shipped to a
  *      browser, or installed on a server — a production deploy runs
  *      `npm ci --omit=dev` or no npm at all.
  *
@@ -48,10 +49,10 @@ class DependencySurfaceTest extends TestCase
         return json_decode((string) file_get_contents(base_path('package.json')), true);
     }
 
-    public function test_gsap_is_the_only_dependency_that_reaches_a_browser(): void
+    public function test_no_dependency_reaches_a_browser(): void
     {
         $this->assertSame(
-            ['gsap'],
+            [],
             array_keys($this->packageJson()['dependencies'] ?? []),
             'A new runtime dependency appeared. Every npm advisory in this project was '
             .'accepted on the grounds that the vulnerable packages are dev-only.'

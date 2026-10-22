@@ -196,8 +196,8 @@ class SecurityHeadersTest extends TestCase
         preg_match("/'nonce-([A-Za-z0-9]+)'/", $this->csp($response), $fromHeader);
         $this->assertNotEmpty($fromHeader, 'The policy carries no nonce.');
 
-        preg_match('/<script data-motion-boot\s+nonce="([A-Za-z0-9]+)"/', $response->getContent(), $fromMarkup);
-        $this->assertNotEmpty($fromMarkup, 'The inline boot script has no nonce attribute.');
+        preg_match('/<script type="module"[^>]*\snonce="([A-Za-z0-9]+)"/', $response->getContent(), $fromMarkup);
+        $this->assertNotEmpty($fromMarkup, 'The public entry has no nonce attribute.');
 
         $this->assertSame($fromHeader[1], $fromMarkup[1]);
     }

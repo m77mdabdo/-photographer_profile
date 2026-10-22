@@ -248,10 +248,33 @@ function restoreStatements() {
   statements = []
 }
 
+/* ───────────────────────────────────────────────────────────────────────────
+ * THE HERO PLATE ON SCROLL — desktop only (Task 42 item 2; 1.2 keeps it off
+ * below 900, where the reference holds the hero still).
+ *
+ * Moved here from the GSAP registry, which never ran it after a session's
+ * first page. Identity at rest — no transform at all until the page scrolls,
+ * so the LCP image's first paint is untouched — then, as the hero scrolls
+ * away, the photograph grows to 106% while drifting down 3% of its height,
+ * which keeps its edges flush with the plate at every point (the old -3% to
+ * +3% drift left a strip of empty plate at its foot when at rest).
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+const desktop = window.matchMedia('(min-width: 900px)')
+let heroImage = null
+
+function drawParallax() {
+  const hero = heroImage.closest('.hero')
+  const r = hero.getBoundingClientRect()
+  const p = desktop.matches ? Math.min(1, Math.max(0, -r.top / r.height)) : 0
+  heroImage.style.transform = p > 0 ? `translateY(${(3 * p).toFixed(3)}%) scale(${(1 + 0.06 * p).toFixed(4)})` : ''
+}
+
 function tick() {
   frame = 0
   if (ctx) drawFields(innerHeight)
   if (statements.length) drawStatements(innerHeight)
+  if (heroImage) drawParallax()
 }
 
 function schedule() {
@@ -268,7 +291,8 @@ export function start() {
   // word-lit copy will occupy (it is the same box: nothing moves).
   statements = [...document.querySelectorAll('[data-arrive~="statement"]')].map(splitStatement)
   fields = collectFields()
-  if (fields.length === 0 && statements.length === 0) return stop
+  heroImage = document.querySelector('.hero .hero__image')
+  if (fields.length === 0 && statements.length === 0 && !heroImage) return stop
 
   if (fields.length) {
     canvas = document.createElement('canvas')
@@ -294,4 +318,6 @@ export function stop() {
   canvas = ctx = null
   fields = []
   restoreStatements()
+  if (heroImage) heroImage.style.transform = ''
+  heroImage = null
 }

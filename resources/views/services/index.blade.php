@@ -1,6 +1,6 @@
 @php use App\Support\Settings; @endphp
 <x-layouts::public :seo="$seo">
-    <section class="offer" data-motion="reveal rule" aria-labelledby="offer-title">
+    <section class="offer" aria-labelledby="offer-title">
         <header class="offer__header">
             <p class="offer__eyebrow">{{ Settings::get('nav.services') }}</p>
 
@@ -45,7 +45,7 @@
         @else
             <ol class="offers" role="list">
                 @foreach ($services as $service)
-                    <li class="offer-card" data-reveal-item>
+                    <li class="offer-card">
                         <article>
                             @if ($service->cover)
                                 <a class="offer-card__frame"

@@ -40,9 +40,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  *
  *       script-src 'self' 'nonce-…'
  *
- *     Every script is either a Vite module from this origin or the one
- *     inline boot block in components/motion-boot.blade.php, which carries
- *     the nonce. No 'unsafe-inline', no 'unsafe-eval', no host allow-list.
+ *     Every script is a Vite module from this origin, carrying the nonce.
+ *     (The one inline boot block, components/motion-boot.blade.php, went
+ *     with the motion registry in Task 42.) No 'unsafe-inline', no 'unsafe-eval', no host allow-list.
  *     Laravel's Vite helper stamps the nonce onto its own tags once
  *     Vite::useCspNonce() has been called, which is what the line below in
  *     handle() does. JSON-LD blocks are data, not script, and browsers do

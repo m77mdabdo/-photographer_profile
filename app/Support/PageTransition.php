@@ -23,6 +23,26 @@ final class PageTransition
 {
     public const RULE = '@media (prefers-reduced-motion: no-preference){@view-transition{navigation:auto}}';
 
+    /**
+     * The transition's two behaviours CSS cannot express.
+     *
+     * F5, BACK AND RELOAD: no transition. Going back is returning to a place,
+     * not arriving somewhere new, so a traversal skips it outright.
+     *
+     * F6, FOCUS: a page that arrives through the transition puts focus on its
+     * own <h1>. Without a transition the browser's focus is left alone, so
+     * the skip link stays a keyboard's first stop.
+     *
+     * INLINE, IN THE HEAD, AND THAT IS THE FIX. It was a module
+     * (resources/js/transition.js). A module is deferred, and `pagereveal`
+     * fires at the first render — which can come before a deferred script has
+     * run. When it did, the listener was attached too late and focus stayed
+     * on <body>: transition-check failed F6 three times in six runs. A
+     * classic script in the head runs before the first render, every time,
+     * and costs no request. It carries the request's CSP nonce.
+     */
+    public const SCRIPT = "addEventListener('pagereveal',function(e){var t=e.viewTransition;if(!t)return;var n=window.navigation&&navigation.activation&&navigation.activation.navigationType;if(n==='traverse'||n==='reload'){t.skipTransition();return}var h=document.querySelector('main h1');if(!h)return;if(!h.hasAttribute('tabindex'))h.setAttribute('tabindex','-1');t.finished.finally(function(){h.focus({preventScroll:true})})})";
+
     /** The CSP source expression for RULE. */
     public static function hash(): string
     {

@@ -478,6 +478,7 @@ class StudioPanelTest extends TestCase
          * Task 41 Part 7 — header targets, Inter fallback: 87,781.
          * Task 41 Part 7 — header targets, fallback metrics: 88,449.
          * Task 42 item 1 — one dissolve for images and text: 88,118.
+         * Task 42 item 2, the registry's initial states removed from motion.css: 85,684.
          *
          * THE SIZE IS ASSERTED ALONGSIDE THE HASH from now on. A hash tells
          * you the bundle changed; it cannot tell you whether it changed by a
@@ -488,12 +489,12 @@ class StudioPanelTest extends TestCase
          * leaked framework fails.
          * ───────────────────────────────────────────────────────────────────
          */
-        $this->assertSame('assets/public-BbStm3-y.css', $publicCss, 'the public stylesheet changed');
-        $this->assertSame('assets/public-hDlRWuM_.js', $publicJs, 'the public entry changed');
+        $this->assertSame('assets/public-sn6YxRVU.css', $publicCss, 'the public stylesheet changed');
+        $this->assertSame('assets/public-Bs5geQqu.js', $publicJs, 'the public entry changed');
 
         $cssBytes = (int) filesize(public_path('build/'.$publicCss));
 
-        $this->assertSame(88_118, $cssBytes, 'the public stylesheet is a different size');
+        $this->assertSame(85_684, $cssBytes, 'the public stylesheet is a different size');
 
         $this->assertLessThan(
             90_000,

@@ -18,14 +18,14 @@
     ═══════════════════════════════════════════════════════════════════════════
 --}}
 @if ($testimonials->isNotEmpty())
-    <section class="voices" aria-labelledby="voices-title" data-motion="reveal rule">
+    <section class="voices" aria-labelledby="voices-title">
         <h2 class="voices__title" id="voices-title">
             {{ \App\Support\SiteCopy::line('testimonials.heading') }}
         </h2>
 
         <ul class="voices__list" role="list">
             @foreach ($testimonials as $testimonial)
-                <li class="voice" data-reveal-item>
+                <li class="voice">
                     <figure class="voice__figure">
                         {{--
                             blockquote inside figure, with the attribution in
