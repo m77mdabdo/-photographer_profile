@@ -78,15 +78,23 @@ const hold = (page, read) => page.evaluate(async (read) => {
   return out
 }, read.toString())
 
-/* Back up in steps of 1/40 of the viewport, a reading after each settles. */
+/*
+ * Back up in steps of 1/40 of the viewport, a reading after each settles —
+ * until the element leaves the bottom of the viewport, where there is no
+ * canvas over it to read. (The first version kept going and recorded the
+ * empty reading as 0%, which read as a fall.)
+ */
 const back = (page, read, steps = 24) => page.evaluate(async (read, steps) => {
   const f = new Function('return ' + read)()
+  const gone = (r) => (Array.isArray(r) ? r.some((v) => v == null) : r == null)
   const out = [f()]
   const step = Math.round(innerHeight / 40)
   for (let i = 0; i < steps; i++) {
     scrollTo({ top: scrollY - step, behavior: 'instant' })
     await window.__frames()
-    out.push(f())
+    const r = f()
+    if (gone(r)) break
+    out.push(r)
   }
   return out
 }, read.toString(), steps)
