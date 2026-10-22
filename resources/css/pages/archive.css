@@ -27,6 +27,7 @@
 .sheet-page__title {
     font-family: var(--font-display);
     font-variation-settings: 'wght' var(--wght-display);
+    font-weight: var(--wght-display);   /* for the fallback's weight band (fonts.css) */
     font-size: var(--fs-h1);
     line-height: 0.92;
     letter-spacing: var(--tracking-tight);
@@ -159,6 +160,7 @@
 .work-empty__line {
     font-family: var(--font-display);
     font-variation-settings: 'wght' var(--wght-mid);
+    font-weight: var(--wght-mid);   /* for the fallback's weight band (fonts.css) */
     font-size: var(--fs-h2);
     line-height: 1.05;
     letter-spacing: var(--tracking-tight);

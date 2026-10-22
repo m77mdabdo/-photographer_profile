@@ -1,32 +1,66 @@
 /*
- * TASK 41 7.5 — "NO LAYOUT SHIFT ON SWAP", ASSERTED ON THE RENDER.
+ * TASK 42 ITEM 4 — WHEN A FACE ARRIVES, NOTHING MOVES. ASSERTED ON THE RENDER.
  *
- * Each page is loaded twice: once with every webfont blocked, which is what a
- * visitor sees during the swap period, and once with them loaded. Every text
- * block in the header and main must have the SAME HEIGHT both times — the
- * same number of lines — or the swap moves everything below it.
+ * Replaces Task 41's version, which asserted two scopes (a project header,
+ * the Arabic work filter) and printed every other moved block as a "note".
+ * Run against that tree this measured 29 leaf blocks that rewrapped on the
+ * swap, on 10 of 20 page-locale pairs, by 16 to 99px — and 28 of the 29
+ * pushed everything under them. A finding printed and never failed is a
+ * finding nobody acts on, so every block is now asserted.
  *
- * This is the guarantee FontMetricsTest set out to check by arithmetic. For
- * Inter Tight its arithmetic (x-height ratio) passed while the guarantee
- * failed: a project subtitle set on two lines in the fallback and one in
- * Inter Tight, moving the story 34px (CLS 0.0166-0.0319).
+ * WHAT CAN MOVE ON SCREEN, which is what this models:
  *
- * WHAT FAILS AND WHAT IS REPORTED. With every webfont blocked, many blocks
- * across the site rewrap — the display headings, Arabic body text: a
- * site-wide fallback-metrics question that Task 41 recorded and did not take
- * on. The check ASSERTS the scopes 7.5 fixed — a project's header, and the
- * Arabic work filter that the first version of the fix broke — and PRINTS
- * every other moved block as a finding, so the wider problem stays visible.
+ *   swap faces       Archivo, Rubik (display), JetBrains Mono: painted in a
+ *                    fallback first, swapped in when they land
+ *   optional faces   Inter Tight, IBM Plex Sans Arabic (body): never swapped
+ *                    in late — a page keeps whichever it started with
+ *
+ * So a page is loaded with the swap faces blocked and then loaded, TWICE: once
+ * with the body faces blocked throughout (a first view that missed them) and
+ * once with them loaded throughout. In both, every text block must keep its
+ * height, or — if its height changes — must push nothing: the next block in
+ * document order must stay where it was relative to it. A height change that
+ * pushes nothing (a heading in a grid row a taller sibling sets) is reported
+ * as harmless with its measured push of 0, never silently passed.
+ *
+ * Both themes, because the display weight is theme-dependent (800 light,
+ * 860 dark) and so is the width a line sets at. 390 and 1440, en and ar.
+ *
+ * 4.4: and the two strings Inter Fallback's 97.5% was tuned against (named in
+ * resources/css/fonts.css) must set the same in the body fallback as in
+ * Inter Tight — the one place a body face's fallback still matters.
  *
  * Usage: node tests/Support/font-swap-check.mjs [base]
  */
 import { launch } from 'puppeteer-core'
 
 const BASE = process.argv.slice(2).find((a) => !a.startsWith('--')) || 'http://127.0.0.1:8000'
-const PAGES = ['/', '/work', '/work/salt-line', '/journal/the-edit-is-the-work', '/services/editorial-commissions', '/about']
-// What 7.5 fixed, and must hold: asserted. Everything else: reported.
-const ASSERTED = { '/work/salt-line': '.project__header', '/work': '.work-filter' }
-const SEL = '.site-header *, main h1, main h2, main h3, main p, main dd, main dt, main li, main figcaption, main blockquote'
+const PAGES = ['/', '/work', '/work/salt-line', '/journal', '/journal/the-edit-is-the-work', '/services', '/services/editorial-commissions', '/about', '/contact', '/archive']
+const SEL = '.site-header *, main h1, main h2, main h3, main p, main dd, main dt, main li, main figcaption, main blockquote, main label, main a, main span'
+const SWAP = /(archivo|rubik|jetbrains)[\w-]*\.woff2/
+const BODY = /(inter-tight|ibm-plex)[\w-]*\.woff2/
+const TUNED = [
+  { path: '/work/salt-line', width: 390, text: 'Eighteen months on one stretch of coast' },
+  { path: '/work/salt-line', width: 1440, text: 'A shoreline photographed through three winters' },
+]
+
+/*
+ * KNOWN, NOT FIXED — each a display string that sits within a pixel or two of
+ * its ch measure, so whether it takes a second line in the fallback is
+ * decided by sub-pixel rounding rather than by the scale: a search over
+ * letter scales from 80% to 145% found none that holds them without breaking
+ * others (Task 42 item 4). All five are demo copy that the content rewrite
+ * replaces. Each is still MEASURED and printed; an entry whose string is no
+ * longer on the site FAILS, so the list cannot outlive its reason.
+ */
+const KNOWN = {
+  'The diary is open for next year.': 'closing heading, 860 weight, 390',
+  'Available dark': 'about title, 800 weight',
+  'Tell me what you are making': 'contact title, 800 weight',
+  'نعمل في الضوء المتاح.': 'Arabic hero statement, 1440',
+  'أعمال في متتاليات': 'Arabic work-index title',
+}
+const knownSeen = new Set()
 
 const browser = await launch({
   executablePath: process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
@@ -35,45 +69,115 @@ const browser = await launch({
   protocolTimeout: 120000,
 })
 
-const heights = async (url, width, block) => {
+/*
+ * bodyPresent: the body faces are font-display: optional, so whether a page
+ * uses them is decided by timing — the right behaviour on screen (a page
+ * never moves), and a coin toss in a check. To model "the body face was
+ * there from the start" deterministically, the stylesheet is served with
+ * their `optional` rewritten to `block`. Test-only; the shipped CSS is not
+ * touched.
+ */
+const cssCache = new Map()
+async function measure(url, width, scheme, block, bodyPresent = false) {
   const page = await browser.newPage()
   await page.setViewport({ width, height: 900 })
-  await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }])
+  await page.emulateMediaFeatures([
+    { name: 'prefers-reduced-motion', value: 'reduce' },
+    { name: 'prefers-color-scheme', value: scheme },
+  ])
   await page.setRequestInterception(true)
-  page.on('request', (r) => (block && /\.woff2(\?|$)/.test(r.url()) ? r.abort() : r.continue()))
+  // Interception turns the HTTP cache off; the optional body faces depend on
+  // it (a face from cache is ready inside optional's ~100ms, so it is used).
+  await page.setCacheEnabled(true)
+  page.on('request', async (r) => {
+    if (block && block.test(r.url())) return r.abort()
+    if (bodyPresent && /\/build\/assets\/public-[\w-]+\.css/.test(r.url())) {
+      if (!cssCache.has(r.url())) cssCache.set(r.url(), (await (await fetch(r.url())).text()).replaceAll('font-display:optional', 'font-display:block').replaceAll('font-display: optional', 'font-display: block'))
+      return r.respond({ status: 200, contentType: 'text/css', body: cssCache.get(r.url()) })
+    }
+    return r.continue()
+  })
   await page.goto(url, { waitUntil: 'networkidle2' })
   await page.evaluate(() => document.fonts.ready)
-  const out = await page.evaluate((sel, SCOPES) => [...document.querySelectorAll(sel)].map((e, i) => {
-    const r = e.getBoundingClientRect()
-    return { i, h: Math.round(r.height), scope: SCOPES.find((sc) => e.closest(sc)) || null, what: `${e.tagName.toLowerCase()}.${(e.className || '').toString().split(' ')[0]} "${e.textContent.trim().slice(0, 30)}"` }
-  }), SEL, Object.values(ASSERTED))
+  const out = await page.evaluate((sel) => {
+    const els = [...document.querySelectorAll(sel)]
+    return els.map((e, i) => {
+      const r = e.getBoundingClientRect()
+      let next = null
+      for (let k = i + 1; k < els.length; k++) if (!e.contains(els[k])) { next = k; break }
+      return {
+        top: r.top + scrollY, h: r.height, next,
+        block: getComputedStyle(e).display !== 'inline' && !e.querySelector(sel),
+        text: e.textContent.trim().replace(/\s+/g, ' '),
+        what: `${e.tagName.toLowerCase()}.${(e.className || '').toString().split(' ')[0]} "${e.textContent.trim().replace(/\s+/g, ' ').slice(0, 36)}"`,
+      }
+    })
+  }, SEL)
   await page.close()
   return out
 }
 
-let failures = 0
-const lines = []
+/* Blocks that changed height between two states, with what each pushed. */
+function moved(a, b) {
+  const out = []
+  for (let k = 0; k < b.length; k++) {
+    const x = a[k], y = b[k]
+    if (!x || x.what !== y.what || !y.block) continue
+    if (Math.abs(y.h - x.h) < 2) continue
+    const push = y.next != null && a[y.next] ? Math.round((b[y.next].top - y.top) - (a[y.next].top - x.top)) : 0
+    out.push({ what: y.what, text: y.text, from: Math.round(x.h), to: Math.round(y.h), push })
+  }
+  return out
+}
+
+const results = []
+const check = (tag, name, ok, detail = '') => results.push({ tag, name, ok, detail })
+const notes = []
+
 for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
   for (const path of PAGES) {
-    for (const width of [1440, 390]) {
-      const url = BASE + (prefix && path === '/' ? '/ar' : prefix + path)
-      const fallback = await heights(url, width, true)
-      const loaded = await heights(url, width, false)
-      const moved = loaded.filter((e, k) => fallback[k] && Math.abs(fallback[k].h - e.h) >= 2)
-      const scope = ASSERTED[path]
-      const bad = scope ? moved.filter((e) => e.scope === scope) : []
-      const found = moved.filter((e) => !bad.includes(e))
-      if (scope) {
-        if (bad.length) failures++
-        lines.push(`    ${tag}  ${bad.length ? 'FAIL' : 'pass'}  ${(path + ' ' + width).padEnd(40)} ${scope}: ${bad.length ? bad.map((e) => `${e.what} ${fallback[e.i].h}->${e.h}px`).join('; ') : 'holds its lines'}`)
+    const url = BASE + (prefix && path === '/' ? '/ar' : prefix + path)
+    for (const width of [390, 1440]) {
+      for (const scheme of ['light', 'dark']) {
+        const where = `${path} ${width} ${scheme}`
+        // Body face missing throughout: swap faces arrive.
+        const all = new RegExp(`${SWAP.source}|${BODY.source}`)
+        const m1 = moved(await measure(url, width, scheme, all), await measure(url, width, scheme, BODY))
+        // Body face present throughout: swap faces arrive.
+        const m2 = moved(await measure(url, width, scheme, SWAP, true), await measure(url, width, scheme, null, true))
+        const pushed = [...m1, ...m2].filter((m) => m.push !== 0)
+        const known = pushed.filter((m) => Object.keys(KNOWN).some((k) => m.text.startsWith(k)))
+        for (const m of known) { knownSeen.add(Object.keys(KNOWN).find((k) => m.text.startsWith(k))); notes.push(`    ${tag}  KNOWN     ${where.padEnd(44)} ${m.what} ${m.from}->${m.to}px, pushes ${m.push}px`) }
+        const bad = pushed.filter((m) => !known.includes(m))
+        for (const m of [...m1, ...m2].filter((m) => m.push === 0)) notes.push(`    ${tag}  harmless  ${where.padEnd(44)} ${m.what} ${m.from}->${m.to}px, pushes 0`)
+        check(tag, `${where}: nothing moves when the swap faces land`, bad.length === 0,
+          bad.length ? bad.map((m) => `${m.what} ${m.from}->${m.to}px pushes ${m.push}px`).join('; ') : '')
+
+        // 4.4 — the strings Inter Fallback's size-adjust was tuned against.
+        for (const t of TUNED.filter((t) => t.path === path && t.width === width && tag === 'en')) {
+          const fb = await measure(url, width, scheme, BODY)
+          const real = await measure(url, width, scheme, null, true)
+          const i = real.findIndex((e) => e.block && e.text.startsWith(t.text))
+          const ok = i >= 0 && fb[i] && Math.abs(fb[i].h - real[i].h) < 2
+          check(tag, `${where}: 4.4 "${t.text.slice(0, 30)}…" sets the same in Inter Fallback`, ok,
+            i < 0 ? 'string not on the page — the tuned copy changed; re-tune 97.5% (fonts.css)' : `${Math.round(fb[i].h)} vs ${Math.round(real[i].h)}px`)
+        }
       }
-      if (found.length) lines.push(`    ${tag}  note  ${(path + ' ' + width).padEnd(40)} ${found.length} other block(s) rewrap, e.g. ${found.slice(0, 2).map((e) => `${e.what} ${fallback[e.i].h}->${e.h}px`).join('; ')}`)
     }
   }
 }
 await browser.close()
-console.log('\n  7.5 — TEXT HOLDS ITS LINES WHEN THE WEBFONT ARRIVES\n')
-console.log(lines.join('\n'))
-const asserted = lines.filter((l) => / (pass|FAIL) /.test(l)).length
-console.log(failures ? `\n  ${failures} failed\n` : `\n  ${asserted}/${asserted} asserted scopes hold (notes are findings, not failures)\n`)
-process.exit(failures ? 1 : 0)
+
+for (const [text, why] of Object.entries(KNOWN)) {
+  if (!knownSeen.has(text)) check('--', `known entry "${text}" (${why}) no longer rewraps or is gone — remove it from KNOWN`, false)
+}
+
+let failed = 0
+console.log('\n  TASK 42 ITEM 4 — TEXT HOLDS WHEN A FACE ARRIVES\n')
+for (const r of results) {
+  if (!r.ok) failed++
+  console.log(`    ${r.tag}  ${r.ok ? 'pass' : 'FAIL'}  ${r.name.padEnd(72)} ${r.detail}`)
+}
+if (notes.length) console.log('\n  HARMLESS (height changed, pushes 0) AND KNOWN (not fixed, see KNOWN)\n\n' + notes.join('\n'))
+console.log(failed ? `\n  ${failed} failed\n` : `\n  ${results.length}/${results.length} passed\n`)
+process.exit(failed ? 1 : 0)

@@ -225,6 +225,7 @@
     margin: 0;
     font-family: var(--font-display);
     font-variation-settings: 'wght' var(--wght-display);
+    font-weight: var(--wght-display);   /* for the fallback's weight band (fonts.css) */
     /* Large, but not the hero's size: this is a door, not a cover. */
     font-size: clamp(2rem, 7vw, 4.5rem);
     line-height: 0.95;
@@ -277,6 +278,7 @@
     margin: 0;
     font-family: var(--font-display);
     font-variation-settings: 'wght' var(--wght-display);
+    font-weight: var(--wght-display);   /* for the fallback's weight band (fonts.css) */
     font-size: var(--fs-h2);
     line-height: 1.05;
     letter-spacing: var(--tracking-tight);

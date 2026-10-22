@@ -93,6 +93,7 @@
     margin: 0;
     font-family: var(--font-display);
     font-variation-settings: 'wght' var(--wght-display);
+    font-weight: var(--wght-display);   /* for the fallback's weight band (fonts.css) */
     font-size: var(--wordmark-size);
     line-height: 0.80;
     letter-spacing: var(--tracking-tight);
@@ -268,6 +269,7 @@
 .hero__statement {
     font-family: var(--font-display);
     font-variation-settings: 'wght' var(--wght-mid);
+    font-weight: var(--wght-mid);   /* for the fallback's weight band (fonts.css) */
     font-size: var(--fs-small);
     line-height: 1.15;
     letter-spacing: var(--tracking-tight);
@@ -552,6 +554,7 @@
 
 .intro__statement {
     font-variation-settings: 'wght' var(--wght-display);
+    font-weight: var(--wght-display);   /* for the fallback's weight band (fonts.css) */
     font-family: var(--font-display);
     font-size: var(--fs-display-l);
     line-height: var(--lh-heading);
@@ -634,6 +637,7 @@
 /* Sub-display: between the two, because it sits at h2/h1 size. */
 .work__name {
     font-variation-settings: 'wght' var(--wght-mid);
+    font-weight: var(--wght-mid);   /* for the fallback's weight band (fonts.css) */
     font-family: var(--font-display);
     font-size: var(--fs-h2);
     line-height: var(--lh-heading);
@@ -719,6 +723,7 @@
 
 .story__title {
     font-variation-settings: 'wght' var(--wght-display);
+    font-weight: var(--wght-display);   /* for the fallback's weight band (fonts.css) */
     font-family: var(--font-display);
     font-size: var(--fs-display-l);
     line-height: var(--lh-tight);
@@ -847,6 +852,7 @@
 
 .closing__title {
     font-variation-settings: 'wght' var(--wght-display);
+    font-weight: var(--wght-display);   /* for the fallback's weight band (fonts.css) */
     font-family: var(--font-display);
     font-size: var(--fs-display-l);
     line-height: var(--lh-heading);

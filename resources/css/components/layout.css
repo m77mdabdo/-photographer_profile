@@ -47,6 +47,7 @@
 .site-header__mark {
     font-family: var(--font-display);
     font-variation-settings: 'wght' var(--wght-mid);
+    font-weight: var(--wght-mid);   /* for the fallback's weight band (fonts.css) */
     font-size: var(--fs-h3);
     letter-spacing: var(--tracking-tight);
     text-transform: uppercase;

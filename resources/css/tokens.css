@@ -388,7 +388,7 @@
      * collateral.
      * ═══════════════════════════════════════════════════════════════════════
      */
-    --font-display: 'Rubik', 'Archivo', 'Archivo Fallback', 'Arial Narrow', Arial, sans-serif;
+    --font-display: 'Rubik', 'Rubik Fallback', 'Archivo', 'Archivo Fallback', 'Arial Narrow', Arial, sans-serif;
     --font-sans: 'IBM Plex Sans Arabic', 'Arabic Fallback', 'Inter Tight', 'Inter Fallback', -apple-system, 'Segoe UI', system-ui, sans-serif;
 }
 

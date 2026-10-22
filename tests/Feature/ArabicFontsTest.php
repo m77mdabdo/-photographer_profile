@@ -113,7 +113,8 @@ class ArabicFontsTest extends TestCase
         );
 
         // The Latin faces stay BEHIND them, for the Latin runs inside Arabic.
-        $this->assertStringContainsString("'Rubik', 'Archivo'", $arabicBlock);
+        // Task 42 item 4: Rubik's metric-matched stand-in sits between them.
+        $this->assertStringContainsString("'Rubik', 'Rubik Fallback', 'Archivo'", $arabicBlock);
         // Task 41 7.5: the Arabic stand-in sits between the two real faces; its
         // effect is asserted on the render by tests/Support/font-swap-check.mjs.
         $this->assertStringContainsString("'IBM Plex Sans Arabic', 'Arabic Fallback', 'Inter Tight'", $arabicBlock);
