@@ -45,22 +45,36 @@ class CinematicSection extends Model
     /** preset => [highlight strength 0-1] */
     public const INTENSITY = ['soft' => 0.35, 'balanced' => 0.55, 'strong' => 0.8];
 
-    /** preset => [opacity of the dark veil at the start] */
-    public const DARKNESS = ['subtle' => 0.45, 'deep' => 0.62, 'night' => 0.78];
+    /**
+     * preset => [veil opacity over a photograph the light is not on].
+     * In the spotlight, "Deep" and "Night" are the brief's 95-98%; without
+     * it (a sweep that lights every photograph) the start darkness is lower,
+     * because there every photograph ends lit.
+     */
+    public const DARKNESS = ['subtle' => 0.85, 'deep' => 0.95, 'night' => 0.98];
+    public const DARKNESS_SWEEP = ['subtle' => 0.45, 'deep' => 0.62, 'night' => 0.78];
 
-    /** preset => share of the section's scroll the whole sweep takes */
-    public const PACE = ['slow' => 1.0, 'natural' => 0.8, 'quick' => 0.6];
+    /** preset => scroll distance per photograph, in viewport heights */
+    public const PACE = ['slow' => 0.9, 'natural' => 0.7, 'quick' => 0.5];
+
+    /** preset => how far either side of the active photograph the light spreads, in photographs */
+    public const SOFTNESS = ['crisp' => 0.45, 'soft' => 0.7, 'gentle' => 0.95];
+
+    /** % of the phone screen a photograph in the moving strip takes */
+    public const MOBILE_WIDTHS = ['70', '80', '90'];
 
     /** preset => the veil's colour, from the site's own palette */
     public const OVERLAYS = ['none', 'ink', 'warm', 'cool'];
 
-    public const DIRECTIONS = ['ltr', 'rtl'];
+    /** auto follows the page's language: left to right in English, right to left in Arabic. */
+    public const DIRECTIONS = ['auto', 'ltr', 'rtl'];
 
-    public const MOBILE_LAYOUTS = ['grid', 'stack'];
+    public const MOBILE_LAYOUTS = ['track', 'grid', 'stack'];
 
     protected $fillable = [
         'type', 'title', 'description', 'is_active', 'sort_order',
         'light_direction', 'intensity', 'darkness', 'pace', 'overlay', 'mobile_layout', 'animate',
+        'spotlight', 'softness', 'mobile_width',
         'featured_media_id', 'video_path', 'poster_media_id',
     ];
 
@@ -70,6 +84,7 @@ class CinematicSection extends Model
             'is_active' => 'boolean',
             'is_demo' => 'boolean',
             'animate' => 'boolean',
+            'spotlight' => 'boolean',
             'sort_order' => 'integer',
         ];
     }
@@ -157,21 +172,39 @@ class CinematicSection extends Model
     }
 
     /**
+     * The direction the light travels ON SCREEN for this page: the owner's
+     * override, or the page's own reading direction.
+     */
+    public function direction(?string $pageDirection = null): string
+    {
+        if (in_array($this->light_direction, ['ltr', 'rtl'], true)) {
+            return $this->light_direction;
+        }
+
+        return $pageDirection ?? \App\Support\Locale::direction();
+    }
+
+    /**
      * The presets, as the numbers the page reads (data attributes on the
      * section). Unknown names fall back to the defaults, so a value written
      * by hand into the database cannot break the page.
      *
      * @return array<string, string>
      */
-    public function lighting(): array
+    public function lighting(?string $pageDirection = null): array
     {
+        $darkness = $this->spotlight ? self::DARKNESS : self::DARKNESS_SWEEP;
+
         return [
-            'direction' => in_array($this->light_direction, self::DIRECTIONS, true) ? $this->light_direction : 'ltr',
+            'direction' => $this->direction($pageDirection),
+            'mode' => $this->spotlight ? 'spotlight' : 'sweep',
             'intensity' => (string) (self::INTENSITY[$this->intensity] ?? self::INTENSITY['balanced']),
-            'darkness' => (string) (self::DARKNESS[$this->darkness] ?? self::DARKNESS['deep']),
+            'darkness' => (string) ($darkness[$this->darkness] ?? $darkness['deep']),
             'pace' => (string) (self::PACE[$this->pace] ?? self::PACE['natural']),
+            'softness' => (string) (self::SOFTNESS[$this->softness] ?? self::SOFTNESS['soft']),
             'overlay' => in_array($this->overlay, self::OVERLAYS, true) ? $this->overlay : 'none',
-            'mobile' => in_array($this->mobile_layout, self::MOBILE_LAYOUTS, true) ? $this->mobile_layout : 'grid',
+            'mobile' => in_array($this->mobile_layout, self::MOBILE_LAYOUTS, true) ? $this->mobile_layout : 'track',
+            'mobileWidth' => in_array((string) $this->mobile_width, self::MOBILE_WIDTHS, true) ? (string) $this->mobile_width : '80',
             'animate' => $this->animate ? '1' : '0',
         ];
     }

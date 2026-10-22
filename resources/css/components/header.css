@@ -133,7 +133,7 @@
     justify-content: space-between;
     gap: var(--sp-4);
     inline-size: 100%;
-    min-block-size: 44px;
+    min-block-size: 48px;
     padding-inline: var(--sp-3);
     font: inherit;
     font-size: var(--fs-body);

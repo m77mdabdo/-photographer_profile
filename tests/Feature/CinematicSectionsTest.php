@@ -77,7 +77,8 @@ class CinematicSectionsTest extends TestCase
         $this->assertSame('gallery', $section->type);
         $this->assertSame('ضوءٌ يوضع بقصد.', $section->getTranslation('title', 'ar', false));
         $this->assertSame($frames->pluck('id')->all(), $section->items->pluck('media_id')->all(), 'the photographs lost their order');
-        $this->assertSame(['direction' => 'rtl', 'intensity' => '0.8', 'darkness' => '0.78', 'pace' => '0.6', 'overlay' => 'warm', 'mobile' => 'stack', 'animate' => '1'], $section->lighting());
+        // Spotlight on by default: "Night" is the brief's 98% for the others.
+        $this->assertSame(['direction' => 'rtl', 'mode' => 'spotlight', 'intensity' => '0.8', 'darkness' => '0.98', 'pace' => '0.5', 'softness' => '0.7', 'overlay' => 'warm', 'mobile' => 'stack', 'mobileWidth' => '80', 'animate' => '1'], $section->lighting());
 
         // Every photograph is claimed, so the library refuses to delete it.
         $this->assertSame(4, $section->mediaUsages()->where('role', 'gallery')->count());
@@ -226,6 +227,26 @@ class CinematicSectionsTest extends TestCase
         $this->assertMatchesRegularExpression('#<video class="cine__media"\s+muted loop playsinline controls\s+preload="none"#', $html);
         $this->assertStringContainsString('<source src="/storage/media/cinematic/clip.mp4" type="video/mp4">', $html);
         $this->assertStringNotContainsString('autoplay', $html, 'autoplay is the script\'s decision, only while on screen');
+    }
+
+    public function test_direction_follows_the_language_unless_overridden(): void
+    {
+        CinematicSection::factory()->gallery(4)->create(['light_direction' => 'auto', 'title' => ['en' => 'Auto', 'ar' => 'تلقائي']]);
+
+        $this->get('/')->assertSee('<ol class="cine__strip" role="list" dir="ltr"', false);
+        $this->get('/ar')->assertSee('<ol class="cine__strip" role="list" dir="rtl"', false);
+
+        CinematicSection::query()->update(['light_direction' => 'ltr']);
+        $this->get('/ar')->assertSee('<ol class="cine__strip" role="list" dir="ltr"', false)->assertSee('data-mode="spotlight"', false);
+    }
+
+    public function test_spotlight_off_is_a_sweep_with_its_own_darkness(): void
+    {
+        $section = CinematicSection::factory()->gallery(4)->create(['spotlight' => false, 'darkness' => 'deep']);
+
+        $this->assertSame('sweep', $section->lighting()['mode']);
+        $this->assertSame('0.62', $section->lighting()['darkness']);
+        $this->get('/')->assertSee('data-mode="sweep"', false);
     }
 
     public function test_animation_off_is_carried_to_the_page(): void

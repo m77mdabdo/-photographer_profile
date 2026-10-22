@@ -264,6 +264,19 @@ class StudioPanelProvider extends PanelProvider
             ])
 
             /*
+             * The owner's own account (master directive, Part 7): name, email
+             * and password. Changing the password asks for the current one.
+             * Account security (recovery codes) is beside it in the menu.
+             */
+            ->profile(isSimple: false)
+            ->userMenuItems([
+                \Filament\Actions\Action::make('accountSecurity')
+                    ->label(fn (): string => __('studio.security.nav'))
+                    ->icon('heroicon-o-shield-check')
+                    ->url(fn (): string => \App\Filament\Pages\AccountSecurity::getUrl()),
+            ])
+
+            /*
              * ───────────────────────────────────────────────────────────────
              * B4 — THE DASHBOARD'S ORDER IS A HIERARCHY, NOT A LIST.
              *

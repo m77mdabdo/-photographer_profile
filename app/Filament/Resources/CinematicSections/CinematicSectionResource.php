@@ -175,10 +175,16 @@ class CinematicSectionResource extends Resource
                         ->label(__('studio.cinematic.direction_label'))
                         ->options(self::options('direction', CinematicSection::DIRECTIONS))
                         ->helperText(__('studio.cinematic.direction_hint'))
-                        ->default('ltr')
+                        ->default('auto')
                         ->in(CinematicSection::DIRECTIONS)
-                        ->inline()
                         ->required(),
+
+                    Toggle::make('spotlight')
+                        ->label(__('studio.cinematic.spotlight'))
+                        ->helperText(__('studio.cinematic.spotlight_hint'))
+                        ->visible($is(CinematicSection::TYPE_GALLERY))
+                        ->live()
+                        ->default(true),
 
                     Toggle::make('animate')
                         ->label(__('studio.cinematic.animate'))
@@ -193,6 +199,7 @@ class CinematicSectionResource extends Resource
 
                     Select::make('darkness')
                         ->label(__('studio.cinematic.darkness_label'))
+                        ->helperText(__('studio.cinematic.darkness_hint'))
                         ->options(self::options('darkness', array_keys(CinematicSection::DARKNESS)))
                         ->in(array_keys(CinematicSection::DARKNESS))
                         ->default('deep')->selectablePlaceholder(false)->required(),
@@ -202,6 +209,13 @@ class CinematicSectionResource extends Resource
                         ->options(self::options('pace', array_keys(CinematicSection::PACE)))
                         ->in(array_keys(CinematicSection::PACE))
                         ->default('natural')->selectablePlaceholder(false)->required(),
+
+                    Select::make('softness')
+                        ->label(__('studio.cinematic.softness_label'))
+                        ->options(self::options('softness', array_keys(CinematicSection::SOFTNESS)))
+                        ->in(array_keys(CinematicSection::SOFTNESS))
+                        ->visible(fn (Get $get): bool => ($get('type') ?: CinematicSection::TYPE_GALLERY) === CinematicSection::TYPE_GALLERY && $get('spotlight') !== false)
+                        ->default('soft')->selectablePlaceholder(false)->required(),
 
                     Select::make('overlay')
                         ->label(__('studio.cinematic.overlay_label'))
@@ -214,7 +228,15 @@ class CinematicSectionResource extends Resource
                         ->options(self::options('mobile', CinematicSection::MOBILE_LAYOUTS))
                         ->in(CinematicSection::MOBILE_LAYOUTS)
                         ->visible($is(CinematicSection::TYPE_GALLERY))
-                        ->default('grid')->selectablePlaceholder(false)->required(),
+                        ->live()
+                        ->default('track')->selectablePlaceholder(false)->required(),
+
+                    Select::make('mobile_width')
+                        ->label(__('studio.cinematic.mobile_width_label'))
+                        ->options(collect(CinematicSection::MOBILE_WIDTHS)->mapWithKeys(fn (string $w): array => [$w => __('studio.cinematic.mobile_width', ['percent' => $w])])->all())
+                        ->in(CinematicSection::MOBILE_WIDTHS)
+                        ->visible(fn (Get $get): bool => ($get('type') ?: CinematicSection::TYPE_GALLERY) === CinematicSection::TYPE_GALLERY && ($get('mobile_layout') ?: 'track') === 'track')
+                        ->default('80')->selectablePlaceholder(false)->required(),
                 ]),
         ]);
     }

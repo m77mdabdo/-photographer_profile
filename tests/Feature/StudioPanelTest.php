@@ -483,6 +483,7 @@ class StudioPanelTest extends TestCase
          * Task 42 item 4, overrides corrected: 90,275.
          * Phase 2, globe switcher and mobile menu (header.css): 95,253.
          * Cinematic sections (cinematic.css): 98,706.
+         * Spotlight, header targets, block widths: 99,803.
          *
          * THE SIZE IS ASSERTED ALONGSIDE THE HASH from now on. A hash tells
          * you the bundle changed; it cannot tell you whether it changed by a
@@ -493,12 +494,12 @@ class StudioPanelTest extends TestCase
          * leaked framework fails.
          * ───────────────────────────────────────────────────────────────────
          */
-        $this->assertSame('assets/public-DrFgiDr2.css', $publicCss, 'the public stylesheet changed');
-        $this->assertSame('assets/public-KZXQgeBC.js', $publicJs, 'the public entry changed');
+        $this->assertSame('assets/public-DjZxFP1k.css', $publicCss, 'the public stylesheet changed');
+        $this->assertSame('assets/public-DrTpdGDb.js', $publicJs, 'the public entry changed');
 
         $cssBytes = (int) filesize(public_path('build/'.$publicCss));
 
-        $this->assertSame(98_737, $cssBytes, 'the public stylesheet is a different size');
+        $this->assertSame(99_803, $cssBytes, 'the public stylesheet is a different size');
 
         /*
          * 90,000 -> 91,000 in Task 42 item 4, for fifteen @font-face blocks:

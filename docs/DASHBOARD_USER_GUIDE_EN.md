@@ -17,7 +17,7 @@ The same guide is available inside the dashboard: **System → Help**.
    sign in you are taken to **Two-factor authentication required**:
    - Press **Begin setup** (you may be asked for your password again).
    - Scan the QR code with an authenticator app (Google Authenticator,
-     Microsoft Authenticator, 1Password, Authy…).
+     Microsoft Authenticator, 1Password, Authy).
    - Type the six-digit **Authentication code** from the app and press
      **Confirm**.
 4. From then on, every sign-in asks for a six-digit code from the app
@@ -86,7 +86,7 @@ current time. **A date in the future hides the item until that moment** — this
 is how to schedule something.
 
 **Deleting** moves an item to the bin; it can be brought back. To see binned
-items, use the **Trashed** filter on the list and choose **Restore**. Deleting
+items, use the **Deleted records** filter on the list and choose **Restore**. Deleting
 something *permanently* (**Force delete**) is for owners only.
 
 **Address (slug).** Pages with their own address have a **Slug** in each
@@ -188,14 +188,28 @@ set **Status** to **Draft** or **Archived**.
 
 **The work → Cinematic sections** controls the lighting galleries and the
 featured image or video on the home page. They appear in the order of this
-list — **drag a row** to move it.
+list — **drag a row** (or use its arrows) to move it.
+
+### What a lighting gallery does
+
+With **Exclusive spotlight** on (the default), the gallery holds the screen
+while the visitor scrolls, and the light moves from the first photograph to
+the last: **only one photograph is lit at a time**; the others stay almost
+black. Scrolling back moves the light back. When the last photograph has
+been lit, the page carries on scrolling normally.
+
+On phones and tablets the photographs sit in a **moving strip**: scrolling
+down slides the strip sideways and keeps the lit photograph in the centre —
+left to right in English, right to left in Arabic. Nobody has to swipe.
+
+Visitors who have asked their device for less motion see every photograph
+fully lit, and on phones can swipe the strip by hand.
 
 ### Creating one
 
 1. Press **New cinematic section**.
 2. **Kind**:
-   - **Lighting gallery** — 4 or 5 photographs that light up one after another
-     as the visitor scrolls.
+   - **Lighting gallery** — 4 or 5 photographs.
    - **Featured image** — one photograph across the full width.
    - **Featured video** — one silent, looping video across the full width.
 3. **Shown on the home page** — switch off to hide without deleting.
@@ -208,24 +222,35 @@ list — **drag a row** to move it.
    - **Image** — choose one photograph.
    - **Video file** — an **MP4 or WebM** file, at most **60 MB**, plus a
      **Poster image** shown before it plays and to visitors who prefer less
-     motion. Keep videos short (10–30 seconds) and without important sound —
-     they always play muted.
+     motion. Keep videos short (10–30 seconds); they always play muted, and
+     only while on screen.
 6. **Lighting**:
-   - **Light travels** — *Left to right* or *Right to left*, on screen, in
-     both languages.
-   - **Strength of the light** — Soft, Balanced, Strong.
-   - **How dark it starts** — Subtle, Deep, Night.
-   - **Pace** — Slow, Natural, Quick.
-   - **Shadow colour** — Neutral, Ink, Warm, Cool.
-   - **On phones** (galleries) — *Two columns* or *One photograph per row*.
-   - **Animate the light** — off shows the photographs fully lit, no movement.
-7. Press **Create**.
+   - **Light travels** — *Follow the language* (recommended: left to right in
+     English, right to left in Arabic), or a fixed *Left to right* /
+     *Right to left* for both languages.
+   - **Exclusive spotlight** (galleries) — on: one photograph lit at a time.
+     Off: every photograph lights in turn and stays lit.
+   - **How dark the other photographs are** — *Subtle* (85%), *Deep* (95%)
+     or *Night* (98%) darker than the lit one.
+   - **Transition** (spotlight) — *Crisp*, *Soft* or *Gentle*: how gradually
+     the light hands over from one photograph to the next.
+   - **Scroll distance per photograph** — *Slow*, *Natural* or *Quick*: how
+     far the visitor scrolls to move the light on by one photograph.
+   - **Strength of the light** — *Soft*, *Balanced* or *Strong*: the soft
+     band of light that crosses each photograph as it is lit.
+   - **Shadow colour** — *Neutral*, *Ink*, *Warm* or *Cool*: the tint of the
+     darkness.
+   - **On phones** (galleries) — *Moving strip (recommended)*, *Two columns*
+     or *One photograph per row*.
+   - **Photograph width on phones** (moving strip) — *70%*, *80%* or *90%* of
+     the screen.
+   - **Animate the light** — off shows the photographs fully lit, with no
+     movement.
+7. Press **Create**, then open the home page to see it.
 
-Visitors who have asked their device for less motion always see every
-photograph fully lit. A section with fewer than four ready photographs, or a
-video whose file is missing, is simply not shown.
-
----
+A section with fewer than four *Ready* photographs, or a video whose file is
+missing, is not shown. Photographs used here cannot be deleted from Media
+until they are removed from the section.
 
 ## 8. Services
 
@@ -298,7 +323,7 @@ foot of the page**.
 ## 11. Journal, pages, clients and testimonials
 
 - **Journal** (*Writing*): articles with **Title**, **Subtitle**,
-  **Excerpt**, **Body**, a **Featured image**, a **Journal category** and
+  **Excerpt**, **Body**, a **Featured image**, a **Journal section** and
   **Tags**. Same publishing rules.
 - **Pages**: free-standing pages such as the privacy notice. **Indexable**
   controls whether search engines may list it. The privacy notice and terms
@@ -407,7 +432,67 @@ who signed in. Entries older than a year are removed automatically.
 
 ---
 
-## 16. Image sizes at a glance
+## 16. Using the dashboard on a phone
+
+Everything in this guide works on a phone. A typical project, start to
+finish, without a computer:
+
+1. Open **your-site-address/admin** in the phone's browser and sign in with
+   your password and the code from your authenticator app.
+2. Open the menu (the ☰ button at the top) → **Media** → **Upload images**.
+   Choose photographs from the phone's library. iPhone users: in
+   *Settings → Camera → Formats* choose **Most Compatible** so photographs
+   are saved as JPEG; HEIC files are refused with a message saying so.
+3. Wait until each photograph shows **Ready**. Tap a photograph's **Edit**
+   to write its alt text in both languages.
+4. Menu → **Projects** → **New project**. Fill the English tab, then the
+   العربية tab. Choose the **Cover image** and **Hero image** with **Choose an
+   image**. Leave **Status** on *Draft*. Press **Create**.
+5. On the projects list tap **Story** to add blocks; use the arrow buttons
+   to reorder (no dragging needed). Press **Save story**, then **Preview**.
+6. Back in the project, set **Status** to *Published* and **Save**.
+7. Open the site in a new tab and check the project in both languages.
+
+Tips: rotate the phone to landscape for wide tables; the menu closes after
+you choose a page; unsaved changes in the story builder survive a closed tab.
+
+## 17. Backups and recovery — who is responsible
+
+The dashboard cannot make or restore backups. Your hosting provider or
+developer must:
+
+- back up the **database** at least daily, and the **uploaded photographs
+  and videos** (the `storage` folder) at least daily;
+- keep backups somewhere other than the server itself;
+- test a restore at least every three months.
+
+Inside the dashboard, deleted items stay in the bin until an owner deletes
+them permanently, and **Activity** records who changed what. Neither is a
+backup.
+
+## 18. Frequently asked questions
+
+**Why does my change not appear on the site?** Check the item is
+**Published**, its **Published at** date is not in the future, and — for
+home-page text — that you pressed **Save settings**. Reload the public page.
+
+**Why is the Arabic page showing English?** That field's **العربية** tab is
+empty.
+
+**Can I undo a deletion?** Yes, unless it was deleted permanently: use the
+**Deleted records** filter and **Restore**.
+
+**Can I schedule a project?** Yes: publish it with a **Published at** date in
+the future.
+
+**Can visitors see drafts?** No. Use **Preview** (projects) to see one.
+
+**How do I add a new person?** An owner adds them in **Users**; they set
+their own password with **Forgotten your password?**.
+
+**What image size should I upload?** See the next section.
+
+## 19. Image sizes at a glance
 
 | Use | Recommended |
 | --- | --- |

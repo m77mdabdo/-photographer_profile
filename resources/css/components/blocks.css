@@ -37,7 +37,16 @@ main h1[tabindex='-1']:focus { outline: none; }
 
 .block { margin: 0; }
 .block__caption, .block__attribution { max-width: var(--container-text); margin: var(--sp-3) auto 0; padding-inline: var(--gutter); font-size: var(--fs-caption); color: var(--text-secondary); }
-.block--contained-image, .block--pair, .block--grid, .block--split, .block--text, .block--quote, .block--credits, .block--video, .block--embed { max-width: var(--container-wide); margin-inline: auto; padding-inline: var(--gutter); }
+/*
+ * width: 100% beside max-width (master directive QA, 22 Oct 2026). The story
+ * is a flex column, and in a flex column auto margins stop an item
+ * stretching: it shrinks to its content. An image not yet loaded has no
+ * width, so a landscape pair below the fold was 33px wide and 24px tall
+ * until its photographs arrived, then 462px — everything under it moved
+ * (measured on /work/salt-line at 390, cold cache). Filling the column up to
+ * max-width reserves the space before a byte of the image arrives.
+ */
+.block--contained-image, .block--pair, .block--grid, .block--split, .block--text, .block--quote, .block--credits, .block--video, .block--embed { width: 100%; max-width: var(--container-wide); margin-inline: auto; padding-inline: var(--gutter); }
 .block--full-width-image { width: 100%; }
 .block__pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); }
 .block__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); }

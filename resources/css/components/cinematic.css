@@ -16,11 +16,20 @@
     color: var(--cine-text);
     padding-block: clamp(var(--sp-8), 10vw, calc(var(--sp-8) * 2));
     display: grid;
+    /*
+     * minmax(0, 1fr), and min-width: 0 below: a grid item's minimum is its
+     * content by default, so the phone strip — five photographs side by side
+     * — widened the column to 1,678px, and the clip hid it. The strip then
+     * could not scroll (it was as wide as its content) and a right-to-left
+     * strip started off-screen. Measured, then fixed.
+     */
+    grid-template-columns: minmax(0, 1fr);
     gap: clamp(var(--sp-8), 12vw, calc(var(--sp-8) * 2.5));
     overflow: clip;   /* the scaled feature never widens the page */
 }
 
-.cine { position: relative; }
+.cine { position: relative; min-width: 0; }
+.cine__pin { min-width: 0; }
 
 /* ── Words ─────────────────────────────────────────────────────────────── */
 
@@ -114,6 +123,67 @@
 
     .cine--gallery[data-mobile='stack'] .cine__strip { grid-template-columns: minmax(0, 1fr); }
     .cine--gallery[data-mobile='stack'] .cine__panel { aspect-ratio: 4 / 3; }
+}
+
+/*
+ * THE MOVING STRIP — phones and tablets, the default (data-mobile="track").
+ * A horizontal row, each photograph var(--cine-mobile-width) wide, the first
+ * centred. Without the script it scrolls sideways with snapping, so every
+ * photograph can still be reached by a swipe; with it (.cine--pinned below)
+ * the page's vertical scroll moves it and the swipe is not needed. The row
+ * flows in the strip's own dir, so Arabic starts at the right.
+ */
+@media (max-width: 899px) {
+    .cine--gallery[data-mobile='track'] .cine__strip.cine__strip {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        padding-inline: calc((100vw - var(--cine-mobile-width, 80vw)) / 2);
+    }
+
+    .cine--gallery[data-mobile='track'] .cine__strip::-webkit-scrollbar { display: none; }
+
+    .cine--gallery[data-mobile='track'] .cine__panel {
+        flex: 0 0 var(--cine-mobile-width, 80vw);
+        aspect-ratio: 3 / 4;
+        scroll-snap-align: center;
+    }
+
+    .cine--gallery[data-mobile='track'] .cine__panel:last-child:nth-child(odd) {
+        grid-column: auto;
+        aspect-ratio: 3 / 4;
+    }
+}
+
+/*
+ * PINNED — the script has made the section tall (its height is inline) and
+ * the stage sticks while the spotlight plays. The strip no longer scrolls by
+ * itself: its position is the page's scroll.
+ */
+.cine--pinned .cine__pin {
+    position: sticky;
+    top: 0;
+    min-block-size: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.cine--pinned .cine__header { margin-block-end: clamp(var(--sp-4), 3vw, var(--sp-6)); }
+
+.cine--pinned[data-mobile='track'] .cine__strip.cine__strip {
+    overflow: visible;
+    scroll-snap-type: none;
+    will-change: transform;
+}
+
+/* A pinned desktop strip keeps every photograph within the stage's height. */
+@media (min-width: 900px) {
+    .cine--pinned .cine__panel { max-block-size: 62svh; }
 }
 
 /* ── Featured image / video ────────────────────────────────────────────── */

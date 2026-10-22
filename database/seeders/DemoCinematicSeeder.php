@@ -59,7 +59,7 @@ class DemoCinematicSeeder extends Seeder
         };
 
         $a = $make(
-            ['type' => 'gallery', 'sort_order' => 1, 'light_direction' => 'ltr', 'intensity' => 'balanced', 'darkness' => 'deep', 'pace' => 'natural', 'overlay' => 'warm', 'mobile_layout' => 'grid'],
+            ['type' => 'gallery', 'sort_order' => 1, 'light_direction' => 'auto', 'spotlight' => true, 'softness' => 'soft', 'intensity' => 'balanced', 'darkness' => 'deep', 'pace' => 'natural', 'overlay' => 'warm', 'mobile_layout' => 'track', 'mobile_width' => '80'],
             ['en' => 'Light, placed with intent.', 'ar' => 'ضوءٌ يوضع بقصد.'],
             ['en' => 'Sample sequence — demo photographs, local only.', 'ar' => 'تسلسل تجريبي — صور للعرض فقط، محليًا.'],
         );
@@ -72,7 +72,7 @@ class DemoCinematicSeeder extends Seeder
         );
 
         $c = $make(
-            ['type' => 'gallery', 'sort_order' => 3, 'light_direction' => 'rtl', 'intensity' => 'strong', 'darkness' => 'night', 'pace' => 'quick', 'overlay' => 'cool', 'mobile_layout' => 'stack'],
+            ['type' => 'gallery', 'sort_order' => 3, 'light_direction' => 'rtl', 'spotlight' => true, 'softness' => 'crisp', 'intensity' => 'strong', 'darkness' => 'night', 'pace' => 'quick', 'overlay' => 'cool', 'mobile_layout' => 'track', 'mobile_width' => '70'],
             ['en' => 'You only see what the light is on.', 'ar' => 'لا ترى إلا ما يقع عليه الضوء.'],
         );
         $gallery($c, $pick(40, 4));

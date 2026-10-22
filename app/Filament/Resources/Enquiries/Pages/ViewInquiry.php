@@ -41,6 +41,33 @@ class ViewInquiry extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            /*
+             * Where the enquiry stands (master directive, Part 7). The statuses
+             * existed and the list filtered by them, but nothing could set one
+             * beyond "New" turning "Read" on opening — so "Booked" was a
+             * filter with nothing in it.
+             */
+            Action::make('changeStatus')
+                ->label(__('studio.enquiries.change_status'))
+                ->icon('heroicon-o-flag')
+                ->authorize(fn (): bool => auth()->user()?->can('update', $this->getRecord()) ?? false)
+                ->fillForm(fn (): array => ['status' => $this->getRecord()->status->value])
+                ->schema([
+                    \Filament\Forms\Components\Select::make('status')
+                        ->label(__('studio.enquiries.status'))
+                        ->options(collect(\App\Enums\InquiryStatus::cases())->mapWithKeys(fn (\App\Enums\InquiryStatus $s): array => [$s->value => $s->label()])->all())
+                        ->in(array_map(fn (\App\Enums\InquiryStatus $s): string => $s->value, \App\Enums\InquiryStatus::cases()))
+                        ->required()
+                        ->selectablePlaceholder(false),
+                ])
+                ->action(function (array $data): void {
+                    $record = $this->getRecord();
+                    $record->status = \App\Enums\InquiryStatus::from($data['status']);
+                    $record->save();
+
+                    Notification::make()->title(__('studio.enquiries.status_changed', ['status' => $record->status->label()]))->success()->send();
+                }),
+
             Action::make('addNote')
                 ->label(__('studio.enquiries.add_note'))
                 ->icon('heroicon-o-pencil-square')

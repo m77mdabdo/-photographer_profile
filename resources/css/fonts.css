@@ -209,9 +209,14 @@
  *   weight band   Archivo at   fallback face        width ratio
  *   1-500         400          Arial Narrow         90.8%
  *   501-640       620          Arial Narrow Bold    89.7%
- *   641-700       660          Arial Narrow Bold    89.7%
- *   701-830       800          Arial Narrow Bold    93.5%
- *   831-1000      860          Arial Narrow Bold    98.1%
+ *   641-700       660          Arial Narrow Bold    89.7%  set to 92.5%
+ *   701-830       800          Arial Narrow Bold    93.5%  set to 95%
+ *   831-1000      860          Arial Narrow Bold    98.1%  set to 95%
+ *
+ * "Set to": re-searched in 0.5% steps over every display block on ten pages,
+ * both themes, once the commercial copy and the cinematic headlines were in
+ * (master directive QA). The averages above came from small samples (185
+ * and 254 characters) and sat outside the holding ranges.
  *
  * Overrides in each band: Archivo's 0.878 / 0.210 em ÷ that band's scale.
  */
@@ -241,9 +246,9 @@
     font-family: 'Archivo Fallback';
     src: local('Arial Narrow Bold'), local('ArialNarrow-Bold'), local('Arial Bold');
     font-weight: 641 700;
-    size-adjust: 89.7%;
-    ascent-override: 97.9%;
-    descent-override: 23.4%;
+    size-adjust: 92.5%;
+    ascent-override: 94.9%;
+    descent-override: 22.7%;
     line-gap-override: 0%;
     unicode-range: U+0000-002F, U+003A-10FFFF;
 }
@@ -252,9 +257,9 @@
     font-family: 'Archivo Fallback';
     src: local('Arial Narrow Bold'), local('ArialNarrow-Bold'), local('Arial Bold');
     font-weight: 701 830;
-    size-adjust: 93.5%;
-    ascent-override: 93.9%;
-    descent-override: 22.5%;
+    size-adjust: 95.0%;
+    ascent-override: 92.4%;
+    descent-override: 22.1%;
     line-gap-override: 0%;
     unicode-range: U+0000-002F, U+003A-10FFFF;
 }
@@ -263,9 +268,9 @@
     font-family: 'Archivo Fallback';
     src: local('Arial Narrow Bold'), local('ArialNarrow-Bold'), local('Arial Bold');
     font-weight: 831 1000;
-    size-adjust: 98.1%;
-    ascent-override: 89.5%;
-    descent-override: 21.4%;
+    size-adjust: 95.0%;
+    ascent-override: 92.4%;
+    descent-override: 22.1%;
     line-gap-override: 0%;
     unicode-range: U+0000-002F, U+003A-10FFFF;
 }
@@ -451,7 +456,7 @@
  *   1-500         400        Arial         127.8%          127.8%
  *   501-640       620        Arial Bold    127.9%          130.0%
  *   641-700       660        Arial Bold    132.1%          130.0%
- *   701-830       800        Arial Bold    130.0%          132.5%
+ *   701-830       800        Arial Bold    130.0%          127.5%
  *   831-1000      860        Arial Bold    136.3%          133.5%
  *
  * "Set to" is the middle of the range in which every Arabic display block on
@@ -508,9 +513,9 @@
     font-family: 'Rubik Fallback';
     src: local('Arial Bold'), local('Arial-BoldMT'), local('Geeza Pro Bold');
     font-weight: 701 830;
-    size-adjust: 132.5%;
-    ascent-override: 70.6%;
-    descent-override: 18.9%;
+    size-adjust: 127.5%;
+    ascent-override: 73.3%;
+    descent-override: 19.6%;
     line-gap-override: 0%;
     unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF,
         U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;

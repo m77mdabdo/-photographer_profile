@@ -155,6 +155,9 @@ return [
     ],
 
     'enquiries' => [
+        'change_status' => 'Change status',
+        'status' => 'Status',
+        'status_changed' => 'Status set to :status.',
         'notes' => 'Your notes',
         'add_note' => 'Add a note',
         'note' => 'Note',
@@ -385,6 +388,11 @@ return [
     ],
 
     'field' => [
+        'quote' => 'Quote',
+        'attribution' => 'Who said it',
+        'role' => 'Their role or company',
+        'credit' => 'Credit',
+        'copyright' => 'Copyright',
         'website' => 'Website',
         'year' => 'Year',
         'price_from_short' => 'From',
@@ -878,8 +886,9 @@ return [
         'section_lighting' => 'Lighting',
         'lighting_hint' => 'How the light arrives as the visitor scrolls. Every image is fully visible to visitors who prefer less motion.',
         'direction_label' => 'Light travels',
-        'direction_hint' => 'Across the screen, in both languages.',
+        'direction_hint' => 'Which way the light moves across the screen. A fixed choice applies to both languages.',
         'direction' => [
+            'auto' => 'Follow the language (left to right in English, right to left in Arabic)',
             'ltr' => 'Left to right',
             'rtl' => 'Right to left',
         ],
@@ -889,13 +898,14 @@ return [
             'balanced' => 'Balanced',
             'strong' => 'Strong',
         ],
-        'darkness_label' => 'How dark it starts',
+        'darkness_label' => 'How dark the other photographs are',
+        'darkness_hint' => 'With the spotlight on: Subtle 85%, Deep 95%, Night 98% darker than the lit photograph.',
         'darkness' => [
             'subtle' => 'Subtle',
             'deep' => 'Deep',
             'night' => 'Night',
         ],
-        'pace_label' => 'Pace',
+        'pace_label' => 'Scroll distance per photograph',
         'pace' => [
             'slow' => 'Slow',
             'natural' => 'Natural',
@@ -910,14 +920,48 @@ return [
         ],
         'mobile_label' => 'On phones',
         'mobile' => [
+            'track' => 'Moving strip (recommended)',
             'grid' => 'Two columns',
             'stack' => 'One photograph per row',
         ],
         'animate' => 'Animate the light',
+        'spotlight' => 'Exclusive spotlight',
+        'spotlight_hint' => 'One photograph lit at a time; the light moves from the first to the last as the visitor scrolls. Off: every photograph lights in turn and stays lit.',
+        'softness_label' => 'Transition',
+        'softness' => [
+            'crisp' => 'Crisp',
+            'soft' => 'Soft',
+            'gentle' => 'Gentle',
+        ],
+        'mobile_width_label' => 'Photograph width on phones',
+        'mobile_width' => ':percent% of the screen',
         'shown' => 'Shown',
         'hidden' => 'Hidden',
         'animate_hint' => 'Off shows the photographs fully lit, with no movement.',
         'empty_heading' => 'No cinematic sections yet',
         'empty_body' => 'Create a lighting gallery or a featured image or video. Sections appear on the home page in the order of this list.',
+    ],
+
+    'security' => [
+        'nav' => 'Account security',
+        'lead' => 'Recovery codes let you sign in if you lose the phone with your authenticator app. Each code works once. Keep them somewhere safe and offline.',
+        'show' => 'Show recovery codes',
+        'regenerate' => 'Generate new codes',
+        'password' => 'Your password',
+        'confirm_hint' => 'Type your password to show your recovery codes.',
+        'regenerate_hint' => 'New codes replace the old ones, which stop working immediately.',
+        'regenerated' => 'New recovery codes generated. Save them now.',
+        'codes_label' => 'Your recovery codes',
+        'save_hint' => 'Save these now — in a password manager, or printed and kept safe. They are hidden again when you leave this page.',
+        'hidden' => 'Your codes are hidden. Press “Show recovery codes” and confirm your password to see them.',
+        'password_hint' => 'To change your password, name or email address, open your',
+        'profile_link' => 'profile',
+    ],
+
+    'help' => [
+        'nav' => 'Help',
+        'search' => 'Search the guide',
+        'contents' => 'Contents',
+        'missing' => 'The guide could not be found.',
     ],
 ];

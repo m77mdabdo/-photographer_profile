@@ -94,7 +94,7 @@ class MakeAdminUser extends Command
 
         // The password is never echoed back, not even masked.
         $this->info("Owner created: {$user->email} (id {$user->id}).");
-        $this->line('Two-factor authentication must be enrolled at /admin/two-factor before the dashboard is reachable.');
+        $this->line('Two-factor authentication must be enrolled at /two-factor before the dashboard is reachable.');
 
         return self::SUCCESS;
     }

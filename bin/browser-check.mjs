@@ -1257,9 +1257,13 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir, expectsLocaleSwitche
       const r = el.getBoundingClientRect()
 
       if (r.width === 0 || r.height === 0) continue
+      // Inside a closed <details> (the globe, the menu) an element keeps a
+      // box but is not rendered; it is not a target until it is shown.
+      // tests/Support/header-check.mjs measures them open.
+      if (typeof el.checkVisibility === 'function' && !el.checkVisibility()) continue
       if (r.width >= 44 && r.height >= 44) continue
 
-      const name = (el.textContent || '').trim().slice(0, 18) || el.getAttribute('aria-label') || el.tagName.toLowerCase()
+      const name = (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 18) || el.getAttribute('aria-label') || el.tagName.toLowerCase()
       small.push(`${name} ${Math.round(r.width)}x${Math.round(r.height)}`)
     }
 

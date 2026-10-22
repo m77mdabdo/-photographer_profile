@@ -1,11 +1,15 @@
 /*
  * Cinematic sections in a browser (lighting brief, 22 Oct 2026).
  *
- *   - a gallery starts dark, lights panel by panel in the chosen ON-SCREEN
- *     direction, and ends fully lit — in English and in Arabic (RTL mirrors
- *     the DOM; it must not mirror the light)
+ *   - THE EXCLUSIVE SPOTLIGHT: at each settled position exactly one
+ *     photograph is lit and every other sits at the configured darkness;
+ *     between two, never two lit; the stage stays pinned; the light travels
+ *     in the section's direction (the language's, or the owner's override)
+ *   - on phones the moving strip keeps the lit photograph centred and runs
+ *     left-to-right in English, right-to-left in Arabic; after the last
+ *     photograph the page scrolls on
  *   - the light is a function of position: the same scroll position gives
- *     the same veils going down and coming back, to three decimals
+ *     the same frame going down and coming back
  *   - a featured section scales into place and its lines arrive in order
  *   - a featured video plays only while on screen, muted, inline
  *   - reduced motion and JavaScript off: no veil, no light, every image lit,
@@ -69,32 +73,68 @@ for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
 
     for (const [i, kind] of kinds.entries()) {
       if (kind !== 'gallery') continue
-      const start = await readAt(page, i, 1.05)
-      if (SHOTS) await page.screenshot({ path: `${SHOTS}/${tag}-${width}-gallery${i}-1-initial.png` })
-      const mid = await readAt(page, i, 0.55)
-      if (SHOTS) await page.screenshot({ path: `${SHOTS}/${tag}-${width}-gallery${i}-2-intermediate.png` })
-      const end = await readAt(page, i, -0.2)
-      const lit = await readAt(page, i, 0.1)
-      if (SHOTS) await page.screenshot({ path: `${SHOTS}/${tag}-${width}-gallery${i}-3-lit.png` })
-      // back up to the intermediate position: same frame as on the way down
-      const back = await page.evaluate(async (y) => { scrollTo({ top: y, behavior: 'instant' }); await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))); return true }, mid.y)
-      const midBack = await page.evaluate((index) => {
-        const s = document.querySelectorAll('[data-cinematic]')[index]
-        return [...s.querySelectorAll('[data-cine-panel]')].map((p) => parseFloat(p.querySelector('.cine__veil')?.style.opacity ?? '0'))
+      const info = await page.evaluate((i) => {
+        const s = document.querySelectorAll('[data-cinematic]')[i]
+        return { mode: s.dataset.mode, darkness: parseFloat(s.dataset.darkness), n: s.querySelectorAll('[data-cine-panel]').length, mobile: s.dataset.mobile, direction: s.dataset.direction }
       }, i)
+      if (info.mode !== 'spotlight') continue
 
-      check(tag, `${width} gallery ${i}: starts dark`, start.panels.every((p) => p.v > 0.3), fmt(start))
-      check(tag, `${width} gallery ${i}: ends fully lit`, end.panels.every((p) => p.v < 0.01) && lit.panels.every((p) => p.v < 0.05), `${fmt(end)} / ${fmt(lit)}`)
+      /* Scroll so the light sits at position a (0 … n-1), and read every veil and panel. */
+      const at = (a) => page.evaluate(async (i, a) => {
+        const s = document.querySelectorAll('[data-cinematic]')[i]
+        const n = s.querySelectorAll('[data-cine-panel]').length
+        const travel = s.offsetHeight - innerHeight
+        scrollTo({ top: s.getBoundingClientRect().top + scrollY + travel * (a / (n - 1)), behavior: 'instant' })
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+        return {
+          y: scrollY,
+          panels: [...s.querySelectorAll('[data-cine-panel]')].map((p) => { const r = p.getBoundingClientRect(); return { v: parseFloat(p.querySelector('.cine__veil')?.style.opacity ?? '0'), cx: r.left + r.width / 2 } }),
+          vw: innerWidth,
+          pinTop: Math.round(s.querySelector('.cine__pin').getBoundingClientRect().top),
+        }
+      }, i, a)
 
-      // On-screen order of lighting: on the first row, the panel the light reaches first must be the one on the chosen side.
-      const row = mid.panels.filter((p) => p.y === mid.panels[0].y || Math.abs(p.y - Math.min(...mid.panels.map((q) => q.y))) < 8)
-      const sorted = [...row].sort((a, b) => a.x - b.x)
-      const leftLit = sorted[0].v, rightLit = sorted[sorted.length - 1].v
-      const okDir = sorted.length < 2 || leftLit === rightLit || (mid.direction === 'ltr' ? leftLit <= rightLit : rightLit <= leftLit)
-      check(tag, `${width} gallery ${i}: light travels ${mid.direction} on screen`, okDir, `left→right veils ${sorted.map((p) => p.v.toFixed(2)).join(' ')}`)
+      const settled = []
+      for (let a = 0; a < info.n; a++) {
+        const r = await at(a)
+        settled.push(r)
+        if (SHOTS) await page.screenshot({ path: `${SHOTS}/${tag}-${width}-gallery${i}-stage${a + 1}.png` })
+        const lit = r.panels.filter((p) => p.v < 0.05).length
+        const dark = r.panels.filter((p, k) => k !== a && p.v >= info.darkness - 0.01).length
+        check(tag, `${width} gallery ${i}: at photograph ${a + 1} only it is lit`, r.panels[a].v < 0.005 && lit === 1 && dark === info.n - 1, r.panels.map((p) => p.v.toFixed(2)).join(' '))
+        if (width < 900 && info.mobile === 'track') {
+          check(tag, `${width} gallery ${i}: photograph ${a + 1} is centred in the strip`, Math.abs(r.panels[a].cx - r.vw / 2) < 2, `centre ${r.panels[a].cx.toFixed(1)} of ${r.vw}`)
+        }
+        check(tag, `${width} gallery ${i}: the stage stays pinned at photograph ${a + 1}`, Math.abs(r.pinTop) <= 1, `pin top ${r.pinTop}px`)
+      }
 
-      const same = back && mid.panels.every((p, k) => Math.abs(p.v - midBack[k]) < 0.0005)
-      check(tag, `${width} gallery ${i}: reverses — same position, same frame`, same, `${fmt(mid)} down, ${midBack.map((v) => v.toFixed(2)).join(' ')} back`)
+      // Halfway: the hand-over never leaves two photographs fully lit.
+      const half = await at(0.5)
+      check(tag, `${width} gallery ${i}: between photographs, none is fully lit twice`, half.panels.filter((p) => p.v < 0.05).length <= 1, half.panels.map((p) => p.v.toFixed(2)).join(' '))
+
+      // Direction: in a moving strip, the next photograph comes from the language's side.
+      if (width < 900 && info.mobile === 'track') {
+        const x0 = settled[0].panels[1].cx - settled[0].panels[0].cx
+        check(tag, `${width} gallery ${i}: the strip runs ${info.direction}`, info.direction === 'ltr' ? x0 > 0 : x0 < 0, `next photograph ${x0 > 0 ? 'to the right' : 'to the left'}`)
+      } else {
+        const x0 = settled[0].panels[1].cx - settled[0].panels[0].cx
+        check(tag, `${width} gallery ${i}: the light travels ${info.direction} on screen`, info.direction === 'ltr' ? x0 > 0 : x0 < 0, `photograph 2 ${x0 > 0 ? 'right' : 'left'} of photograph 1`)
+      }
+
+      // Reverse: back to position 1.5 from the end gives the frame it gave on the way down.
+      const down = await at(1.5)
+      await at(info.n - 1)
+      const back = await at(1.5)
+      check(tag, `${width} gallery ${i}: reverses — same position, same frame`, down.panels.every((p, k) => Math.abs(p.v - back.panels[k].v) < 0.0005 && Math.abs(p.cx - back.panels[k].cx) < 0.5), `${down.panels.map((p) => p.v.toFixed(2)).join(' ')} / ${back.panels.map((p) => p.v.toFixed(2)).join(' ')}`)
+
+      // After the last photograph the page scrolls on.
+      const after = await page.evaluate(async (i) => {
+        const s = document.querySelectorAll('[data-cinematic]')[i]
+        scrollTo({ top: s.getBoundingClientRect().top + scrollY + s.offsetHeight + 50, behavior: 'instant' })
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+        return Math.round(s.getBoundingClientRect().bottom)
+      }, i)
+      check(tag, `${width} gallery ${i}: after the last photograph the page scrolls on`, after < 0, `section bottom at ${after}px`)
     }
 
     // Featured image: scales into place, lines in order.
@@ -142,8 +182,11 @@ for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
       transformed: [...document.querySelectorAll('.cine__media')].filter((m) => m.style.transform).length,
       hiddenLines: [...document.querySelectorAll('[data-cine-line]')].filter((l) => getComputedStyle(l).opacity !== '1').length,
       controls: [...document.querySelectorAll('[data-cine-video]')].every((v) => v.controls),
+      // The phone strip is its own swipeable row, nothing pinned, nothing tall.
+      swipeable: [...document.querySelectorAll('[data-mobile="track"] .cine__strip')].every((t) => getComputedStyle(t).overflowX === 'auto' && t.scrollWidth > t.clientWidth),
+      pinned: document.querySelectorAll('.cine--pinned').length,
     }))
-    check(tag, `${mode}: every image lit, no layer, video controls present`, r.layers === 0 && r.transformed === 0 && r.hiddenLines === 0 && r.controls, JSON.stringify(r))
+    check(tag, `${mode}: every image lit, no layer, video controls present, strip swipeable`, r.layers === 0 && r.transformed === 0 && r.hiddenLines === 0 && r.controls && r.swipeable && r.pinned === 0, JSON.stringify(r))
     await page.close()
   }
 }

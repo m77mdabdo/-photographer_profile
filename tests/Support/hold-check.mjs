@@ -22,7 +22,9 @@ import { launch } from 'puppeteer-core'
 
 const BASE = process.argv.slice(2).find((a) => !a.startsWith('--')) || 'http://127.0.0.1:8000'
 // Searched in order for a heading and a photograph arriving together.
-const PAGES = ['/', '/work/salt-line', '/services', '/about', '/journal']
+// /work added when the real services (no photographs) replaced the demo ones, which had
+// been the 390 pair; the portfolio's cards put a title right under each photograph.
+const PAGES = ['/', '/work/salt-line', '/work', '/services', '/about', '/journal']
 
 const browser = await launch({
   executablePath: process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
@@ -108,6 +110,7 @@ for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
   for (const width of [390, 1440]) {
     // ---- a heading and a photograph, both mid-arrival --------------------
     let found = null
+    globalThis.__best = null
     for (const path of PAGES) {
       const url = prefix && path === '/' ? prefix : prefix + path
       const page = await open(url, width)
@@ -128,14 +131,20 @@ for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
       })
       for (const pair of pairs) {
         // Try a few placements of the pair's midpoint through the arrival window.
-        for (const at of [0.62, 0.7, 0.55, 0.78, 0.48]) {
+        // Placements of the pair's midpoint through the arrival window, finely: at 390 a
+        // heading and a photograph are both mid-arrival only over a narrow band.
+        for (let at = 0.3; at <= 0.95; at += 0.025) {
           const got = await page.evaluate(async ({ hi, ii, mid }, at) => {
             scrollTo({ top: mid - innerHeight * at, behavior: 'instant' })
             await window.__frames()
             window.__h = window.__heads[hi]; window.__i = window.__imgs[ii]
             return { h: window.__cover(window.__h), i: window.__cover(window.__i), y: scrollY }
           }, pair, at)
-          if (got.h > 0.1 && got.h < 0.9 && got.i > 0.1 && got.i < 0.9) { found = { page, url, got }; break }
+          const score = Math.min(got.h ?? 0, 1 - (got.h ?? 1), got.i ?? 0, 1 - (got.i ?? 1))
+          if (!globalThis.__best || score > globalThis.__best.score) globalThis.__best = { score, url, at: at.toFixed(3), h: got.h, i: got.i }
+          // Part-way: strictly between 5% and 95% for both (a 10-90 band found no pair at
+          // 390 on the real pages — the heading leads its photograph by ~180px there).
+          if (got.h > 0.05 && got.h < 0.95 && got.i > 0.05 && got.i < 0.95) { found = { page, url, got }; break }
         }
         if (found) break
       }
@@ -145,7 +154,7 @@ for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
 
     const where = `${width}`
     if (!found) {
-      check(tag, `${where}: a heading and a photograph mid-arrival together`, false, 'no such position found on ' + PAGES.join(' '))
+      check(tag, `${where}: a heading and a photograph mid-arrival together`, false, 'no such position found on ' + PAGES.join(' ') + '; closest ' + JSON.stringify(globalThis.__best))
     } else {
       const { page, url } = found
       const label = await page.evaluate(() => ({ h: window.__h.textContent.trim().slice(0, 40), i: window.__i.getAttribute('alt')?.slice(0, 40) || window.__i.currentSrc.split('/').pop() }))

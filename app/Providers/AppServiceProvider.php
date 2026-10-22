@@ -191,6 +191,24 @@ class AppServiceProvider extends ServiceProvider
         Settings::forgetMemo();
         Settings::overlayConfig();
 
+        /*
+         * TWELVE CHARACTERS, EVERYWHERE (master directive, Part 8). make:admin-user
+         * already asked for 12; Fortify's reset and the panel's profile page read
+         * Password::default(), which was Laravel's 8. One rule now.
+         */
+        \Illuminate\Validation\Rules\Password::defaults(fn () => \Illuminate\Validation\Rules\Password::min(12));
+
+        /*
+         * DEBUG NEVER REACHES A VISITOR IN PRODUCTION (master directive, Part 8).
+         * APP_DEBUG=true on a live server renders stack traces with environment
+         * values to anybody who triggers an error. Forced off here, and said so
+         * in the log, rather than trusting that the .env was edited.
+         */
+        if ($this->app->isProduction() && config('app.debug')) {
+            config(['app.debug' => false]);
+            \Illuminate\Support\Facades\Log::critical('APP_DEBUG was true in production and has been forced off. Set APP_DEBUG=false in .env.');
+        }
+
         Gate::policy(Media::class, MediaPolicy::class);
         Gate::policy(\App\Models\CinematicSection::class, \App\Policies\CinematicSectionPolicy::class);
         Gate::policy(Project::class, ProjectPolicy::class);

@@ -78,6 +78,19 @@ class Settings extends Page
     public array $values = [];
 
     /** site.name ⇄ site__name. The dots are what Livewire cannot carry. */
+    /**
+     * The plain label an owner reads — "Studio name", not "site.name"
+     * (master directive, Phase 5). From lang/{en,ar}/setting_labels.php; the
+     * key stays visible as a hint, for anybody asking for help. A key with
+     * no label falls back to itself, and SettingLabelsTest fails on it.
+     */
+    public static function labelFor(string $key): string
+    {
+        $label = __('setting_labels.'.str_replace('.', '_', $key));
+
+        return str_starts_with($label, 'setting_labels.') ? $key : $label;
+    }
+
     public static function token(string $key): string
     {
         return str_replace('.', '__', $key);
@@ -197,19 +210,19 @@ class Settings extends Page
         if (str_ends_with($setting->key, '_media_id')) {
             if ($locale !== Locale::DEFAULT) {
                 return Placeholder::make($path)
-                    ->label($setting->key)
+                    ->label(static::labelFor($setting->key))->hint($setting->key)
                     ->content(__('studio.settings.not_translatable'));
             }
 
             return MediaPickerField::make($path)
-                ->label($setting->key)
+                ->label(static::labelFor($setting->key))->hint($setting->key)
                 ->helperText(__('studio.settings.media_hint'));
         }
 
         return $setting->type === 'text'
-            ? Textarea::make($path)->label($setting->key)->rows(3)
+            ? Textarea::make($path)->label(static::labelFor($setting->key))->hint($setting->key)->rows(3)
                 ->extraInputAttributes($this->attributesFor($locale))
-            : TextInput::make($path)->label($setting->key)->maxLength(500)
+            : TextInput::make($path)->label(static::labelFor($setting->key))->hint($setting->key)->maxLength(500)
                 ->extraInputAttributes($this->attributesFor($locale));
     }
 

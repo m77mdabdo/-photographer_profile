@@ -136,8 +136,8 @@ class MediaResource extends Resource
             Section::make(__('studio.media.credit_section'))
                 ->columns(2)
                 ->schema([
-                    TextInput::make('credit')->maxLength(255),
-                    TextInput::make('copyright')->maxLength(255),
+                    TextInput::make('credit')->label(__('studio.field.credit'))->maxLength(255),
+                    TextInput::make('copyright')->label(__('studio.field.copyright'))->maxLength(255),
 
                     /*
                      * B1 — the focal point, as two numbers.

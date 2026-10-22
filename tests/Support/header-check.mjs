@@ -69,6 +69,8 @@ for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
 
     const box = await page.evaluate(() => { const r = document.querySelector('.globe__panel').getBoundingClientRect(); return { l: r.left, r: r.right, w: innerWidth } })
     check(tag, `${where}: the globe panel stays inside the viewport`, box.l >= 0 && box.r <= box.w, `${Math.round(box.l)}–${Math.round(box.r)} of ${box.w}`)
+    const targets = await page.evaluate(() => [...document.querySelectorAll('.globe-switch__option')].map((b) => { const r = b.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)] }))
+    check(tag, `${where}: each language is a 44px target`, targets.every(([w, h]) => w >= 44 && h >= 44), JSON.stringify(targets))
 
     await page.keyboard.press('Escape')
     await wait(150)

@@ -61,6 +61,15 @@ class PanelArabicRenderTest extends TestCase
          * noindex". It is the value of a meta tag, not a word.
          */
         'noindex',
+
+        /*
+         * The Help page (System → Help) is the Arabic user guide, and it
+         * names things that are spelled the same in any language: the apps
+         * it tells the owner to install, the file formats it accepts, an
+         * example address and slug.
+         */
+        'Google', 'Authenticator', 'Microsoft', 'Password', 'Authy',
+        'JPEG', 'PNG', 'WebP', 'HEIC', 'WebM', 'MP4', 'H', 'https', 'admin', 'salt-line',
     ];
 
     /**
@@ -200,7 +209,7 @@ class PanelArabicRenderTest extends TestCase
             $latin = $this->latinWords($this->visibleText($html));
 
             if ($latin !== []) {
-                $failures[] = $label.': '.implode(', ', array_slice($latin, 0, 12));
+                $failures[] = $label.': '.implode(', ', array_slice($latin, 0, 80));
             }
         }
 

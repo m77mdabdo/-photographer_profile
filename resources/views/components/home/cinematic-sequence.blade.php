@@ -21,15 +21,25 @@
         <section class="cine cine--{{ $section->type }}"
                  data-cinematic="{{ $section->type }}"
                  data-direction="{{ $light['direction'] }}"
+                 data-mode="{{ $light['mode'] }}"
+                 data-softness="{{ $light['softness'] }}"
                  data-intensity="{{ $light['intensity'] }}"
                  data-darkness="{{ $light['darkness'] }}"
                  data-pace="{{ $light['pace'] }}"
                  data-overlay="{{ $light['overlay'] }}"
                  data-mobile="{{ $light['mobile'] }}"
+                 style="--cine-mobile-width: {{ $light['mobileWidth'] }}vw"
                  data-animate="{{ $light['animate'] }}"
                  @if ($title) aria-labelledby="{{ $id }}" @else aria-label="{{ __('studio.cinematic.type.'.$section->type) }}" @endif>
 
             @if ($section->type === \App\Models\CinematicSection::TYPE_GALLERY)
+                {{--
+                    The pin: the stage the spotlight plays on. cinematic.js
+                    makes the section tall and this sticky, so scrolling moves
+                    the light rather than the page; without it the section is
+                    its natural height and every photograph is lit.
+                --}}
+                <div class="cine__pin">
                 @if ($title || $text)
                     <header class="cine__header">
                         @if ($title)
@@ -42,7 +52,8 @@
                 @endif
 
                 @php($frames = $section->readyItems())
-                <ol class="cine__strip" role="list" style="--cine-count: {{ $frames->count() }}">
+                {{-- dir is the light's direction on screen: the page's own, or the owner's override. --}}
+                <ol class="cine__strip" role="list" dir="{{ $light['direction'] }}" style="--cine-count: {{ $frames->count() }}">
                     @foreach ($frames as $i => $media)
                         <li class="cine__panel" data-cine-panel>
                             <x-picture :media="$media"
@@ -52,6 +63,7 @@
                         </li>
                     @endforeach
                 </ol>
+                </div>
             @else
                 <div class="cine__stage">
                     @if ($section->type === \App\Models\CinematicSection::TYPE_IMAGE)
