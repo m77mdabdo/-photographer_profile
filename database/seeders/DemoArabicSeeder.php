@@ -81,6 +81,7 @@ use Illuminate\Database\Seeder;
  */
 class DemoArabicSeeder extends Seeder
 {
+    use Concerns\SeedsDemoContent;
     use ProtectsEditedContent;
 
     /*
@@ -103,6 +104,10 @@ class DemoArabicSeeder extends Seeder
 
     public function run(): void
     {
+        if ($this->refusesDemoContent()) {
+            return;
+        }
+
         $filled = 0;
 
         $filled += $this->projects();

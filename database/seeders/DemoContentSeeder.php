@@ -25,10 +25,15 @@ use Illuminate\Support\Str;
  */
 class DemoContentSeeder extends Seeder
 {
+    use Concerns\SeedsDemoContent;
     use \Database\Seeders\Concerns\ProtectsEditedContent;
 
     public function run(): void
     {
+        if ($this->refusesDemoContent()) {
+            return;
+        }
+
         /*
          * DEMO MEDIA ONLY.
          *
@@ -243,31 +248,13 @@ class DemoContentSeeder extends Seeder
         }
 
         /*
-         * Demo clients, marked as such so media:purge-demo's sibling cleanup
-         * can find them. Names are invented studios, not real companies.
+         * NO DEMO CLIENTS. There were nine, shown on the homepage and the about
+         * page under "Selected clients" — invented names plus one real
+         * magazine. A client list is a claim about the business, so the owner
+         * decided (22 Oct 2026) it is never fabricated, even locally. Clients
+         * are added in Studio → Clients, and the sections hide while there are
+         * none.
          */
-        $clientNames = ['Aperture Quarterly', 'Meridian Press', 'Nord & Vale', 'The Gentlewoman',
-            'Studio Halcyon', 'Ferrous Editions', 'Blue Hour Journal', 'Atelier Rive'];
-
-        foreach ($clientNames as $position => $clientName) {
-            $this->createIfMissing(
-                Client::class,
-                ['name' => $clientName],
-                [
-                    'url' => 'https://example.com/'.Str::slug($clientName),
-                    'sort_order' => $position,
-                    'is_active' => true,
-                    'is_demo' => true,
-                ]
-            );
-        }
-
-        // One hidden, so the active filter is visibly doing something.
-        $this->createIfMissing(
-            Client::class,
-            ['name' => 'Withdrawn Commission'],
-            ['sort_order' => 99, 'is_active' => false, 'is_demo' => true]
-        );
 
         /*
          * Two that must never reach the homepage, so the filtering is

@@ -481,6 +481,8 @@ class StudioPanelTest extends TestCase
          * Task 42 item 2, the registry's initial states removed from motion.css: 85,684.
          * Task 42 item 4, width-matched fallbacks per weight band: 90,832.
          * Task 42 item 4, overrides corrected: 90,275.
+         * Phase 2, globe switcher and mobile menu (header.css): 95,253.
+         * Cinematic sections (cinematic.css): 98,706.
          *
          * THE SIZE IS ASSERTED ALONGSIDE THE HASH from now on. A hash tells
          * you the bundle changed; it cannot tell you whether it changed by a
@@ -491,12 +493,12 @@ class StudioPanelTest extends TestCase
          * leaked framework fails.
          * ───────────────────────────────────────────────────────────────────
          */
-        $this->assertSame('assets/public-BC_sYTwo.css', $publicCss, 'the public stylesheet changed');
-        $this->assertSame('assets/public-Bs5geQqu.js', $publicJs, 'the public entry changed');
+        $this->assertSame('assets/public-DrFgiDr2.css', $publicCss, 'the public stylesheet changed');
+        $this->assertSame('assets/public-KZXQgeBC.js', $publicJs, 'the public entry changed');
 
         $cssBytes = (int) filesize(public_path('build/'.$publicCss));
 
-        $this->assertSame(90_275, $cssBytes, 'the public stylesheet is a different size');
+        $this->assertSame(98_737, $cssBytes, 'the public stylesheet is a different size');
 
         /*
          * 90,000 -> 91,000 in Task 42 item 4, for fifteen @font-face blocks:
@@ -504,8 +506,18 @@ class StudioPanelTest extends TestCase
          * faces (resources/css/fonts.css), measured at ~4.5 kB raw, 0.2 kB
          * gzipped. Nothing else moved.
          */
+        /*
+         * 91,000 -> 96,000 in Phase 2 of the master directive: the header's
+         * globe language switcher and mobile menu (components/header.css),
+         * ~5 kB raw, 0.7 kB gzipped.
+         */
+        /*
+         * 96,000 -> 100,000 for the cinematic sections' stylesheet
+         * (components/cinematic.css, lighting brief, 22 Oct 2026),
+         * ~3.4 kB raw.
+         */
         $this->assertLessThan(
-            91_000,
+            100_000,
             $cssBytes,
             'the public stylesheet has grown by more than a rule or two; something has leaked into it'
         );

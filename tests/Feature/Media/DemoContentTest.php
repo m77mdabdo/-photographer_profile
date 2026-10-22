@@ -334,7 +334,8 @@ class DemoContentTest extends TestCase
             // Twelve: eight for the page, one each for the client marquee,
             // the journal strip, the services strip and — since Task 34 D2 —
             // the testimonial strip.
-            $this->assertCount(12, $queries, 'theme='.($theme ?? 'system').' issued '.count($queries));
+            // 12 -> 13: the cinematic sections, one select whatever their number (lighting brief, 22 Oct 2026).
+            $this->assertCount(13, $queries, 'theme='.($theme ?? 'system').' issued '.count($queries));
         }
     }
 

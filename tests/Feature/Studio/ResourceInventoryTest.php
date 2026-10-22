@@ -48,7 +48,7 @@ class ResourceInventoryTest extends TestCase
      * one key-value document rather than a table of rows. That is Part C, and
      * the test below holds it to it.
      */
-    private const EXPECTED_RESOURCES = 15;
+    private const EXPECTED_RESOURCES = 16;   // 15 -> 16: Cinematic sections (lighting brief, 22 Oct 2026)
 
     protected function setUp(): void
     {
@@ -242,9 +242,11 @@ class ResourceInventoryTest extends TestCase
          *               to a related model. NavigationTest drives that round
          *               trip in both locales instead.
          *
-         * Testimonials joined in Task 34 D2, bringing it from nine to ten.
+         * Testimonials joined in Task 34 D2, bringing it from nine to ten;
+         * Cinematic sections (title, description) in the lighting brief, to
+         * eleven.
          */
-        $this->assertSame(10, $covered, 'the number of translatable resources moved');
+        $this->assertSame(11, $covered, 'the number of translatable resources moved');
     }
 
     /** @return list<string> every leaf field's state path in a resource's form */

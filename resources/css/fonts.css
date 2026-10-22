@@ -52,28 +52,26 @@
 /* ---------------- Inter Tight — sans ------------------------------------ */
 
 /*
- * TASK 42 ITEM 4 — THE BODY FACES ARE font-display: optional.
+ * THE BODY FACES SWAP — and were briefly font-display: optional (Task 42
+ * item 4), which was reverted the same day on the browser harness's
+ * evidence. With optional, a first Arabic page view kept Arial for every
+ * paragraph (the painted-face check failed on every Arabic page: "Arabic
+ * words painted in Arial rather than IBM Plex Sans Arabic"), and a first
+ * English view kept Arial in place of Inter Tight. Zero movement bought with
+ * the site's own typography on a visitor's first page is the wrong trade.
  *
- * Inter Tight here and IBM Plex Sans Arabic below. Measured over ten pages in
- * both locales, a fallback scaled to the body face's AVERAGE width still
- * breaks individual paragraphs differently — some one line longer, some one
- * shorter (Arabic: -31 to +38px; English: -27px) — because no single scale
- * is exact for every sentence. With swap, each of those moved everything
- * under it when the face arrived.
- *
- * With optional, a body face that is not ready within the first ~100ms is
- * not swapped in for that page: the page keeps the metric-matched fallback,
- * and the downloaded face is used from the next page on. A paragraph can set
- * differently between two page views; it never moves on screen. The display
- * faces stay swap — they are preloaded, carry the identity, and their
- * fallbacks are matched per weight band (below) closely enough to hold.
+ * So a body paragraph CAN rewrap when its face lands — one line either way;
+ * no single fallback scale holds every sentence (measured: Arabic -31 to
+ * +38px, English -27px). tests/Support/font-swap-check.mjs reports every
+ * such block with its measured push on every run, and fails on any display
+ * or mono block that moves.
  */
 
 @font-face {
     font-family: 'Inter Tight';
     font-style: normal;
     font-weight: 100 900;
-    font-display: optional;   /* body: never swapped in late — see the note above Inter Tight */
+    font-display: swap;
     src: url('/fonts/inter-tight-latin.woff2') format('woff2');
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
         U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122,
@@ -84,7 +82,7 @@
     font-family: 'Inter Tight';
     font-style: normal;
     font-weight: 100 900;
-    font-display: optional;   /* body: never swapped in late — see the note above Inter Tight */
+    font-display: swap;
     src: url('/fonts/inter-tight-latin-ext.woff2') format('woff2');
     unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
         U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
@@ -449,12 +447,19 @@
  * the home statement 397 -> 496px. Banded by weight for the reason the
  * Archivo note gives; Rubik against Arial's Arabic, regular or bold:
  *
- *   weight band   Rubik at   fallback      width ratio
- *   1-500         400        Arial         127.8%
- *   501-640       620        Arial Bold    127.9%
- *   641-700       660        Arial Bold    132.1%
- *   701-830       800        Arial Bold    130.0%
- *   831-1000      860        Arial Bold    136.3%
+ *   weight band   Rubik at   fallback      average width   set to
+ *   1-500         400        Arial         127.8%          127.8%
+ *   501-640       620        Arial Bold    127.9%          130.0%
+ *   641-700       660        Arial Bold    132.1%          130.0%
+ *   701-830       800        Arial Bold    130.0%          132.5%
+ *   831-1000      860        Arial Bold    136.3%          133.5%
+ *
+ * "Set to" is the middle of the range in which every Arabic display block on
+ * ten pages, both themes, 390 and 1440, keeps its line count — found by
+ * searching the scale in 0.5% steps (Task 42 item 4). The averages sat at
+ * the edge of those ranges or outside them. 860 sits at the bottom of its
+ * range (133.5-136%): the Arabic product-photography title at 1440 is 2px
+ * from its box, and the middle of the range wrapped it.
  *
  * Overrides: Rubik's 0.935 / 0.250 em ÷ each band's scale.
  *
@@ -479,30 +484,6 @@
     font-family: 'Rubik Fallback';
     src: local('Arial Bold'), local('Arial-BoldMT'), local('Geeza Pro Bold');
     font-weight: 501 640;
-    size-adjust: 127.9%;
-    ascent-override: 73.1%;
-    descent-override: 19.5%;
-    line-gap-override: 0%;
-    unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF,
-        U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
-}
-
-@font-face {
-    font-family: 'Rubik Fallback';
-    src: local('Arial Bold'), local('Arial-BoldMT'), local('Geeza Pro Bold');
-    font-weight: 641 700;
-    size-adjust: 132.1%;
-    ascent-override: 70.8%;
-    descent-override: 18.9%;
-    line-gap-override: 0%;
-    unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF,
-        U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
-}
-
-@font-face {
-    font-family: 'Rubik Fallback';
-    src: local('Arial Bold'), local('Arial-BoldMT'), local('Geeza Pro Bold');
-    font-weight: 701 830;
     size-adjust: 130.0%;
     ascent-override: 71.9%;
     descent-override: 19.2%;
@@ -514,10 +495,34 @@
 @font-face {
     font-family: 'Rubik Fallback';
     src: local('Arial Bold'), local('Arial-BoldMT'), local('Geeza Pro Bold');
+    font-weight: 641 700;
+    size-adjust: 130.0%;
+    ascent-override: 71.9%;
+    descent-override: 19.2%;
+    line-gap-override: 0%;
+    unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF,
+        U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+
+@font-face {
+    font-family: 'Rubik Fallback';
+    src: local('Arial Bold'), local('Arial-BoldMT'), local('Geeza Pro Bold');
+    font-weight: 701 830;
+    size-adjust: 132.5%;
+    ascent-override: 70.6%;
+    descent-override: 18.9%;
+    line-gap-override: 0%;
+    unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF,
+        U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+
+@font-face {
+    font-family: 'Rubik Fallback';
+    src: local('Arial Bold'), local('Arial-BoldMT'), local('Geeza Pro Bold');
     font-weight: 831 1000;
-    size-adjust: 136.3%;
-    ascent-override: 68.6%;
-    descent-override: 18.3%;
+    size-adjust: 133.5%;
+    ascent-override: 70.0%;
+    descent-override: 18.7%;
     line-gap-override: 0%;
     unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF,
         U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
@@ -598,7 +603,7 @@ U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E,
     font-family: 'IBM Plex Sans Arabic';
     font-style: normal;
     font-weight: 400;
-    font-display: optional;   /* body: never swapped in late — see the note above Inter Tight */
+    font-display: swap;
     src: url('/fonts/ibm-plex-sans-arabic-400-arabic.woff2') format('woff2');
     unicode-range:
 U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E,
@@ -616,7 +621,7 @@ U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E,
     font-family: 'IBM Plex Sans Arabic';
     font-style: normal;
     font-weight: 600;
-    font-display: optional;   /* body: never swapped in late — see the note above Inter Tight */
+    font-display: swap;
     src: url('/fonts/ibm-plex-sans-arabic-600-arabic.woff2') format('woff2');
     unicode-range:
 U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E,

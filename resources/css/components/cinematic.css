@@ -1,0 +1,191 @@
+/*
+ * Cinematic sections — lighting galleries and featured media on the home page
+ * (lighting brief, 22 Oct 2026). Markup: components/home/cinematic-sequence;
+ * motion: resources/js/public/cinematic.js.
+ *
+ * Everything here draws the FINISHED state: photographs fully lit, captions
+ * in place. The veil and the light are layers the script adds, so without it
+ * (reduced motion, a failed script, "Animate the light" off) nothing is dark
+ * and nothing is hidden.
+ *
+ * A dark room in either theme: the colours are the --cine-* tokens.
+ */
+
+.cinematic {
+    background: var(--cine-room);
+    color: var(--cine-text);
+    padding-block: clamp(var(--sp-8), 10vw, calc(var(--sp-8) * 2));
+    display: grid;
+    gap: clamp(var(--sp-8), 12vw, calc(var(--sp-8) * 2.5));
+    overflow: clip;   /* the scaled feature never widens the page */
+}
+
+.cine { position: relative; }
+
+/* ── Words ─────────────────────────────────────────────────────────────── */
+
+.cine__header {
+    display: grid;
+    gap: var(--sp-4);
+    padding-inline: var(--gutter);
+    margin-block-end: clamp(var(--sp-5), 4vw, var(--sp-8));
+    max-inline-size: 72rem;
+}
+
+.cine__title,
+.cine__headline {
+    margin: 0;
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-display);
+    font-weight: var(--wght-display);   /* for the fallback's weight band (fonts.css) */
+    font-size: clamp(2rem, 5.2vw, 4.25rem);
+    line-height: 0.95;
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
+    text-wrap: balance;
+    color: var(--cine-text);
+}
+
+.cine__text {
+    margin: 0;
+    max-inline-size: 56ch;
+    color: var(--cine-text-muted);
+    font-size: var(--fs-body);
+    line-height: 1.6;
+}
+
+/* ── The lighting gallery ──────────────────────────────────────────────── */
+
+/* Doubled class: the base list reset ([role='list']) would otherwise zero the gutter. */
+.cine__strip.cine__strip {
+    display: grid;
+    grid-template-columns: repeat(var(--cine-count, 4), minmax(0, 1fr));
+    gap: clamp(4px, 0.6vw, 10px);
+    margin: 0;
+    padding-block: 0;
+    padding-inline: var(--gutter);
+    list-style: none;
+}
+
+.cine__panel {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 3 / 4;
+    background: var(--cine-panel);
+    isolation: isolate;
+}
+
+.cine__panel picture,
+.cine__image {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+}
+
+.cine__image { object-fit: cover; }
+
+.cine__index {
+    position: absolute;
+    inset-block-end: var(--sp-3);
+    inset-inline-start: var(--sp-3);
+    z-index: 3;
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    color: var(--cine-text);
+    mix-blend-mode: difference;
+}
+
+/* Tablet: the strip holds, with a touch more height so five do not go thin. */
+@media (max-width: 1099px) {
+    .cine--gallery .cine__panel { aspect-ratio: 2 / 3; }
+}
+
+/* Phones: two columns, or one photograph per row — the owner's choice. */
+@media (max-width: 699px) {
+    .cine--gallery .cine__strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cine--gallery .cine__panel { aspect-ratio: 4 / 5; }
+
+    /* An odd fifth photograph spans the row rather than standing alone. */
+    .cine--gallery[data-mobile='grid'] .cine__panel:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+        aspect-ratio: 16 / 10;
+    }
+
+    .cine--gallery[data-mobile='stack'] .cine__strip { grid-template-columns: minmax(0, 1fr); }
+    .cine--gallery[data-mobile='stack'] .cine__panel { aspect-ratio: 4 / 3; }
+}
+
+/* ── Featured image / video ────────────────────────────────────────────── */
+
+.cine__stage {
+    position: relative;
+    overflow: hidden;
+    margin-inline: var(--gutter);
+    aspect-ratio: 16 / 9;
+    background: var(--cine-panel);
+    isolation: isolate;
+}
+
+@media (max-width: 699px) {
+    .cine__stage { aspect-ratio: 4 / 5; margin-inline: 0; }
+}
+
+.cine__stage picture,
+.cine__media {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    transform-origin: 50% 50%;
+}
+
+.cine__caption {
+    display: grid;
+    gap: var(--sp-3);
+    padding-inline: var(--gutter);
+    margin-block-start: clamp(var(--sp-5), 3vw, var(--sp-6));
+    max-inline-size: 64rem;
+}
+
+/* ── Layers the script adds ────────────────────────────────────────────── */
+
+.cine__veil,
+.cine__light {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    will-change: opacity, transform;
+}
+
+.cine__veil {
+    z-index: 1;
+    background: var(--cine-veil-none);
+}
+
+[data-overlay='ink'] .cine__veil { background: var(--cine-veil-ink); }
+[data-overlay='warm'] .cine__veil { background: var(--cine-veil-warm); }
+[data-overlay='cool'] .cine__veil { background: var(--cine-veil-cool); }
+
+/*
+ * The light: a soft vertical band, brightest in its middle, crossing the
+ * frame. soft-light lifts the photograph's own tones instead of washing it
+ * in a flat colour, so detail survives in the highlight.
+ */
+.cine__light {
+    z-index: 2;
+    inset-inline: -10%;
+    background: radial-gradient(60% 90% at 50% 45%, var(--cine-light), transparent 70%);
+    mix-blend-mode: soft-light;
+    opacity: 0;
+}
+
+.cine__light--wide {
+    background: radial-gradient(45% 80% at 50% 45%, var(--cine-light), transparent 72%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cine__veil,
+    .cine__light { display: none; }
+    .cine__media { transform: none !important; }
+}

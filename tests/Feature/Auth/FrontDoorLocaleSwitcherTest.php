@@ -309,7 +309,8 @@ class FrontDoorLocaleSwitcherTest extends TestCase
 
         foreach ([
             'resources/views/layouts/auth.blade.php',
-            'resources/views/layouts/public.blade.php',
+            // The public header renders it inside the globe (Phase 2).
+            'resources/views/components/globe-switch.blade.php',
             'resources/views/filament/studio/locale-switch.blade.php',
         ] as $view) {
             $this->assertStringContainsString(

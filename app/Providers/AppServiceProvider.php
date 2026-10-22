@@ -153,8 +153,16 @@ class AppServiceProvider extends ServiceProvider
         config()->set('livewire.temporary_file_upload.rules', [
             'required',
             'file',
-            'mimes:'.implode(',', (array) config('media.accepted_extensions')),
-            'max:'.(int) config('media.max_upload_kb'),
+            /*
+             * mp4 and webm as well, for a cinematic section's featured video
+             * (lighting brief, 22 Oct 2026). The video field checks the type
+             * again by content (FileUpload acceptedFileTypes) and caps it at
+             * CinematicSectionResource::VIDEO_MAX_KB; the Media library's own
+             * upload still accepts images only (StoreUploadedMedia reads the
+             * bytes), so widening this gate admits nothing new there.
+             */
+            'mimes:'.implode(',', [...(array) config('media.accepted_extensions'), 'mp4', 'webm']),
+            'max:'.max((int) config('media.max_upload_kb'), \App\Filament\Resources\CinematicSections\CinematicSectionResource::VIDEO_MAX_KB),
         ]);
 
         /*
@@ -184,6 +192,7 @@ class AppServiceProvider extends ServiceProvider
         Settings::overlayConfig();
 
         Gate::policy(Media::class, MediaPolicy::class);
+        Gate::policy(\App\Models\CinematicSection::class, \App\Policies\CinematicSectionPolicy::class);
         Gate::policy(Project::class, ProjectPolicy::class);
         Gate::policy(Category::class, CategoryPolicy::class);
         Gate::policy(Client::class, ClientPolicy::class);

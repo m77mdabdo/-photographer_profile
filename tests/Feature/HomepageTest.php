@@ -114,9 +114,9 @@ class HomepageTest extends TestCase
         }
 
         // And each section holds real content, not just a shell.
-        $this->assertStringContainsString('Work, in series', $html);
-        $this->assertStringContainsString('Loose frames', $html);
-        $this->assertStringContainsString('The diary is open for next year.', $html);
+        $this->assertStringContainsString('Selected projects', $html);
+        $this->assertStringContainsString('Recent images', $html);
+        $this->assertStringContainsString('Planning a shoot? Send the brief.', $html);
     }
 
     // ----------------------------------------------------------------- 2
@@ -841,7 +841,13 @@ class HomepageTest extends TestCase
         $this->populate();
         $html = $this->get('/')->assertOk()->getContent();
 
-        foreach (['site.name', 'site.statement', 'nav.work', 'stage.1.label'] as $key) {
+        /*
+         * nav.work was in this list and passed only because "Work" also
+         * appeared inside the old heading "Work, in series": the label
+         * reaches the page through the header menu, which this fixture does
+         * not seed. It is not hero copy either, so a hero key replaces it.
+         */
+        foreach (['site.name', 'site.statement', 'stage.1.label', 'stage.4.label'] as $key) {
             $this->assertStringContainsString(
                 e((string) \App\Support\Settings::get($key)),
                 $html,
@@ -1055,13 +1061,15 @@ class HomepageTest extends TestCase
         $settingsQueries = array_filter($queries, static fn (string $sql): bool => str_contains($sql, '`settings`'));
 
         $this->assertCount(1, $settingsQueries, 'the settings map must be one query, not one per key');
-        $this->assertCount(16, $queries, 'cold: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
+        // 16 -> 17: the cinematic sections, one select whatever their number (lighting brief, 22 Oct 2026).
+        $this->assertCount(17, $queries, 'cold: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
 
         // Warm, which is every request after the first.
         $queries = [];
         $this->get('/')->assertOk();
 
-        $this->assertCount(12, $queries, 'warm: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
+        // 12 -> 13 warm: the cinematic sections' one select (lighting brief, 22 Oct 2026).
+        $this->assertCount(13, $queries, 'warm: '.count($queries).' queries:'.PHP_EOL.implode(PHP_EOL, $queries));
     }
 
     /**

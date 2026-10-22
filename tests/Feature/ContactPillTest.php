@@ -28,7 +28,7 @@ class ContactPillTest extends TestCase
 
     public function test_it_carries_the_owners_own_invitation_on_ordinary_pages(): void
     {
-        foreach (['/' => 'Start a conversation', '/ar' => 'ابدأ محادثة', '/about' => 'Start a conversation', '/ar/about' => 'ابدأ محادثة'] as $url => $label) {
+        foreach (['/' => 'Request a quote', '/ar' => 'اطلب عرض سعر', '/about' => 'Request a quote', '/ar/about' => 'اطلب عرض سعر'] as $url => $label) {
             $html = (string) $this->get($url)->assertOk()->getContent();
 
             $this->assertMatchesRegularExpression('#<a class="contact-pill" href="[^"]*/contact">'.preg_quote($label, '#').'</a>#u', $html, $url);

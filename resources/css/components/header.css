@@ -1,0 +1,258 @@
+/*
+ * The header's controls: the globe language switcher and the mobile menu
+ * (master directive, Phase 2; Task 42 Part 2). Markup in layouts/public and
+ * components/globe-switch; behaviour in resources/js/public/header.js.
+ *
+ * Both controls are <details>, so both open and close with scripting off.
+ * Their panels are absolutely positioned: opening one moves nothing.
+ */
+
+/* ── The bar: sticky, and stepping aside on the way down ───────────────── */
+
+.site-header {
+    position: sticky;
+    top: 0;
+    /* Above the hero's labels and the contact pill (--z-nav), so an open
+       menu or globe panel covers them. */
+    z-index: var(--z-menu);
+    background: var(--bg);
+    transition: transform var(--dur-base) var(--ease-editorial), background-color var(--dur-base) var(--ease-out);
+}
+
+/* Off the top of the page the bar is translucent over the work beneath it. */
+.site-header[data-header='shown'] {
+    background: color-mix(in srgb, var(--bg) 84%, transparent);
+    -webkit-backdrop-filter: blur(12px) saturate(1.1);
+    backdrop-filter: blur(12px) saturate(1.1);
+}
+
+.site-header[data-header='hidden'] {
+    transform: translateY(-100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .site-header { transition: none; }
+}
+
+/* ── Shared: a disclosure toggle ───────────────────────────────────────── */
+
+.globe__toggle,
+.site-menu__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    min-block-size: 44px;
+    min-inline-size: 44px;
+    padding-inline: var(--sp-2);
+    justify-content: center;
+    list-style: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    border-radius: 999px;
+    transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.globe__toggle::-webkit-details-marker,
+.site-menu__toggle::-webkit-details-marker { display: none; }
+
+.globe__toggle::marker,
+.site-menu__toggle::marker { content: ''; }
+
+@media (hover: hover) {
+    .globe__toggle:hover,
+    .site-menu__toggle:hover { color: var(--text-primary); }
+}
+
+.globe[open] > .globe__toggle,
+.site-menu[open] > .site-menu__toggle {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+.globe__toggle:focus-visible,
+.site-menu__toggle:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ── The globe ─────────────────────────────────────────────────────────── */
+
+.globe {
+    position: relative;
+}
+
+.globe__icon {
+    display: block;
+    inline-size: 20px;
+    block-size: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.25;
+    flex: none;
+    transition: transform var(--dur-base) var(--ease-editorial);
+}
+
+.globe[open] .globe__icon { transform: rotate(-24deg); }
+
+.globe__code {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    font-variation-settings: 'wght' var(--wght-mono);
+    letter-spacing: var(--tracking-wide);
+}
+
+.globe__panel {
+    position: absolute;
+    inset-block-start: calc(100% + var(--sp-2));
+    inset-inline-end: 0;
+    z-index: 1;
+    min-inline-size: 11rem;
+    padding: var(--sp-2);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-panel);
+    transform-origin: top right;
+    animation: header-panel-in var(--dur-base) var(--ease-editorial);
+}
+
+[dir='rtl'] .globe__panel { transform-origin: top left; }
+
+.globe-switch__set {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.globe-switch__option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    inline-size: 100%;
+    min-block-size: 44px;
+    padding-inline: var(--sp-3);
+    font: inherit;
+    font-size: var(--fs-body);
+    color: var(--text-secondary);
+    text-align: start;
+    background: none;
+    border: 0;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+}
+
+/* The active language: marked by a dot as well as colour. */
+.globe-switch__option[aria-current='true'] {
+    color: var(--text-primary);
+}
+
+.globe-switch__option[aria-current='true']::after {
+    content: '';
+    inline-size: 6px;
+    block-size: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+}
+
+@media (hover: hover) {
+    .globe-switch__option:hover {
+        color: var(--text-primary);
+        background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+    }
+}
+
+.globe-switch__option:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+@keyframes header-panel-in {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+}
+
+/* ── The mobile menu ───────────────────────────────────────────────────── */
+
+.site-header__controls {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+}
+
+.site-menu { display: none; }
+
+.site-menu__toggle {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    padding-inline: var(--sp-3);
+}
+
+.site-menu__close { display: none; }
+.site-menu[open] .site-menu__open { display: none; }
+.site-menu[open] .site-menu__close { display: inline; }
+
+.site-menu__panel {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 100%;
+    z-index: 1;
+    padding: var(--sp-6) var(--gutter) var(--sp-8);
+    background: var(--bg);
+    border-block-end: 1px solid var(--border);
+    box-shadow: var(--shadow-panel);
+    animation: header-panel-in var(--dur-base) var(--ease-editorial);
+}
+
+.site-menu__list {
+    display: grid;
+    gap: var(--sp-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.site-menu__list a {
+    display: flex;
+    align-items: center;
+    min-block-size: 52px;
+    font-family: var(--font-display);
+    font-variation-settings: 'wght' var(--wght-mid);
+    font-weight: var(--wght-mid);   /* for the fallback's weight band (fonts.css) */
+    font-size: clamp(1.75rem, 8vw, 2.5rem);
+    letter-spacing: var(--tracking-tight);
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--text-secondary);
+    border-block-end: 1px solid var(--border);
+}
+
+.site-menu__list a[aria-current='page'] { color: var(--text-primary); }
+
+@media (prefers-reduced-motion: reduce) {
+    .globe__panel,
+    .site-menu__panel { animation: none; }
+    .globe__icon { transition: none; }
+}
+
+/*
+ * Below 900px the inline navigation gives way to the menu: one row, the name
+ * at the start, the globe and the menu at the end.
+ */
+@media (max-width: 899px) {
+    .site-header {
+        flex-wrap: nowrap;
+        align-items: center;
+    }
+
+    .site-header > .site-nav { display: none; }
+
+    .site-menu { display: block; position: static; }
+
+    .site-header .site-header__mark { flex: 1 1 auto; min-inline-size: 0; }
+}

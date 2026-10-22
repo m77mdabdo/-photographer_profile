@@ -206,6 +206,26 @@
      */
     --header-height: 6rem;
 
+    /* The drop under a header panel (globe, mobile menu). Black in either
+       theme: a shadow is the absence of light, not a palette colour. */
+    --shadow-panel: 0 18px 48px -18px rgb(0 0 0 / 0.55);
+
+    /*
+     * Cinematic sections (lighting brief, 22 Oct 2026). The sequence is a
+     * dark room in either theme, so these are fixed, not theme-bound. Veils:
+     * the darkness a photograph starts in, in the owner's chosen shadow
+     * colour. Light: the warm band that crosses it.
+     */
+    --cine-room: var(--c-ink);
+    --cine-panel: var(--c-ink-soft);   /* behind a photograph while it loads */
+    --cine-veil-none: #050506;
+    --cine-veil-ink: #070b14;
+    --cine-veil-warm: #140c05;
+    --cine-veil-cool: #04101a;
+    --cine-light: rgb(255 236 210 / 0.9);
+    --cine-text: var(--c-paper);
+    --cine-text-muted: var(--c-gray-warm);
+
     /* ---------------------------------------------------------------
      * Z-index layers — named, so no one ever writes z-index: 9999.
      * --------------------------------------------------------------- */

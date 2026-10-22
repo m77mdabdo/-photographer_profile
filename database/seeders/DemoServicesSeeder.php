@@ -30,10 +30,15 @@ use Illuminate\Database\Seeder;
  */
 class DemoServicesSeeder extends Seeder
 {
+    use Concerns\SeedsDemoContent;
     use Concerns\ProtectsEditedContent;
 
     public function run(): void
     {
+        if ($this->refusesDemoContent()) {
+            return;
+        }
+
         /*
          * DEMO MEDIA ONLY. Without this a real client's photograph ends up
          * illustrating an invented rate card — the leak ArchiveTest exists to

@@ -301,10 +301,10 @@ class ArchiveTest extends TestCase
             'archive query counts moved: '.json_encode(['sheet' => $full, 'filtered' => $filtered])
         );
 
-        // Thirty-six to a page: a roll of 35mm film.
+        // Thirty-six to a page.
         $html = $this->get('/archive')->getContent();
         $this->assertSame(36, substr_count($html, 'class="sheet-frame"'));
-        $this->assertStringContainsString('roll 1 of 2', $html);
+        $this->assertStringContainsString('sheet 1 of 2', $html);
     }
 
     public function test_no_query_is_repeated_per_frame(): void

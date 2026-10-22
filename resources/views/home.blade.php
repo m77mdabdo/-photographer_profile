@@ -28,10 +28,12 @@
                 'journal' => $journal,
                 'archive' => $archive,
                 'testimonials' => $testimonials,
+                'cinematic' => $cinematic,
             ])),
             [
                 '<x-home.introduction :project="$hero" />',
                 '<x-home.selected-works :layout="$layout" />',
+                '<x-home.cinematic-sequence :sections="$cinematic" />',
                 '<x-home.featured-story :project="$story" />',
                 '<x-home.services-preview :services="$services" />',
                 '<x-home.journal-preview :articles="$journal" />',
@@ -42,8 +44,16 @@
         ), fn (string $html) => $html !== ''));
     @endphp
 
+    {{--
+        The cinematic sequence stays dark whatever its position: a lighting
+        gallery in the paper register would be lit before it began. It is
+        marked data-register="fixed" and the alternation counts around it.
+    --}}
+    @php($band = 0)
     @foreach ($sections as $html)
-        @if ($loop->odd)
+        @if (str_contains($html, 'data-register="fixed"'))
+            {!! $html !!}
+        @elseif ($band++ % 2 === 0)
             <div class="register register--inverse">{!! $html !!}</div>
         @else
             {!! $html !!}

@@ -13,6 +13,14 @@
  * Refused only by reduced motion. If the visitor turns reduced motion on
  * mid-visit, everything the layer made is removed.
  */
+
+/*
+ * The header's disclosures (globe, menu) and its step-aside on scroll —
+ * resources/js/public/header.js. Small, so it is part of the entry; under
+ * reduced motion the bar stays put and only the disclosure keys apply.
+ */
+import { start as header } from './public/header.js'
+
 function arrive() {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)')
   if (reduce.matches) return
@@ -23,10 +31,29 @@ function arrive() {
       reduce.addEventListener('change', (e) => { if (e.matches) stop() }, { once: true })
     })
     .catch(() => {})
+
+  /*
+   * The home page's cinematic sections (lighting brief, 22 Oct 2026) —
+   * fetched only on a page that has one. Refused by reduced motion like the
+   * rest; every image is fully lit without it.
+   */
+  if (document.querySelector('[data-cinematic]')) {
+    import('./public/cinematic.js')
+      .then(({ start, stop }) => {
+        start()
+        reduce.addEventListener('change', (e) => { if (e.matches) stop() }, { once: true })
+      })
+      .catch(() => {})
+  }
+}
+
+function boot() {
+  header({ hide: !window.matchMedia('(prefers-reduced-motion: reduce)').matches })
+  arrive()
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', arrive, { once: true })
+  document.addEventListener('DOMContentLoaded', boot, { once: true })
 } else {
-  arrive()
+  boot()
 }

@@ -220,8 +220,35 @@
             it is the one control a visitor in the wrong language needs before
             they read anything else. The theme switch stays in the footer: a
             palette is a comfort, a language is comprehension.
+
+            Behind a globe (components/globe-switch), and below 900px beside a
+            menu that carries the same links as the inline navigation, which
+            that width hides. Both are <details>: they work with scripting
+            off; resources/js/public/header.js adds Escape and outside-tap.
         --}}
-        <x-locale-switch :return-to="$preferenceReturnTo" />
+        <div class="site-header__controls">
+            <x-globe-switch :return-to="$preferenceReturnTo" />
+
+            @if ($navItems !== [])
+                <details class="site-menu" data-disclosure>
+                    <summary class="site-menu__toggle">
+                        <span class="site-menu__open">{{ __('studio.controls.menu_open') }}</span>
+                        <span class="site-menu__close">{{ __('studio.controls.menu_close') }}</span>
+                    </summary>
+                    <nav class="site-menu__panel" aria-label="{{ \App\Support\SiteCopy::get('footer.nav_label') }}">
+                        <ul role="list" class="site-menu__list">
+                            @foreach ($navItems as $item)
+                                <li>
+                                    <a href="{{ $item['url'] }}"
+                                       @if ($item['external']) target="_blank" rel="noopener" @endif
+                                       @if (! $item['external'] && (request()->url() === $item['url'] || str_starts_with(request()->url(), $item['url'].'/'))) aria-current="page" @endif>{{ $item['label'] }}</a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </nav>
+                </details>
+            @endif
+        </div>
     </header>
 
     <main id="main" tabindex="-1">

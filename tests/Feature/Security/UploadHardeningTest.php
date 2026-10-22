@@ -229,8 +229,11 @@ class UploadHardeningTest extends TestCase
 
         $this->assertIsArray($rules, 'Livewire is back on its undeclared 12 MB default.');
         $this->assertContains('max:'.(int) config('media.max_upload_kb'), $rules);
+        // The image extensions, plus mp4/webm for a cinematic section's video
+        // (lighting brief, 22 Oct 2026); the Media upload still accepts images
+        // only, by content (StoreUploadedMedia).
         $this->assertContains(
-            'mimes:'.implode(',', (array) config('media.accepted_extensions')),
+            'mimes:'.implode(',', [...(array) config('media.accepted_extensions'), 'mp4', 'webm']),
             $rules
         );
     }

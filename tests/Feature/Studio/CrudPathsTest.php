@@ -129,7 +129,22 @@ class CrudPathsTest extends TestCase
             str_contains($name, 'slug') => $marker.'-'.str_replace('.', '-', $name),
 
             $field instanceof \Filament\Forms\Components\Toggle => false,
-            $field instanceof \Filament\Forms\Components\Repeater => [],
+
+                /*
+                 * A repeater with a minimum gets that many rows, each filled
+                 * the way this method fills any field. The cinematic gallery
+                 * (lighting brief, 22 Oct 2026) requires four photographs, and
+                 * an empty list was refused — correctly.
+                 */
+            $field instanceof \Filament\Forms\Components\Repeater => collect(range(1, max(0, (int) $field->getMinItems())))
+                ->mapWithKeys(fn (int $i): array => ['row'.$i => collect($field->getDefaultChildComponents())
+                    ->filter(fn ($child): bool => $child instanceof \Filament\Forms\Components\Field)
+                    ->mapWithKeys(fn ($child): array => [$child->getName() => $this->valueFor($child, $marker.$i)])
+                    ->all()])
+                ->all(),
+
+            // A radio's value has to be one of its options, like a select's.
+            $field instanceof \Filament\Forms\Components\Radio => array_key_first($field->getOptions()),
 
                 /*
                  * A date picker needs a date. The first version of this sent

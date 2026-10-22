@@ -36,6 +36,7 @@ use Illuminate\Database\Seeder;
  */
 class DemoJournalSeeder extends Seeder
 {
+    use Concerns\SeedsDemoContent;
     use Concerns\ProtectsEditedContent;
 
     /**
@@ -50,6 +51,10 @@ class DemoJournalSeeder extends Seeder
 
     public function run(): void
     {
+        if ($this->refusesDemoContent()) {
+            return;
+        }
+
         /*
          * DEMO MEDIA ONLY.
          *

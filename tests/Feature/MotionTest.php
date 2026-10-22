@@ -416,7 +416,8 @@ class MotionTest extends TestCase
          * other than motion moved them.
          */
         // 11 → 12 in Task 34 D2, for the testimonial strip's one flat select.
-        $this->assertSame(12, $measure('/'), 'the homepage query count moved');
+        // 12 -> 13: the cinematic sections, one select whatever their number (lighting brief, 22 Oct 2026).
+        $this->assertSame(13, $measure('/'), 'the homepage query count moved');
         $this->assertSame(3, $measure('/journal'), 'the journal query count moved');
         $this->assertSame(1, $measure('/services'), 'the services query count moved');
 

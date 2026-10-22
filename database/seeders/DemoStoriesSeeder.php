@@ -40,6 +40,7 @@ use Illuminate\Support\Facades\DB;
  */
 class DemoStoriesSeeder extends Seeder
 {
+    use Concerns\SeedsDemoContent;
     use \Database\Seeders\Concerns\ProtectsEditedContent;
 
     /**
@@ -252,6 +253,10 @@ class DemoStoriesSeeder extends Seeder
 
     public function run(): void
     {
+        if ($this->refusesDemoContent()) {
+            return;
+        }
+
         $categories = Category::query()->pluck('id', 'slug');
 
         $order = 0;

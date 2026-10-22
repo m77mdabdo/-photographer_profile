@@ -248,8 +248,9 @@ class ThemeTest extends TestCase
              * The theme itself still touches nothing — it is a cookie read
              * and an attribute — which is what this pins.
              */
+            // 12 -> 13: the cinematic sections, one select whatever their number (lighting brief, 22 Oct 2026).
             $this->assertCount(
-                12,
+                13,
                 $queries,
                 "theme=".($cookie ?? 'system')." issued ".count($queries).' queries'
             );

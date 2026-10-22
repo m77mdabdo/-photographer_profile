@@ -164,13 +164,13 @@ class SiteCopyTest extends TestCase
         Settings::set('work.see_all', '');
         Settings::flush();
 
-        $this->assertSame('See all work', SiteCopy::get('work.see_all'));
+        $this->assertSame('See the full portfolio', SiteCopy::get('work.see_all'));
 
         // And a deleted row behaves the same way.
         \App\Models\Setting::query()->where('key', 'work.see_all')->delete();
         Settings::flush();
 
-        $this->assertSame('See all work', SiteCopy::get('work.see_all'));
+        $this->assertSame('See the full portfolio', SiteCopy::get('work.see_all'));
     }
 
     /** A key with no registry entry at all returns the key, which is findable. */
@@ -290,6 +290,9 @@ class SiteCopyTest extends TestCase
             ->reject(fn ($setting): bool => str_ends_with($setting->key, '_url')
                 || str_ends_with($setting->key, '_media_id')
                 || in_array($setting->key, ['attribution.name', 'contact.recipient', 'footer.social_3_label'], true))
+            // A key with no default in either language (the studio's location,
+            // left for the owner to set) is absent, not untranslated.
+            ->reject(fn ($setting): bool => collect(SiteCopy::defaults())->firstWhere('key', $setting->key)['value'] === null)
             ->reject(fn ($setting): bool => Settings::isTranslated($setting->key, 'ar'))
             ->pluck('key')
             ->all();

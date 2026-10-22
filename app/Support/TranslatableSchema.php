@@ -79,6 +79,9 @@ final class TranslatableSchema
          * page should not carry one Latin name in the middle of a sentence.
          */
         'testimonials' => ['quote', 'attribution', 'role'],
+
+        // The home page's cinematic sections (lighting brief, 22 Oct 2026).
+        'cinematic_sections' => ['title', 'description'],
     ];
 
     /**

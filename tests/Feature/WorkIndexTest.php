@@ -95,7 +95,7 @@ class WorkIndexTest extends TestCase
 
         // And the count in the header is the published count, not the total.
         $this->assertSame(3, Project::query()->published()->count());
-        $this->assertStringContainsString('3 series', $html);
+        $this->assertStringContainsString('3 projects', $html);
     }
 
     public function test_the_first_cover_is_the_lcp_and_the_rest_are_lazy(): void
@@ -138,7 +138,7 @@ class WorkIndexTest extends TestCase
 
         $this->assertStringContainsString('work-empty', $html);
         $this->assertStringContainsString('Nothing published yet', $html);
-        $this->assertStringContainsString('Work appears here as it is finished', $html);
+        $this->assertStringContainsString('Projects appear here as they are published', $html);
 
         // No apology, no broken-looking shell.
         $this->assertStringNotContainsString('class="pager"', $html);

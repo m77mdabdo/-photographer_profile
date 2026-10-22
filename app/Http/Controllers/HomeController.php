@@ -89,6 +89,22 @@ class HomeController extends Controller
             'clients' => Client::active()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'url']),
 
             /*
+             * The cinematic sections (lighting brief, 22 Oct 2026), in the
+             * owner's order, with every image they show eager-loaded: three
+             * queries for the whole sequence. A section that has nothing to
+             * show — a gallery short of four ready photographs, a video whose
+             * file is missing — is dropped here rather than rendered empty.
+             */
+            'cinematic' => \App\Models\CinematicSection::query()
+                ->visible()
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->with(['items.media.variants', 'featured.variants', 'poster.variants'])
+                ->get()
+                ->filter(fn (\App\Models\CinematicSection $section): bool => $section->isRenderable())
+                ->values(),
+
+            /*
              * Task 34 D2. With their portraits, because rendering one without
              * eager-loading it would be a query per quote — on the home page,
              * which is the one page everybody loads.

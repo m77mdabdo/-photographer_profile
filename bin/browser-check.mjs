@@ -158,7 +158,7 @@ const PUBLIC_PAGES = [
   { label: 'contact', path: '/contact' },
   { label: 'contact sent', path: '/contact/sent' },
   { label: 'services', path: '/services' },
-  { label: 'a service', path: '/services/editorial-commissions' },
+  { label: 'a service', path: '/services/product-photography' },
   { label: 'a quoted service', path: '/services/long-term-projects' },
   { label: 'privacy', path: '/privacy' },
   { label: 'terms', path: '/terms' },
@@ -296,6 +296,18 @@ const ADMIN_PAGES = [
    */
   { label: 'studio navigation', path: '/admin/menus', admin: true },
   { label: 'studio testimonials', path: '/admin/testimonials', admin: true },
+  // The cinematic sections (lighting brief, 22 Oct 2026): the list and a form.
+  { label: 'studio cinematic sections', path: '/admin/cinematic-sections', admin: true },
+  {
+    label: 'studio cinematic section',
+    admin: true,
+    discover: {
+      from: '/admin/cinematic-sections',
+      selector: 'a[href*="/admin/cinematic-sections/"][href$="/edit"]',
+      named: 'cinematic section',
+      path: '/admin/cinematic-sections/{id}/edit',
+    },
+  },
   { label: 'studio activity', path: '/admin/activity/activity-logs', admin: true },
   {
     label: 'studio media detail',

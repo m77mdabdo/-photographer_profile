@@ -183,7 +183,7 @@ for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
  * Scrolled top to bottom, sampling the canvas over it and checking it never
  * sits inside a text arrival.
  */
-const ALL = ['/', '/work', '/work/salt-line', '/archive', '/journal', '/journal/the-edit-is-the-work', '/services', '/services/editorial-commissions', '/about', '/contact']
+const ALL = ['/', '/work', '/work/salt-line', '/archive', '/journal', '/journal/the-edit-is-the-work', '/services', '/services/product-photography', '/about', '/contact']
 for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
   for (const path of ALL) {
     for (const width of [1440, 390]) {

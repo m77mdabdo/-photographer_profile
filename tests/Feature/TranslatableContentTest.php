@@ -411,7 +411,8 @@ class TranslatableContentTest extends TestCase
          * one of these.
          */
         // The home page rose 11 → 12 in Task 34 D2 for the testimonial strip.
-        $expected = ['/' => 12, '/journal' => 3, '/services' => 1, '/work' => 6];
+        // 12 -> 13: the cinematic sections, one select whatever their number (lighting brief, 22 Oct 2026).
+        $expected = ['/' => 13, '/journal' => 3, '/services' => 1, '/work' => 6];
 
         foreach ($expected as $path => $queries) {
             foreach (Locale::codes() as $locale) {

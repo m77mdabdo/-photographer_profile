@@ -592,7 +592,8 @@ class LocaleTest extends TestCase
          * navigation, because a published quote can be scheduled and a cache
          * that outlives its publish date would hold it back.
          */
-        $expected = ['/' => 12, '/journal' => 3, '/services' => 1, '/work' => 6];
+        // 12 -> 13: the cinematic sections, one select whatever their number (lighting brief, 22 Oct 2026).
+        $expected = ['/' => 13, '/journal' => 3, '/services' => 1, '/work' => 6];
 
         foreach ($expected as $path => $queries) {
             foreach (Locale::codes() as $locale) {
@@ -629,7 +630,7 @@ class LocaleTest extends TestCase
                 $this->assertNoExecutableJavaScript($html, $url);
 
                 // The switcher is a form, and it works without script.
-                $this->assertStringContainsString('class="locale-switch"', $html, "$url should carry the switcher");
+                $this->assertStringContainsString('data-locale-switcher=', $html, "$url should carry the switcher");
                 $this->assertStringContainsString('method="POST"', $html);
             }
         }
