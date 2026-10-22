@@ -222,12 +222,10 @@
     src: local('Arial Narrow'), local('Helvetica Neue Condensed'), local('Arial');
     font-weight: 1 500;
     size-adjust: 90.8%;
-    ascent-override: 1.0%;
-    descent-override: 0.2%;
+    ascent-override: 96.7%;
+    descent-override: 23.1%;
     line-gap-override: 0%;
-    unicode-range: U+0000-002F, U+003A-024F, U+0259, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
-        U+0300-036F, U+1E00-1EFF, U+2000-206F, U+20A0-20C0, U+2100-214F,
-        U+2190-2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    unicode-range: U+0000-002F, U+003A-10FFFF;
 }
 
 @font-face {
@@ -235,12 +233,10 @@
     src: local('Arial Narrow Bold'), local('ArialNarrow-Bold'), local('Arial Bold');
     font-weight: 501 640;
     size-adjust: 89.7%;
-    ascent-override: 1.0%;
-    descent-override: 0.2%;
+    ascent-override: 97.9%;
+    descent-override: 23.4%;
     line-gap-override: 0%;
-    unicode-range: U+0000-002F, U+003A-024F, U+0259, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
-        U+0300-036F, U+1E00-1EFF, U+2000-206F, U+20A0-20C0, U+2100-214F,
-        U+2190-2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    unicode-range: U+0000-002F, U+003A-10FFFF;
 }
 
 @font-face {
@@ -248,12 +244,10 @@
     src: local('Arial Narrow Bold'), local('ArialNarrow-Bold'), local('Arial Bold');
     font-weight: 641 700;
     size-adjust: 89.7%;
-    ascent-override: 1.0%;
-    descent-override: 0.2%;
+    ascent-override: 97.9%;
+    descent-override: 23.4%;
     line-gap-override: 0%;
-    unicode-range: U+0000-002F, U+003A-024F, U+0259, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
-        U+0300-036F, U+1E00-1EFF, U+2000-206F, U+20A0-20C0, U+2100-214F,
-        U+2190-2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    unicode-range: U+0000-002F, U+003A-10FFFF;
 }
 
 @font-face {
@@ -261,12 +255,10 @@
     src: local('Arial Narrow Bold'), local('ArialNarrow-Bold'), local('Arial Bold');
     font-weight: 701 830;
     size-adjust: 93.5%;
-    ascent-override: 0.9%;
-    descent-override: 0.2%;
+    ascent-override: 93.9%;
+    descent-override: 22.5%;
     line-gap-override: 0%;
-    unicode-range: U+0000-002F, U+003A-024F, U+0259, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
-        U+0300-036F, U+1E00-1EFF, U+2000-206F, U+20A0-20C0, U+2100-214F,
-        U+2190-2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    unicode-range: U+0000-002F, U+003A-10FFFF;
 }
 
 @font-face {
@@ -274,12 +266,10 @@
     src: local('Arial Narrow Bold'), local('ArialNarrow-Bold'), local('Arial Bold');
     font-weight: 831 1000;
     size-adjust: 98.1%;
-    ascent-override: 0.9%;
-    descent-override: 0.2%;
+    ascent-override: 89.5%;
+    descent-override: 21.4%;
     line-gap-override: 0%;
-    unicode-range: U+0000-002F, U+003A-024F, U+0259, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
-        U+0300-036F, U+1E00-1EFF, U+2000-206F, U+20A0-20C0, U+2100-214F,
-        U+2190-2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    unicode-range: U+0000-002F, U+003A-10FFFF;
 }
 
 /*
@@ -300,16 +290,16 @@
  *   701-830       800          102.8%
  *   831-1000      860          105.7%
  *
- * The letter bands carry Inter Fallback's Latin range, which leaves out
- * U+0030-0039, so each character has exactly one face per weight.
+ * The letter bands cover everything but U+0030-0039, so each character has
+ * exactly one face per weight.
  */
 @font-face {
     font-family: 'Archivo Fallback';
     src: local('Arial Narrow'), local('Helvetica Neue Condensed'), local('Arial');
     font-weight: 1 500;
     size-adjust: 93.8%;
-    ascent-override: 0.9%;
-    descent-override: 0.2%;
+    ascent-override: 93.6%;
+    descent-override: 22.4%;
     line-gap-override: 0%;
     unicode-range: U+0030-0039;
 }
@@ -319,8 +309,8 @@
     src: local('Arial Narrow Bold'), local('ArialNarrow-Bold'), local('Arial Bold');
     font-weight: 501 640;
     size-adjust: 97.4%;
-    ascent-override: 0.9%;
-    descent-override: 0.2%;
+    ascent-override: 90.1%;
+    descent-override: 21.6%;
     line-gap-override: 0%;
     unicode-range: U+0030-0039;
 }
@@ -330,8 +320,8 @@
     src: local('Arial Narrow Bold'), local('ArialNarrow-Bold'), local('Arial Bold');
     font-weight: 641 700;
     size-adjust: 98.3%;
-    ascent-override: 0.9%;
-    descent-override: 0.2%;
+    ascent-override: 89.3%;
+    descent-override: 21.4%;
     line-gap-override: 0%;
     unicode-range: U+0030-0039;
 }
@@ -341,8 +331,8 @@
     src: local('Arial Narrow Bold'), local('ArialNarrow-Bold'), local('Arial Bold');
     font-weight: 701 830;
     size-adjust: 102.8%;
-    ascent-override: 0.9%;
-    descent-override: 0.2%;
+    ascent-override: 85.4%;
+    descent-override: 20.4%;
     line-gap-override: 0%;
     unicode-range: U+0030-0039;
 }
@@ -352,8 +342,8 @@
     src: local('Arial Narrow Bold'), local('ArialNarrow-Bold'), local('Arial Bold');
     font-weight: 831 1000;
     size-adjust: 105.7%;
-    ascent-override: 0.8%;
-    descent-override: 0.2%;
+    ascent-override: 83.1%;
+    descent-override: 19.9%;
     line-gap-override: 0%;
     unicode-range: U+0030-0039;
 }
@@ -478,8 +468,8 @@
     src: local('Arial'), local('Geeza Pro');
     font-weight: 1 500;
     size-adjust: 127.8%;
-    ascent-override: 0.7%;
-    descent-override: 0.2%;
+    ascent-override: 73.2%;
+    descent-override: 19.6%;
     line-gap-override: 0%;
     unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF,
         U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
@@ -490,8 +480,8 @@
     src: local('Arial Bold'), local('Arial-BoldMT'), local('Geeza Pro Bold');
     font-weight: 501 640;
     size-adjust: 127.9%;
-    ascent-override: 0.7%;
-    descent-override: 0.2%;
+    ascent-override: 73.1%;
+    descent-override: 19.5%;
     line-gap-override: 0%;
     unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF,
         U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
@@ -502,8 +492,8 @@
     src: local('Arial Bold'), local('Arial-BoldMT'), local('Geeza Pro Bold');
     font-weight: 641 700;
     size-adjust: 132.1%;
-    ascent-override: 0.7%;
-    descent-override: 0.2%;
+    ascent-override: 70.8%;
+    descent-override: 18.9%;
     line-gap-override: 0%;
     unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF,
         U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
@@ -514,8 +504,8 @@
     src: local('Arial Bold'), local('Arial-BoldMT'), local('Geeza Pro Bold');
     font-weight: 701 830;
     size-adjust: 130.0%;
-    ascent-override: 0.7%;
-    descent-override: 0.2%;
+    ascent-override: 71.9%;
+    descent-override: 19.2%;
     line-gap-override: 0%;
     unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF,
         U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
@@ -526,8 +516,8 @@
     src: local('Arial Bold'), local('Arial-BoldMT'), local('Geeza Pro Bold');
     font-weight: 831 1000;
     size-adjust: 136.3%;
-    ascent-override: 0.7%;
-    descent-override: 0.2%;
+    ascent-override: 68.6%;
+    descent-override: 18.3%;
     line-gap-override: 0%;
     unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF,
         U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;

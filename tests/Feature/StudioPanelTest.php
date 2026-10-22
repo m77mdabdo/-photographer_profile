@@ -480,6 +480,7 @@ class StudioPanelTest extends TestCase
          * Task 42 item 1 — one dissolve for images and text: 88,118.
          * Task 42 item 2, the registry's initial states removed from motion.css: 85,684.
          * Task 42 item 4, width-matched fallbacks per weight band: 90,832.
+         * Task 42 item 4, overrides corrected: 90,275.
          *
          * THE SIZE IS ASSERTED ALONGSIDE THE HASH from now on. A hash tells
          * you the bundle changed; it cannot tell you whether it changed by a
@@ -490,15 +491,21 @@ class StudioPanelTest extends TestCase
          * leaked framework fails.
          * ───────────────────────────────────────────────────────────────────
          */
-        $this->assertSame('assets/public-CVEqmmF3.css', $publicCss, 'the public stylesheet changed');
+        $this->assertSame('assets/public-BC_sYTwo.css', $publicCss, 'the public stylesheet changed');
         $this->assertSame('assets/public-Bs5geQqu.js', $publicJs, 'the public entry changed');
 
         $cssBytes = (int) filesize(public_path('build/'.$publicCss));
 
-        $this->assertSame(90_832, $cssBytes, 'the public stylesheet is a different size');
+        $this->assertSame(90_275, $cssBytes, 'the public stylesheet is a different size');
 
+        /*
+         * 90,000 -> 91,000 in Task 42 item 4, for fifteen @font-face blocks:
+         * Archivo's and Rubik's stand-ins split into weight bands and digit
+         * faces (resources/css/fonts.css), measured at ~4.5 kB raw, 0.2 kB
+         * gzipped. Nothing else moved.
+         */
         $this->assertLessThan(
-            90_000,
+            91_000,
             $cssBytes,
             'the public stylesheet has grown by more than a rule or two; something has leaked into it'
         );

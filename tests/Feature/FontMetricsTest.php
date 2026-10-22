@@ -57,6 +57,18 @@ class FontMetricsTest extends TestCase
                 'fallback' => 'Menlo.ttc',
                 'note' => 'Menlo',
             ],
+            // Task 42 item 4: the Arabic stand-ins. Their vertical overrides
+            // follow the same arithmetic; their scales are matched by width.
+            'Rubik Fallback' => [
+                'webfont' => 'rubik-arabic.woff2',
+                'fallback' => null,
+                'note' => "Arial's Arabic, matched by width",
+            ],
+            'Arabic Fallback' => [
+                'webfont' => 'ibm-plex-sans-arabic-400-arabic.woff2',
+                'fallback' => null,
+                'note' => "Arial's Arabic, matched by width",
+            ],
         ];
     }
 
@@ -93,29 +105,48 @@ class FontMetricsTest extends TestCase
     }
 
     /**
-     * @return array<string, float>  property => declared percentage
+     * Every @font-face a family declares. Task 42 item 4 split Archivo's and
+     * Rubik's stand-ins into weight bands and digit faces — ten and five
+     * blocks — and this used to read only the first, so it parsed a
+     * neighbouring value and asserted against it.
+     *
+     * @return list<array<string, float>>  one property => declared percentage map per face
      */
-    private function declaredOverrides(string $family): array
+    private function declaredFaces(string $family): array
     {
-        $css = (string) file_get_contents(resource_path('css/fonts.css'));
+        $css = (string) preg_replace('#/\*.*?\*/#s', '', (string) file_get_contents(resource_path('css/fonts.css')));
 
-        $pattern = '/@font-face\s*\{[^}]*font-family:\s*\''.preg_quote($family, '/').'\';(.*?)\}/s';
+        preg_match_all('/@font-face\s*\{([^}]*)\}/s', $css, $blocks);
 
-        $this->assertMatchesRegularExpression($pattern, $css, "{$family} is not declared");
+        $faces = [];
 
-        preg_match($pattern, $css, $block);
+        foreach ($blocks[1] as $block) {
+            if (! preg_match('/font-family:\s*\''.preg_quote($family, '/').'\';/', $block)) {
+                continue;
+            }
 
-        $values = [];
+            $values = [];
 
-        foreach (['size-adjust', 'ascent-override', 'descent-override', 'line-gap-override'] as $property) {
-            preg_match('/'.$property.':\s*([0-9.]+)%/', $block[1], $found);
+            foreach (['size-adjust', 'ascent-override', 'descent-override', 'line-gap-override'] as $property) {
+                preg_match('/(?<![\w-])'.$property.':\s*([0-9.]+)%/', $block, $found);
 
-            $this->assertNotEmpty($found, "{$family} declares no {$property}");
+                $this->assertNotEmpty($found, "a {$family} face declares no {$property}");
 
-            $values[$property] = (float) $found[1];
+                $values[$property] = (float) $found[1];
+            }
+
+            $faces[] = $values;
         }
 
-        return $values;
+        $this->assertNotEmpty($faces, "{$family} is not declared");
+
+        return $faces;
+    }
+
+    /** @return array<string, float> */
+    private function declaredOverrides(string $family): array
+    {
+        return $this->declaredFaces($family)[0];
     }
 
     /**
@@ -150,8 +181,8 @@ class FontMetricsTest extends TestCase
             $this->assertArrayHasKey($path, $measured, "{$face['webfont']} was not measured");
 
             $metrics = $measured[$path];
-            $declared = $this->declaredOverrides($family);
 
+            foreach ($this->declaredFaces($family) as $declared) {
             $scale = $declared['size-adjust'] / 100;
 
             $expectedAscent = ($metrics['ascender'] / $scale) * 100;
@@ -186,9 +217,14 @@ class FontMetricsTest extends TestCase
                 self::TOLERANCE,
                 "{$family}: line-gap-override drifted from the font."
             );
+            }
         }
 
-        $this->assertCount(3, $report, implode(PHP_EOL, $report));
+        /*
+         * Every face of every family: Archivo 10 (five weight bands, letters
+         * and digits), Inter 2 (letters, digits), Mono 1, Rubik 5, Arabic 1.
+         */
+        $this->assertCount(19, $report, implode(PHP_EOL, $report));
     }
 
     /**
@@ -211,7 +247,7 @@ class FontMetricsTest extends TestCase
             $webfont = public_path('fonts/'.$face['webfont']);
             $fallback = $root.$face['fallback'];
 
-            if (! is_file($fallback)) {
+            if ($face['fallback'] === null || ! is_file($fallback)) {
                 continue;
             }
 
@@ -243,8 +279,16 @@ class FontMetricsTest extends TestCase
              * set against the site's own copy and its two measured line breaks, and the guarantee is asserted
              * on the render by tests/Support/font-swap-check.mjs. The two other
              * faces stay on x-height; neither showed a shift.
+             *
+             * TASK 42 ITEM 4 — AND ARCHIVO FALLBACK IS NOW MATCHED BY WIDTH TOO.
+             * Its x-height ratio (101.4%) set display lines 12% too wide: 29
+             * blocks across the site rewrapped when Archivo landed, 28 of them
+             * pushing what was under them. It is now scaled per weight band to
+             * Archivo's measured width (fonts.css has the table), and the
+             * guarantee is asserted on the render, both themes, by
+             * tests/Support/font-swap-check.mjs. Only Mono stays on x-height.
              */
-            if ($family === 'Inter Fallback') {
+            if (in_array($family, ['Inter Fallback', 'Archivo Fallback'], true)) {
                 continue;
             }
 
