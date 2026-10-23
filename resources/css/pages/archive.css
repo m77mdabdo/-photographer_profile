@@ -113,6 +113,8 @@
     align-items: center;
     gap: var(--sp-2);
     min-height: 44px;     /* a real target, not a 12px line of text */
+    min-inline-size: 44px; /* …in both directions: "All" and "سفر" were 16–23px wide */
+    justify-content: center;
     font-family: var(--font-mono);
     font-variation-settings: 'wght' var(--wght-mono);
     font-size: var(--fs-meta);
@@ -324,7 +326,9 @@
 .pager__step {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     min-height: 44px;
+    min-inline-size: 44px; /* "التالي" is 20px of text */
     color: var(--text-primary);
     text-decoration: none;
     border-bottom: var(--rule-strong) solid var(--accent);

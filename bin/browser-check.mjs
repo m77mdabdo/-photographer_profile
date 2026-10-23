@@ -159,7 +159,8 @@ const PUBLIC_PAGES = [
   { label: 'contact sent', path: '/contact/sent' },
   { label: 'services', path: '/services' },
   { label: 'a service', path: '/services/product-photography' },
-  { label: 'a quoted service', path: '/services/long-term-projects' },
+  // The demo's priced service went with the demo services; no real service carries a price.
+  { label: 'another service', path: '/services/advertising-and-campaign-photography' },
   { label: 'privacy', path: '/privacy' },
   { label: 'terms', path: '/terms' },
   { label: 'journal', path: '/journal' },
@@ -304,7 +305,7 @@ const ADMIN_PAGES = [
     discover: {
       from: '/admin/cinematic-sections',
       selector: 'a[href*="/admin/cinematic-sections/"][href$="/edit"]',
-      named: 'cinematic section',
+      named: 'cinematic',
       path: '/admin/cinematic-sections/{id}/edit',
     },
   },

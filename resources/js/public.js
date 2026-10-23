@@ -47,8 +47,27 @@ function arrive() {
   }
 }
 
+/*
+ * A featured video's poster, given only as it nears the screen. A `poster`
+ * attribute is fetched at page load whatever `preload` says: on the home page
+ * that was a 447 kB photograph racing the hero for the connection, and LCP
+ * went from 2.2 s to 4.8 s. Part of the entry, not cinematic.js, because the
+ * poster is wanted under reduced motion too.
+ */
+function posters() {
+  const videos = document.querySelectorAll('video[data-poster]')
+  if (!videos.length) return
+  const give = (v) => { v.poster = v.dataset.poster; v.removeAttribute('data-poster') }
+  if (!('IntersectionObserver' in window)) { videos.forEach(give); return }
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { give(e.target); io.unobserve(e.target) }
+  }, { rootMargin: '100% 0px' })
+  videos.forEach((v) => io.observe(v))
+}
+
 function boot() {
   header({ hide: !window.matchMedia('(prefers-reduced-motion: reduce)').matches })
+  posters()
   arrive()
 }
 

@@ -34,12 +34,22 @@ class DisposableAdminCommandTest extends TestCase
      * hand an hour ago makes this test fail for a reason that has nothing to
      * do with the code. It failed exactly that way the first time it ran.
      */
+    /**
+     * …but a clean start must not cost the developer their file. Deleting it
+     * outright signed every running browser check out of the dashboard
+     * mid-run, because the account it describes lives in the development
+     * database, which these tests never touch. So it is set aside, and put
+     * back afterwards.
+     */
+    private ?string $setAside = null;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         if (is_file($this->credentialsPath())) {
-            @unlink($this->credentialsPath());
+            $this->setAside = $this->credentialsPath().'.set-aside-'.getmypid();
+            rename($this->credentialsPath(), $this->setAside);
         }
     }
 
@@ -47,6 +57,10 @@ class DisposableAdminCommandTest extends TestCase
     {
         if (is_file($this->credentialsPath())) {
             @unlink($this->credentialsPath());
+        }
+
+        if ($this->setAside !== null && is_file($this->setAside)) {
+            rename($this->setAside, $this->credentialsPath());
         }
 
         parent::tearDown();

@@ -43,6 +43,7 @@ final class ResourceDefaults
         return [
             Select::make('status')
                 ->label(__('studio.table.status'))
+                ->hintAction(\App\Filament\Support\HelpHint::action('status', 4))
                 ->options(fn (): array => collect(\App\Enums\PublishStatus::cases())
                     ->mapWithKeys(fn ($s): array => [$s->value => $s->label()])->all())
                 ->default(\App\Enums\PublishStatus::Draft->value)

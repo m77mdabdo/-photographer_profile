@@ -170,7 +170,14 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    overflow: hidden;
+    /*
+     * clip, not hidden: hidden makes the stage a scroll container, and a
+     * right-to-left strip overflows to the left of it — the browser then
+     * moved the whole stage sideways as the strip travelled (Arabic home
+     * CLS 0.23 after scrolling; English 0). clip cuts the same edge and
+     * cannot scroll.
+     */
+    overflow: clip;
 }
 
 .cine--pinned .cine__header { margin-block-end: clamp(var(--sp-4), 3vw, var(--sp-6)); }
@@ -190,7 +197,7 @@
 
 .cine__stage {
     position: relative;
-    overflow: hidden;
+    overflow: clip;   /* not hidden — see .cine__pin: the light (inset-inline -10%) let an RTL stage scroll sideways */
     margin-inline: var(--gutter);
     aspect-ratio: 16 / 9;
     background: var(--cine-panel);

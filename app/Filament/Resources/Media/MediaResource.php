@@ -128,7 +128,7 @@ class MediaResource extends Resource
                 ->description(__('studio.media.description_hint'))
                 ->schema([
                     Translatable::tabs([
-                        'alt' => fn (string $path) => TextInput::make($path)->maxLength(255),
+                        'alt' => fn (string $path) => TextInput::make($path)->maxLength(255)->hintAction(\App\Filament\Support\HelpHint::action('alt', 5)),
                         'caption' => fn (string $path) => Textarea::make($path)->rows(3),
                     ]),
                 ]),

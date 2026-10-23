@@ -494,12 +494,16 @@ class StudioPanelTest extends TestCase
          * leaked framework fails.
          * ───────────────────────────────────────────────────────────────────
          */
-        $this->assertSame('assets/public-DjZxFP1k.css', $publicCss, 'the public stylesheet changed');
-        $this->assertSame('assets/public-DrTpdGDb.js', $publicJs, 'the public entry changed');
+        // Release gate, 23 Oct 2026: +100 bytes — 44px minimum widths on the
+        // filter and pager links and a 24px consent checkbox (target size);
+        // −4 bytes — the cinematic stages clip instead of hiding (Arabic CLS).
+        // The entry gained the video poster's lazy hand-over (LCP 4.8 → 2.5 s).
+        $this->assertSame('assets/public-3nxwlvZw.css', $publicCss, 'the public stylesheet changed');
+        $this->assertSame('assets/public-1o_v3AtE.js', $publicJs, 'the public entry changed');
 
         $cssBytes = (int) filesize(public_path('build/'.$publicCss));
 
-        $this->assertSame(99_803, $cssBytes, 'the public stylesheet is a different size');
+        $this->assertSame(99_899, $cssBytes, 'the public stylesheet is a different size');
 
         /*
          * 90,000 -> 91,000 in Task 42 item 4, for fifteen @font-face blocks:

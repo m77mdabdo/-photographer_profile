@@ -220,13 +220,23 @@ class CinematicSectionsTest extends TestCase
     public function test_a_video_renders_muted_inline_with_a_poster_and_no_preload(): void
     {
         Storage::disk('media_public')->put('cinematic/clip.mp4', str_repeat('x', 2048));
-        CinematicSection::factory()->video('cinematic/clip.mp4', $this->ready()->id)->create();
+        $poster = $this->ready();
+        $poster->variants()->create([
+            'format' => 'webp', 'width' => 1920, 'height' => 1080, 'disk' => 'media_public',
+            'path' => "2026/09/{$poster->uuid}/1920.webp", 'size_bytes' => 4242,
+        ]);
+        CinematicSection::factory()->video('cinematic/clip.mp4', $poster->id)->create();
 
         $html = (string) $this->get('/')->assertOk()->getContent();
 
         $this->assertMatchesRegularExpression('#<video class="cine__media"\s+muted loop playsinline controls\s+preload="none"#', $html);
         $this->assertStringContainsString('<source src="/storage/media/cinematic/clip.mp4" type="video/mp4">', $html);
         $this->assertStringNotContainsString('autoplay', $html, 'autoplay is the script\'s decision, only while on screen');
+
+        // A poster attribute downloads at page load whatever preload says; it
+        // raced the hero and doubled LCP. It is handed over near the screen.
+        $this->assertDoesNotMatchRegularExpression('#<video[^>]*\sposter=#', $html);
+        $this->assertMatchesRegularExpression('#<video[^>]*\sdata-poster="[^"]*/1920\.webp"#', $html);
     }
 
     public function test_direction_follows_the_language_unless_overridden(): void

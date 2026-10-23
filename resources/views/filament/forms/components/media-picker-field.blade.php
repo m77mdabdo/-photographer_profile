@@ -18,9 +18,20 @@
                 choosing a hero would also set the cover.
             */
             receive(event) {
-                const { slot, media } = event.detail ?? {}
+                const { slot, media, cleared } = event.detail ?? {}
 
-                if (slot !== @js($statePath) || ! Array.isArray(media) || ! media.length) {
+                if (slot !== @js($statePath)) {
+                    return
+                }
+
+                /* Remove current image, in the picker: an explicit empty answer. */
+                if (cleared) {
+                    $wire.set(@js($statePath), null)
+
+                    return
+                }
+
+                if (! Array.isArray(media) || ! media.length) {
                     return
                 }
 

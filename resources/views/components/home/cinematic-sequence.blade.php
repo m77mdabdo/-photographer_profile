@@ -71,7 +71,9 @@
                     @else
                         {{--
                             Muted, inline, no preload: nothing downloads until
-                            cinematic.js decides it is on screen. `controls`
+                            cinematic.js decides it is on screen. The poster is
+                            data-poster, set by public.js near the screen — a
+                            poster attribute downloads at page load. `controls`
                             is server-rendered so a visitor without the script
                             (or preferring less motion) can still play it; the
                             script removes them when it takes over playback.
@@ -79,7 +81,7 @@
                         <video class="cine__media"
                                muted loop playsinline controls
                                preload="none"
-                               @if ($section->poster?->isReady()) poster="{{ $section->poster->url('jpeg', 1920) ?? $section->poster->url('webp', 1920) }}" @endif
+                               @if ($section->poster?->isReady()) data-poster="{{ $section->poster->url('webp', 1920) ?: $section->poster->url('jpeg', 1920) }}" @endif
                                @if ($title) aria-labelledby="{{ $id }}" @else aria-label="{{ $section->poster?->getTranslation('alt', null, fallback: true) ?? __('studio.cinematic.type.video') }}" @endif
                                data-cine-video>
                             <source src="{{ $section->videoUrl() }}" type="{{ str_ends_with((string) $section->video_path, '.webm') ? 'video/webm' : 'video/mp4' }}">

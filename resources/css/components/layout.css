@@ -94,7 +94,8 @@
     .site-header__mark {
         display: inline-flex;
         align-items: center;
-        min-block-size: 44px;
+        /* 48, not 44: at 768 the box rendered 43.x px and missed the target. */
+        min-block-size: 48px;
     }
 
     /*

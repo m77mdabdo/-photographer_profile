@@ -30,26 +30,40 @@ built but not yet checked.
 
 ## Tasks
 
-| # | Task | Priority | Status | Files changed | Verification | Result | Remaining issues |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 1.1 | Discovery and baseline | P0 | VERIFIED | this file | repository, routes, settings, data inspected | see Baseline | — |
-| 1.2 | Motion registry dead from the second page view (Task 42 item 2) | P0 | VERIFIED | `resources/js/public.js`, `resources/js/public/arrive/arrive.js`, `resources/css/components/motion.css`, templates, tests | `tests/Support/second-view-check.mjs` 14 FAIL → 26/26; suite; harness 400/400 ×2 | committed `e818d2d` | — |
-| 1.3 | Page-transition focus race (F6 failing 3 in 6) | P1 | VERIFIED | `app/Support/PageTransition.php`, `components/page-transition.blade.php`, layout | `transition-check.mjs` 4/4 clean runs | committed `e818d2d` | — |
-| 1.4 | Hold and return proven with sampled series (Task 42 item 3) | P1 | VERIFIED | `tests/Support/hold-check.mjs` | 26 readings over 5 s, then a reading per step back; 390/1440, en/ar | 24/24: every hold flat (range 0.00), every return monotonic | — |
-| 1.5 | Font-swap check fails on asserted rewraps (Task 42 item 4) | P2 | TODO | `tests/Support/font-swap-check.mjs`, `resources/css/fonts.css` | check fails on old state, passes on new | — | — |
-| 2.1 | Rewrite site copy for the commercial business (en + ar) | P0 | TODO | settings seeder, copy update command | rendered pages read in both locales | — | needs confirmed business facts |
-| 2.2 | Services: product, studio, advertising, architecture & interiors, location, brand campaigns (en + ar) | P0 | TODO | services seeder | service pages render in both locales | — | no prices invented |
-| 2.3 | Remove fabricated claims from public view (demo clients, demo case studies) | P0 | TODO | — | no demo record reachable in production | — | depends on owner decision |
-| 2.4 | Globe language switcher (keyboard, screen reader, touch, Escape, outside click, RTL) | P1 | TODO | `components/locale-switch.blade.php`, CSS, JS | browser check at 320–1920, both locales | — | must work without JS |
-| 2.5 | English default, language persists, switching keeps the page | P1 | TODO | — | browser check | partly exists already | verify persistence |
-| 3.x | Visual design: hero, lighting system, motion | P1 | TODO | | screenshots, reference comparison | — | HALIDE reference video not yet located in the repository |
-| 4.x | Mobile-first pass at 320, 360, 375, 390, 414, 768, 1024, 1280, 1440, 1920 (folds in Task 42 mobile build) | P0 | TODO | | harness + screenshots | — | — |
-| 5.x | Admin modules: CRUD, validation, uploads, permissions; in-panel Help link | P1 | TODO | | feature tests + browser | — | — |
-| 6.x | Security review and performance | P1 | TODO | `docs/SECURITY_AUDIT.md`, `docs/PERFORMANCE_REPORT.md` | audits, Lighthouse rig | — | — |
-| 7.x | SEO and accessibility | P1 | TODO | `docs/SEO_ACCESSIBILITY_REPORT.md` | harness, sitemap, structured data | — | no invented address or reviews in structured data |
-| 8.x | Dashboard guides (en, ar) | P1 | TODO | `docs/DASHBOARD_USER_GUIDE_EN.md`, `docs/DASHBOARD_USER_GUIDE_AR.md` | written against the running panel | — | — |
-| 9.x | Full QA | P0 | TODO | `docs/TEST_RESULTS.md` | suite, harness, browser checks, budgets | — | — |
-| 10.x | Release preparation and handover | P0 | TODO | `docs/DEPLOYMENT_GUIDE.md`, `docs/FINAL_HANDOVER_REPORT.md` | — | — | — |
+Final state, 23 Oct 2026. Every VERIFIED row names the check that was run
+and its result in the final gate (see `QA_TEST_REPORT.md`).
+
+| # | Task | Status | Verification (final gate) | Remaining |
+| --- | --- | --- | --- | --- |
+| 1.1 | Discovery and baseline | VERIFIED | see Baseline | — |
+| 1.2 | Motion registry dead from the second page view (Task 42 item 2) | VERIFIED | `second-view-check.mjs` 24/24 | — |
+| 1.3 | Page-transition focus race | VERIFIED | `transition-check.mjs` 24/24 | — |
+| 1.4 | Hold and return in sampled series (Task 42 item 3) | VERIFIED | `hold-check.mjs` 24/24 | — |
+| 1.5 | Font swap moves nothing it can be made not to (Task 42 item 4) | VERIFIED | `font-swap-check.mjs` 84/84; `FontMetricsTest` | body rewraps under `swap` are reported, by design |
+| 2.1 | Commercial copy, en + ar, English default | VERIFIED | `CommercialContentTest`; harness 416/416 per language | owner to review wording |
+| 2.2 | Six services, en + ar, no invented prices | VERIFIED | `CommercialContentTest`; responsive sweep | — |
+| 2.3 | Demo content local-only | VERIFIED | demo seeders refuse outside local (`CommercialContentTest`) | real portfolio — owner |
+| 2.4 | Globe language switcher | VERIFIED | `header-check.mjs` 64/64 (keyboard, Escape, outside click, RTL, 44 px) | — |
+| 3.1 | Cinematic lighting galleries: exclusive spotlight, phone track, RTL | VERIFIED | `cinematic-check.mjs` 166/166; `CinematicSectionsTest` 13/13 | — |
+| 3.2 | Featured image / video sections | VERIFIED | `CinematicSectionsTest`; round trip (image via picker) | video upload not driven through the browser |
+| 3.3 | Arrivals and statements | VERIFIED | `arrive-check.mjs` 116/116, `statement-check.mjs` 28/28 | — |
+| 4.1 | Mobile-first public site at 10 widths | VERIFIED | `responsive-check.mjs` (see `RESPONSIVE_TEST_REPORT.md`) | real devices not tested |
+| 4.2 | Dashboard on a phone | VERIFIED | responsive `--panel`; `mobile-publish-check.mjs` 13/13 | — |
+| 5.1 | Full CMS coverage | VERIFIED | `CMS_COVERAGE_MATRIX.md`; `cms-roundtrip-check.mjs` 130/130 | gaps listed in the matrix |
+| 5.2 | Picker could not change a single image (found by the round trip) | VERIFIED | `MediaPickerFieldTest` 9/9; round trip | — |
+| 5.3 | Account security: recovery codes, password change | VERIFIED | `DashboardCompletionTest` | — |
+| 5.4 | Enquiry status from the enquiry screen | VERIFIED | `DashboardCompletionTest` | — |
+| 6.1 | Security review and hardening | VERIFIED | `SECURITY_AUDIT.md`; Security tests | no external penetration test |
+| 6.2 | Performance budgets | VERIFIED with one exception | `PERFORMANCE_REPORT.md`: en LCP 2.49 s / 97; ar 2.65 s / 95 | **Arabic LCP 0.14–0.21 s over 2.5 s** |
+| 6.3 | Poster and RTL-overflow regressions (found by budgets) | VERIFIED | LCP 4.8 → 2.49 s; ar CLS 0.23 → 0.0008 | — |
+| 7.1 | SEO and accessibility | VERIFIED | harness (axe, headings, landmarks, targets) 416/416 ×3; `SeoTest` | — |
+| 7.2 | Tap targets ≥ 24 px (filters, pager, checkbox) | VERIFIED | responsive sweep | — |
+| 8.1 | Dashboard guides en/ar, written against the running panel | VERIFIED | `help-check.mjs` 68/68; `PanelArabicRenderTest` | — |
+| 8.2 | Help Center in the dashboard, search, contextual **?** buttons | VERIFIED | `help-check.mjs` 68/68 | — |
+| 9.1 | Full QA | VERIFIED | `QA_TEST_REPORT.md` | — |
+| 9.2 | Test isolation: the suite deleted a developer's harness credentials | VERIFIED | `DisposableAdminCommandTest` 6/6, file unchanged across the run | — |
+| 10.1 | Deployment, rollback, checklist, handover | DONE | documents reviewed against the code | must be followed on the real host |
+| 10.2 | Local commit | DONE | `git log` | not pushed (not authorised) |
 
 ## Blockers (need the owner)
 

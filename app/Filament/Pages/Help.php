@@ -47,10 +47,30 @@ class Help extends Page
         return auth()->check();
     }
 
-    /** @return list<array{id: string, title: string, html: string}> */
+    /**
+     * The guide in the panel's language, each section carrying the OTHER
+     * language's text of the same section as search data — the two guides
+     * share their section numbers — so a word typed in either language finds
+     * the section.
+     *
+     * @return list<array{id: string, title: string, html: string, also: string}>
+     */
     public function sections(): array
     {
-        $file = base_path('docs/DASHBOARD_USER_GUIDE_'.(Locale::current() === 'ar' ? 'AR' : 'EN').'.md');
+        $current = $this->parse(Locale::current() === 'ar' ? 'AR' : 'EN');
+        $other = $this->parse(Locale::current() === 'ar' ? 'EN' : 'AR');
+
+        foreach ($current as $i => $section) {
+            $current[$i]['also'] = isset($other[$i]) ? $other[$i]['title'].' '.strip_tags($other[$i]['html']) : '';
+        }
+
+        return $current;
+    }
+
+    /** @return list<array{id: string, title: string, html: string}> */
+    private function parse(string $language): array
+    {
+        $file = base_path('docs/DASHBOARD_USER_GUIDE_'.$language.'.md');
 
         if (! is_file($file)) {
             return [];

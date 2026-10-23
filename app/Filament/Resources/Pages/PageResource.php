@@ -100,8 +100,8 @@ class PageResource extends Resource
                     'title' => fn (string $p) => TextInput::make($p)->maxLength(255),
                     'standfirst' => fn (string $p) => Textarea::make($p)->rows(3),
                     'body' => fn (string $p) => Textarea::make($p)->rows(8),
-                    'seo_title' => fn (string $p) => TextInput::make($p)->maxLength(255),
-                    'seo_description' => fn (string $p) => Textarea::make($p)->rows(3),
+                    'seo_title' => fn (string $p) => TextInput::make($p)->maxLength(255)->hintAction(\App\Filament\Support\HelpHint::action('seo_title', 14)),
+                    'seo_description' => fn (string $p) => Textarea::make($p)->rows(3)->hintAction(\App\Filament\Support\HelpHint::action('seo_description', 14)),
                 ]),
             ]),
 

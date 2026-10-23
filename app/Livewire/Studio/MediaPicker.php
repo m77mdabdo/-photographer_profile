@@ -109,8 +109,21 @@ class MediaPicker extends Component
      */
     public function choose(int $mediaId): void
     {
+        /*
+         * SINGLE MODE ANSWERS ON THE SAME CHANNEL AS MULTI MODE.
+         *
+         * This dispatched 'media-picked', which the custom admin listened for
+         * and which nothing has listened for since the dashboard moved to
+         * Filament: the form field (filament/forms/components/
+         * media-picker-field) listens for 'media-selected'. So choosing a
+         * cover, a hero, a featured image, a poster or a settings image
+         * through the picker closed the picker and changed nothing. Found by
+         * driving the real interface on a phone (tests/Support/
+         * mobile-publish-check.mjs); every form test had set the field's state
+         * directly and could not see it.
+         */
         if (! $this->multiple) {
-            $this->dispatch('media-picked', slot: $this->slot, mediaId: $mediaId);
+            $this->dispatch('media-selected', slot: $this->slot, media: $this->payloadFor([$mediaId]));
             $this->closePicker();
 
             return;
@@ -235,7 +248,8 @@ class MediaPicker extends Component
     public function clearSelection(): void
     {
         if (! $this->multiple) {
-            $this->dispatch('media-picked', slot: $this->slot, mediaId: null);
+            // "Remove current image": an explicit, empty answer the field acts on.
+            $this->dispatch('media-selected', slot: $this->slot, media: [], cleared: true);
             $this->closePicker();
 
             return;
@@ -257,9 +271,24 @@ class MediaPicker extends Component
             return;
         }
 
-        $byId = Media::with('variants')->whereIn('id', $this->selected)->get()->keyBy('id');
+        $payload = $this->payloadFor($this->selected);
 
-        $payload = collect($this->selected)
+        $this->dispatch('media-selected', slot: $this->slot, media: $payload);
+
+        $this->closePicker();
+    }
+
+    /**
+     * What the field receives for each chosen id, in order.
+     *
+     * @param  list<int>  $ids
+     * @return list<array{id: int, thumbnail: ?string, alt: mixed, name: string}>
+     */
+    private function payloadFor(array $ids): array
+    {
+        $byId = Media::with('variants')->whereIn('id', $ids)->get()->keyBy('id');
+
+        return collect($ids)
             ->map(fn (int $id): ?array => $byId->has($id) ? [
                 'id' => $id,
                 'thumbnail' => $byId[$id]->thumbnailUrl(),
@@ -269,10 +298,6 @@ class MediaPicker extends Component
             ->filter()
             ->values()
             ->all();
-
-        $this->dispatch('media-selected', slot: $this->slot, media: $payload);
-
-        $this->closePicker();
     }
 
     private function atCapacity(): bool

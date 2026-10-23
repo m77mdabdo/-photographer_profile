@@ -70,6 +70,8 @@ class PanelArabicRenderTest extends TestCase
          */
         'Google', 'Authenticator', 'Microsoft', 'Password', 'Authy',
         'JPEG', 'PNG', 'WebP', 'HEIC', 'WebM', 'MP4', 'H', 'https', 'admin', 'salt-line',
+        // The folder the backup chapter tells the host to copy.
+        'storage',
     ];
 
     /**

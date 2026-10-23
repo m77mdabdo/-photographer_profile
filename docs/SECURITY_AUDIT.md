@@ -1,7 +1,7 @@
 # Security audit
 
 Review of the Anas Fareed application against the OWASP Top 10 (2021) and the
-relevant OWASP ASVS 4.0 level-2 controls, 22 Oct 2026. Builds on the Task 36
+relevant OWASP ASVS 4.0 level-2 controls, 22–23 Oct 2026. Builds on the Task 36
 audit (see `operations/deployment.md`); this pass re-verified those controls
 and closed new findings. **No known critical or high-severity finding is
 open.** This is not a claim that the application cannot be compromised: no
@@ -18,6 +18,8 @@ external penetration test was performed.
 | S5 | No in-dashboard password change | Low | Fixed | Filament profile page; current password required | same test file |
 | S6 | Video upload (new feature) | — | Designed secure | MIME checked by content (`video/mp4`, `video/webm`), 60 MB cap, stored under the media disk whose directory refuses script execution; path rendered only if it stays inside the disk (`..` refused) and the file is non-empty | `CinematicSectionsTest::test_a_video_must_be_mp4_or_webm`, `…nothing_to_show_is_not_rendered` |
 | S7 | Livewire temporary-upload gate widened to admit mp4/webm | Low | Accepted | The Media library still accepts images only, by content (`StoreUploadedMedia`); only the video field accepts video | `Security/UploadHardeningTest` |
+| S9 | Browser tests need a signed-in owner; a shared test account or a password on a command line would leak into history, logs or production | Medium | Designed secure | `admin:disposable` creates a throwaway owner **only when `APP_ENV=local`** (no `--force`), at a reserved-TLD address, never alters an existing user, prints nothing secret, writes the password and TOTP seed only to `storage/app/private/harness-admin.json` (gitignored), and `--delete` removes both. The browser scripts read that file and compute the code in-process; no secret appears in arguments, output or screenshots. Removed at the end of this release pass | `Console/DisposableAdminCommandTest` (6 tests); `git check-ignore` |
+| S10 | Two-factor code replay | — | Verified | A second sign-in with the same six-digit code inside its 30-second window is refused (observed during browser testing) | Observed in the browser 23 Oct 2026 (Fortify's used-code cache); no dedicated automated test |
 | S8 | Demo content (stock photographs, invented clients) could be seeded on a live site | Low (integrity) | Fixed | Demo seeders refuse outside `local`/`testing` | `CommercialContentTest::test_demo_seeders_refuse_to_run_outside_local` |
 
 ## Controls verified

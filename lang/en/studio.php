@@ -959,9 +959,27 @@ return [
     ],
 
     'help' => [
+        'what_is_this' => 'What is this?',
+        'close' => 'Close',
+        'read_more' => 'Read more in Help',
+        'no_results' => 'Nothing in the guide matches “:q”. Try another word.',
         'nav' => 'Help',
         'search' => 'Search the guide',
         'contents' => 'Contents',
         'missing' => 'The guide could not be found.',
+    ],
+
+    'help_hint' => [
+        'status' => ['title' => 'Status', 'body' => 'Draft: saved, not on the website. Published: on the website from the “Published at” date (a future date schedules it). Archived: kept, not on the website.'],
+        'seo_title' => ['title' => 'SEO title', 'body' => 'The title shown by Google and in the browser tab. About 50–60 characters. Leave empty to use the item’s own title.'],
+        'seo_description' => ['title' => 'SEO description', 'body' => 'The sentence shown under the title in search results and link previews. About 150 characters. Leave empty to use the summary or excerpt.'],
+        'alt' => ['title' => 'Alt text', 'body' => 'One sentence describing what is in the photograph, read aloud to blind visitors and used by search engines. Describe the picture, not the project.'],
+        'direction' => ['title' => 'Light travels', 'body' => 'Which way the light moves across the screen. “Follow the language” goes left to right in English and right to left in Arabic, matching how each is read.'],
+        'spotlight' => ['title' => 'Exclusive spotlight', 'body' => 'On: one photograph lit at a time, the light moving on as the visitor scrolls. Off: every photograph lights in turn and stays lit.'],
+        'darkness' => ['title' => 'How dark the other photographs are', 'body' => 'How dark the photographs the light is not on look: Subtle 85%, Deep 95%, Night 98%. Visitors who prefer less motion always see every photograph fully lit.'],
+        'softness' => ['title' => 'Transition', 'body' => 'How gradually the light hands over from one photograph to the next. Crisp is quick, Gentle is slow.'],
+        'pace' => ['title' => 'Scroll distance per photograph', 'body' => 'How far the visitor scrolls to move the light on by one photograph. Slow gives each photograph more time.'],
+        'mobile' => ['title' => 'On phones', 'body' => 'Moving strip: the photographs slide sideways as the visitor scrolls down, the lit one centred. Two columns or one per row: a still grid.'],
+        'video' => ['title' => 'Video file', 'body' => 'An MP4 or WebM file up to 60 MB, ideally 10–30 seconds. It always plays muted and on a loop, only while on screen. The poster image is shown before it plays.'],
     ],
 ];

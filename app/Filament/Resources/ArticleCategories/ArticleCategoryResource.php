@@ -74,8 +74,8 @@ class ArticleCategoryResource extends Resource
                 'slug' => ResourceDefaults::slugField(ArticleCategory::class),
                 'name' => fn (string $p) => TextInput::make($p)->maxLength(255),
                 'description' => fn (string $p) => Textarea::make($p)->rows(3),
-                'seo_title' => fn (string $p) => TextInput::make($p)->maxLength(255),
-                'seo_description' => fn (string $p) => Textarea::make($p)->rows(3),
+                'seo_title' => fn (string $p) => TextInput::make($p)->maxLength(255)->hintAction(\App\Filament\Support\HelpHint::action('seo_title', 14)),
+                'seo_description' => fn (string $p) => Textarea::make($p)->rows(3)->hintAction(\App\Filament\Support\HelpHint::action('seo_description', 14)),
             ]),
         ]);
     }

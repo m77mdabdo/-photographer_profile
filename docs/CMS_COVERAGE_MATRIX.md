@@ -2,7 +2,8 @@
 
 Every public element, where the owner changes it, where it is stored, and the
 automated test that proves the change reaches the page. Verified 22 Oct 2026
-against the code and the running site.
+against the code and the running site; the end-to-end dashboard round trips
+below were run 23 Oct 2026.
 
 **Legend** — **Editable**: changed in the dashboard, no code. **Fixed (reason)**:
 intentionally not editable. **Gap**: not editable today; listed under
@@ -85,6 +86,49 @@ the same structure in Arabic).
 | Privacy notice, terms, other pages | Editable | Writing → Pages | `pages` | `ServicesAndPagesTest` |
 | Per-page SEO title/description, canonical, indexable | Editable | each item's SEO fields | the item | `SeoTest` |
 | Redirects | Editable | System → Redirects | `redirects` | `RedirectsTest` |
+
+## Verified through the real dashboard (end to end)
+
+A database field existing is not proof that the owner can change it. These
+were changed **by a browser driving the real dashboard** (sign-in with
+two-factor, typing into the real fields, pressing the real Save), then:
+the form reloaded to prove the value was saved; the public page fetched in
+English and in Arabic to prove it appears where it should; the original value
+put back **through the dashboard**; and the touched database rows compared
+before and after to prove nothing else changed. Run at a phone width (390) and
+a desktop width (1440).
+
+| Content | Changed in | Public page checked | Script |
+| --- | --- | --- | --- |
+| Home opening statement | Site settings | `/`, `/ar` | `tests/Support/cms-roundtrip-check.mjs` |
+| Contact page heading | Site settings | `/contact`, `/ar/contact` | same |
+| Social link | Site settings → Footer & social | footer, both languages | same |
+| Search description (SEO) | Site settings → Search & sharing | `<meta name="description">` | same |
+| Service name (en), summary (ar), SEO title | Services → edit | service page, `<title>` | same |
+| Project title (en, ar) | Projects → edit | project page, both languages | same |
+| Navigation label (en, ar) | Navigation → *The strip at the top* → Edit | header, both languages | same |
+| Photograph alt text | Media → search → Edit | `alt` on the project page | same |
+| Cinematic gallery title (en, ar) and darkness | Cinematic sections → edit | home page markup (`data-darkness`) | same |
+| Cinematic featured image (replaced through the picker, then restored) | Cinematic sections → *Replace* → picker | home page image path | same |
+| New project with an uploaded photograph, published from a phone | Projects → create (390 px) | the new project page | `tests/Support/mobile-publish-check.mjs` |
+
+Result 23 Oct 2026: round trip **130/130**, mobile publishing **13/13**.
+
+**Found by this testing and fixed:** in single-image fields, tapping a
+photograph in the picker did nothing — the picker announced the choice on an
+event no field listened to, so *Replace* could not change a cover, hero or
+featured image from the dashboard. The picker now answers the field directly
+(`MediaPicker::choose()`), removing an image clears the field, and two feature
+tests pin both (`Studio/MediaPickerFieldTest`).
+
+**Noted, harmless:** saving the navigation dialog renumbers the links'
+internal order values (0, 10, 20… become 1, 2, 3…). The order itself is
+unchanged and is all the site reads; the round trip asserts the order.
+
+**Not driven through the browser:** uploading a featured *video* (the file
+field is the same FilePond upload used for photographs, which is driven end to
+end; the video's validation and rendering are covered by
+`CinematicSectionsTest`).
 
 ## Fixed system elements (deliberately not editable)
 

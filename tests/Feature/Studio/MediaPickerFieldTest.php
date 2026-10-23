@@ -121,6 +121,43 @@ class MediaPickerFieldTest extends TestCase
     }
 
     /**
+     * A SINGLE-IMAGE FIELD, CHOSEN THE WAY A PERSON CHOOSES IT: one tap.
+     *
+     * The test above reaches media-selected through toggle + confirm, the
+     * multi-select path — which a cover field never takes. The tap path
+     * (choose) dispatched 'media-picked', an event nothing listened for, so
+     * picking a cover through the dashboard changed nothing. Found by
+     * tests/Support/mobile-publish-check.mjs driving the real interface.
+     */
+    public function test_one_tap_in_single_mode_answers_the_field(): void
+    {
+        $media = $this->ready()->first();
+
+        Livewire::test(MediaPicker::class)
+            ->call('openPicker', 'data.cover_media_id')
+            ->call('choose', $media->id)
+            ->assertDispatched('media-selected', function (string $event, array $params) use ($media): bool {
+                return $params['slot'] === 'data.cover_media_id'
+                    && $params['media'][0]['id'] === $media->id
+                    && array_key_exists('thumbnail', $params['media'][0]);
+            })
+            ->assertNotDispatched('media-picked');
+    }
+
+    /** "Remove current image" sends an explicit, empty answer the field acts on. */
+    public function test_removing_the_current_image_clears_the_field(): void
+    {
+        Livewire::test(MediaPicker::class)
+            ->call('openPicker', 'data.cover_media_id')
+            ->call('clearSelection')
+            ->assertDispatched('media-selected', fn (string $event, array $params): bool => $params['slot'] === 'data.cover_media_id' && $params['media'] === [] && ($params['cleared'] ?? false) === true);
+
+        // And the field's listener acts on it: it sets null when told cleared.
+        $view = (string) file_get_contents(resource_path('views/filament/forms/components/media-picker-field.blade.php'));
+        $this->assertStringContainsString('if (cleared)', $view);
+    }
+
+    /**
      * Shift-range selection still takes the run between two clicks.
      *
      * The gesture the Select could not offer at all: on a gallery strip it is

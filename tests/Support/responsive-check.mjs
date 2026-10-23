@@ -13,11 +13,17 @@
  *
  * Screenshots of the first screen at 320, 390, 768 and 1440 go to --shots.
  *
- * Usage: node tests/Support/responsive-check.mjs [base] [--shots=dir] [--admin=email:password:totpSecret]
- *        (a LOCAL test account; the secret is the base32 TOTP seed)
+ * Usage: node tests/Support/responsive-check.mjs [base] [--shots=dir] [--panel] [--only=/path]
+ *
+ * --panel signs in with the throwaway owner `php artisan admin:disposable`
+ * creates (local only, refused in any other environment) and reads its
+ * credentials from storage/app/private/harness-admin.json — never from the
+ * command line, so neither the password nor the TOTP seed reaches a shell
+ * history, a process list or a log. Remove it afterwards with
+ * `php artisan admin:disposable --delete`.
  */
 import { launch } from 'puppeteer-core'
-import { mkdirSync } from 'fs'
+import { mkdirSync, readFileSync, existsSync } from 'fs'
 import { createHmac } from 'crypto'
 
 /* RFC 6238 TOTP from a base32 secret — the six-digit code an authenticator app shows. */
@@ -40,6 +46,7 @@ if (SHOTS) mkdirSync(SHOTS, { recursive: true })
 
 const WIDTHS = [320, 360, 375, 390, 414, 768, 1024, 1280, 1440, 1920]
 const SHOT_WIDTHS = [320, 390, 768, 1440]
+const ONLY = (argv.find((a) => a.startsWith('--only=')) || '').slice(7)
 const PAGES = ['/', '/work', '/work/salt-line', '/archive', '/services', '/services/product-photography', '/journal', '/journal/the-edit-is-the-work', '/about', '/contact', '/privacy', '/no-such-page']
 
 const browser = await launch({
@@ -53,7 +60,7 @@ const results = []
 const check = (tag, name, ok, detail = '') => results.push({ tag, name, ok, detail })
 
 for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
-  for (const path of PAGES) {
+  for (const path of PAGES.filter((p) => !ONLY || p === ONLY)) {
     const url = BASE + (prefix && path === '/' ? '/ar' : prefix + path)
     for (const width of WIDTHS) {
       const page = await browser.newPage()
@@ -68,11 +75,13 @@ for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
       const r = await page.evaluate(async (narrow) => {
         let overflow = 0
         for (let y = 0; y <= document.documentElement.scrollHeight; y += Math.round(innerHeight * 0.8)) {
-          scrollTo(0, y)
+          scrollTo({ top: y, behavior: 'instant' }) // the site scrolls smoothly; a measurement must not wait on an animation
           await new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res)))
           overflow = Math.max(overflow, document.documentElement.scrollWidth - innerWidth)
         }
-        scrollTo(0, 0)
+        scrollTo({ top: 0, behavior: 'instant' })
+        // The header hid on the way down and slides back (0.3 s): let it land before the screenshot.
+        await new Promise((res) => setTimeout(res, 600))
         const clipped = []
         for (const el of document.querySelectorAll('main h1, main h2, main h3, main p, main a, main button, main label, .site-header a, .site-footer a')) {
           if (!el.checkVisibility()) continue
@@ -110,19 +119,24 @@ for (const [prefix, tag] of [['', 'en'], ['/ar', 'ar']]) {
 }
 
 // The dashboard at phone widths, signed in (credentials of a local test account).
-const admin = (argv.find((a) => a.startsWith('--admin=')) || '').slice(8)
-if (admin) {
-  const [email, password, secret] = admin.split(':')
+const CREDENTIALS = new URL('../../storage/app/private/harness-admin.json', import.meta.url)
+if (argv.includes('--panel') && !existsSync(CREDENTIALS)) {
+  console.error('  --panel: no credentials file. Run `php artisan admin:disposable` first (local only).')
+  process.exit(2)
+}
+if (argv.includes('--panel')) {
+  const { email, password, totp_secret: secret } = JSON.parse(readFileSync(CREDENTIALS, 'utf8'))
   const ctx = await browser.createBrowserContext()
   const page = await ctx.newPage()
   await page.setViewport({ width: 390, height: 844 })
   await page.goto(BASE + '/login', { waitUntil: 'networkidle2' })
   await page.type('input[name="email"]', email)
   await page.type('input[name="password"]', password)
-  await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle2' }), page.click('button[type="submit"]')])
+  // The form's own button: the page's FIRST submit is the language switcher's.
+  await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle2' }), page.click('form:has(input[name="password"]) button[type="submit"]')])
   if (await page.$('input[name="code"]')) {
     await page.type('input[name="code"]', totp(secret))
-    await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle2' }), page.click('button[type="submit"]')])
+    await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle2' }), page.click('form:has(input[name="code"]) button[type="submit"]')])
   }
   check('panel', 'signs in on a phone with a two-factor code', /\/admin/.test(page.url()), page.url())
   for (const path of ['/admin', '/admin/projects', '/admin/projects/create', '/admin/media', '/admin/cinematic-sections', '/admin/cinematic-sections/create', '/admin/services', '/admin/enquiries', '/admin/settings', '/admin/account-security', '/admin/help', '/admin/profile']) {

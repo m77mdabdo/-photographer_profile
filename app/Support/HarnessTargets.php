@@ -71,6 +71,9 @@ final class HarnessTargets
              */
             'media' => Media::query()->whereNotNull('credit')->where('credit', '!=', '')->orderBy('id')->value('id'),
             'enquiry' => Inquiry::query()->orderBy('id')->value('id'),
+
+            // A lighting gallery, the cinematic form with the most fields.
+            'cinematic' => \App\Models\CinematicSection::query()->orderByRaw("type = 'gallery' desc")->orderBy('id')->value('id'),
         ];
     }
 
