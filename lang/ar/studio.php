@@ -73,6 +73,7 @@ return [
     ],
 
     'media' => [
+        'focal_readout' => 'نقطة التركيز: :x، :y',
         'demo' => 'مخزون',
         'demo_note' => 'صورة مخزونة، ليست من عملك. احذفها جميعاً بـ',
         'demo_only' => 'المخزون فقط',
@@ -420,6 +421,34 @@ return [
     ],
 
     'story' => [
+        'draft_found' => 'وُجدت مسوّدة غير محفوظة لهذه الحكاية من هذه الجلسة (:count كتل). لم تُحفظ على الخادم بعد.',
+        'other_tab' => 'هذه الحكاية مفتوحة في تبويب آخر. أيّ حفظ يأتي أخيرًا سيُرفض بدل أن يكتب فوق الآخر — أعد التحميل هناك، أو أنهِ هنا أولًا.',
+        'discard_reload' => 'تجاهل تغييراتي وأعد التحميل',
+        'go_to_first' => 'انتقل إلى أولها',
+        'empty_story' => 'هذه الحكاية فارغة. أضف كتلة من الأعلى — تتراصّ الكتل في الصفحة بالترتيب الذي ترتّبها به هنا.',
+        'images_legend' => 'الصور',
+        'count_or_more' => ':count أو أكثر',
+        'count_exactly' => ':count بالضبط',
+        // Words the story builder's script sets on the page, handed to it as data-strings.
+        'js' => [
+            'undone' => 'تم التراجع',
+            'redone' => 'أُعيد',
+            'draft_restored' => 'استُعيدت المسوّدة',
+            'saved' => 'حُفظت الحكاية',
+            'block_removed' => 'أُزيلت الكتلة. اضغط Control أو Command مع Z للتراجع.',
+            'work_safe' => 'عملك محفوظ. لم يضع شيء.',
+            'needs_images' => ':label تحتاج صورًا؛ فيها :count.|:label تحتاج صورة واحدة؛ فيها :count.|:label تحتاج صورتين؛ فيها :count.|:label تحتاج :min صور؛ فيها :count.|:label تحتاج :min صورة؛ فيها :count.|:label تحتاج :min صورة؛ فيها :count.',
+            'too_many_images' => ':label تتسع لصور أقل؛ فيها :count.|:label تتسع لصورة واحدة على الأكثر؛ فيها :count.|:label تتسع لصورتين على الأكثر؛ فيها :count.|:label تتسع لـ :max صور على الأكثر؛ فيها :count.|:label تتسع لـ :max صورة على الأكثر؛ فيها :count.|:label تتسع لـ :max صورة على الأكثر؛ فيها :count.',
+            'needs_quote' => ':label تحتاج نص الاقتباس نفسه.',
+            'needs_body' => ':label تحتاج نصًا.',
+            'needs_field' => ':label تحتاج قيمة في الحقل :field.',
+            'invalid' => 'لا كتل تحتاج انتباهًا|كتلة واحدة تحتاج انتباهًا|كتلتان تحتاجان انتباهًا|:count كتل تحتاج انتباهًا|:count كتلة تحتاج انتباهًا|:count كتلة تحتاج انتباهًا',
+            'using' => 'المستخدم: :alt',
+            'describe' => 'صِف هذه الصورة',
+            'move_earlier' => 'حرّك الصورة قبل',
+            'move_later' => 'حرّك الصورة بعد',
+            'remove_image' => 'أزل الصورة',
+        ],
         'block_count' => 'كتلة|كتلتان|كتل|كتلة',
         'story' => 'الحكاية',
         'outline' => 'المخطّط',

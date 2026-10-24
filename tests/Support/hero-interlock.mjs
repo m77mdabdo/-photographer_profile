@@ -46,6 +46,11 @@ const AS_JSON = args.includes('--json')
 const VIEWPORTS = [1440, 1024, 768, 390]
 const WIDE = 900
 const MIN_GAP = 32
+// Engineering pass, Oct 2026: the words are TUCKED against the photograph —
+// never under it (that is still a cut), but no further from its edge than a
+// tenth of their own size. 0.18em (about 45px at 1440) read as two words
+// parked either side of a picture rather than one name crossed by it.
+const TUCK_MAX_EM = 0.1
 
 const dir = mkdtempSync(join(tmpdir(), 'hero-interlock-'))
 const browser = await launch({
@@ -108,8 +113,20 @@ try {
         const clearLeft = leftOfPlate.length ? p.left - Math.max(...leftOfPlate.map((c) => c.right)) : null
         const clearRight = rightOfPlate.length ? Math.min(...rightOfPlate.map((c) => c.left)) - p.right : null
 
+        // Where the statement sits: the English portrait composition puts it
+        // on the reading-start side, under the first word.
+        const hero = document.querySelector('.hero')
+        const voice = document.querySelector('.hero__voice')?.getBoundingClientRect()
+        const portrait = hero?.classList.contains('hero--portrait') ?? false
+        const startSide = document.documentElement.dir === 'rtl' ? 'right' : 'left'
+        const voiceSide = voice ? ((voice.left + voice.right) / 2 > (p.left + p.right) / 2 ? 'right' : 'left') : null
+
         return {
           oneTextNode,
+          fontSize: parseFloat(getComputedStyle(h1).fontSize),
+          portrait,
+          startSide,
+          voiceSide,
           crossesLine: lineCrossed.x > 0 && lineCrossed.y > 0,
           coveredLetters: chars.filter((c) => c.covered && !c.space).map((c) => c.ch).join(''),
           coveredSpaces: chars.filter((c) => c.covered && c.space).length,
@@ -143,6 +160,12 @@ try {
         } else if (m.offscreen) {
           ok = false
           verdict = 'a letter is off the screen'
+        } else if ([m.clearLeft, m.clearRight].some((c) => c === null || c < 1 || c > m.fontSize * TUCK_MAX_EM)) {
+          ok = false
+          verdict = `the words are not tucked against the photograph — clear ${Math.round(m.clearLeft)}px | ${Math.round(m.clearRight)}px, allowed 1–${Math.round(m.fontSize * TUCK_MAX_EM)}px`
+        } else if (m.portrait && m.voiceSide !== m.startSide) {
+          ok = false
+          verdict = `the statement sits on the ${m.voiceSide}; with a portrait photograph it belongs on the reading-start side (${m.startSide}), under the first word`
         } else {
           ok = true
           verdict = `cut at the word boundary — clear ${Math.round(m.clearLeft)}px | ${Math.round(m.clearRight)}px`

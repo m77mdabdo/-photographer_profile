@@ -1,37 +1,58 @@
 # QA test report
 
-Final gate, 23 October 2026, run on the code in the release commit. Every
-number below comes from a run of that code; none is carried over from an
-earlier state.
+Every number below comes from a run of the code in the release commit;
+none is carried over from an earlier state.
 
 ## Results
 
+Final gate of the Help Center and performance pass, 24 October 2026, on the
+code in the release commit.
+
 | Layer | Command | Result |
 | --- | --- | --- |
-| PHP feature and unit tests | `php artisan test` | **1391 passed**, 2 skipped, 0 failed (12,971 assertions) |
-| Browser harness, English | `npm run check:browser` | **416/416** |
-| Browser harness, Arabic (RTL) | `npm run check:browser -- --locale=ar` | **416/416** |
-| Browser harness, reduced motion | `npm run check:browser -- --reduced-motion` | **416/416** |
+| PHP feature and unit tests | `php artisan test` | **1441 passed**, 2 skipped, 0 failed (17,959 assertions) |
+| Browser harness, English | `npm run check:browser` | HARNESS_EN |
+| Browser harness, Arabic (RTL) | `npm run check:browser -- --locale=ar` | HARNESS_AR |
+| Browser harness, reduced motion | `npm run check:browser -- --reduced-motion` | HARNESS_RM |
 | Responsive: every page, both languages, 10 widths, plus dashboard screens | `tests/Support/responsive-check.mjs --panel` | **901/901** |
 | Cinematic spotlight, phone track, RTL | `cinematic-check.mjs` | **166/166** |
 | Header and globe switcher | `header-check.mjs` | **64/64** |
-| Font swap | `font-swap-check.mjs` | **84/84** |
+| Font swap (incl. the new Arabic figures subsets) | `font-swap-check.mjs` | **84/84** |
 | Arrivals | `arrive-check.mjs` | **116/116** |
 | Statements | `statement-check.mjs` | **28/28** |
 | Page transitions | `transition-check.mjs` | **24/24** |
 | Second page view | `second-view-check.mjs` | **24/24** |
 | Hold and return | `hold-check.mjs` | **24/24** |
-| Help Center and **?** buttons | `help-check.mjs` | **68/68** |
+| Help Center: search (en / ar / Egyptian), choices, step-by-step, contextual help, layout | `help-check.mjs` | **124/124** |
+| Help tutorials performed in the dashboard | `help-tour-check.mjs` | **36/36** |
 | Publishing from a phone | `mobile-publish-check.mjs` | **13/13** |
 | Dashboard → website round trip | `cms-roundtrip-check.mjs` | **130/130** |
-| Performance budgets | production rig, Lighthouse ×3 per language | see `PERFORMANCE_REPORT.md`; Arabic LCP 0.14–0.21 s over budget |
+| Performance budgets | `bin/perf-budgets.sh`, Lighthouse ×3 per language | both languages within every budget (`PERFORMANCE_REPORT.md`) |
 | Dependencies | `composer audit`; `npm audit --omit=dev` | no advisories; 0 vulnerabilities |
 
-The two skips are by design. Each is a resource with no empty state
-(`PanelEmptyStateTest`), and its reason is printed by the test.
+The two skips are by design: resources with no empty state
+(`PanelEmptyStateTest`), with the reason printed by the test.
 
-The browser checks run headless Chrome at emulated widths. They are not real
-devices (see `RESPONSIVE_TEST_REPORT.md`).
+The browser checks run headless Chrome at emulated widths — not real devices
+(see `RESPONSIVE_TEST_REPORT.md`).
+
+### The tutorials performed end to end (`help-tour-check.mjs`)
+
+Each step is followed with the exact buttons the article names, and the public
+site is checked after it. It works on records it creates (a throwaway project,
+service and hidden video section) and on the real first gallery, which it
+puts back and verifies; it fails if any other project, service or section
+changed.
+
+| Tutorial | What is done and checked |
+| --- | --- |
+| Hide something without deleting it | Status → Draft → Save changes; public page 404; Published → back |
+| Delete | Delete on the row → Delete in the dialog; gone from list and site |
+| Bring back something you deleted | Filter → Deleted records → Only deleted records → Restore → Restore; page back |
+| Add or replace the video | New cinematic section → Featured video → upload MP4 → poster via the picker → Create; file stored; then deleted |
+| Edit a paragraph or heading | A service's description: `## ` heading and two paragraphs (English), Arabic text (Arabic tab) → Save changes; the service page renders a heading and two paragraphs; the Arabic page shows the Arabic |
+| Reorder a gallery's photographs | Move down → Save changes: the home page shows the first two swapped; Move up → Save changes: original order, stored order identical |
+| Cannot sign in / code refused | Wrong password in English and in Arabic (exact messages); right password, wrong code in Arabic and in English (exact messages, not signed in); right code then signs in |
 
 ## What the dashboard → website round trip proves
 
@@ -58,7 +79,18 @@ The content types covered are:
 
 Detail is in `CMS_COVERAGE_MATRIX.md`.
 
-## Defects found during this QA pass and fixed
+## Defects found in the Help Center and performance pass and fixed
+
+| # | Defect | Found by | Fix | Regression test |
+| --- | --- | --- | --- | --- |
+| H1 | The image picker's words were English in the Arabic dashboard (heading, *Recently used*, *Select all*, counts, *Add N images*, *Remove current image*, capacity message) | dashboard inventory | translated, with Arabic plural forms | `MediaPickerFieldTest`, `PanelArabicRenderTest` |
+| H2 | All 44 permission-refusal messages were English in the Arabic dashboard; one said “services” for cinematic sections | Help Center audit | moved to `studio.refuse.*` in both languages | `RefusalsAreTranslatedTest` |
+| H3 | A wrong two-factor code (and the error box's title) showed English on the Arabic sign-in page | performing the sign-in-failure tutorial in Arabic | `lang/ar.json` for Fortify's messages; translated title | `RefusalsAreTranslatedTest::test_sign_in_refusals_read_in_arabic`; `help-tour-check.mjs` |
+| H4 | A project's *Description* is not shown anywhere on the site, and the guide said it was the project page's text | writing the paragraph tutorial | an explicit hint on the field in both languages; articles and guides corrected | `HelpKnowledgeBaseTest` (labels) |
+| H5 | Arabic home LCP 2.64–2.71 s, over budget: the Latin fallback fonts were downloaded whole for spaces, figures and a © | Lighthouse phases + CDP glyph census | figures subsets of Archivo and Inter Tight on Arabic pages | `ArabicFontsTest`; budgets 2.36–2.45 s |
+| H6 | A Help Center label pointed at the wrong field (featured image section's field is *Image*, not *Photograph*) | writing the article against the code | corrected | none automatic: the label check confirms a word exists in the dashboard, not that it is on the screen the step names — a known limit (see Not tested) |
+
+## Defects found during the release-gate pass and fixed
 
 | # | Defect | Found by | Fix | Regression test |
 | --- | --- | --- | --- | --- |
@@ -83,6 +115,8 @@ Detail is in `CMS_COVERAGE_MATRIX.md`.
   Screenshots now wait for both.
 
 ## Not tested
+
+- That each `[[Label]]` in a Help article appears on the *particular* screen its step names (it is checked against the whole dashboard's vocabulary; the 28 performed tutorials are checked screen by screen).
 
 - Real phones and tablets, Safari on iOS, and touch.
 - Uploading a featured video through the browser. The upload path is the same

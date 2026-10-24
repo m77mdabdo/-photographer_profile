@@ -136,6 +136,17 @@ class ArabicRenderTest extends TestCase
      */
     private function visibleText(string $html): string
     {
+        /*
+         * AND THE HEAD'S WORDS A PERSON MEETS. The <head> used to be dropped
+         * whole, so the page title — the browser tab, the search result, the
+         * link preview — was never read: /ar/work and /ar/archive were titled
+         * "Work" and "Archive" in English under a scan that called them clean
+         * (Engineering pass, Oct 2026).
+         */
+        preg_match('#<title>(.*?)</title>#s', $html, $title);
+        preg_match_all('#<meta\s+(?:name|property)="(?:description|og:title|og:description|twitter:title|twitter:description)"\s+content="([^"]*)"#i', $html, $meta);
+        $head = ($title[1] ?? '').' '.implode(' ', $meta[1]);
+
         $body = (string) preg_replace('#<(script|style|template)[^>]*>.*?</\1>#s', '', $html);
         $body = (string) preg_replace('#<head>.*?</head>#s', '', $body);
         $body = (string) preg_replace('#<!--.*?-->#s', '', $body);
@@ -146,7 +157,7 @@ class ArabicRenderTest extends TestCase
             $attributes,
         );
 
-        $text = strip_tags($body).' '.implode(' ', $attributes[2]);
+        $text = $head.' '.strip_tags($body).' '.implode(' ', $attributes[2]);
 
         return trim((string) preg_replace('/\s+/', ' ', html_entity_decode($text)));
     }

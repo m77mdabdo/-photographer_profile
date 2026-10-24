@@ -87,10 +87,12 @@ class WorkController extends Controller
     {
         $page = (int) $projects->currentPage();
 
-        $title = $category?->name ?? 'Work';
+        // The owner's own label for the page, in the page's language — a
+        // literal 'Work' titled the Arabic portfolio in English.
+        $title = $category?->name ?? \App\Support\Settings::get('nav.work');
 
         if ($page > 1) {
-            $title .= ', page '.$page;
+            $title .= ' — '.\App\Support\SiteCopy::line('shared.pagination_position', ['current' => $page, 'total' => $projects->lastPage()]);
         }
 
         /*

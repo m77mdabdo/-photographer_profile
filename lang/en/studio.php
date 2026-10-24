@@ -87,6 +87,7 @@ return [
     ],
 
     'media' => [
+        'focal_readout' => 'Focal point: :x, :y',
         'demo' => 'Stock',
         'demo_note' => 'Stock photograph, not your own work. Remove every one with',
         'demo_only' => 'Stock only',
@@ -506,6 +507,34 @@ return [
     ],
 
     'story' => [
+        'draft_found' => 'An unsaved draft of this story from this session was found (:count blocks). It has not been saved to the server.',
+        'other_tab' => 'This story is open in another tab. Whichever saves last will be refused rather than overwrite the other — reload there, or finish here first.',
+        'discard_reload' => 'Discard my changes and reload',
+        'go_to_first' => 'go to the first one',
+        'empty_story' => 'This story is empty. Add a block above — blocks stack down the page in the order you arrange them here.',
+        'images_legend' => 'Images',
+        'count_or_more' => ':count or more',
+        'count_exactly' => 'exactly :count',
+        // Words the story builder's script sets on the page, handed to it as data-strings.
+        'js' => [
+            'undone' => 'Undone',
+            'redone' => 'Redone',
+            'draft_restored' => 'Draft restored',
+            'saved' => 'Story saved',
+            'block_removed' => 'Block removed. Press Control or Command Z to undo.',
+            'work_safe' => 'Your work is safe. Nothing was lost.',
+            'needs_images' => ':label needs :min image; it has :count.|:label needs :min images; it has :count.',
+            'too_many_images' => ':label takes at most :max image; it has :count.|:label takes at most :max images; it has :count.',
+            'needs_quote' => ':label needs the quote itself.',
+            'needs_body' => ':label needs some body text.',
+            'needs_field' => ':label needs a :field.',
+            'invalid' => ':count block needs attention|:count blocks need attention',
+            'using' => 'Using: :alt',
+            'describe' => 'Describe this image',
+            'move_earlier' => 'Move image earlier',
+            'move_later' => 'Move image later',
+            'remove_image' => 'Remove image',
+        ],
         'block_count' => 'block|blocks',
         'story' => 'Story',
         'outline' => 'Outline',

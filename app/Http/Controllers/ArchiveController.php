@@ -187,12 +187,13 @@ class ArchiveController extends Controller
     {
         $parts = array_filter([$category?->name, $year === null ? null : (string) $year]);
 
-        $title = 'Archive'.($parts === [] ? '' : ' — '.implode(', ', $parts));
+        // As on the portfolio: the owner's label, in the page's language.
+        $title = \App\Support\Settings::get('nav.archive').($parts === [] ? '' : ' — '.implode(', ', $parts));
 
         $page = (int) $frames->currentPage();
 
         if ($page > 1) {
-            $title .= ', page '.$page;
+            $title .= ' — '.\App\Support\SiteCopy::line('shared.pagination_position', ['current' => $page, 'total' => $frames->lastPage()]);
         }
 
         /*
