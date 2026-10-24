@@ -55,6 +55,13 @@ change your content — see the next section.
 **Your account.** Your name at the top right opens your **profile**, where you
 change your name, email address and password (section 13).
 
+**Help inside the dashboard.** **System → Help** asks *What would you like to
+do?* — type a task in your own words, in English or Arabic (“change the home
+page photo”, “عاوز اغير كلمة”), and follow the step-by-step article it finds.
+Fields that are easy to misunderstand have a **?** button (**What is this?**)
+beside them: it explains the field and links to the full article. This guide
+is there too, under *Read the full guide*.
+
 ---
 
 ## 3. English and Arabic content
@@ -147,7 +154,9 @@ process, with **Try again**.
 
 1. Press **New project**.
 2. **Content** (both languages): **Slug**, **Title**, **Subtitle**,
-   **Excerpt** (a sentence or two for lists), **Description**, **Location**,
+   **Excerpt** (a sentence or two for lists and the top of the project page),
+   **Description** (for your records — not shown on the site; the page's
+   paragraphs are text blocks in its story), **Location**,
    **Client**. Only the slug is required to save a draft.
 3. **Imagery**: **Cover image** (used in lists and when sharing) and **Hero
    image** (the large opening image). Press **Choose an image** and pick from
@@ -302,7 +311,7 @@ text, and **About: portrait photograph**.
 
 ### Studio information
 
-The location fields (**Location**, **City**) are empty on purpose: fill them
+The location fields (**Location (leave empty to hide)**, **City (leave empty to hide)**) are empty on purpose: fill them
 only with true information, and leave them empty to keep them off the site.
 
 ---
@@ -331,7 +340,7 @@ foot of the page**.
 - **Clients**: names shown on the home page and the About page. **Only add
   clients you have actually worked with and may name.** The section hides
   while the list is empty.
-- **Testimonials**: a **Quote**, **Attribution** (who said it), **Role** and
+- **Testimonials**: a **Quote**, **Who said it**, **Their role or company** and
   an optional **Portrait**. **Only publish real words from real clients, with
   their permission.** The section hides while there are none published.
 
@@ -406,8 +415,8 @@ who signed in. Entries older than a year are removed automatically.
 
 ## 14. Search engines and sharing
 
-- **Site settings → Search & sharing**: the **Search description** and the
-  **Sharing image** used when a page is shared on social media or messaging
+- **Site settings → Search & sharing**: the **Search description (Google and sharing)** and the
+  **Sharing image (link previews)** used when a page is shared on social media or messaging
   apps.
 - Projects, articles, services and pages have their own **SEO title** and
   **SEO description** where shown; if empty, the title and excerpt are used.

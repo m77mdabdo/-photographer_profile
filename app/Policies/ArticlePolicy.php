@@ -56,7 +56,7 @@ class ArticlePolicy
     public function forceDelete(User $user, Article $article): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete an article.');
+            return Response::deny(__('studio.refuse.force_article'));
         }
 
         return Response::allow();
@@ -103,7 +103,7 @@ class ArticlePolicy
     public function forceDeleteAny(User $user): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete articles.');
+            return Response::deny(__('studio.refuse.force_articles'));
         }
 
         return Response::allow();

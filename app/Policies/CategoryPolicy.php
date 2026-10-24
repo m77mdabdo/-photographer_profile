@@ -43,7 +43,7 @@ class CategoryPolicy
     public function delete(User $user, Category $category): Response
     {
         if (! $this->isAdmin($user)) {
-            return Response::deny('You do not have permission to delete categories.');
+            return Response::deny(__('studio.refuse.delete_categories'));
         }
 
         /*
@@ -61,11 +61,7 @@ class CategoryPolicy
             : $category->projects()->count();
 
         if ($count > 0) {
-            return Response::deny(sprintf(
-                'This category is used by %d %s. Remove it from them first, then delete it.',
-                $count,
-                $count === 1 ? 'project' : 'projects'
-            ));
+            return Response::deny(trans_choice('studio.refuse.category_in_use', $count, ['count' => $count]));
         }
 
         return Response::allow();
@@ -83,7 +79,7 @@ class CategoryPolicy
     public function forceDelete(User $user, Category $category): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete a category.');
+            return Response::deny(__('studio.refuse.force_category'));
         }
 
         return Response::allow();
@@ -131,7 +127,7 @@ class CategoryPolicy
     public function forceDeleteAny(User $user): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete categories.');
+            return Response::deny(__('studio.refuse.force_categories'));
         }
 
         return Response::allow();

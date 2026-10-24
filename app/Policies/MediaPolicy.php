@@ -50,7 +50,7 @@ class MediaPolicy
     public function delete(User $user, Media $media): Response
     {
         if (! $this->isAdmin($user)) {
-            return Response::deny('You do not have permission to delete media.');
+            return Response::deny(__('studio.refuse.delete_media'));
         }
 
         /*
@@ -68,11 +68,7 @@ class MediaPolicy
             : $media->usages()->count();
 
         if ($usages > 0) {
-            return Response::deny(sprintf(
-                'This image is still used in %d %s. Remove it there first, then delete it.',
-                $usages,
-                $usages === 1 ? 'place' : 'places'
-            ));
+            return Response::deny(trans_choice('studio.refuse.media_in_use', $usages, ['count' => $usages]));
         }
 
         return Response::allow();
@@ -85,7 +81,7 @@ class MediaPolicy
     public function forceDelete(User $user, Media $media): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete media.');
+            return Response::deny(__('studio.refuse.force_media'));
         }
 
         return Response::allow();
@@ -141,20 +137,17 @@ class MediaPolicy
     public function deleteAny(User $user): Response
     {
         if (! $this->isAdmin($user)) {
-            return Response::deny('You do not have permission to delete media.');
+            return Response::deny(__('studio.refuse.delete_media'));
         }
 
-        return Response::deny(
-            'Media is deleted one image at a time, so each one can be checked '
-            .'for stories still using it.'
-        );
+        return Response::deny(__('studio.refuse.media_one_at_a_time'));
     }
 
     /** Permanent destruction of many files at once: the Owner alone. */
     public function forceDeleteAny(User $user): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete media.');
+            return Response::deny(__('studio.refuse.force_media'));
         }
 
         return Response::allow();

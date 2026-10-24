@@ -54,7 +54,7 @@ class CinematicSectionPolicy
     public function forceDelete(User $user, CinematicSection $section): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete a cinematic section.');
+            return Response::deny(__('studio.refuse.force_cinematic_section'));
         }
 
         return Response::allow();
@@ -107,7 +107,7 @@ class CinematicSectionPolicy
     public function forceDeleteAny(User $user): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete services.');
+            return Response::deny(__('studio.refuse.force_cinematic_sections'));
         }
 
         return Response::allow();

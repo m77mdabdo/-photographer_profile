@@ -1,0 +1,185 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * Google and sharing. [[Label]] marks a word on screen.
+ */
+return [
+    [
+        'id' => 'edit-seo',
+        'category' => 'seo',
+        'kind' => 'task',
+        'level' => 'everyday',
+        'minutes' => 4,
+        'roles' => 'all',
+        'open' => '/admin/settings',
+        'intents' => ['seo', 'edit', 'text'],
+        'related' => ['sharing-image', 'write-alt-text', 'change-slug'],
+        'verified' => ['how' => 'workflow', 'by' => 'tests/Support/cms-roundtrip-check.mjs'],
+        'en' => [
+            'title' => 'Change how your pages appear in Google',
+            'summary' => 'The title and the sentence under it in search results — for the whole site and for each project, service, article or page.',
+            'outcome' => 'Search results and link previews show the words you chose.',
+            'before' => [],
+            'path' => 'System → Site settings → Search & sharing; and each item’s SEO fields',
+            'steps' => [
+                ['title' => 'The whole site', 'body' => '[[System]] → [[Site settings]] → [[Search & sharing]] → [[Search description (Google and sharing)]]: about 150 characters describing the studio. Both language tabs. [[Save settings]].'],
+                ['title' => 'One service, article or page', 'body' => 'Open it with [[Edit]]. In [[Content]], fill [[SEO title]] (about 60 characters) and [[SEO description]] (about 150) in each language tab. [[Save changes]].'],
+                ['title' => 'One project', 'body' => 'Projects use their [[Title]] and [[Excerpt]] in search results — write the excerpt as one clear sentence.'],
+                ['title' => 'Leave empty if unsure', 'body' => 'Empty SEO fields use the item’s title and summary or excerpt, which is usually fine.'],
+            ],
+            'fields' => [
+                ['name' => 'SEO title', 'about' => 'Shown as the blue link in Google and as the browser tab’s title. Short and specific: “Product photography for brands — Anas Fareed”.'],
+                ['name' => 'SEO description', 'about' => 'The grey sentence under it. Say what the page offers.'],
+            ],
+            'verify' => [
+                'Open the public page and look at the browser tab’s title.',
+                'Google itself updates on its own schedule — days or weeks. The change is on your site at once.',
+            ],
+            'trouble' => [
+                ['if' => 'Google still shows the old text.', 'then' => 'That is Google’s copy; it refreshes when Google next visits. Nothing to do on your side.'],
+            ],
+            'warnings' => ['Do not stuff keywords or claim things that are not true — search engines penalise both.'],
+            'keywords' => 'seo google search engine search results meta title meta description page title description ranking',
+        ],
+        'ar' => [
+            'title' => 'غيّر طريقة ظهور صفحاتك في جوجل',
+            'summary' => 'العنوان والجملة تحته في نتائج البحث — للموقع كله ولكل مشروع أو خدمة أو مقالة أو صفحة.',
+            'outcome' => 'تعرض نتائج البحث ومعاينات الروابط الكلمات التي اخترتها.',
+            'before' => [],
+            'path' => 'النظام ← إعدادات الموقع ← البحث والمشاركة؛ وحقول السيو في كل عنصر',
+            'steps' => [
+                ['title' => 'الموقع كله', 'body' => '[[النظام]] ← [[إعدادات الموقع]] ← [[البحث والمشاركة]] ← [[وصف البحث (جوجل والمشاركة)]]: نحو 150 حرفًا تصف الاستوديو. في تبويبي اللغة. [[حفظ الإعدادات]].'],
+                ['title' => 'خدمة أو مقالة أو صفحة', 'body' => 'افتحها بـ[[تعديل]]. في [[المحتوى]] املأ [[عنوان السيو]] (نحو 60 حرفًا) و[[وصف السيو]] (نحو 150) في كل تبويب لغة. [[حفظ التغييرات]].'],
+                ['title' => 'مشروع', 'body' => 'المشاريع تستخدم [[العنوان]] و[[المقتطف]] في نتائج البحث — اكتب المقتطف جملة واحدة واضحة.'],
+                ['title' => 'اتركها فارغة إن لم تكن متأكدًا', 'body' => 'حقول السيو الفارغة تستخدم عنوان العنصر وملخصه أو مقتطفه، وهذا مناسب غالبًا.'],
+            ],
+            'fields' => [
+                ['name' => 'عنوان السيو', 'about' => 'يظهر كالرابط الأزرق في جوجل وكعنوان تبويب المتصفح. قصير ومحدد: «تصوير المنتجات للعلامات التجارية — أنس فريد».'],
+                ['name' => 'وصف السيو', 'about' => 'الجملة الرمادية تحته. قل ما تقدّمه الصفحة.'],
+            ],
+            'verify' => [
+                'افتح الصفحة العامة وانظر عنوان تبويب المتصفح.',
+                'جوجل نفسه يتحدّث في موعده — أيام أو أسابيع. التغيير في موقعك فوري.',
+            ],
+            'trouble' => [
+                ['if' => 'جوجل ما زال يعرض النص القديم.', 'then' => 'هذه نسخة جوجل؛ تتحدّث حين يزور جوجل الموقع مرة أخرى. لا شيء تفعله من جهتك.'],
+            ],
+            'warnings' => ['لا تحشُ الكلمات المفتاحية ولا تدّعِ ما ليس صحيحًا — محركات البحث تعاقب على الأمرين.'],
+            'keywords' => 'سيو جوجل محركات البحث نتائج البحث عنوان الصفحة وصف الصفحة ميتا يظهر في جوجل',
+        ],
+    ],
+
+    [
+        'id' => 'sharing-image',
+        'category' => 'seo',
+        'kind' => 'task',
+        'level' => 'everyday',
+        'minutes' => 3,
+        'roles' => 'all',
+        'open' => '/admin/settings',
+        'intents' => ['seo', 'photo', 'settings', 'replace'],
+        'related' => ['edit-seo', 'upload-photos'],
+        'verified' => ['how' => 'labels'],
+        'en' => [
+            'title' => 'Change the sharing image and the browser tab icon',
+            'summary' => 'The picture shown when your site is shared on WhatsApp or social media, and the small icon in the browser tab.',
+            'outcome' => 'Shared links and browser tabs show your images.',
+            'before' => ['A landscape image of at least 1,200 × 630 for sharing, and a square image of at least 512 × 512 for the icon, both in Media and Ready.'],
+            'path' => 'System → Site settings → Search & sharing',
+            'steps' => [
+                ['title' => 'Open the section', 'body' => '[[System]] → [[Site settings]] → [[Search & sharing]].'],
+                ['title' => 'Sharing image', 'body' => 'At [[Sharing image (link previews)]] press [[Replace]] or [[Choose an image]], search and tap it.'],
+                ['title' => 'Browser tab icon', 'body' => 'At [[Browser tab icon]] do the same with the square image.'],
+                ['title' => 'Save', 'body' => 'Press [[Save settings]]. Images are chosen once on the English tab and used for both languages.'],
+            ],
+            'fields' => [],
+            'verify' => ['Reload the site: the tab shows the new icon.', 'Paste the site address into a chat with yourself: the preview uses the new image (apps can keep an old preview for a while).'],
+            'trouble' => [],
+            'warnings' => [],
+            'keywords' => 'sharing image og image link preview whatsapp preview favicon icon tab icon browser icon logo',
+        ],
+        'ar' => [
+            'title' => 'غيّر صورة المشاركة وأيقونة تبويب المتصفح',
+            'summary' => 'الصورة التي تظهر حين يُشارك موقعك على واتساب أو وسائل التواصل، والأيقونة الصغيرة في تبويب المتصفح.',
+            'outcome' => 'الروابط المشاركة وتبويبات المتصفح تعرض صورك.',
+            'before' => ['صورة أفقية 1200 × 630 على الأقل للمشاركة، وصورة مربعة 512 × 512 على الأقل للأيقونة، كلتاهما في «الصور» وجاهزة.'],
+            'path' => 'النظام ← إعدادات الموقع ← البحث والمشاركة',
+            'steps' => [
+                ['title' => 'افتح القسم', 'body' => '[[النظام]] ← [[إعدادات الموقع]] ← [[البحث والمشاركة]].'],
+                ['title' => 'صورة المشاركة', 'body' => 'عند [[صورة المشاركة (معاينة الروابط)]] اضغط [[استبدال]] أو [[اختر صورة]]، وابحث واضغطها.'],
+                ['title' => 'أيقونة التبويب', 'body' => 'عند [[أيقونة تبويب المتصفح]] افعل الشيء نفسه بالصورة المربعة.'],
+                ['title' => 'احفظ', 'body' => 'اضغط [[حفظ الإعدادات]]. الصور تُختار مرة واحدة في تبويب English وتُستخدم للغتين.'],
+            ],
+            'fields' => [],
+            'verify' => ['أعد تحميل الموقع: التبويب يعرض الأيقونة الجديدة.', 'الصق عنوان الموقع في محادثة مع نفسك: المعاينة تستخدم الصورة الجديدة (قد تحتفظ التطبيقات بمعاينة قديمة فترة).'],
+            'trouble' => [],
+            'warnings' => [],
+            'keywords' => 'صورة المشاركة معاينة الرابط واتساب ايقونة التبويب الفافيكون اللوجو',
+        ],
+    ],
+
+    [
+        'id' => 'redirects',
+        'category' => 'seo',
+        'kind' => 'task',
+        'level' => 'advanced',
+        'minutes' => 3,
+        'roles' => 'all',
+        'open' => '/admin/redirects',
+        'intents' => ['slug', 'add'],
+        'related' => ['change-slug'],
+        'verified' => ['how' => 'labels'],
+        'en' => [
+            'title' => 'Send an old address to a new one (redirects)',
+            'summary' => 'When a page moves, an old link keeps working by sending visitors to the new address.',
+            'outcome' => 'Old links arrive at the right page.',
+            'before' => ['Slug changes make their redirect automatically; add one by hand only for other moves.'],
+            'path' => 'System → Redirects → New Redirect',
+            'steps' => [
+                ['title' => 'Start', 'body' => '[[System]] → [[Redirects]] → [[New Redirect]].'],
+                ['title' => 'From and To', 'body' => '[[From]]: the old address, starting with a slash, for example */old-work*. [[To]]: where it should go now.'],
+                ['title' => 'Kind', 'body' => '[[301 — permanent]] unless the move is temporary ([[302 — temporary]]).'],
+                ['title' => 'Save', 'body' => 'Save, then open the old address to test it.'],
+            ],
+            'fields' => [
+                ['name' => 'Hits', 'about' => 'How many visitors used the redirect — useful to know if it is still needed.'],
+                ['name' => 'Origin', 'about' => '[[Added by hand]] (you made it) or [[From a rename]] (made by the site when a slug changed). Filter by it to see only yours.'],
+                ['name' => 'Active', 'about' => 'Switch off to pause a redirect without deleting it; the list shows [[Live]] or [[Paused]].'],
+                ['name' => 'The address that moved', 'about' => 'The form’s section holding [[From]] and [[To]].'],
+            ],
+            'verify' => ['Opening the old address lands on the new page.'],
+            'trouble' => [
+                ['if' => 'A red message on From.', 'then' => 'It must start with / and contain only the path — “/old-name”, not a full https:// address.'],
+            ],
+            'warnings' => ['A redirect applies to the language in its address: /ar/… moves the Arabic page only.'],
+            'keywords' => 'redirect redirects old link old address 301 moved page broken link',
+        ],
+        'ar' => [
+            'title' => 'حوّل عنوانًا قديمًا إلى جديد (التحويلات)',
+            'summary' => 'حين تنتقل صفحة، يبقى الرابط القديم يعمل بإرسال الزوار إلى العنوان الجديد.',
+            'outcome' => 'الروابط القديمة توصل إلى الصفحة الصحيحة.',
+            'before' => ['تغيير المعرّف يُنشئ تحويله تلقائيًا؛ أضف تحويلًا يدويًا فقط لانتقالات أخرى.'],
+            'path' => 'النظام ← التحويلات ← إضافة تحويل',
+            'steps' => [
+                ['title' => 'ابدأ', 'body' => '[[النظام]] ← [[التحويلات]] ← [[إضافة تحويل]].'],
+                ['title' => 'من وإلى', 'body' => '[[من]]: العنوان القديم، يبدأ بشرطة مائلة، مثل */old-work*. [[إلى]]: أين يجب أن يذهب الآن.'],
+                ['title' => 'النوع', 'body' => '[[301 — دائم]] ما لم يكن الانتقال مؤقتًا ([[302 — مؤقت]]).'],
+                ['title' => 'احفظ', 'body' => 'احفظ، ثم افتح العنوان القديم لتجربته.'],
+            ],
+            'fields' => [
+                ['name' => 'الزيارات', 'about' => 'كم زائرًا استخدم التحويل — يفيد في معرفة إن كان ما زال مطلوبًا.'],
+                ['name' => 'المصدر', 'about' => '[[أُضيف يدوياً]] (أنشأته أنت) أو [[من إعادة تسمية]] (أنشأه الموقع حين تغيّر معرّف). صفِّ به لترى تحويلاتك فقط.'],
+                ['name' => 'مفعّل', 'about' => 'أوقفه لتعليق التحويل دون حذفه؛ تعرض القائمة [[يعمل]] أو [[موقوف]].'],
+                ['name' => 'العنوان الذي تغيّر', 'about' => 'قسم النموذج الذي يضم [[من]] و[[إلى]].'],
+            ],
+            'verify' => ['فتح العنوان القديم يوصل إلى الصفحة الجديدة.'],
+            'trouble' => [
+                ['if' => 'رسالة حمراء عند «من».', 'then' => 'يجب أن يبدأ بـ / ويحوي المسار فقط — «/old-name» لا عنوانًا كاملًا بـ https://.'],
+            ],
+            'warnings' => ['التحويل يسري على لغة عنوانه: ‎/ar/…‎ ينقل الصفحة العربية فقط.'],
+            'keywords' => 'تحويل تحويلات رابط قديم عنوان قديم 301 صفحة انتقلت رابط مكسور',
+        ],
+    ],
+];

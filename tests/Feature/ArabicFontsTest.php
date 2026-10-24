@@ -114,10 +114,19 @@ class ArabicFontsTest extends TestCase
 
         // The Latin faces stay BEHIND them, for the Latin runs inside Arabic.
         // Task 42 item 4: Rubik's metric-matched stand-in sits between them.
-        $this->assertStringContainsString("'Rubik', 'Rubik Fallback', 'Archivo'", $arabicBlock);
+        // Help Center pass (Oct 2026): the same Latin faces, subset to the
+        // spaces, figures and punctuation an Arabic page draws with them, stand
+        // in front of the full files — which still catch any real Latin word.
+        $this->assertStringContainsString("'Rubik', 'Rubik Fallback', 'Archivo Figures', 'Archivo'", $arabicBlock);
         // Task 41 7.5: the Arabic stand-in sits between the two real faces; its
         // effect is asserted on the render by tests/Support/font-swap-check.mjs.
-        $this->assertStringContainsString("'IBM Plex Sans Arabic', 'Arabic Fallback', 'Inter Tight'", $arabicBlock);
+        $this->assertStringContainsString("'IBM Plex Sans Arabic', 'Arabic Fallback', 'Inter Tight Basic', 'Inter Tight'", $arabicBlock);
+
+        // The subsets are what they claim: the same face, a fraction of the bytes.
+        foreach (['archivo-figures.woff2' => 'archivo-latin.woff2', 'inter-tight-basic.woff2' => 'inter-tight-latin.woff2'] as $subset => $full) {
+            $this->assertFileExists(public_path('fonts/'.$subset));
+            $this->assertLessThan(filesize(public_path('fonts/'.$full)) * 0.4, filesize(public_path('fonts/'.$subset)), "$subset is not a subset");
+        }
 
         // And the panel names the display role --font-serif, so it restates it.
         $theme = (string) file_get_contents(base_path('resources/css/filament/studio/theme.css'));

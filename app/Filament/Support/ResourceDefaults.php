@@ -43,7 +43,7 @@ final class ResourceDefaults
         return [
             Select::make('status')
                 ->label(__('studio.table.status'))
-                ->hintAction(\App\Filament\Support\HelpHint::action('status', 4))
+                ->hintAction(\App\Filament\Support\HelpHint::action('status'))
                 ->options(fn (): array => collect(\App\Enums\PublishStatus::cases())
                     ->mapWithKeys(fn ($s): array => [$s->value => $s->label()])->all())
                 ->default(\App\Enums\PublishStatus::Draft->value)
@@ -101,7 +101,8 @@ final class ResourceDefaults
                 ->seconds(false)
                 ->native(false)
                 ->displayFormat(fn (): string => Locale::isDefault() ? 'j M Y, H:i' : 'j M Y، H:i')
-                ->helperText(__('studio.field.published_at_hint')),
+                ->helperText(__('studio.field.published_at_hint'))
+                ->hintAction(HelpHint::action('published_at')),
         ];
     }
 
@@ -321,6 +322,7 @@ final class ResourceDefaults
             return TextInput::make($path)
                 ->required()
                 ->maxLength(255)
+                ->hintAction(HelpHint::action('slug'))
                 ->rule('regex:~^[\p{Ll}\p{N}\p{Arabic}]+(?:-[\p{Ll}\p{N}\p{Arabic}]+)*$~u')
                 ->rule(fn (?Model $record): Closure => function (
                     string $attribute,

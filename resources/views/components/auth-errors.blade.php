@@ -10,4 +10,4 @@
     The region stays in the DOM either way, because aria-live only announces
     changes to a region the screen reader was already observing.
 --}}
-<div aria-live="assertive" role="alert" class="auth-errors">@if ($errors->any())<p class="auth-errors__title">There {{ $errors->count() === 1 ? 'is a problem' : 'are problems' }} with what you entered:</p><ul role="list" class="auth-errors__list">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>@endif</div>
+<div aria-live="assertive" role="alert" class="auth-errors">@if ($errors->any())<p class="auth-errors__title">{{ trans_choice('studio.auth.errors_title', $errors->count()) }}</p><ul role="list" class="auth-errors__list">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>@endif</div>

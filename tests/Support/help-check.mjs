@@ -3,10 +3,13 @@
  * Part 7), at a phone width and a desktop width, in both panel languages:
  *
  *   - each question-mark button opens the explanation for ITS control, in the
- *     panel's language, with a link to the right Help section
- *   - System → Help shows the guide in the panel's language; search filters
- *     the sections; a word in the OTHER language finds the same section; a
- *     word in neither says so plainly
+ *     panel's language, with a link to the Help article for that task
+ *   - System → Help asks “What would you like to do?” in the panel's
+ *     language; typed tasks (English, Arabic, Egyptian Arabic, a word in the
+ *     other language) find the right article; “remove” offers a choice; a
+ *     word in nothing says so plainly
+ *   - an article's “Guide me step by step” works from the keyboard and
+ *     announces “Step n of N”
  *   - nothing overflows the screen
  *
  * Signs in with `php artisan admin:disposable` (local only; credentials read
@@ -94,8 +97,8 @@ async function openHint(fieldId) {
   return page.evaluate(() => {
     const modal = [...document.querySelectorAll('.fi-modal-window')].find((m) => m.checkVisibility())
     if (!modal) return null
-    const link = [...modal.querySelectorAll('a')].find((a) => /#help-\d+/.test(a.href))
-    return { heading: modal.querySelector('.fi-modal-heading')?.textContent.trim(), body: modal.querySelector('.fi-modal-description')?.textContent.trim(), link: link ? new URL(link.href).hash : null }
+    const article = [...modal.querySelectorAll('a')].map((a) => new URL(a.href).searchParams.get('article')).find(Boolean)
+    return { heading: modal.querySelector('.fi-modal-heading')?.textContent.trim(), body: modal.querySelector('.fi-modal-description')?.textContent.trim(), link: article ?? null }
   })
 }
 
@@ -105,12 +108,14 @@ async function closeModal() {
 }
 
 const FIELDS = [
-  { url: `/admin/cinematic-sections/${cinematic}/edit`, id: 'form.darkness', topic: 'darkness', section: '#help-7' },
-  { url: `/admin/cinematic-sections/${cinematic}/edit`, id: 'form.light_direction', topic: 'direction', section: '#help-7' },
-  { url: `/admin/cinematic-sections/${cinematic}/edit`, id: 'form.spotlight', topic: 'spotlight', section: '#help-7' },
-  { url: `/admin/cinematic-sections/${cinematic}/edit`, id: 'form.pace', topic: 'pace', section: '#help-7' },
-  { url: `/admin/services/${service}/edit`, id: 'form.seo_title.en', topic: 'seo_title', section: '#help-14' },
-  { url: `/admin/services/${service}/edit`, id: 'form.status', topic: 'status', section: '#help-4' },
+  { url: `/admin/cinematic-sections/${cinematic}/edit`, id: 'form.darkness', topic: 'darkness', section: 'adjust-gallery-lighting' },
+  { url: `/admin/cinematic-sections/${cinematic}/edit`, id: 'form.light_direction', topic: 'direction', section: 'adjust-gallery-lighting' },
+  { url: `/admin/cinematic-sections/${cinematic}/edit`, id: 'form.spotlight', topic: 'spotlight', section: 'adjust-gallery-lighting' },
+  { url: `/admin/cinematic-sections/${cinematic}/edit`, id: 'form.pace', topic: 'pace', section: 'adjust-gallery-lighting' },
+  { url: `/admin/services/${service}/edit`, id: 'form.seo_title.en', topic: 'seo_title', section: 'edit-seo' },
+  { url: `/admin/services/${service}/edit`, id: 'form.status', topic: 'status', section: 'publish' },
+  { url: `/admin/services/${service}/edit`, id: 'form.price_from_pence', topic: 'price', section: 'edit-service' },
+  { url: `/admin/services/${service}/edit`, id: 'form.published_at', topic: 'published_at', section: 'publish' },
 ]
 
 for (const width of [390, 1440]) {
@@ -124,34 +129,67 @@ for (const width of [390, 1440]) {
       const hint = await openHint(f.id)
       const want = hints[locale][f.topic]
       check(`${where}: help beside ${f.topic} opens its explanation`, hint && hint.heading === want.title && hint.body === want.body, hint ? `"${hint.heading}"` : 'no help button or no modal')
-      check(`${where}: …and links to Help ${f.section}`, hint?.link === f.section, hint?.link ?? '—')
+      check(`${where}: …and links to the article ${f.section}`, hint?.link === f.section, hint?.link ?? '—')
       if (SHOTS && f.topic === 'darkness') await page.screenshot({ path: `${SHOTS}/hint-${f.topic}-${locale}-${width}.png` })
       await closeModal()
     }
 
     // The Help Center itself.
     await page.goto(BASE + '/admin/help', { waitUntil: 'networkidle2' })
-    const sections = await page.evaluate(() => document.querySelectorAll('.studio-help__section').length)
-    const first = await page.evaluate(() => document.querySelector('.studio-help__section h2')?.textContent.trim())
-    check(`${where}: Help shows the guide in the panel's language`, sections >= 15 && (locale === 'ar' ? /تسجيل الدخول/.test(first) : /Signing in/.test(first)), `${sections} sections, first "${first}"`)
+    const question = await page.evaluate(() => document.querySelector('.studio-help__question')?.textContent.trim())
+    check(`${where}: Help asks what you want to do, in the panel's language`, question === (locale === 'ar' ? 'تحب تعمل إيه في موقعك؟' : 'What would you like to do?'), question)
+    const home = await page.evaluate(() => ({ chips: document.querySelectorAll('.studio-help__chip').length, topics: document.querySelectorAll('.studio-help__topic-card').length, lessons: document.querySelectorAll('.studio-help__lesson').length }))
+    check(`${where}: popular tasks, topics and the 14-lesson path are listed`, home.chips >= 10 && home.topics >= 10 && home.lessons === 14, JSON.stringify(home))
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/help-home-${locale}-${width}.png`, fullPage: width < 800 ? false : true })
+
     const search = async (q) => {
-      await page.$eval('.studio-help__search input', (i) => { i.value = '' })
-      await page.type('.studio-help__search input', q)
-      await wait(500)
+      await page.$eval('#help-q', (i) => { i.value = '' })
+      await page.type('#help-q', q)
+      await page.waitForFunction((q) => document.querySelector('.studio-help__count')?.textContent.includes(q), { timeout: 15000 }, q).catch(() => {})
+      await wait(400)
       return page.evaluate(() => ({
-        shown: [...document.querySelectorAll('.studio-help__section')].filter((s) => s.checkVisibility()).map((s) => s.id),
-        empty: [...document.querySelectorAll('.studio-help__empty')].some((e) => e.checkVisibility()),
+        ids: [...document.querySelectorAll('.studio-help__results .studio-help__card')].map((a) => new URL(a.href).searchParams.get('article')),
+        choices: [...document.querySelectorAll('.studio-help__choice')].map((a) => new URL(a.href).searchParams.get('article')),
+        empty: !!document.querySelector('.studio-help__empty'),
       }))
     }
-    const same = await search(locale === 'ar' ? 'رموز الاستعادة' : 'recovery codes')
-    check(`${where}: search finds the recovery-codes section`, same.shown.includes('help-13') && same.shown.length < sections, same.shown.join(' '))
-    const cross = await search(locale === 'ar' ? 'spotlight' : 'إضاءة حصرية')
-    check(`${where}: a word in the other language finds the same section`, cross.shown.includes('help-7'), cross.shown.join(' '))
+    const QUERIES = locale === 'ar'
+      ? [['عاوز اغير كلمة', 'change-a-word'], ['ازاي اغير صورة الرئيسية', 'replace-home-photo'], ['ارفع فيديو', 'upload-video'], ['خلي المشروع يظهر', 'publish'], ['رجع المشروع اللي اتمسح', 'restore-item'], ['change project cover', 'change-project-cover']]
+      : [['change a word', 'change-a-word'], ['replace homepage photo', 'replace-home-photo'], ['upload a video', 'upload-video'], ['publish project', 'publish'], ['restore deleted project', 'restore-item'], ['ارفع فيديو', 'upload-video']]
+    for (const [q, id] of QUERIES) {
+      const r = await search(q)
+      check(`${where}: “${q}” finds ${id} first`, r.ids[0] === id, r.ids.slice(0, 3).join(' '))
+    }
+    const remove = await search(locale === 'ar' ? 'شيل' : 'remove')
+    check(`${where}: “remove” offers hide / delete / delete for good / restore`, ['unpublish', 'delete-item', 'delete-permanently', 'restore-item'].every((c) => remove.choices.includes(c)), remove.choices.join(' '))
     const none = await search('zqxwvy')
-    check(`${where}: a word in neither guide says so`, none.shown.length === 0 && none.empty)
-    if (SHOTS) await page.screenshot({ path: `${SHOTS}/help-${locale}-${width}.png` })
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
+    check(`${where}: a word in nothing says so`, none.ids.length === 0 && none.empty)
+    if (SHOTS) { await search(locale === 'ar' ? 'اغير صورة' : 'change photo'); await page.screenshot({ path: `${SHOTS}/help-results-${locale}-${width}.png` }) }
+    let overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
     check(`${where}: Help fits the screen`, overflow <= 0, `${overflow}px`)
+
+    // An article, followed step by step from the keyboard.
+    await page.goto(BASE + '/admin/help?article=change-project-cover', { waitUntil: 'networkidle2' })
+    const article = await page.evaluate(() => ({
+      title: document.querySelector('.studio-help__article-title')?.textContent.trim(),
+      steps: document.querySelectorAll('.studio-help__step').length,
+      labels: document.querySelectorAll('.studio-help__ui').length,
+      open: document.querySelector('.studio-help__open')?.getAttribute('href'),
+    }))
+    check(`${where}: the article shows its steps with the on-screen words marked`, article.steps >= 5 && article.labels >= 5 && /\/admin\/projects$/.test(article.open || ''), JSON.stringify(article))
+    await page.evaluate(() => [...document.querySelectorAll('.studio-help__steps-head .studio-help__button')].find((b) => b.checkVisibility()).focus())
+    await page.keyboard.press('Enter')
+    await wait(400)
+    const first = await page.evaluate(() => ({ status: document.querySelector('.studio-help__step-status')?.textContent.trim(), shown: [...document.querySelectorAll('.studio-help__step')].filter((s) => s.checkVisibility()).length, focused: document.activeElement?.classList.contains('studio-help__step-status') }))
+    check(`${where}: “Guide me step by step” shows one step and announces it`, first.shown === 1 && /1/.test(first.status || '') && first.focused, JSON.stringify(first))
+    await page.evaluate(() => [...document.querySelectorAll('.studio-help__stepper-controls .studio-help__button--primary')].find((b) => b.checkVisibility()).focus())
+    await page.keyboard.press('Enter')
+    await wait(400)
+    const second = await page.evaluate(() => document.querySelector('.studio-help__step-status')?.textContent.trim())
+    check(`${where}: Next moves to step 2`, /2/.test(second || ''), second)
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/help-article-${locale}-${width}.png` })
+    overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
+    check(`${where}: the article fits the screen`, overflow <= 0, `${overflow}px`)
   }
 }
 

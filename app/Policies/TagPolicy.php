@@ -70,7 +70,7 @@ class TagPolicy
     public function delete(User $user, Tag $tag): Response
     {
         if (! $this->isAdmin($user)) {
-            return Response::deny('You do not have permission to delete tags.');
+            return Response::deny(__('studio.refuse.delete_tags'));
         }
 
         /*
@@ -88,11 +88,7 @@ class TagPolicy
             : $tag->articles()->count();
 
         if ($count > 0) {
-            return Response::deny(sprintf(
-                'This tag is used by %d %s. Remove it from them first, then delete it.',
-                $count,
-                $count === 1 ? 'article' : 'articles'
-            ));
+            return Response::deny(trans_choice('studio.refuse.tag_in_use', $count, ['count' => $count]));
         }
 
         return Response::allow();
@@ -102,7 +98,7 @@ class TagPolicy
     public function forceDelete(User $user, Tag $tag): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete a tag.');
+            return Response::deny(__('studio.refuse.force_tag'));
         }
 
         return Response::allow();
@@ -130,7 +126,7 @@ class TagPolicy
     public function deleteAny(User $user): Response
     {
         if (! $this->isAdmin($user)) {
-            return Response::deny('You do not have permission to delete tags.');
+            return Response::deny(__('studio.refuse.delete_tags'));
         }
 
         /*
@@ -138,15 +134,13 @@ class TagPolicy
          * and a bulk delete asked without records cannot evaluate it. Tags are
          * removed one at a time, and each refusal names its articles.
          */
-        return Response::deny(
-            'Tags are deleted one at a time, so each one can be checked for articles still using it.'
-        );
+        return Response::deny(__('studio.refuse.tags_one_at_a_time'));
     }
 
     public function forceDeleteAny(User $user): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete tags.');
+            return Response::deny(__('studio.refuse.force_tags'));
         }
 
         return Response::allow();

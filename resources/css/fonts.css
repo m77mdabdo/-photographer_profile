@@ -123,6 +123,55 @@
  *     --layout-features= --no-hinting --desubroutinize
  * ───────────────────────────────────────────────────────────────────────────
  */
+/*
+ * ───────────────────────────────────────────────────────────────────────────
+ * ARCHIVO AND INTER TIGHT, CUT DOWN THE SAME WAY (Help Center pass, Oct 2026).
+ *
+ * The A11 reasoning above, applied to the other two Latin faces. Measured on
+ * /ar with CDP: Archivo painted only SPACES and punctuation inside Rubik
+ * headings (a space between two Arabic words falls outside every Arabic
+ * subset's unicode-range), and Inter Tight painted spaces, “·”, the years
+ * and the header's “AR” — yet each cost the whole Latin subset: 35.5 kB and
+ * 44.9 kB, fetched before first paint, on the locale whose LCP was over.
+ *
+ * So an Arabic page gets the same faces subset to what it draws with them:
+ *   archivo-figures.woff2     ~8 kB  — space, digits, punctuation, « » · – — ©
+ *   inter-tight-basic.woff2  ~16 kB  — Basic Latin + the same punctuation
+ * (the © in the footer alone used to pull the whole Inter Tight file).
+ * (Inter Tight keeps A–Z because the header's language code is Latin.)
+ * The full Latin files stay BEHIND them in the Arabic stacks (tokens.css), so
+ * a real Latin word in Arabic text still renders in Archivo or Inter Tight
+ * and only then downloads them. English is untouched.
+ *
+ * Name tables and the wght axis are kept: the painted face is still Archivo /
+ * Inter Tight, at every weight, with the same metrics — so the fallback
+ * size-adjust faces below still match. Built with:
+ *   python3 -m fontTools.subset archivo-latin.woff2 --flavor=woff2 \
+ *     --unicodes="U+0020-0040,U+005B-0060,U+007B-007E,U+00A0,U+00A9,U+00AB,U+00B0,U+00B7,U+00BB,U+00D7,U+2009,U+200E-200F,U+2013-2014,U+2018-201D,U+2022,U+2026,U+202F,U+2066-2069,U+2212" \
+ *     --layout-features= --no-hinting --desubroutinize
+ *   python3 -m fontTools.subset inter-tight-latin.woff2 --flavor=woff2 \
+ *     --unicodes="U+0020-007E,U+00A0,U+00A9,U+00AB,U+00B0,U+00B7,U+00BB,U+00D7,U+2009,U+200E-200F,U+2013-2014,U+2018-201D,U+2022,U+2026,U+202F,U+2066-2069,U+2212" \
+ *     --layout-features= --no-hinting --desubroutinize
+ * ───────────────────────────────────────────────────────────────────────────
+ */
+@font-face {
+    font-family: 'Archivo Figures';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('/fonts/archivo-figures.woff2') format('woff2');
+    unicode-range: U+0020-0040, U+005B-0060, U+007B-007E, U+00A0, U+00A9, U+00AB, U+00B0, U+00B7, U+00BB, U+00D7, U+2009, U+200E-200F, U+2013-2014, U+2018-201D, U+2022, U+2026, U+202F, U+2066-2069, U+2212;
+}
+
+@font-face {
+    font-family: 'Inter Tight Basic';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('/fonts/inter-tight-basic.woff2') format('woff2');
+    unicode-range: U+0020-007E, U+00A0, U+00A9, U+00AB, U+00B0, U+00B7, U+00BB, U+00D7, U+2009, U+200E-200F, U+2013-2014, U+2018-201D, U+2022, U+2026, U+202F, U+2066-2069, U+2212;
+}
+
 @font-face {
     font-family: 'JetBrains Mono Figures';
     font-style: normal;

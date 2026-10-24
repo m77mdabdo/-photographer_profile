@@ -70,16 +70,16 @@ class SettingPolicy
      */
     public function deleteAny(User $user): Response
     {
-        return Response::deny('Settings cannot be deleted, only edited.');
+        return Response::deny(__('studio.refuse.setting_delete'));
     }
 
     public function forceDeleteAny(User $user): Response
     {
-        return Response::deny('Settings cannot be deleted, only edited.');
+        return Response::deny(__('studio.refuse.setting_delete'));
     }
 
     public function restoreAny(User $user): Response
     {
-        return Response::deny('Settings are never deleted, so there is nothing to restore.');
+        return Response::deny(__('studio.refuse.setting_restore'));
     }
 }

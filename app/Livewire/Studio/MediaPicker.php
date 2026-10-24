@@ -307,11 +307,7 @@ class MediaPicker extends Component
 
     private function capacityMessage(): string
     {
-        return sprintf(
-            'This block takes %d more %s. Deselect something to choose a different one.',
-            (int) $this->max,
-            $this->max === 1 ? 'image' : 'images'
-        );
+        return trans_choice('studio.story.picker_capacity', (int) $this->max, ['count' => (int) $this->max]);
     }
 
     /**

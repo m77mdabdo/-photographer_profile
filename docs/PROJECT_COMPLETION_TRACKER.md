@@ -30,7 +30,7 @@ built but not yet checked.
 
 ## Tasks
 
-Final state, 23 Oct 2026. Every VERIFIED row names the check that was run
+Final state, 24 Oct 2026. Every VERIFIED row names the check that was run
 and its result in the final gate (see `QA_TEST_REPORT.md`).
 
 | # | Task | Status | Verification (final gate) | Remaining |
@@ -54,12 +54,16 @@ and its result in the final gate (see `QA_TEST_REPORT.md`).
 | 5.3 | Account security: recovery codes, password change | VERIFIED | `DashboardCompletionTest` | — |
 | 5.4 | Enquiry status from the enquiry screen | VERIFIED | `DashboardCompletionTest` | — |
 | 6.1 | Security review and hardening | VERIFIED | `SECURITY_AUDIT.md`; Security tests | no external penetration test |
-| 6.2 | Performance budgets | VERIFIED with one exception | `PERFORMANCE_REPORT.md`: en LCP 2.49 s / 97; ar 2.65 s / 95 | **Arabic LCP 0.14–0.21 s over 2.5 s** |
+| 6.2 | Performance budgets | VERIFIED | `PERFORMANCE_REPORT.md`: en LCP 2.42–2.49 s / 97; ar 2.36–2.45 s / 97 | re-measure on the real host |
+| 6.4 | Arabic LCP over budget — Latin fallback fonts fetched whole for spaces and figures | VERIFIED | figures subsets of Archivo and Inter Tight; ar LCP 2.64–2.71 → 2.36–2.45 s, 329 → 274 kB; `font-swap-check` 84/84; `ArabicFontsTest` | — |
 | 6.3 | Poster and RTL-overflow regressions (found by budgets) | VERIFIED | LCP 4.8 → 2.49 s; ar CLS 0.23 → 0.0008 | — |
 | 7.1 | SEO and accessibility | VERIFIED | harness (axe, headings, landmarks, targets) 416/416 ×3; `SeoTest` | — |
 | 7.2 | Tap targets ≥ 24 px (filters, pager, checkbox) | VERIFIED | responsive sweep | — |
 | 8.1 | Dashboard guides en/ar, written against the running panel | VERIFIED | `help-check.mjs` 68/68; `PanelArabicRenderTest` | — |
 | 8.2 | Help Center in the dashboard, search, contextual **?** buttons | VERIFIED | `help-check.mjs` 68/68 | — |
+| 8.3 | Help Center rebuilt as a task knowledge base (60 articles, en/ar), bilingual + Egyptian search, step-by-step mode, 15 contextual **?** buttons | VERIFIED | `HelpKnowledgeBaseTest`, `HelpSearchTest`, `HelpCenterTest`; `help-check.mjs`; `HELP_CENTER_COVERAGE.md` (970 of 980 controls named) | 10 controls are data values (counts, “Never”) |
+| 8.4 | Tutorials performed literally in the dashboard (unpublish, delete, restore, upload video) | VERIFIED | `help-tour-check.mjs` 20/20 | — |
+| 8.5 | Arabic panel showed English: the image picker's words and all 44 refusal messages | VERIFIED | translated; `RefusalsAreTranslatedTest`; a copy-paste refusal said “services” for cinematic sections — fixed | — |
 | 9.1 | Full QA | VERIFIED | `QA_TEST_REPORT.md` | — |
 | 9.2 | Test isolation: the suite deleted a developer's harness credentials | VERIFIED | `DisposableAdminCommandTest` 6/6, file unchanged across the run | — |
 | 10.1 | Deployment, rollback, checklist, handover | DONE | documents reviewed against the code | must be followed on the real host |

@@ -54,7 +54,7 @@ class ServicePolicy
     public function forceDelete(User $user, Service $service): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete a service.');
+            return Response::deny(__('studio.refuse.force_service'));
         }
 
         return Response::allow();
@@ -107,7 +107,7 @@ class ServicePolicy
     public function forceDeleteAny(User $user): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete services.');
+            return Response::deny(__('studio.refuse.force_services'));
         }
 
         return Response::allow();

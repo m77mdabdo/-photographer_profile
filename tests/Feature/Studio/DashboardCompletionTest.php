@@ -137,13 +137,13 @@ class DashboardCompletionTest extends TestCase
     {
         $this->admin();
 
-        $html = (string) $this->get(Help::getUrl())->assertOk()->getContent();
+        // The long-form guide is the Help Center's "Read the full guide" view.
+        $html = (string) $this->get(Help::getUrl(['guide' => 1]))->assertOk()->getContent();
         $this->assertStringContainsString('Signing in', $html);
         $this->assertStringContainsString('Cinematic sections (home page)', $html);
         $this->assertStringNotContainsString('<div dir="rtl"', $html);
 
-        app()->setLocale('ar');
-        $sections = (new Help())->sections();
+        $sections = \App\Support\Help\KnowledgeBase::guide('ar');
         $this->assertGreaterThan(10, count($sections));
         $this->assertSame('1. تسجيل الدخول', $sections[0]['title']);
         foreach ($sections as $section) {

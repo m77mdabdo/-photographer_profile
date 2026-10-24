@@ -103,8 +103,8 @@ class ServiceResource extends Resource
                     'description' => fn (string $p) => Textarea::make($p)->rows(8),
                     'price_note' => fn (string $p) => TextInput::make($p)->maxLength(255),
                     'cta_label' => fn (string $p) => TextInput::make($p)->maxLength(255),
-                    'seo_title' => fn (string $p) => TextInput::make($p)->maxLength(255)->hintAction(\App\Filament\Support\HelpHint::action('seo_title', 14)),
-                    'seo_description' => fn (string $p) => Textarea::make($p)->rows(3)->hintAction(\App\Filament\Support\HelpHint::action('seo_description', 14)),
+                    'seo_title' => fn (string $p) => TextInput::make($p)->maxLength(255)->hintAction(\App\Filament\Support\HelpHint::action('seo_title')),
+                    'seo_description' => fn (string $p) => Textarea::make($p)->rows(3)->hintAction(\App\Filament\Support\HelpHint::action('seo_description')),
                 ]),
             ]),
 
@@ -135,7 +135,8 @@ class ServiceResource extends Resource
                         ->label(__('studio.field.price_from'))
                         ->rules(['integer', 'min:0'])
                         ->extraInputAttributes(['inputmode' => 'numeric'])
-                        ->helperText(__('studio.field.price_hint')),
+                        ->helperText(__('studio.field.price_hint'))
+                        ->hintAction(\App\Filament\Support\HelpHint::action('price')),
 
                     TextInput::make('canonical_url')
                         ->label(__('studio.field.canonical'))

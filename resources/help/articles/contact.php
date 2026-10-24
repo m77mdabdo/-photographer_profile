@@ -1,0 +1,136 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * Contact details and enquiries. [[Label]] marks a word on screen.
+ */
+return [
+    [
+        'id' => 'update-contact-info',
+        'category' => 'contact',
+        'kind' => 'task',
+        'level' => 'beginner',
+        'minutes' => 4,
+        'roles' => 'all',
+        'open' => '/admin/settings',
+        'intents' => ['contact', 'edit', 'social', 'text', 'enquiry'],
+        'related' => ['edit-footer', 'manage-enquiries', 'enquiry-not-arriving'],
+        'verified' => ['how' => 'workflow', 'by' => 'tests/Support/cms-roundtrip-check.mjs'],
+        'en' => [
+            'title' => 'Update your contact information and where enquiries go',
+            'summary' => 'The email address that receives enquiries, the contact page text, the form’s wording and your social links.',
+            'outcome' => 'Visitors see correct contact details, and every enquiry reaches your inbox.',
+            'before' => ['The email address where you want enquiries delivered.'],
+            'path' => 'System → Site settings → Contact',
+            'steps' => [
+                ['title' => 'Open Contact', 'body' => 'Menu → [[System]] → [[Site settings]] → press [[Contact]].'],
+                ['title' => 'Where enquiries go', 'body' => 'In [[Email address that receives enquiries]], type the address that should receive every enquiry. Type it on the [[English]] tab.'],
+                ['title' => 'The contact page', 'body' => 'Edit [[Contact page title]], [[Contact page introduction]] and [[Note about replies]] in both language tabs.'],
+                ['title' => 'The form’s wording', 'body' => 'The labels and hints of the form fields are in the next section, [[Contact — the form itself]] (for example [[Form field: phone]]).'],
+                ['title' => 'Social links and copyright', 'body' => 'Open [[Footer & social]] — see “Edit the footer: copyright line and social links”.'],
+                ['title' => 'Save', 'body' => 'Press [[Save settings]].'],
+                ['title' => 'Test it', 'body' => 'Open the contact page on the public site, send yourself a short test enquiry, and check that it arrives in the dashboard ([[Enquiries]]) and in your inbox.'],
+            ],
+            'fields' => [
+                ['name' => 'Email address that receives enquiries', 'about' => 'If it is empty, enquiries are still saved in the dashboard but no email is sent.'],
+                ['name' => 'Location (leave empty to hide)', 'about' => 'In [[The studio]]. Leave it empty unless you want a location on the site.'],
+            ],
+            'verify' => ['The contact page shows the new text.', 'A test enquiry appears in Enquiries and arrives by email.'],
+            'trouble' => [
+                ['if' => 'The enquiry is in the dashboard but no email arrived.', 'then' => 'See “An enquiry did not arrive by email”.'],
+                ['if' => 'Your test enquiry was refused.', 'then' => 'The form refuses very fast or repeated submissions (spam protection). Wait a few seconds after opening the page before sending, and do not send many in a row.'],
+            ],
+            'warnings' => ['The site has no setting for the studio’s own phone number: visitors reach you through the form. If you add a number to a text, it is public — never use a private one.'],
+            'keywords' => 'contact information email address phone enquiries email where enquiries go contact page update contact details change email',
+        ],
+        'ar' => [
+            'title' => 'حدّث بيانات التواصل والبريد الذي تصل إليه الطلبات',
+            'summary' => 'البريد الذي تصل إليه الطلبات، ونص صفحة التواصل، وكلمات النموذج، وروابط حساباتك.',
+            'outcome' => 'يرى الزوار بيانات تواصل صحيحة، ويصل كل طلب إلى بريدك.',
+            'before' => ['البريد الإلكتروني الذي تريد أن تصل إليه الطلبات.'],
+            'path' => 'النظام ← إعدادات الموقع ← التواصل',
+            'steps' => [
+                ['title' => 'افتح التواصل', 'body' => 'القائمة ← [[النظام]] ← [[إعدادات الموقع]] ← اضغط [[التواصل]].'],
+                ['title' => 'أين تذهب الطلبات', 'body' => 'في [[البريد الذي تصل إليه الطلبات]] اكتب البريد الذي يجب أن يصل إليه كل طلب. اكتبه في تبويب [[English]].'],
+                ['title' => 'صفحة التواصل', 'body' => 'عدّل [[عنوان صفحة التواصل]] و[[مقدمة صفحة التواصل]] و[[ملاحظة حول الرد]] في تبويبي اللغة.'],
+                ['title' => 'كلمات النموذج', 'body' => 'عناوين حقول النموذج وتلميحاتها في القسم التالي [[التواصل — النموذج نفسه]] (مثل [[حقل النموذج: الهاتف]]).'],
+                ['title' => 'روابط التواصل والحقوق', 'body' => 'افتح [[التذييل وحسابات التواصل]] — راجع «عدّل التذييل: سطر الحقوق وروابط التواصل».'],
+                ['title' => 'احفظ', 'body' => 'اضغط [[حفظ الإعدادات]].'],
+                ['title' => 'جرّبه', 'body' => 'افتح صفحة التواصل في الموقع، وأرسل لنفسك طلبًا تجريبيًا قصيرًا، وتأكد أنه وصل إلى لوحة التحكم ([[الطلبات]]) وإلى بريدك.'],
+            ],
+            'fields' => [
+                ['name' => 'البريد الذي تصل إليه الطلبات', 'about' => 'إن كان فارغًا تُحفظ الطلبات في لوحة التحكم لكن لا تُرسل رسالة.'],
+                ['name' => 'الموقع (اتركه فارغًا لإخفائه)', 'about' => 'في [[الاستوديو]]. اتركه فارغًا ما لم ترد ظهور موقع جغرافي في الموقع.'],
+            ],
+            'verify' => ['صفحة التواصل تعرض النص الجديد.', 'الطلب التجريبي يظهر في الطلبات ويصل بالبريد.'],
+            'trouble' => [
+                ['if' => 'الطلب في لوحة التحكم لكن لم تصل رسالة.', 'then' => 'راجع «طلب لم يصل بالبريد».'],
+                ['if' => 'رُفض طلبك التجريبي.', 'then' => 'النموذج يرفض الإرسال السريع جدًا أو المتكرر (حماية من الرسائل المزعجة). انتظر ثواني بعد فتح الصفحة قبل الإرسال، ولا ترسل عدة طلبات متتالية.'],
+            ],
+            'warnings' => ['لا يوجد في الموقع إعداد لرقم هاتف الاستوديو: يصل إليك الزوار عبر النموذج. إن كتبت رقمًا في نص فهو علني — لا تستخدم رقمًا خاصًا أبدًا.'],
+            'keywords' => 'بيانات التواصل الايميل البريد رقم التليفون الطلبات بتوصل فين صفحة التواصل اغير الايميل',
+        ],
+    ],
+
+    [
+        'id' => 'manage-enquiries',
+        'category' => 'contact',
+        'kind' => 'task',
+        'level' => 'beginner',
+        'minutes' => 3,
+        'roles' => 'all',
+        'open' => '/admin/enquiries',
+        'intents' => ['enquiry', 'contact'],
+        'related' => ['update-contact-info', 'enquiry-not-arriving'],
+        'verified' => ['how' => 'labels'],
+        'en' => [
+            'title' => 'Read and manage enquiries',
+            'summary' => 'Every message from the contact form, with its status and your private notes.',
+            'outcome' => 'You know which enquiries are new, which you answered, and which became bookings.',
+            'before' => [],
+            'path' => 'People & messages → Enquiries',
+            'steps' => [
+                ['title' => 'Open Enquiries', 'body' => 'Menu → [[People & messages]] → [[Enquiries]]. A red number in the menu counts new ones.'],
+                ['title' => 'Read one', 'body' => 'Press [[View]] on its row. Opening it marks it [[Read]]. It shows [[Who wrote]], [[The work]] (type, location, budget, timing) and the [[Message]].'],
+                ['title' => 'Reply', 'body' => 'Press the sender’s email address: your email app opens. Replies are not sent from the dashboard.'],
+                ['title' => 'Record where it stands', 'body' => 'Press [[Change status]] and choose [[New]], [[Read]], [[Contacted]], [[Qualified]], [[Booked]], [[Closed]] or [[Spam]].'],
+                ['title' => 'Keep a note', 'body' => 'Press [[Add a note]] — for example “called back Tuesday”. Notes are private.'],
+                ['title' => 'Find enquiries later', 'body' => 'In the list, [[Filter]] → [[Status]] (for example [[Booked]]) or [[Read]] → [[Unread only]].'],
+            ],
+            'fields' => [
+                ['name' => 'Your notes', 'about' => 'Private notes added with [[Add a note]]; visitors never see them.'],
+                ['name' => 'Provenance', 'about' => 'How the enquiry arrived: the date, whether consent was recorded, and the sender’s address stored only as a one-way fingerprint.'],
+                ['name' => 'Read', 'about' => 'The list filter [[Read]] → [[Unread only]] shows what you have not opened yet.'],
+            ],
+            'verify' => ['The enquiry shows the status you chose in the list.'],
+            'trouble' => [],
+            'warnings' => ['Enquiries contain personal data. Delete those you no longer need; do not forward them to people who should not see them.'],
+            'keywords' => 'enquiries enquiry messages leads inquiries contact form messages read reply status booked spam notes',
+        ],
+        'ar' => [
+            'title' => 'اقرأ الطلبات وأدِرها',
+            'summary' => 'كل رسالة من نموذج التواصل، بحالتها وملاحظاتك الخاصة.',
+            'outcome' => 'تعرف أي الطلبات جديد، وأيها رددت عليه، وأيها صار حجزًا.',
+            'before' => [],
+            'path' => 'الأشخاص والرسائل ← الطلبات',
+            'steps' => [
+                ['title' => 'افتح الطلبات', 'body' => 'القائمة ← [[الأشخاص والرسائل]] ← [[الطلبات]]. يعدّ الرقم الأحمر في القائمة الجديد منها.'],
+                ['title' => 'اقرأ طلبًا', 'body' => 'اضغط [[عرض]] في صفّه. فتحه يجعله [[مقروء]]. يعرض [[المُرسِل]] و[[العمل المطلوب]] (النوع والمكان والميزانية والتوقيت) و[[الرسالة]].'],
+                ['title' => 'ردّ', 'body' => 'اضغط بريد المرسل: يُفتح تطبيق البريد. الردود لا تُرسل من لوحة التحكم.'],
+                ['title' => 'سجّل أين وصل', 'body' => 'اضغط [[تغيير الحالة]] واختر [[جديد]] أو [[مقروء]] أو [[تمّ التواصل]] أو [[مؤهّل]] أو [[محجوز]] أو [[مغلق]] أو [[مزعج]].'],
+                ['title' => 'دوّن ملاحظة', 'body' => 'اضغط [[أضف ملاحظة]] — مثل «اتصلت به الثلاثاء». الملاحظات خاصة.'],
+                ['title' => 'اعثر على الطلبات لاحقًا', 'body' => 'في القائمة: [[تصفية]] ← [[الحالة]] (مثل [[محجوز]]) أو [[الاطّلاع]] ← [[غير المقروء فقط]].'],
+            ],
+            'fields' => [
+                ['name' => 'ملاحظاتك', 'about' => 'ملاحظات خاصة تضيفها بـ[[أضف ملاحظة]]؛ لا يراها الزوار أبدًا.'],
+                ['name' => 'المصدر والتوثيق', 'about' => 'كيف وصل الطلب: التاريخ، وهل سُجّلت الموافقة، وعنوان المرسل محفوظًا كبصمة أحادية الاتجاه فقط.'],
+                ['name' => 'الاطّلاع', 'about' => 'التصفية [[الاطّلاع]] ← [[غير المقروء فقط]] تعرض ما لم تفتحه بعد.'],
+            ],
+            'verify' => ['الطلب يعرض الحالة التي اخترتها في القائمة.'],
+            'trouble' => [],
+            'warnings' => ['الطلبات تحتوي بيانات شخصية. احذف ما لم تعد تحتاجه، ولا تعد توجيهها لمن لا يجب أن يراها.'],
+            'keywords' => 'الطلبات طلب رسائل استفسارات نموذج التواصل اقرأ ارد الحالة محجوز مزعج ملاحظات',
+        ],
+    ],
+];

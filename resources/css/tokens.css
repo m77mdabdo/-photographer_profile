@@ -408,8 +408,14 @@
      * collateral.
      * ═══════════════════════════════════════════════════════════════════════
      */
-    --font-display: 'Rubik', 'Rubik Fallback', 'Archivo', 'Archivo Fallback', 'Arial Narrow', Arial, sans-serif;
-    --font-sans: 'IBM Plex Sans Arabic', 'Arabic Fallback', 'Inter Tight', 'Inter Fallback', -apple-system, 'Segoe UI', system-ui, sans-serif;
+    --font-display: 'Rubik', 'Rubik Fallback', 'Archivo Figures', 'Archivo', 'Archivo Fallback', 'Arial Narrow', Arial, sans-serif;
+    --font-sans: 'IBM Plex Sans Arabic', 'Arabic Fallback', 'Inter Tight Basic', 'Inter Tight', 'Inter Fallback', -apple-system, 'Segoe UI', system-ui, sans-serif;
+    /*
+     * 'Archivo Figures' and 'Inter Tight Basic' (fonts.css): the same faces,
+     * subset to what an Arabic page draws with them — spaces, figures,
+     * punctuation (and, for Inter Tight, Basic Latin). The full faces behind
+     * them still catch any other Latin character.
+     */
 }
 
 

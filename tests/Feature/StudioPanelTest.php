@@ -498,12 +498,15 @@ class StudioPanelTest extends TestCase
         // filter and pager links and a 24px consent checkbox (target size);
         // −4 bytes — the cinematic stages clip instead of hiding (Arabic CLS).
         // The entry gained the video poster's lazy hand-over (LCP 4.8 → 2.5 s).
-        $this->assertSame('assets/public-3nxwlvZw.css', $publicCss, 'the public stylesheet changed');
+        // Help Center pass, 24 Oct 2026: +636 bytes — two @font-face rules
+        // for the Arabic pages' figures subsets of Archivo and Inter Tight
+        // (Arabic LCP 2.64–2.71 → 2.36–2.45 s, PERFORMANCE_REPORT.md).
+        $this->assertSame('assets/public-Bur1UoT1.css', $publicCss, 'the public stylesheet changed');
         $this->assertSame('assets/public-1o_v3AtE.js', $publicJs, 'the public entry changed');
 
         $cssBytes = (int) filesize(public_path('build/'.$publicCss));
 
-        $this->assertSame(99_899, $cssBytes, 'the public stylesheet is a different size');
+        $this->assertSame(100_535, $cssBytes, 'the public stylesheet is a different size');
 
         /*
          * 90,000 -> 91,000 in Task 42 item 4, for fifteen @font-face blocks:
@@ -521,8 +524,13 @@ class StudioPanelTest extends TestCase
          * (components/cinematic.css, lighting brief, 22 Oct 2026),
          * ~3.4 kB raw.
          */
+        /*
+         * 100,000 -> 101,000 for two @font-face rules (fonts.css: 'Archivo
+         * Figures', 'Inter Tight Basic'), 636 bytes raw — fonts the Arabic
+         * pages fetch instead of 80 kB of Latin files. 16.5 kB gzipped.
+         */
         $this->assertLessThan(
-            100_000,
+            101_000,
             $cssBytes,
             'the public stylesheet has grown by more than a rule or two; something has leaked into it'
         );

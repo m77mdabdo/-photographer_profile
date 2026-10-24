@@ -104,8 +104,8 @@ class ArticleResource extends Resource
                     'subtitle' => fn (string $p) => TextInput::make($p)->maxLength(255),
                     'excerpt' => fn (string $p) => Textarea::make($p)->rows(3),
                     'body' => fn (string $p) => Textarea::make($p)->rows(8),
-                    'seo_title' => fn (string $p) => TextInput::make($p)->maxLength(255)->hintAction(\App\Filament\Support\HelpHint::action('seo_title', 14)),
-                    'seo_description' => fn (string $p) => Textarea::make($p)->rows(3)->hintAction(\App\Filament\Support\HelpHint::action('seo_description', 14)),
+                    'seo_title' => fn (string $p) => TextInput::make($p)->maxLength(255)->hintAction(\App\Filament\Support\HelpHint::action('seo_title')),
+                    'seo_description' => fn (string $p) => Textarea::make($p)->rows(3)->hintAction(\App\Filament\Support\HelpHint::action('seo_description')),
                 ]),
             ]),
 

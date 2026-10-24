@@ -46,7 +46,7 @@ class InquiryPolicy
      */
     public function create(User $user): Response
     {
-        return Response::deny('Enquiries arrive from the contact form. They are not written here.');
+        return Response::deny(__('studio.refuse.inquiry_create'));
     }
 
     public function update(User $user, Inquiry $inquiry): bool
@@ -119,7 +119,7 @@ class InquiryPolicy
     public function forceDeleteAny(User $user): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete enquiries.');
+            return Response::deny(__('studio.refuse.force_inquiries'));
         }
 
         return Response::allow();

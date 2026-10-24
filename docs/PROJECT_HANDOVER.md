@@ -1,7 +1,7 @@
 # Project handover
 
 For the owner of the Anas Fareed website and whoever hosts it. Written 23 Oct
-2026 at the end of the release pass.
+2026 at the end of the release pass; updated 24 Oct 2026 (Help Center, Arabic performance).
 
 ## What is finished
 
@@ -20,10 +20,17 @@ For the owner of the Anas Fareed website and whoever hosts it. Written 23 Oct
   `CMS_COVERAGE_MATRIX.md`, including which changes were proven end to end
   through the real dashboard. It works on a phone, and a project can be created,
   given a photograph and published from 390 px.
-- **A Help Center in the dashboard** (System → Help) in English and Arabic.
-  Searching in one language finds sections in the other. The fields that are
-  easy to misunderstand have a **?** button that explains them and links to the
-  right Help section.
+- **A Help Center in the dashboard** (System → Help) that asks *What would
+  you like to do?* — 60 step-by-step articles in English and Arabic, found by
+  typing a task in your own words (English, Arabic or Egyptian Arabic, typos
+  included), with a *Guide me step by step* mode, a 14-lesson path for
+  beginners, troubleshooting, and a map of every Site settings field. Fifteen
+  **?** buttons beside the easily-misread fields open the right article. The
+  core tutorials (publishing, hiding, deleting, restoring, video, photographs,
+  covers, contact, SEO) are performed literally in the dashboard by automated
+  checks. Coverage: `HELP_CENTER_COVERAGE.md`.
+- **Both languages within the performance budgets** (Arabic LCP brought from
+  2.64–2.71 s to 2.36–2.45 s): `PERFORMANCE_REPORT.md`.
 - **Account security.** Two-factor sign-in is required. Recovery codes and a
   password change are under the user menu → *Account security* / *Profile*.
 
@@ -57,6 +64,7 @@ none of it can reach the live site through the normal installation.
 | `SECURITY_AUDIT.md` | what was reviewed and what risk remains |
 | `CMS_COVERAGE_MATRIX.md` | every public element and where it is edited |
 | `QA_TEST_REPORT.md`, `RESPONSIVE_TEST_REPORT.md`, `PERFORMANCE_REPORT.md` | test evidence |
+| `HELP_CENTER_COVERAGE.md` | what the Help Center documents, measured against the live dashboard |
 | `FINAL_PROJECT_AUDIT.md` | the release status and its evidence |
 | `PROJECT_COMPLETION_TRACKER.md` | task-by-task record |
 | `operations/` | deeper technical notes: browser checks, performance rig, media pipeline |
@@ -76,5 +84,13 @@ none of it can reach the live site through the normal installation.
 - **Content edited by the owner is never overwritten by seeders.** Seeders
   create values and never replace them. Copy updates touch only demo rows or
   values still equal to the old default.
-- **Nothing has been pushed or deployed.** The work is in a local commit on
+- **Help articles are data** in `resources/help/` (one PHP file per topic,
+  English and Arabic side by side). Mark on-screen words as `[[Label]]`; the
+  test suite fails if a marked word is not in the dashboard in that language.
+  After changing the dashboard, run `node tests/Support/dashboard-inventory.mjs`
+  then `php artisan help:coverage`.
+- **Performance:** `bin/perf-budgets.sh LABEL` on the production rig
+  (`operations/performance.md`). It caches production config while it runs —
+  never run the test suite at the same time.
+- **Nothing has been pushed or deployed.** The work is in local commits on
   `main`.

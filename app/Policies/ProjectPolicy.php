@@ -52,7 +52,7 @@ class ProjectPolicy
     public function forceDelete(User $user, Project $project): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete a project.');
+            return Response::deny(__('studio.refuse.force_project'));
         }
 
         return Response::allow();
@@ -108,7 +108,7 @@ class ProjectPolicy
     public function forceDeleteAny(User $user): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete projects.');
+            return Response::deny(__('studio.refuse.force_projects'));
         }
 
         return Response::allow();

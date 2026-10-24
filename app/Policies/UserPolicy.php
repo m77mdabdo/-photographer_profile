@@ -68,15 +68,15 @@ class UserPolicy
     public function delete(User $user, User $subject): Response
     {
         if (! $this->isOwner($user)) {
-            return Response::deny('Only an Owner can remove people.');
+            return Response::deny(__('studio.refuse.remove_people'));
         }
 
         if ($user->is($subject)) {
-            return Response::deny('You cannot delete your own account.');
+            return Response::deny(__('studio.refuse.delete_self'));
         }
 
         if ($subject->role === UserRole::Owner && User::query()->where('role', UserRole::Owner)->count() <= 1) {
-            return Response::deny('This is the last Owner. Promote somebody else first.');
+            return Response::deny(__('studio.refuse.last_owner'));
         }
 
         return Response::allow();
@@ -105,16 +105,16 @@ class UserPolicy
      */
     public function deleteAny(User $user): Response
     {
-        return Response::deny('People are removed one at a time.');
+        return Response::deny(__('studio.refuse.people_one_at_a_time'));
     }
 
     public function forceDeleteAny(User $user): Response
     {
-        return Response::deny('People are removed one at a time.');
+        return Response::deny(__('studio.refuse.people_one_at_a_time'));
     }
 
     public function restoreAny(User $user): Response
     {
-        return Response::deny('People are restored one at a time.');
+        return Response::deny(__('studio.refuse.people_restore_one_at_a_time'));
     }
 }

@@ -54,7 +54,7 @@ class RedirectPolicy
     public function forceDelete(User $user, Redirect $redirect): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete a redirect.');
+            return Response::deny(__('studio.refuse.force_redirect'));
         }
 
         return Response::allow();
@@ -101,7 +101,7 @@ class RedirectPolicy
     public function forceDeleteAny(User $user): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete redirects.');
+            return Response::deny(__('studio.refuse.force_redirects'));
         }
 
         return Response::allow();

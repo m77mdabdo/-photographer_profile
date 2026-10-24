@@ -5,13 +5,19 @@ locale**. A single figure for a bilingual site is a figure for whichever
 language was measured, and three of these five were stated site-wide while
 being English-only.
 
-| budget | English | Arabic |
+| budget (24 Oct 2026) | English | Arabic |
 | --- | --- | --- |
-| public JS | 49.13 kB of 60 gzipped | the same assets — asserted, not assumed |
-| public CSS | 13.0 kB of 35 gzipped | the same assets — asserted, not assumed |
-| CLS | 0.0000 home and work | 0.0000 home and work |
+| public JS | 5.26 kB of 60 gzipped (home) | the same assets — asserted, not assumed |
+| public CSS | 16.5 kB of 35 gzipped | the same assets — asserted, not assumed |
+| CLS (after scrolling) | 0.0000 home and work | ≤ 0.0010 home and work |
 | TBT | 0 ms | 0 ms |
-| LCP | **2.5 s** / score 97 | **2.9 s** / score 94 |
+| LCP | **2.42–2.49 s** / score 97 | **2.36–2.45 s** / score 97 |
+
+Measured with `bin/perf-budgets.sh` (below). The Arabic figure fell from
+2.64–2.71 s when its Latin fallback faces were subset to the spaces, figures
+and punctuation an Arabic page draws with them — `docs/PERFORMANCE_REPORT.md`
+has the investigation. Older figures below are kept as the record of how the
+budgets were reached.
 
 **The 0.3152–0.3336 strip collapse below did not reproduce in 32 runs** on
 the production rig in Task 38 D (stepped scroll and jump-to-bottom, three
@@ -75,6 +81,10 @@ When a tool behaves differently from what you expect, read what it does before
 reading what it says it does.
 
 ## The rig
+
+`bin/perf-budgets.sh LABEL [runs]` does everything below in one command and
+clears the caches on exit — with one rule that cost a run: in zsh, never call
+a variable `path` (it is `$PATH`).
 
 `php artisan serve` is not the deployment. It hands static files out raw and
 knows nothing about `public/.htaccess`, so a measurement through it reports a

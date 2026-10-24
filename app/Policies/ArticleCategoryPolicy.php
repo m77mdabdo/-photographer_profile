@@ -47,7 +47,7 @@ class ArticleCategoryPolicy
     public function delete(User $user, ArticleCategory $category): Response
     {
         if (! $this->isAdmin($user)) {
-            return Response::deny('You do not have permission to delete article categories.');
+            return Response::deny(__('studio.refuse.delete_article_categories'));
         }
 
         /*
@@ -65,11 +65,7 @@ class ArticleCategoryPolicy
             : $category->articles()->count();
 
         if ($count > 0) {
-            return Response::deny(sprintf(
-                'This category holds %d %s. Move them first, then delete it.',
-                $count,
-                $count === 1 ? 'article' : 'articles'
-            ));
+            return Response::deny(trans_choice('studio.refuse.article_category_in_use', $count, ['count' => $count]));
         }
 
         return Response::allow();
@@ -78,7 +74,7 @@ class ArticleCategoryPolicy
     public function forceDelete(User $user, ArticleCategory $category): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete an article category.');
+            return Response::deny(__('studio.refuse.force_article_category'));
         }
 
         return Response::allow();
@@ -100,18 +96,16 @@ class ArticleCategoryPolicy
     public function deleteAny(User $user): Response
     {
         if (! $this->isAdmin($user)) {
-            return Response::deny('You do not have permission to delete article categories.');
+            return Response::deny(__('studio.refuse.delete_article_categories'));
         }
 
-        return Response::deny(
-            'Article categories are deleted one at a time, so each one can be checked for articles still in it.'
-        );
+        return Response::deny(__('studio.refuse.article_categories_one_at_a_time'));
     }
 
     public function forceDeleteAny(User $user): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete article categories.');
+            return Response::deny(__('studio.refuse.force_article_categories'));
         }
 
         return Response::allow();

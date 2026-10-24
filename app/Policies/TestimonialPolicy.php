@@ -57,7 +57,7 @@ class TestimonialPolicy
     public function forceDelete(User $user, Testimonial $testimonial): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete a testimonial.');
+            return Response::deny(__('studio.refuse.force_testimonial'));
         }
 
         return Response::allow();
@@ -110,7 +110,7 @@ class TestimonialPolicy
     public function forceDeleteAny(User $user): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete testimonials.');
+            return Response::deny(__('studio.refuse.force_testimonials'));
         }
 
         return Response::allow();

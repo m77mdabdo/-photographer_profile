@@ -4,20 +4,31 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Support\Help\HelpSearch;
+use App\Support\Help\HelpText;
+use App\Support\Help\KnowledgeBase;
 use App\Support\Locale;
 use BackedEnum;
 use Filament\Pages\Page;
-use Illuminate\Support\Str;
+use Livewire\Attributes\Url;
 
 /**
- * Help — the dashboard user guide, inside the dashboard (master directive,
- * Part 12). Reads docs/DASHBOARD_USER_GUIDE_EN.md or _AR.md by the panel's
- * language, so there is one guide and it cannot drift from a second copy.
- * Split into its numbered sections, with an index and a filter box, because
- * on a phone a single long page is hard to find anything in.
+ * The Help Center (Help Center directive, Parts 3–5, 11).
  *
- * Rendered with raw HTML stripped and unsafe links refused: the guide is a
- * file in the repository, but nothing on this page should depend on that.
+ * One page, four views, each with its own address so a link to it can be
+ * shared or bookmarked:
+ *
+ *   /admin/help                    "What would you like to do?" — search,
+ *                                   popular tasks, topics, the learning path
+ *   /admin/help?q=…                 search results (HelpSearch)
+ *   /admin/help?topic=projects      one topic's articles
+ *   /admin/help?article=…           one task, step by step
+ *   /admin/help?guide=1             the long-form guide, section by section
+ *
+ * Articles come from resources/help (KnowledgeBase); every text is escaped
+ * and rendered through HelpText, which allows a small Markdown subset and
+ * nothing else. The page never changes content: "Open this page" links go
+ * to the dashboard screen, and the person does the task themselves.
  */
 class Help extends Page
 {
@@ -26,6 +37,18 @@ class Help extends Page
     protected static ?int $navigationSort = 99;
 
     protected string $view = 'filament.pages.help';
+
+    #[Url(except: '')]
+    public string $q = '';
+
+    #[Url(except: null)]
+    public ?string $article = null;
+
+    #[Url(except: null)]
+    public ?string $topic = null;
+
+    #[Url(except: false)]
+    public bool $guide = false;
 
     public static function getNavigationGroup(): ?string
     {
@@ -39,7 +62,11 @@ class Help extends Page
 
     public function getTitle(): string
     {
-        return __('studio.help.nav');
+        $article = $this->current();
+
+        return $article !== null
+            ? KnowledgeBase::text($article, $this->locale())['title']
+            : __('studio.help.nav');
     }
 
     public static function canAccess(): bool
@@ -47,52 +74,119 @@ class Help extends Page
         return auth()->check();
     }
 
-    /**
-     * The guide in the panel's language, each section carrying the OTHER
-     * language's text of the same section as search data — the two guides
-     * share their section numbers — so a word typed in either language finds
-     * the section.
-     *
-     * @return list<array{id: string, title: string, html: string, also: string}>
-     */
-    public function sections(): array
+    /** Typing a search leaves whatever was open. */
+    public function updatedQ(): void
     {
-        $current = $this->parse(Locale::current() === 'ar' ? 'AR' : 'EN');
-        $other = $this->parse(Locale::current() === 'ar' ? 'EN' : 'AR');
-
-        foreach ($current as $i => $section) {
-            $current[$i]['also'] = isset($other[$i]) ? $other[$i]['title'].' '.strip_tags($other[$i]['html']) : '';
-        }
-
-        return $current;
+        $this->article = null;
+        $this->topic = null;
+        $this->guide = false;
     }
 
-    /** @return list<array{id: string, title: string, html: string}> */
-    private function parse(string $language): array
+    public function locale(): string
     {
-        $file = base_path('docs/DASHBOARD_USER_GUIDE_'.$language.'.md');
+        return Locale::current() === 'ar' ? 'ar' : 'en';
+    }
 
-        if (! is_file($file)) {
-            return [];
+    /** @return array<string, mixed>|null */
+    public function current(): ?array
+    {
+        return $this->article !== null ? KnowledgeBase::find($this->article) : null;
+    }
+
+    /** @return array{results: list<array<string, mixed>>, choices: list<array<string, mixed>>} */
+    public function results(): array
+    {
+        $found = HelpSearch::search($this->q, $this->locale());
+
+        return [
+            'results' => array_values(array_filter(array_map(fn (array $hit): ?array => $this->card($hit['id']), $found['results']))),
+            'choices' => array_values(array_filter(array_map(fn (string $id): ?array => $this->card($id), $found['choices']))),
+        ];
+    }
+
+    /**
+     * What a list shows of an article: title, summary, topic, time.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function card(string $id): ?array
+    {
+        $article = KnowledgeBase::find($id);
+
+        if ($article === null) {
+            return null;
         }
 
-        $source = (string) file_get_contents($file);
-        $parts = preg_split('/^## /m', $source) ?: [];
-        array_shift($parts);   // the title and the introduction above section 1
+        $text = KnowledgeBase::text($article, $this->locale());
+        $category = KnowledgeBase::categories()[$article['category']] ?? null;
 
-        $sections = [];
+        return [
+            'id' => $id,
+            'title' => $text['title'],
+            'summary' => $text['summary'] ?? '',
+            'kind' => $article['kind'],
+            'minutes' => $article['minutes'] ?? null,
+            'roles' => $article['roles'] ?? 'all',
+            'category' => $category !== null ? $category[$this->locale()]['title'] : __('studio.help.kind.reference'),
+        ];
+    }
 
-        foreach ($parts as $i => $part) {
-            [$title, $body] = array_pad(explode("\n", $part, 2), 2, '');
-            $body = (string) preg_replace('#</?div[^>]*>|^---\s*$#m', '', $body);
+    /** @return array<string, array<string, mixed>> */
+    public function categories(): array
+    {
+        $out = [];
 
-            $sections[] = [
-                'id' => 'help-'.($i + 1),
-                'title' => trim($title),
-                'html' => Str::markdown($body, ['html_input' => 'strip', 'allow_unsafe_links' => false]),
+        foreach (KnowledgeBase::categories() as $key => $category) {
+            $out[$key] = [
+                'key' => $key,
+                'icon' => $category['icon'],
+                'title' => $category[$this->locale()]['title'],
+                'about' => $category[$this->locale()]['about'],
+                'count' => count(KnowledgeBase::inCategory($key)),
             ];
         }
 
-        return $sections;
+        return $out;
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function cards(array $ids): array
+    {
+        return array_values(array_filter(array_map(fn (string $id): ?array => $this->card($id), $ids)));
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function topicCards(string $topic): array
+    {
+        return $this->cards(array_column(KnowledgeBase::inCategory($topic), 'id'));
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function guideSections(): array
+    {
+        return KnowledgeBase::guide($this->locale());
+    }
+
+    public function html(string $text): string
+    {
+        return HelpText::block($text);
+    }
+
+    public function inline(string $text): string
+    {
+        return HelpText::inline($text);
+    }
+
+    public function open(?string $article = null, ?string $topic = null, bool $guide = false): void
+    {
+        $this->q = '';
+        $this->article = $article;
+        $this->topic = $topic;
+        $this->guide = $guide;
+    }
+
+    public function home(): void
+    {
+        $this->open();
     }
 }

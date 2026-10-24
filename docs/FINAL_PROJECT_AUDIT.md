@@ -1,6 +1,6 @@
 # Final project audit
 
-23 October 2026.
+23 October 2026; updated 24 October 2026.
 
 ## Status: BLOCKED — EXTERNAL REQUIREMENT
 
@@ -21,9 +21,9 @@ up:**
 Once these are in place, `PRODUCTION_CHECKLIST.md` takes the site live, and
 nothing in the code has to change.
 
-**Open technical item (not blocking):** Arabic home-page LCP measures
-2.64–2.71 s in the lab, 0.14–0.21 s over the 2.5 s line. English is 2.49 s.
-See `PERFORMANCE_REPORT.md`, and re-measure on the real host.
+**No open technical item.** The Arabic home-page LCP that was 0.14–0.21 s
+over budget on 23 Oct now measures 2.36–2.45 s (English 2.42–2.49 s), both
+within 2.5 s in the lab; re-measure on the real host after deployment.
 
 ## Evidence
 
@@ -36,10 +36,10 @@ See `PERFORMANCE_REPORT.md`, and re-measure on the real host.
 | Dashboard on a phone; publish a project from 390 px | `mobile-publish-check.mjs` | 13/13 |
 | Every public element editable, or deliberately fixed | `CMS_COVERAGE_MATRIX.md` | 3 gaps listed |
 | **Dashboard → website round trip** for homepage, projects, galleries, featured image, services, navigation, contact, SEO, alt text; phone and desktop; restored; nothing else changed | `cms-roundtrip-check.mjs` | 130/130 |
-| Help Center, bilingual search, contextual **?** buttons | `help-check.mjs` | 68/68 |
+| Help Center: task articles, bilingual + Egyptian search, contextual **?** buttons | `help-check.mjs`; `help-tour-check.mjs`; `HELP_CENTER_COVERAGE.md` | see QA_TEST_REPORT |
 | Security | `SECURITY_AUDIT.md`; Security tests; `composer audit`; `npm audit --omit=dev` | no open critical/high; 0 advisories |
 | Accessibility and SEO | harness (en, ar, reduced motion) | 416/416 ×3 |
-| Performance | `PERFORMANCE_REPORT.md` | en within budget; ar LCP over by 0.14–0.21 s |
+| Performance | `PERFORMANCE_REPORT.md` | both languages within every budget |
 | Automated tests | `php artisan test` | 1391 passed, 2 skipped by design |
 
 ## Found and fixed in the final pass

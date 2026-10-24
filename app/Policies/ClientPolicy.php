@@ -62,12 +62,12 @@ class ClientPolicy
      */
     public function restore(User $user, Client $client): Response
     {
-        return Response::deny('Clients are deleted outright, so there is nothing to restore.');
+        return Response::deny(__('studio.refuse.client_restore'));
     }
 
     public function forceDelete(User $user, Client $client): Response
     {
-        return Response::deny('Clients are deleted outright; there is no second step.');
+        return Response::deny(__('studio.refuse.client_force'));
     }
 
     public function reorder(User $user): bool
@@ -111,7 +111,7 @@ class ClientPolicy
     public function forceDeleteAny(User $user): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete clients.');
+            return Response::deny(__('studio.refuse.force_clients'));
         }
 
         return Response::allow();

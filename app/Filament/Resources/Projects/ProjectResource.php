@@ -113,7 +113,13 @@ class ProjectResource extends Resource
                     'title' => fn (string $p) => TextInput::make($p)->maxLength(255),
                     'subtitle' => fn (string $p) => TextInput::make($p)->maxLength(255),
                     'excerpt' => fn (string $p) => Textarea::make($p)->rows(3),
-                    'description' => fn (string $p) => Textarea::make($p)->rows(8),
+                    /*
+                     * Stored and translated, but not drawn on the public
+                     * project page (Help Center audit, Oct 2026): the page
+                     * shows the subtitle, the excerpt and the story. Saying
+                     * so here stops an owner editing text nobody will see.
+                     */
+                    'description' => fn (string $p) => Textarea::make($p)->rows(8)->helperText(__('studio.field.project_description_hint')),
                     'location' => fn (string $p) => TextInput::make($p)->maxLength(255),
                     'client' => fn (string $p) => TextInput::make($p)->maxLength(255),
                 ]),
@@ -247,7 +253,8 @@ class ProjectResource extends Resource
                         ->label(__('studio.field.year'))
                         ->rule('integer')
                         ->extraInputAttributes(['inputmode' => 'numeric', 'maxlength' => 4]),
-                    Toggle::make('is_featured')->label(__('studio.filter.featured'))->live(),
+                    Toggle::make('is_featured')->label(__('studio.filter.featured'))->live()
+                        ->hintAction(\App\Filament\Support\HelpHint::action('featured')),
                 ]),
         ]);
     }

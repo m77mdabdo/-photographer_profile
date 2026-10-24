@@ -4,7 +4,7 @@
             <div class="picker__panel">
                 <header class="picker__header">
                     <h2 id="picker-heading" class="picker__heading">
-                        {{ $multiple ? 'Choose images' : 'Choose an image' }}
+                        {{ $multiple ? __('studio.story.picker_heading_many') : __('studio.story.picker_heading_one') }}
                     </h2>
                     <button type="button" class="admin-link" wire:click="closePicker">{{ __('studio.story.picker_close') }}</button>
                 </header>
@@ -20,21 +20,24 @@
                     @if ($projectId !== null)
                         <button type="button" class="admin-link" wire:click="toggleRecent"
                                 aria-pressed="{{ $recentOnly ? 'true' : 'false' }}">
-                            {{ $recentOnly ? 'All images' : 'Recently used here' }}
+                            {{ $recentOnly ? __('studio.story.picker_all') : __('studio.story.picker_recent') }}
                         </button>
                     @endif
 
                     @if ($multiple)
                         <button type="button" class="admin-link" wire:click="selectAllMatching">
-                            Select all {{ $matchingCount }} matching
+                            {{ __('studio.story.picker_select_matching', ['count' => $matchingCount]) }}
                         </button>
                     @endif
                 </div>
 
                 @if ($multiple)
                     <p class="picker__status" role="status" aria-live="polite">
-                        <strong>{{ count($selected) }}</strong> selected
-                        @if ($max !== null) of {{ $max }} available @endif
+                        @if ($max !== null)
+                            {{ __('studio.story.picker_selected_of', ['count' => count($selected), 'max' => $max]) }}
+                        @else
+                            {{ __('studio.story.picker_selected', ['count' => count($selected)]) }}
+                        @endif
 
                         @if ($selected !== [])
                             <button type="button" class="admin-link" wire:click="clearSelection">{{ __('studio.story.picker_clear') }}</button>
@@ -92,11 +95,11 @@
                         <button type="button" class="admin-button"
                                 wire:click="confirmSelection"
                                 @disabled($selected === [])>
-                            Add {{ count($selected) }} {{ Str::plural('image', count($selected)) }}
+                            {{ trans_choice('studio.story.picker_add', count($selected), ['count' => count($selected)]) }}
                         </button>
                     @else
                         <button type="button" class="admin-button admin-button--quiet" wire:click="clearSelection">
-                            Remove current image
+                            {{ __('studio.story.picker_remove_current') }}
                         </button>
                     @endif
                 </footer>

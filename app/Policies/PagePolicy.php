@@ -62,15 +62,11 @@ class PagePolicy
     public function delete(User $user, Page $page): Response
     {
         if (! $this->isAdmin($user)) {
-            return Response::deny('You do not have permission to delete pages.');
+            return Response::deny(__('studio.refuse.delete_pages'));
         }
 
         if ($page->is_locked) {
-            return Response::deny(
-                'This page is linked from the footer by name — the privacy notice and the '
-                .'terms. Deleting it would leave a 404 where a regulator or a client looks, '
-                .'so it is locked. Unlock it in the database if it genuinely has to go.'
-            );
+            return Response::deny(__('studio.refuse.page_locked'));
         }
 
         return Response::allow();
@@ -85,14 +81,11 @@ class PagePolicy
     public function forceDelete(User $user, Page $page): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete a page.');
+            return Response::deny(__('studio.refuse.force_page'));
         }
 
         if ($page->is_locked) {
-            return Response::deny(
-                'This page is locked because the footer links to it by name. '
-                .'A permanent delete would be the same 404, with no undo.'
-            );
+            return Response::deny(__('studio.refuse.page_locked_force'));
         }
 
         return Response::allow();
@@ -139,7 +132,7 @@ class PagePolicy
     public function forceDeleteAny(User $user): Response
     {
         if ($user->role !== UserRole::Owner) {
-            return Response::deny('Only an Owner can permanently delete pages.');
+            return Response::deny(__('studio.refuse.force_pages'));
         }
 
         return Response::allow();

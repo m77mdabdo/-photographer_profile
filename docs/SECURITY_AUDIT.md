@@ -1,7 +1,7 @@
 # Security audit
 
 Review of the Anas Fareed application against the OWASP Top 10 (2021) and the
-relevant OWASP ASVS 4.0 level-2 controls, 22–23 Oct 2026. Builds on the Task 36
+relevant OWASP ASVS 4.0 level-2 controls, 22–24 Oct 2026. Builds on the Task 36
 audit (see `operations/deployment.md`); this pass re-verified those controls
 and closed new findings. **No known critical or high-severity finding is
 open.** This is not a claim that the application cannot be compromised: no
@@ -20,6 +20,9 @@ external penetration test was performed.
 | S7 | Livewire temporary-upload gate widened to admit mp4/webm | Low | Accepted | The Media library still accepts images only, by content (`StoreUploadedMedia`); only the video field accepts video | `Security/UploadHardeningTest` |
 | S9 | Browser tests need a signed-in owner; a shared test account or a password on a command line would leak into history, logs or production | Medium | Designed secure | `admin:disposable` creates a throwaway owner **only when `APP_ENV=local`** (no `--force`), at a reserved-TLD address, never alters an existing user, prints nothing secret, writes the password and TOTP seed only to `storage/app/private/harness-admin.json` (gitignored), and `--delete` removes both. The browser scripts read that file and compute the code in-process; no secret appears in arguments, output or screenshots. Removed at the end of this release pass | `Console/DisposableAdminCommandTest` (6 tests); `git check-ignore` |
 | S10 | Two-factor code replay | — | Verified | A second sign-in with the same six-digit code inside its 30-second window is refused (observed during browser testing) | Observed in the browser 23 Oct 2026 (Fortify's used-code cache); no dedicated automated test |
+| S11 | The Help Center renders article text and echoes the visitor's search | Low | Designed secure | Articles go through `HelpText`: Markdown with raw HTML stripped and unsafe links refused; on-screen labels are wrapped after escaping, so they cannot inject markup; the query is printed escaped | `Studio/HelpCenterTest::test_a_search_cannot_inject_markup` |
+| S12 | Help is part of the dashboard, not the public site | — | Verified | `/admin/help` (every view, every article) requires sign-in with two-factor; guests are redirected | `Studio/HelpCenterTest::test_guests_are_sent_to_sign_in` |
+| S13 | Sign-in refusals in Arabic | Low (usability of a security control) | Fixed | A wrong two-factor code, recovery code or password showed Fortify's English message on the Arabic sign-in page (no `lang/ar.json`), and the error box's title was English; translated | `RefusalsAreTranslatedTest::test_sign_in_refusals_read_in_arabic`; performed in the browser by `help-tour-check.mjs` (wrong password and wrong code, both languages, then the right code signs in) |
 | S8 | Demo content (stock photographs, invented clients) could be seeded on a live site | Low (integrity) | Fixed | Demo seeders refuse outside `local`/`testing` | `CommercialContentTest::test_demo_seeders_refuse_to_run_outside_local` |
 
 ## Controls verified
@@ -59,5 +62,11 @@ external penetration test was performed.
 4. **Uploaded originals** are kept privately, but every rendition and video is
    public by URL (by design — they are what the site shows).
 5. **Mail deliverability** (SPF/DKIM) depends on the host's mail service.
-6. Security relies on the server configuration in `operations/deployment.md`
+6. **Account discovery through password reset.** For an unknown address,
+   *Forgotten your password?* answers that no account exists (Laravel's
+   default `passwords.user`), so someone can test whether an email has a
+   dashboard account. Rate-limited, and the dashboard has very few accounts;
+   it can be closed by answering every request with the “link sent” message —
+   left as is because it also tells the owner when they mistyped their email.
+7. Security relies on the server configuration in `operations/deployment.md`
    (document root at `public/`); a misconfigured server can expose `.env`.
