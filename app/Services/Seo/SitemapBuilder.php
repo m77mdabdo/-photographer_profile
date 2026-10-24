@@ -11,8 +11,10 @@ use App\Models\Media;
 use App\Models\Page;
 use App\Models\Project;
 use App\Models\Service;
+use App\Support\AbsoluteUrl;
 use App\Support\Locale;
 use App\Support\LocaleAlternates;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -306,7 +308,7 @@ final class SitemapBuilder
      */
     private function image(Media $media): array
     {
-        $url = \App\Support\AbsoluteUrl::for($media->url());
+        $url = AbsoluteUrl::for($media->url());
 
         if ($url === null) {
             return [];
@@ -409,7 +411,7 @@ final class SitemapBuilder
                 continue;
             }
 
-            /** @var \Illuminate\Database\Eloquent\Model|null $record */
+            /** @var Model|null $record */
             $record = $model::query()->where('slug', $last)->first();
 
             if ($record === null) {
@@ -433,7 +435,7 @@ final class SitemapBuilder
     /**
      * The first path segment that identifies a model bound by slug.
      *
-     * @var array<string, class-string<\Illuminate\Database\Eloquent\Model>>
+     * @var array<string, class-string<Model>>
      */
     private const SLUG_MODELS = [
         'work' => Project::class,

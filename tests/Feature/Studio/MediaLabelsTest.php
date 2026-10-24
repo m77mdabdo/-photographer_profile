@@ -10,6 +10,8 @@ use App\Filament\Resources\Media\Pages\ListMedia;
 use App\Models\Media;
 use App\Models\User;
 use Filament\Facades\Filament;
+use Filament\Tables\Columns\Column;
+use Filament\Tables\Columns\TextColumn;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -52,13 +54,13 @@ class MediaLabelsTest extends TestCase
         Filament::setCurrentPanel('studio');
     }
 
-    private function column(): \Filament\Tables\Columns\Column
+    private function column(): Column
     {
         $columns = Livewire::test(ListMedia::class)->instance()->getTable()->getColumns();
 
         // The first TEXT column: the thumbnail is an ImageColumn and leads.
         foreach ($columns as $column) {
-            if ($column instanceof \Filament\Tables\Columns\TextColumn) {
+            if ($column instanceof TextColumn) {
                 return $column;
             }
         }

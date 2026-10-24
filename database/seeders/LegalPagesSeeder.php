@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Enums\PublishStatus;
 use App\Models\Page;
+use App\Support\ContactAddress;
 use App\Support\Settings;
 use Illuminate\Database\Seeder;
 
@@ -73,7 +74,7 @@ class LegalPagesSeeder extends Seeder
     private function definitions(): array
     {
         $studio = Settings::get('site.name', 'the studio');
-        $email = Settings::get('contact.recipient', 'the studio address on the contact page');
+        $email = ContactAddress::recipient() ?? 'the studio address on the contact page';
 
         return [
             [

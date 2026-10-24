@@ -6,6 +6,7 @@ namespace App\Filament\Resources\Media\Pages;
 
 use App\Actions\Media\StoreUploadedMedia;
 use App\Filament\Resources\Media\MediaResource;
+use App\Filament\Support\NamesPlaces;
 use App\Models\Media;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
@@ -17,7 +18,7 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class ListMedia extends ListRecords
 {
-    use \App\Filament\Support\NamesPlaces;
+    use NamesPlaces;
 
     protected static string $resource = MediaResource::class;
 

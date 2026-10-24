@@ -6,10 +6,12 @@ namespace Tests\Feature\Studio;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
 use Filament\Facades\Filament;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -71,7 +73,7 @@ class ActionPlacementTest extends TestCase
     /**
      * Can a freshly created record of this kind be deleted at all?
      *
-     * @param  class-string<\Illuminate\Database\Eloquent\Model>  $model
+     * @param  class-string<Model>  $model
      */
     private function canDeleteARecord(string $model): bool
     {
@@ -270,7 +272,7 @@ class ActionPlacementTest extends TestCase
         foreach ($this->tables() as $name => [$table, $model]) {
             foreach ($table->getRecordActions() as $action) {
                 $this->assertNotInstanceOf(
-                    \Filament\Actions\CreateAction::class,
+                    CreateAction::class,
                     $action,
                     "$name has a create action in its rows",
                 );

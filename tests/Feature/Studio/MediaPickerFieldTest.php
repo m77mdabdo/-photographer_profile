@@ -12,6 +12,7 @@ use App\Models\Media;
 use App\Models\Project;
 use App\Models\User;
 use Filament\Facades\Filament;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -43,7 +44,7 @@ class MediaPickerFieldTest extends TestCase
         Filament::setCurrentPanel('studio');
     }
 
-    private function ready(int $count = 1): \Illuminate\Database\Eloquent\Collection
+    private function ready(int $count = 1): Collection
     {
         return Media::factory()->count($count)->create(['status' => MediaStatus::Ready]);
     }

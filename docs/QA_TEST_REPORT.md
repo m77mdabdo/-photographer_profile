@@ -5,16 +5,17 @@ none is carried over from an earlier state.
 
 ## Results
 
-Final gate of the Help Center and performance pass, 24 October 2026, on the
-code in the release commit.
+Final gate of the engineering quality pass (which follows the Help Center and
+performance pass), 24 October 2026, on the code in the release commit.
 
 | Layer | Command | Result |
 | --- | --- | --- |
-| PHP feature and unit tests | `php artisan test` | **1441 passed**, 2 skipped, 0 failed (17,959 assertions) |
-| Browser harness, English | `npm run check:browser` | HARNESS_EN |
-| Browser harness, Arabic (RTL) | `npm run check:browser -- --locale=ar` | HARNESS_AR |
-| Browser harness, reduced motion | `npm run check:browser -- --reduced-motion` | HARNESS_RM |
+| PHP feature and unit tests | `php artisan test` | **1452 passed**, 2 skipped, 0 failed (17,979 assertions); `vendor/bin/pint --test` clean |
+| Browser harness, English | `npm run check:browser` | **416/416** |
+| Browser harness, Arabic (RTL) | `npm run check:browser -- --locale=ar` | **416/416** |
+| Browser harness, reduced motion | `npm run check:browser -- --reduced-motion` | **416/416** |
 | Responsive: every page, both languages, 10 widths, plus dashboard screens | `tests/Support/responsive-check.mjs --panel` | **901/901** |
+| Arabic hero: no letter covered, each word within 0.1em of the photograph, statement on the reading-start side 32px from it | `hero-interlock.mjs` | **8/8** (4 widths × 2 themes) |
 | Cinematic spotlight, phone track, RTL | `cinematic-check.mjs` | **166/166** |
 | Header and globe switcher | `header-check.mjs` | **64/64** |
 | Font swap (incl. the new Arabic figures subsets) | `font-swap-check.mjs` | **84/84** |
@@ -27,7 +28,7 @@ code in the release commit.
 | Help tutorials performed in the dashboard | `help-tour-check.mjs` | **36/36** |
 | Publishing from a phone | `mobile-publish-check.mjs` | **13/13** |
 | Dashboard → website round trip | `cms-roundtrip-check.mjs` | **130/130** |
-| Performance budgets | `bin/perf-budgets.sh`, Lighthouse ×3 per language | both languages within every budget (`PERFORMANCE_REPORT.md`) |
+| Performance budgets | `bin/perf-budgets.sh`, Lighthouse ×3 per language | both languages within every budget: en LCP 2.43–2.49 s, score 97; ar LCP 2.42–2.45 s (one run 1.76 s), score 97–100; CLS ≤ 0.0009 (`PERFORMANCE_REPORT.md`) |
 | Dependencies | `composer audit`; `npm audit --omit=dev` | no advisories; 0 vulnerabilities |
 
 The two skips are by design: resources with no empty state
@@ -78,6 +79,16 @@ The content types covered are:
 - a cinematic featured image replaced through the picker and restored
 
 Detail is in `CMS_COVERAGE_MATRIX.md`.
+
+## Defects found in the engineering quality pass and fixed
+
+| # | Defect | Found by | Fix | Regression test |
+| --- | --- | --- | --- | --- |
+| E1 | Arabic hero: each word of the name 33–39px from the photograph, and the statement under the wrong word ≈89px away | side-by-side comparison with English | words tucked to 0.06em; statement mirrored before the plate at 32px | `hero-interlock.mjs` (gap, side, distance) |
+| E2 | `/ar/work` and `/ar/archive` had English page titles (tab, search results, link previews) | localization audit | titles from the translated navigation labels | `ArabicRenderTest` now scans `<title>` and sharing meta |
+| E3 | `studio@example.com` shipped as the enquiry address: in structured data, the privacy notice, and as the recipient of every enquiry | artifact search | empty by default; `ContactAddress` treats reserved domains as not set | `ContactAddressTest`, `ContactFormTest` |
+| E4 | The story editor, focal-point readout and sign-in title spoke English in the Arabic dashboard | localization audit | words passed from the page, Arabic plural rules | `StoryBuilderTest`; checked in the Arabic dashboard |
+| E5 | At exactly 900px both the stacked and the composed layouts applied | breakpoint review | `max-width: 899px` | checked at 899/900/901 |
 
 ## Defects found in the Help Center and performance pass and fixed
 

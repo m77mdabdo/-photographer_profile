@@ -6,21 +6,20 @@ namespace App\Filament\Resources\Users;
 
 use App\Enums\UserRole;
 use App\Filament\Resources\Users\Pages\ManageUsers;
-use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\AddressesRecordsById;
+use App\Filament\Support\ResourceDefaults;
 use App\Models\User;
 use BackedEnum;
 use Filament\Actions\CreateAction;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Table;
 use Illuminate\Support\Str;
 
 /**
@@ -47,10 +46,9 @@ class UserResource extends Resource
 
     protected static ?string $model = User::class;
 
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-users';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
 
     protected static ?int $navigationSort = 2;
-
 
     public static function getNavigationGroup(): ?string
     {
@@ -67,7 +65,6 @@ class UserResource extends Resource
     {
         return auth()->user()?->role === UserRole::Owner;
     }
-
 
     /**
      * The noun Filament puts in its own sentences.
@@ -264,7 +261,7 @@ class UserResource extends Resource
      */
     private static function add(array $data): User
     {
-        $user = new User();
+        $user = new User;
 
         $user->password = bcrypt(Str::random(48));
 

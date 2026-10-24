@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Facades\Route;
+use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
 /**
@@ -49,7 +51,7 @@ class BrowserHarnessTest extends TestCase
          * closest thing to `php -l` for an ES module, and it is what stops a
          * broken harness being committed as "the tests passed".
          */
-        $process = new \Symfony\Component\Process\Process(
+        $process = new Process(
             ['node', '--check', 'bin/browser-check.mjs'],
             base_path(),
         );
@@ -63,7 +65,7 @@ class BrowserHarnessTest extends TestCase
 
         // And it declines gracefully rather than hanging when told to check a
         // host that is not there.
-        $help = new \Symfony\Component\Process\Process(
+        $help = new Process(
             ['node', 'bin/browser-check.mjs', '--base=http://127.0.0.1:59999', '--only=/nothing'],
             base_path(),
             null,
@@ -146,7 +148,7 @@ class BrowserHarnessTest extends TestCase
         $missing = [];
         $checked = 0;
 
-        foreach (\Illuminate\Support\Facades\Route::getRoutes() as $route) {
+        foreach (Route::getRoutes() as $route) {
             if (! in_array('GET', $route->methods(), true)) {
                 continue;
             }
@@ -203,7 +205,7 @@ class BrowserHarnessTest extends TestCase
     {
         $routes = [];
 
-        foreach (\Illuminate\Support\Facades\Route::getRoutes() as $route) {
+        foreach (Route::getRoutes() as $route) {
             $routes[] = '/'.trim($route->uri(), '/');
         }
 
@@ -318,7 +320,7 @@ class BrowserHarnessTest extends TestCase
             'document.fonts.check' => 'fonts applying rather than being declared',
             'getBoundingClientRect' => 'hero geometry',
             'requestfailed' => 'failed network requests',
-            "msg.type()" => 'console errors',
+            'msg.type()' => 'console errors',
         ] as $needle => $what) {
             $this->assertStringContainsString($needle, $source, "the harness no longer checks {$what}");
         }

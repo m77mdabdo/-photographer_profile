@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Models\Concerns\Translatable;
+use App\Actions\Services\SyncServiceCoverMedia;
 use App\Enums\PublishStatus;
+use App\Models\Concerns\Translatable;
 use App\Support\RichText;
+use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,11 +20,12 @@ use Illuminate\Support\Str;
 
 class Service extends Model
 {
-    /** @use HasFactory<\Database\Factories\ServiceFactory> */
-    use HasFactory;
-    use Translatable;
     use Concerns\RedirectsOnSlugChange;
+
+    /** @use HasFactory<ServiceFactory> */
+    use HasFactory;
     use SoftDeletes;
+    use Translatable;
 
     /**
      * slug, status, published_at and description_html are deliberately absent,
@@ -92,7 +95,7 @@ class Service extends Model
          */
         static::saved(function (self $record): void {
             if ($record->wasChanged(['cover_media_id']) || $record->wasRecentlyCreated) {
-                app(\App\Actions\Services\SyncServiceCoverMedia::class)($record);
+                app(SyncServiceCoverMedia::class)($record);
             }
         });
 

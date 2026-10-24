@@ -31,6 +31,15 @@ For the owner of the Anas Fareed website and whoever hosts it. Written 23 Oct
   checks. Coverage: `HELP_CENTER_COVERAGE.md`.
 - **Both languages within the performance budgets** (Arabic LCP brought from
   2.64–2.71 s to 2.36–2.45 s): `PERFORMANCE_REPORT.md`.
+- **Arabic and English at parity.** The Arabic home page now matches the
+  English composition (the name tucked against the photograph, the statement
+  mirrored); no English remains in Arabic page titles or the Arabic dashboard;
+  the placeholder enquiry address is gone. Final run on this code: 1452 PHP
+  tests passed (2 skipped by design), every browser check passed
+  (`QA_TEST_REPORT.md`, `ENGINEERING_QUALITY_REPORT.md`).
+- **Before launch, set the enquiry address** (Site settings → Contact): a fresh
+  install no longer ships an example address, so until it is set enquiries are
+  stored in the dashboard but no email is sent.
 - **Account security.** Two-factor sign-in is required. Recovery codes and a
   password change are under the user menu → *Account security* / *Profile*.
 
@@ -67,6 +76,8 @@ none of it can reach the live site through the normal installation.
 | `HELP_CENTER_COVERAGE.md` | what the Help Center documents, measured against the live dashboard |
 | `FINAL_PROJECT_AUDIT.md` | the release status and its evidence |
 | `PROJECT_COMPLETION_TRACKER.md` | task-by-task record |
+| `ENGINEERING_QUALITY_REPORT.md` | the Arabic/English parity and cleanup pass |
+| `../README.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`, `FRONTEND_DESIGN_SYSTEM.md`, `MAINTENANCE_GUIDE.md` | developers |
 | `operations/` | deeper technical notes: browser checks, performance rig, media pipeline |
 
 ## For the next developer

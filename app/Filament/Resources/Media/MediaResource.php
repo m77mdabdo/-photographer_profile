@@ -7,21 +7,19 @@ namespace App\Filament\Resources\Media;
 use App\Enums\MediaStatus;
 use App\Filament\Resources\Media\Pages\ListMedia;
 use App\Filament\Resources\Media\Pages\ViewMedia;
-use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\AddressesRecordsById;
+use App\Filament\Support\HelpHint;
+use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\Translatable;
 use App\Models\Media;
 use BackedEnum;
-use Filament\Actions\BulkActionGroup;
 use Filament\Actions\Action;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -74,7 +72,7 @@ class MediaResource extends Resource
 
     protected static ?string $model = Media::class;
 
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-rectangle-stack';
 
     protected static ?int $navigationSort = 2;
 
@@ -91,7 +89,6 @@ class MediaResource extends Resource
      */
     /** The columns this resource edits in every locale. */
     public const TRANSLATED = ['alt', 'caption'];
-
 
     public static function getNavigationGroup(): ?string
     {
@@ -128,7 +125,7 @@ class MediaResource extends Resource
                 ->description(__('studio.media.description_hint'))
                 ->schema([
                     Translatable::tabs([
-                        'alt' => fn (string $path) => TextInput::make($path)->maxLength(255)->hintAction(\App\Filament\Support\HelpHint::action('alt')),
+                        'alt' => fn (string $path) => TextInput::make($path)->maxLength(255)->hintAction(HelpHint::action('alt')),
                         'caption' => fn (string $path) => Textarea::make($path)->rows(3),
                     ]),
                 ]),

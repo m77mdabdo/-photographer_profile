@@ -9,6 +9,7 @@ use App\Http\Requests\StoreInquiryRequest;
 use App\Mail\InquiryAcknowledged;
 use App\Mail\InquiryReceived;
 use App\Models\Inquiry;
+use App\Support\ContactAddress;
 use App\Support\SeoData;
 use App\Support\Settings;
 use App\Support\SpamGuard;
@@ -50,7 +51,7 @@ class ContactController extends Controller
      */
     public function store(StoreInquiryRequest $request): RedirectResponse
     {
-        $inquiry = new Inquiry();
+        $inquiry = new Inquiry;
 
         $inquiry->fill($request->inquiryAttributes());
 
@@ -118,10 +119,12 @@ class ContactController extends Controller
      */
     private function notifyStudio(Inquiry $inquiry): void
     {
-        $recipient = Settings::get('contact.recipient');
+        // A placeholder (example.com, .test…) counts as not set: a visitor's
+        // message must never be mailed to a documentation domain.
+        $recipient = ContactAddress::recipient();
 
         if ($recipient === null) {
-            Log::warning('Inquiry stored but no recipient is configured.', ['inquiry' => $inquiry->id]);
+            Log::warning('Inquiry stored but no real recipient is configured.', ['inquiry' => $inquiry->id]);
 
             return;
         }

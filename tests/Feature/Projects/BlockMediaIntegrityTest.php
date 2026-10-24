@@ -8,14 +8,18 @@ use App\Actions\Projects\SyncBlockMedia;
 use App\Enums\BlockType;
 use App\Enums\MediaStatus;
 use App\Enums\UserRole;
+use App\Filament\Resources\Media\Pages\ListMedia;
 use App\Models\Media;
 use App\Models\Project;
 use App\Models\ProjectBlock;
 use App\Models\User;
+use Filament\Actions\Testing\TestAction;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
@@ -166,18 +170,18 @@ class BlockMediaIntegrityTest extends TestCase
          * being swallowed: a denied action in Filament is hidden by default,
          * which would leave the editor with no button and no reason.
          */
-        \Filament\Facades\Filament::setCurrentPanel('studio');
+        Filament::setCurrentPanel('studio');
 
-        $action = \Filament\Actions\Testing\TestAction::make('delete')->table($media);
+        $action = TestAction::make('delete')->table($media);
 
         // Still on screen — a hidden button is a dead end with no reason.
-        \Livewire\Livewire::actingAs($user)
-            ->test(\App\Filament\Resources\Media\Pages\ListMedia::class)
+        Livewire::actingAs($user)
+            ->test(ListMedia::class)
             ->assertActionVisible($action);
 
         // And clicking it says the policy's own sentence, counting the uses.
-        \Livewire\Livewire::actingAs($user)
-            ->test(\App\Filament\Resources\Media\Pages\ListMedia::class)
+        Livewire::actingAs($user)
+            ->test(ListMedia::class)
             ->callAction($action)
             ->assertNotified((string) $response->message());
 

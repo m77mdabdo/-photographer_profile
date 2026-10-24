@@ -6,15 +6,18 @@ namespace Tests\Feature;
 
 use App\Enums\PublishStatus;
 use App\Models\Project;
+use App\Support\Settings;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Tests\Support\AssertsNoJavaScript;
 use Tests\Support\DemoWorld;
 use Tests\TestCase;
 
 class WorkIndexTest extends TestCase
 {
-    use \Tests\Support\AssertsNoJavaScript;
+    use AssertsNoJavaScript;
     use RefreshDatabase;
 
     private DemoWorld $world;
@@ -29,11 +32,11 @@ class WorkIndexTest extends TestCase
             'visibility' => 'public',
         ]);
 
-        \App\Support\Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
-        \App\Support\Settings::flush();
+        Settings::flush();
+        $this->seed(SettingsSeeder::class);
+        Settings::flush();
 
-        $this->world = new DemoWorld();
+        $this->world = new DemoWorld;
     }
 
     private function fill(int $published = 14): void
@@ -240,8 +243,8 @@ class WorkIndexTest extends TestCase
          * block that rendered nothing.
          */
         foreach (['block--full-width-image', 'block--contained-image', 'block--text',
-                  'block--quote', 'block--grid', 'block--pair', 'block--split',
-                  'block--spacer', 'block--gallery-strip', 'block--credits'] as $marker) {
+            'block--quote', 'block--grid', 'block--pair', 'block--split',
+            'block--spacer', 'block--gallery-strip', 'block--credits'] as $marker) {
             $this->assertStringContainsString($marker, $html, "missing {$marker}");
         }
 
@@ -250,8 +253,8 @@ class WorkIndexTest extends TestCase
         $this->assertSame(2, substr_count($html, 'block--split'), 'image-text and text-image');
 
         foreach (['An opening frame.', 'A heading', 'A pair.', 'A line worth pulling out.',
-                  'Three at once.', 'Beside the picture', 'The other way round',
-                  'The full run.', 'Made with'] as $content) {
+            'Three at once.', 'Beside the picture', 'The other way round',
+            'The full run.', 'Made with'] as $content) {
             $this->assertStringContainsString($content, $html, "block content missing: {$content}");
         }
 

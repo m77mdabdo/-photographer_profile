@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Studio;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -54,7 +55,7 @@ class StoryBuilderControlsTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('controls')]
+    #[DataProvider('controls')]
     public function test_each_control_declares_the_minimum_touch_target(string $selector): void
     {
         $css = $this->stylesheet();

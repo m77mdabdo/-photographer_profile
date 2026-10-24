@@ -17,7 +17,7 @@ use Filament\Pages\Dashboard as BaseDashboard;
  */
 class Dashboard extends BaseDashboard
 {
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-home';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-home';
 
     public function getTitle(): string
     {
@@ -60,7 +60,7 @@ class Dashboard extends BaseDashboard
      * wasteful — it is what stops a 4-column table from wrapping its dates.
      * ───────────────────────────────────────────────────────────────────────
      */
-    public function getColumns(): int | array
+    public function getColumns(): int|array
     {
         return 1;
     }

@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\RedirectFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
 class Redirect extends Model
 {
-    /** @use HasFactory<\Database\Factories\RedirectFactory> */
+    /** @use HasFactory<RedirectFactory> */
     use HasFactory;
 
     /**

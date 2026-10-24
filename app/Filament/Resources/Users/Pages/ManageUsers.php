@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Users\Pages;
 
 use App\Filament\Resources\Users\UserResource;
+use App\Filament\Support\NamesPlaces;
 use Filament\Resources\Pages\ManageRecords;
 
 /**
@@ -17,7 +18,7 @@ use Filament\Resources\Pages\ManageRecords;
  */
 class ManageUsers extends ManageRecords
 {
-    use \App\Filament\Support\NamesPlaces;
+    use NamesPlaces;
 
     protected static string $resource = UserResource::class;
 }

@@ -68,7 +68,7 @@ class SitemapController extends Controller
     public function segment(string $segment, SitemapBuilder $builder): Response
     {
         if (! in_array($segment, SitemapBuilder::SEGMENTS, true)) {
-            throw new NotFoundHttpException();
+            throw new NotFoundHttpException;
         }
 
         $xml = Sitemap::remember($segment, function () use ($segment, $builder): string {

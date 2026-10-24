@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Models\Article;
+use App\Models\CinematicSection;
 use App\Models\Inquiry;
 use App\Models\Media;
 use App\Models\Project;
@@ -73,7 +74,7 @@ final class HarnessTargets
             'enquiry' => Inquiry::query()->orderBy('id')->value('id'),
 
             // A lighting gallery, the cinematic form with the most fields.
-            'cinematic' => \App\Models\CinematicSection::query()->orderByRaw("type = 'gallery' desc")->orderBy('id')->value('id'),
+            'cinematic' => CinematicSection::query()->orderByRaw("type = 'gallery' desc")->orderBy('id')->value('id'),
         ];
     }
 

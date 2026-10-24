@@ -111,7 +111,8 @@ final class StructuredData
             }
         }
 
-        if (filled($email = Settings::get('contact.recipient'))) {
+        // Only a real address: the placeholder default was published to search engines.
+        if (filled($email = ContactAddress::recipient())) {
             $data['email'] = $email;
         }
 

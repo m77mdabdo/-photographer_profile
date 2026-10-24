@@ -6,6 +6,7 @@ namespace App\Filament\Widgets;
 
 use App\Actions\Media\ReprocessMedia;
 use App\Enums\MediaStatus;
+use App\Filament\Resources\Media\MediaResource;
 use App\Models\Media;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -40,7 +41,7 @@ class MediaNeedingAttention extends TableWidget
 {
     protected static ?int $sort = 2;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     /** An hour, for the reason in the class comment. */
     private const STUCK_AFTER_MINUTES = 60;
@@ -153,7 +154,7 @@ class MediaNeedingAttention extends TableWidget
                             ->send();
                     }),
             ])
-            ->recordUrl(fn (Media $record): string => \App\Filament\Resources\Media\MediaResource::getUrl('index'))
+            ->recordUrl(fn (Media $record): string => MediaResource::getUrl('index'))
             ->paginated([5, 10, 25])
             ->defaultPaginationPageOption(5);
     }

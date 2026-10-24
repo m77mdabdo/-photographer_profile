@@ -5,13 +5,9 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Enums\InquiryStatus;
-use App\Models\Article;
 use App\Models\Inquiry;
-use App\Models\Media;
-use App\Models\Project;
 use App\Support\HarnessTargets;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * The rows the browser harness needs in order to check a screen at all.

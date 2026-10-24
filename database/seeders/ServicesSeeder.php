@@ -38,7 +38,7 @@ class ServicesSeeder extends Seeder
                 continue;
             }
 
-            $service = new Service();
+            $service = new Service;
 
             $service->forceFill([
                 'slug' => $definition['slug'],

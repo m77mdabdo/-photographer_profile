@@ -11,9 +11,11 @@ use App\Models\Menu;
 use App\Models\MenuItem;
 use App\Models\Page;
 use App\Models\User;
+use App\Support\Locale;
 use App\Support\Navigation;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -182,7 +184,7 @@ class NavigationTest extends TestCase
             'the menu ignored its own order'
         );
 
-        $arabic = $this->withUnencryptedCookie(\App\Support\Locale::COOKIE, 'ar')
+        $arabic = $this->withUnencryptedCookie(Locale::COOKIE, 'ar')
             ->get('/ar')
             ->assertOk()
             ->getContent();
@@ -228,7 +230,7 @@ class NavigationTest extends TestCase
 
         MenuItem::factory()->create(['menu_id' => $menu->id, 'target' => 'work.index']);
 
-        $count = function () use ($menu): int {
+        $count = function (): int {
             Navigation::forget();
 
             $queries = 0;
@@ -239,7 +241,7 @@ class NavigationTest extends TestCase
             Navigation::for(Menu::HEADER);
 
             $measured = $queries;
-            DB::getEventDispatcher()->forget(\Illuminate\Database\Events\QueryExecuted::class);
+            DB::getEventDispatcher()->forget(QueryExecuted::class);
 
             return $measured;
         };

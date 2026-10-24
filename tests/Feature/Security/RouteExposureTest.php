@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Security;
 
+use Filament\Facades\Filament;
 use Illuminate\Routing\Route as RoutingRoute;
 use Illuminate\Support\Facades\Route;
+use Livewire\Mechanisms\HandleRequests\EndpointResolver;
 use Tests\TestCase;
 
 /**
@@ -39,7 +41,7 @@ class RouteExposureTest extends TestCase
 
     public function test_every_panel_route_requires_authentication(): void
     {
-        $panel = trim(\Filament\Facades\Filament::getPanel('studio')->getPath(), '/');
+        $panel = trim(Filament::getPanel('studio')->getPath(), '/');
 
         $unguarded = [];
 
@@ -91,7 +93,7 @@ class RouteExposureTest extends TestCase
          * APP_KEY, a provider runs before the application boots, and reading
          * config there fails with "Target class [config] does not exist".
          */
-        $livewire = \Livewire\Mechanisms\HandleRequests\EndpointResolver::prefix();
+        $livewire = EndpointResolver::prefix();
 
         $probes = [
             '/filament/exports/1/download',

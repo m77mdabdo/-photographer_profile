@@ -1,4 +1,5 @@
-<div data-story-builder data-project-id="{{ $project->id }}" data-unsaved-guard data-dirty="0">
+<div data-story-builder data-project-id="{{ $project->id }}" data-unsaved-guard data-dirty="0"
+     data-strings="{{ json_encode(array_merge(__('studio.story.js'), ['alt_for_image' => __('studio.story.alt_for_image')]), JSON_UNESCAPED_UNICODE) }}">
 
     {{--
         WHICH LANGUAGE THIS EDITOR IS POINTED AT.
@@ -72,18 +73,14 @@
         the editor is told it exists and chooses.
     --}}
     <div class="draft-prompt" data-draft-prompt hidden role="alert">
-        <p>
-            An unsaved draft of this story from this session was found
-            (<span data-draft-count>0</span> blocks). It has not been saved to the server.
-        </p>
+        <p>{!! str_replace(':count', '<span data-draft-count>0</span>', e(__('studio.story.draft_found'))) !!}</p>
         <button type="button" class="admin-button" data-draft-restore>{{ __('studio.story.restore_draft') }}</button>
         <button type="button" class="admin-link" data-draft-discard>{{ __('studio.story.discard_draft') }}</button>
     </div>
 
     {{-- Another tab holds an unsaved draft of this same story. --}}
     <p class="warning-strip" data-other-tab hidden role="status">
-        This story is open in another tab. Whichever saves last will be refused rather than
-        overwrite the other — reload there, or finish here first.
+        {{ __('studio.story.other_tab') }}
     </p>
 
     {{-- The save was refused because the story moved underneath us. --}}
@@ -91,7 +88,7 @@
         <div class="warning-strip warning-strip--stale" role="alert">
             <span>{{ __('studio.story.stale') }}</span>
             <button type="button" class="admin-button" wire:click="reloadStory">
-                Discard my changes and reload
+                {{ __('studio.story.discard_reload') }}
             </button>
         </div>
     @endif
@@ -103,7 +100,7 @@
 
     {{-- What is wrong, before Save is pressed. Clicking jumps to the first. --}}
     <button type="button" class="save-notice" data-save-notice hidden>
-        <span data-invalid-count></span> — go to the first one
+        <span data-invalid-count></span> — {{ __('studio.story.go_to_first') }}
     </button>
 
     @if ($message !== '')
@@ -148,7 +145,7 @@
             </section>
 
             <p class="empty-state" data-empty @if ($blocks !== []) hidden @endif>
-                This story is empty. Add a block above — blocks stack down the page in the order you arrange them here.
+                {{ __('studio.story.empty_story') }}
             </p>
 
             <ul class="block-list" role="list" data-block-list>

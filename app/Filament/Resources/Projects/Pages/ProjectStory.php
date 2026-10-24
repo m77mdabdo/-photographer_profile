@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Projects\Pages;
 
 use App\Filament\Resources\Projects\ProjectResource;
+use App\Filament\Support\NamesPlaces;
 use App\Models\Project;
-use Filament\Resources\Pages\Page;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
+use Filament\Resources\Pages\Page;
 
 /**
  * The story builder, inside the panel.
@@ -58,8 +59,8 @@ class ProjectStory extends Page
      * the screen type after it. The trait wins; it calls the page's own
      * parent for the trail and adds the record itself.
      */
-    use InteractsWithRecord, \App\Filament\Support\NamesPlaces {
-        \App\Filament\Support\NamesPlaces::getBreadcrumbs insteadof InteractsWithRecord;
+    use \App\Filament\Support\NamesPlaces, InteractsWithRecord {
+        NamesPlaces::getBreadcrumbs insteadof InteractsWithRecord;
     }
 
     protected static string $resource = ProjectResource::class;

@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace Tests\Feature\Studio;
 
 use App\Enums\UserRole;
+use App\Filament\Resources\Users\UserResource;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Component;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -60,7 +64,7 @@ class PanelEmptyStateTest extends TestCase
         ]));
     }
 
-    /** @return array<string, array{class-string<Resource>}> */
+    /** @return array<string, array{class-string<resource>}> */
     public static function resources(): array
     {
         $resources = [];
@@ -79,9 +83,9 @@ class PanelEmptyStateTest extends TestCase
     }
 
     /**
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    #[DataProvider('resources')]
     public function test_every_table_says_what_will_appear_in_it(string $resource): void
     {
         if (in_array(class_basename($resource), self::NO_EMPTY_STATE, true)) {
@@ -157,7 +161,7 @@ class PanelEmptyStateTest extends TestCase
      * reads as a lapse in a panel that is otherwise whole, so each pair is
      * compared across the two locales rather than merely being present.
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    #[DataProvider('resources')]
     public function test_the_empty_state_is_translated(string $resource): void
     {
         if (in_array(class_basename($resource), self::NO_EMPTY_STATE, true)) {
@@ -206,18 +210,18 @@ class PanelEmptyStateTest extends TestCase
     {
         $this->assertGreaterThanOrEqual(1, User::query()->count());
 
-        Livewire::test(\App\Filament\Resources\Users\UserResource::getPages()['index']->getPage())
+        Livewire::test(UserResource::getPages()['index']->getPage())
             ->assertCanSeeTableRecords([auth()->user()]);
     }
 
-    /** @param  class-string<Resource>  $resource */
+    /** @param  class-string<resource>  $resource */
     private function tableFor(string $resource): Table
     {
         return $resource::table(Table::make($this->instanceFor($resource)));
     }
 
-    /** @param  class-string<Resource>  $resource */
-    private function instanceFor(string $resource): \Livewire\Component
+    /** @param  class-string<resource>  $resource */
+    private function instanceFor(string $resource): Component
     {
         return Livewire::test($resource::getPages()['index']->getPage())->instance();
     }
@@ -225,7 +229,7 @@ class PanelEmptyStateTest extends TestCase
     /** An icon is a string or a Heroicon enum depending on how it was set. */
     private function iconName(mixed $icon): string
     {
-        return $icon instanceof \Filament\Support\Icons\Heroicon
+        return $icon instanceof Heroicon
             ? $icon->value
             : (string) $icon;
     }

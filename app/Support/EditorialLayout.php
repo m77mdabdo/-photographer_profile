@@ -30,7 +30,9 @@ final class EditorialLayout
     public const COLUMNS = 12;
 
     private const LANDSCAPE = 'landscape';
+
     private const PORTRAIT = 'portrait';
+
     private const SQUARE = 'square';
 
     /**
@@ -63,6 +65,7 @@ final class EditorialLayout
              */
             if ($count <= 3) {
                 $plan[] = $this->smallRun($project, $orientation, $index, $count);
+
                 continue;
             }
 
@@ -74,12 +77,11 @@ final class EditorialLayout
                  * landscapes was identical, which is the same monotony one
                  * level down.
                  */
-                $orientation === self::LANDSCAPE && $lastWasWide
-                    => match ($narrowCount % 3) {
-                        0 => [6, 7, 9, false],
-                        1 => [5, 1, 16, false],
-                        default => [7, 5, 5, false],
-                    },
+                $orientation === self::LANDSCAPE && $lastWasWide => match ($narrowCount % 3) {
+                    0 => [6, 7, 9, false],
+                    1 => [5, 1, 16, false],
+                    default => [7, 5, 5, false],
+                },
 
                 /*
                  * A landscape that is free to be full-bleed still must not
@@ -116,8 +118,7 @@ final class EditorialLayout
 
                 // A square sits between the two: mid width, and it alternates
                 // side so it never lands under the item before it.
-                default
-                    => [5, $index % 2 === 0 ? 2 : 7, 6, false],
+                default => [5, $index % 2 === 0 ? 2 : 7, 6, false],
             };
 
             $plan[] = [

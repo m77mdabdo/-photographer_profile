@@ -4,25 +4,29 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\PublishStatus;
 use App\Enums\UserRole;
 use App\Filament\Resources\Pages\Pages\EditPage;
 use App\Filament\Resources\Services\Pages\CreateService;
-use Filament\Facades\Filament;
 use App\Models\Page;
 use App\Models\Service;
 use App\Models\User;
 use App\Support\PageLinks;
 use App\Support\Settings;
+use Database\Seeders\LegalPagesSeeder;
+use Database\Seeders\SettingsSeeder;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use Tests\Support\AssertsNoJavaScript;
 use Tests\Support\DemoWorld;
 use Tests\TestCase;
 
 class ServicesAndPagesTest extends TestCase
 {
-    use \Tests\Support\AssertsNoJavaScript;
+    use AssertsNoJavaScript;
     use RefreshDatabase;
 
     private DemoWorld $world;
@@ -35,11 +39,11 @@ class ServicesAndPagesTest extends TestCase
         Storage::fake('media_public', config('filesystems.disks.media_public'));
 
         Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
         PageLinks::forget();
 
-        $this->world = new DemoWorld();
+        $this->world = new DemoWorld;
     }
 
     private function admin(UserRole $role = UserRole::Editor): User
@@ -153,7 +157,7 @@ class ServicesAndPagesTest extends TestCase
 
     public function test_privacy_and_terms_render_from_the_database(): void
     {
-        $this->seed(\Database\Seeders\LegalPagesSeeder::class);
+        $this->seed(LegalPagesSeeder::class);
 
         foreach ([Page::PRIVACY, Page::TERMS] as $slug) {
             $page = Page::query()->where('slug', $slug)->sole();
@@ -178,7 +182,7 @@ class ServicesAndPagesTest extends TestCase
 
     public function test_the_legal_pages_are_editable_from_the_admin(): void
     {
-        $this->seed(\Database\Seeders\LegalPagesSeeder::class);
+        $this->seed(LegalPagesSeeder::class);
 
         Filament::setCurrentPanel('studio');
 
@@ -209,7 +213,7 @@ class ServicesAndPagesTest extends TestCase
      */
     public function test_a_locked_page_cannot_be_moved_or_deleted(): void
     {
-        $this->seed(\Database\Seeders\LegalPagesSeeder::class);
+        $this->seed(LegalPagesSeeder::class);
 
         $page = Page::query()->where('slug', Page::PRIVACY)->sole();
 
@@ -244,7 +248,7 @@ class ServicesAndPagesTest extends TestCase
 
     public function test_the_footer_links_to_the_legal_pages_once_they_are_published(): void
     {
-        $this->seed(\Database\Seeders\LegalPagesSeeder::class);
+        $this->seed(LegalPagesSeeder::class);
         PageLinks::forget();
 
         $html = $this->get('/')->assertOk()->getContent();
@@ -271,7 +275,7 @@ class ServicesAndPagesTest extends TestCase
             (new Page(['title' => ucfirst($reserved), 'body' => 'A page that must never be reached.']))
                 ->forceFill([
                     'slug' => $reserved,
-                    'status' => \App\Enums\PublishStatus::Published,
+                    'status' => PublishStatus::Published,
                     'published_at' => now(),
                 ])->save();
 
@@ -295,7 +299,7 @@ class ServicesAndPagesTest extends TestCase
      */
     public function test_the_query_counts_are_flat(): void
     {
-        $this->seed(\Database\Seeders\LegalPagesSeeder::class);
+        $this->seed(LegalPagesSeeder::class);
 
         Service::factory()->count(6)->create([
             'cover_media_id' => $this->world->media('landscape')->id,
@@ -356,7 +360,7 @@ class ServicesAndPagesTest extends TestCase
 
     public function test_no_new_public_page_ships_executable_javascript(): void
     {
-        $this->seed(\Database\Seeders\LegalPagesSeeder::class);
+        $this->seed(LegalPagesSeeder::class);
 
         $service = Service::factory()->create([
             'cover_media_id' => $this->world->media('landscape')->id,

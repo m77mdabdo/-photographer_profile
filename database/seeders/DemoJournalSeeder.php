@@ -12,6 +12,7 @@ use App\Models\ArticleCategory;
 use App\Models\Media;
 use App\Models\Tag;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 /**
  * Six pieces of writing, at the length a studio actually writes at.
@@ -36,8 +37,8 @@ use Illuminate\Database\Seeder;
  */
 class DemoJournalSeeder extends Seeder
 {
-    use Concerns\SeedsDemoContent;
     use Concerns\ProtectsEditedContent;
+    use Concerns\SeedsDemoContent;
 
     /**
      * @var array<string, string>
@@ -123,7 +124,7 @@ class DemoJournalSeeder extends Seeder
 
     private function category(string $name, string $description): ArticleCategory
     {
-        $slug = \Illuminate\Support\Str::slug($name);
+        $slug = Str::slug($name);
 
         $category = ArticleCategory::query()->where('slug', $slug)->first();
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Support\PageTransition;
 use Closure;
 use Filament\Facades\Filament;
 use Illuminate\Http\Request;
@@ -214,7 +215,7 @@ class SecurityHeaders
          */
         // The public surface allows one inline style by hash: the page
         // transition's opt-in (App\Support\PageTransition says why inline).
-        $style = $isPanel ? "'self' 'unsafe-inline'" : "'self' ".\App\Support\PageTransition::hash();
+        $style = $isPanel ? "'self' 'unsafe-inline'" : "'self' ".PageTransition::hash();
 
         return implode('; ', [
             "default-src 'self'",

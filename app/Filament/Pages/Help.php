@@ -32,7 +32,7 @@ use Livewire\Attributes\Url;
  */
 class Help extends Page
 {
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-question-mark-circle';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-question-mark-circle';
 
     protected static ?int $navigationSort = 99;
 

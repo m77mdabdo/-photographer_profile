@@ -7,10 +7,12 @@ namespace Tests\Feature\Security;
 use App\Actions\Media\StoreUploadedMedia;
 use App\Models\Media;
 use App\Models\User;
+use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -90,7 +92,7 @@ class UploadHardeningTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('hostileNames')]
+    #[DataProvider('hostileNames')]
     public function test_the_stored_path_is_a_uuid_and_never_the_client_filename(string $name): void
     {
         $media = ($this->action)($this->png($name));
@@ -135,7 +137,7 @@ class UploadHardeningTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('hostilePayloads')]
+    #[DataProvider('hostilePayloads')]
     public function test_nothing_but_a_real_image_reaches_the_disk(string $name, string $bytes, string $claimedMime): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -303,6 +305,6 @@ class UploadHardeningTest extends TestCase
         $editor = User::factory()->create(['role' => 'editor']);
 
         $this->assertTrue($editor->can('create', Media::class));
-        $this->assertFalse(app(\Illuminate\Contracts\Auth\Access\Gate::class)->forUser(null)->allows('create', Media::class));
+        $this->assertFalse(app(Gate::class)->forUser(null)->allows('create', Media::class));
     }
 }

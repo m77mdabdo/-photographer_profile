@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Auth;
 
+use App\Console\Commands\ClearTwoFactor;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -231,7 +232,7 @@ class ClearTwoFactorCommandTest extends TestCase
             ->assertSuccessful();
 
         // There is no password option to pass one to.
-        $definition = (new \App\Console\Commands\ClearTwoFactor())->getDefinition();
+        $definition = (new ClearTwoFactor)->getDefinition();
 
         $this->assertFalse($definition->hasOption('password'));
         $this->assertSame(['email'], array_keys($definition->getArguments()));

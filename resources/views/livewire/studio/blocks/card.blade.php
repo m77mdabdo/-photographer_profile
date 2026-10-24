@@ -47,12 +47,12 @@
         @if ($type->acceptsMedia())
             <div class="block-media" data-media-zone>
                 <p class="field__legend">
-                    Images
+                    {{ __('studio.story.images_legend') }}
                     <span class="admin-note">
                         @if ($type->isUnbounded())
-                            {{ $type->minMedia() }} or more
+                            {{ __('studio.story.count_or_more', ['count' => $type->minMedia()]) }}
                         @elseif ($type->minMedia() === $type->maxMedia())
-                            exactly {{ $type->minMedia() }}
+                            {{ __('studio.story.count_exactly', ['count' => $type->minMedia()]) }}
                         @else
                             {{ $type->minMedia() }}–{{ $type->maxMedia() }}
                         @endif

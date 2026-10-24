@@ -9,6 +9,7 @@ use App\Enums\UserRole;
 use App\Filament\Resources\Articles\Pages\EditArticle;
 use App\Filament\Resources\Projects\Pages\EditProject;
 use App\Filament\Resources\Services\Pages\EditService;
+use App\Filament\Support\MediaField;
 use App\Models\Article;
 use App\Models\ArticleCategory;
 use App\Models\Category;
@@ -235,7 +236,7 @@ class RelationsTest extends TestCase
         $ready = $this->readyMedia();
         $pending = Media::factory()->create(['status' => MediaStatus::Pending]);
 
-        $options = \App\Filament\Support\MediaField::make('cover_media_id', 'Cover')
+        $options = MediaField::make('cover_media_id', 'Cover')
             ->getOptions();
 
         $this->assertArrayHasKey($ready->getKey(), $options);

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Http\Controllers\PageController;
+use App\Http\Middleware\HandleRedirects;
 use App\Models\Article;
 use App\Models\Page;
 use App\Models\Project;
-use App\Http\Middleware\HandleRedirects;
 use App\Models\Redirect;
 use App\Models\Service;
 use App\Support\Locale;
@@ -38,7 +38,7 @@ class LocaleTest extends TestCase
     {
         parent::setUp();
 
-        $this->world = new DemoWorld();
+        $this->world = new DemoWorld;
     }
 
     // ----------------------------------------------------------------- 1

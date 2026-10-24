@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\CompressResponse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Tests\Support\DemoWorld;
 use Tests\TestCase;
 
 /**
@@ -28,7 +33,7 @@ class CompressionTest extends TestCase
 {
     use RefreshDatabase;
 
-    private \Tests\Support\DemoWorld $world;
+    private DemoWorld $world;
 
     protected function setUp(): void
     {
@@ -42,10 +47,10 @@ class CompressionTest extends TestCase
          * database produces. A compression test measured on a page with no
          * content in it is measuring the layout.
          */
-        $this->world = new \Tests\Support\DemoWorld;
+        $this->world = new DemoWorld;
 
         for ($i = 0; $i < 4; $i++) {
-            $this->world->story('series-'.$i, \Tests\Support\DemoWorld::simpleScore(2), ['landscape']);
+            $this->world->story('series-'.$i, DemoWorld::simpleScore(2), ['landscape']);
         }
     }
 
@@ -135,11 +140,11 @@ class CompressionTest extends TestCase
         // ...while a streamed or file response is not. Asserted on the class's
         // own rule rather than by finding a route that returns one, because
         // which routes stream is not this guarantee's business.
-        $middleware = new \App\Http\Middleware\CompressResponse;
+        $middleware = new CompressResponse;
 
         $streamed = $middleware->handle(
-            \Illuminate\Http\Request::create('/', 'GET', server: ['HTTP_ACCEPT_ENCODING' => 'gzip']),
-            fn (): \Symfony\Component\HttpFoundation\StreamedResponse => new \Symfony\Component\HttpFoundation\StreamedResponse(
+            Request::create('/', 'GET', server: ['HTTP_ACCEPT_ENCODING' => 'gzip']),
+            fn (): StreamedResponse => new StreamedResponse(
                 fn () => print str_repeat('a', 5000),
                 200,
                 ['Content-Type' => 'text/plain'],
@@ -152,12 +157,12 @@ class CompressionTest extends TestCase
     /** What a server already encoded is never encoded again. */
     public function test_an_already_encoded_response_is_not_touched(): void
     {
-        $middleware = new \App\Http\Middleware\CompressResponse;
+        $middleware = new CompressResponse;
         $payload = (string) gzencode(str_repeat('already compressed. ', 500));
 
         $response = $middleware->handle(
-            \Illuminate\Http\Request::create('/', 'GET', server: ['HTTP_ACCEPT_ENCODING' => 'gzip']),
-            fn (): \Illuminate\Http\Response => new \Illuminate\Http\Response($payload, 200, [
+            Request::create('/', 'GET', server: ['HTTP_ACCEPT_ENCODING' => 'gzip']),
+            fn (): Response => new Response($payload, 200, [
                 'Content-Type' => 'text/html',
                 'Content-Encoding' => 'gzip',
             ]),
@@ -280,7 +285,7 @@ class CompressionTest extends TestCase
         preg_match('/const FLOOR = (\d+)/', $proxy, $found);
         $this->assertNotEmpty($found, 'bin/gzip-proxy.mjs no longer declares FLOOR.');
 
-        $middleware = new \ReflectionClass(\App\Http\Middleware\CompressResponse::class);
+        $middleware = new \ReflectionClass(CompressResponse::class);
 
         $this->assertSame(
             $middleware->getConstant('MINIMUM_BYTES'),

@@ -4,12 +4,24 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Studio;
 
+use App\Enums\MediaStatus;
 use App\Enums\UserRole;
+use App\Filament\Forms\Components\MediaPickerField;
 use App\Filament\Pages\Settings as SettingsPage;
+use App\Filament\Support\MediaField;
+use App\Models\Media;
 use App\Models\Setting;
 use App\Models\User;
 use App\Support\Locale;
+use App\Support\Settings;
 use App\Support\Settings as SettingsStore;
+use App\Support\SiteImages;
+use Database\Seeders\SettingsSeeder;
+use Filament\Forms\Components\Field;
+use Filament\Forms\Components\Placeholder;
+use Filament\Pages\Page;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
@@ -32,7 +44,7 @@ class SettingsPageTest extends TestCase
          * a row nothing reads. See SettingPolicy.
          */
         SettingsStore::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         SettingsStore::flush();
 
         $this->actingAs(User::factory()->create([
@@ -45,7 +57,7 @@ class SettingsPageTest extends TestCase
     /** It is a Page. A Resource would be a table of keys. */
     public function test_settings_are_a_page_not_a_resource(): void
     {
-        $this->assertTrue(is_subclass_of(SettingsPage::class, \Filament\Pages\Page::class));
+        $this->assertTrue(is_subclass_of(SettingsPage::class, Page::class));
         $this->assertFalse(is_subclass_of(SettingsPage::class, \Filament\Resources\Resource::class));
 
         $this->get('/admin/settings')->assertOk();
@@ -157,7 +169,7 @@ class SettingsPageTest extends TestCase
      */
     public function test_every_media_setting_is_a_picker_not_a_text_box(): void
     {
-        $mediaKeys = \App\Models\Setting::query()
+        $mediaKeys = Setting::query()
             ->where('key', 'like', '%_media_id')
             ->pluck('key');
 
@@ -170,8 +182,8 @@ class SettingsPageTest extends TestCase
 
         $walk = function (array $components) use (&$walk, &$fields): void {
             foreach ($components as $child) {
-                if ($child instanceof \Filament\Forms\Components\Field
-                    || $child instanceof \Filament\Forms\Components\Placeholder) {
+                if ($child instanceof Field
+                    || $child instanceof Placeholder) {
                     $fields[$child->getName()] = $child;
                 }
 
@@ -180,7 +192,7 @@ class SettingsPageTest extends TestCase
         };
 
         $walk($component->instance()->form(
-            \Filament\Schemas\Schema::make($component->instance())
+            Schema::make($component->instance())
         )->getComponents());
 
         foreach ($mediaKeys as $key) {
@@ -204,7 +216,7 @@ class SettingsPageTest extends TestCase
              * ───────────────────────────────────────────────────────────────
              */
             $this->assertInstanceOf(
-                \App\Filament\Forms\Components\MediaPickerField::class,
+                MediaPickerField::class,
                 $default,
                 "$key is not a media picker — it is a ".($default === null ? 'missing field' : $default::class)
             );
@@ -217,7 +229,7 @@ class SettingsPageTest extends TestCase
             $arabic = $fields['values.'.$token.'.ar'] ?? null;
 
             $this->assertInstanceOf(
-                \Filament\Forms\Components\Placeholder::class,
+                Placeholder::class,
                 $arabic,
                 "$key offers a per-locale picture"
             );
@@ -227,10 +239,10 @@ class SettingsPageTest extends TestCase
     /** Only processed images are offered, so no page can show a pending one. */
     public function test_the_favicon_picker_offers_only_ready_images(): void
     {
-        $ready = \App\Models\Media::factory()->create(['status' => \App\Enums\MediaStatus::Ready]);
-        $pending = \App\Models\Media::factory()->create(['status' => \App\Enums\MediaStatus::Pending]);
+        $ready = Media::factory()->create(['status' => MediaStatus::Ready]);
+        $pending = Media::factory()->create(['status' => MediaStatus::Pending]);
 
-        $options = \App\Filament\Support\MediaField::make('x', 'x')->getOptions();
+        $options = MediaField::make('x', 'x')->getOptions();
 
         $this->assertArrayHasKey($ready->getKey(), $options);
         $this->assertArrayNotHasKey($pending->getKey(), $options);
@@ -239,10 +251,10 @@ class SettingsPageTest extends TestCase
     /** An unset site image renders no markup rather than a broken one. */
     public function test_an_unset_favicon_renders_no_icon_link(): void
     {
-        \App\Support\Settings::set('seo.favicon_media_id', null);
-        \App\Support\Settings::flush();
+        Settings::set('seo.favicon_media_id', null);
+        Settings::flush();
 
-        $this->assertNull(\App\Support\SiteImages::faviconLink());
+        $this->assertNull(SiteImages::faviconLink());
 
         $html = $this->get('/')->assertOk()->getContent();
 

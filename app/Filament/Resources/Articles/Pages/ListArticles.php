@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Articles\Pages;
 
 use App\Filament\Resources\Articles\ArticleResource;
+use App\Filament\Support\NamesPlaces;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListArticles extends ListRecords
 {
-    use \App\Filament\Support\NamesPlaces;
+    use NamesPlaces;
 
     protected static string $resource = ArticleResource::class;
 

@@ -7,7 +7,11 @@ namespace Tests\Feature\Security;
 use App\Models\ActivityLog;
 use App\Models\Inquiry;
 use App\Models\User;
+use App\Support\SpamGuard;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -123,7 +127,7 @@ class PersonalDataTest extends TestCase
         $before = $user->updated_at;
 
         $this->actingAs($user);
-        event(new \Illuminate\Auth\Events\Login('web', $user, false));
+        event(new Login('web', $user, false));
 
         $user->refresh();
 
@@ -153,7 +157,7 @@ class PersonalDataTest extends TestCase
          * first version of this test pass nothing and prove nothing. Forced
          * on, and the age is asserted before the prune runs.
          */
-        $aged = function (string $event, int $daysAgo) : ActivityLog {
+        $aged = function (string $event, int $daysAgo): ActivityLog {
             $entry = ActivityLog::query()->create(['event' => $event, 'actor_name' => 'Someone']);
             $entry->forceFill(['created_at' => now()->subDays($daysAgo)])->saveQuietly();
 
@@ -179,7 +183,7 @@ class PersonalDataTest extends TestCase
      */
     public function test_the_prune_is_scheduled(): void
     {
-        $events = app(\Illuminate\Console\Scheduling\Schedule::class)->events();
+        $events = app(Schedule::class)->events();
 
         $commands = array_map(fn ($event): string => $event->command ?? '', $events);
 
@@ -199,7 +203,7 @@ class PersonalDataTest extends TestCase
     {
         $commands = array_map(
             fn ($event): string => $event->command ?? '',
-            app(\Illuminate\Console\Scheduling\Schedule::class)->events()
+            app(Schedule::class)->events()
         );
 
         $this->assertEmpty(
@@ -230,8 +234,8 @@ class PersonalDataTest extends TestCase
             'email' => 'visitor@example.test',
             'message' => 'I would like to discuss a commission for the spring issue.',
             'consent' => '1',
-            \App\Support\SpamGuard::HONEYPOT => '',
-            \App\Support\SpamGuard::TIMER => \Illuminate\Support\Facades\Crypt::encryptString((string) (time() - 10)),
+            SpamGuard::HONEYPOT => '',
+            SpamGuard::TIMER => Crypt::encryptString((string) (time() - 10)),
         ]);
 
         $inquiry = Inquiry::query()->latest('id')->first();

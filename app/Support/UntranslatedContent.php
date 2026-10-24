@@ -526,7 +526,7 @@ final class UntranslatedContent
              * gets something it can count and paginate.
              */
             $union = DB::query()->selectRaw(
-                "null as `key`, null as `type`, null as `record_id`, "
+                'null as `key`, null as `type`, null as `record_id`, '
                 .'null as `label`, 0 as `missing`, null as `updated_at`'
             )->whereRaw('1 = 0');
         }

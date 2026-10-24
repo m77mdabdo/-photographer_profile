@@ -43,7 +43,7 @@ class ServiceController extends Controller
     {
         // A draft is a 404, not a 403: its existence is not public information.
         if (! $service->isPubliclyVisible()) {
-            throw new NotFoundHttpException();
+            throw new NotFoundHttpException;
         }
 
         $service->load(['cover.variants', 'gallery.variants']);

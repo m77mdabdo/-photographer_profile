@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\CinematicSections\Pages;
 
+use App\Actions\Cinematic\SyncCinematicMedia;
 use App\Filament\Resources\CinematicSections\CinematicSectionResource;
+use App\Filament\Support\NamesPlaces;
 use App\Filament\Support\Translatable;
 use App\Models\CinematicSection;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateCinematicSection extends CreateRecord
 {
-    use \App\Filament\Support\NamesPlaces;
+    use NamesPlaces;
 
     protected static string $resource = CinematicSectionResource::class;
 
@@ -26,6 +28,6 @@ class CreateCinematicSection extends CreateRecord
     /** The gallery's photographs are saved after the section; claim them now. */
     protected function afterCreate(): void
     {
-        app(\App\Actions\Cinematic\SyncCinematicMedia::class)($this->getRecord());
+        app(SyncCinematicMedia::class)($this->getRecord());
     }
 }

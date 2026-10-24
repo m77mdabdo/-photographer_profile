@@ -125,8 +125,8 @@ trait ProtectsEditedContent
      * a demo project.
      *
      * @param  array<string, string>  $values  attribute => value in $locale
-     * @return int  how many attributes were actually filled
-     * ───────────────────────────────────────────────────────────────────────
+     * @return int how many attributes were actually filled
+     *             ───────────────────────────────────────────────────────────────────────
      */
     protected function fillMissingTranslations(
         Model $record,

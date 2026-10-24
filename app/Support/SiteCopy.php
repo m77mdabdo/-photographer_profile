@@ -151,7 +151,9 @@ final class SiteCopy
         ['key' => 'contact.response_note', 'value' => 'Every enquiry is read in full and answered by a person.', 'ar' => 'نقرأ كل طلب كاملًا، ويردّ عليه شخص لا نظام آلي.', 'type' => 'text', 'group' => 'contact'],
         ['key' => 'contact.consent', 'value' => 'I am happy for my details to be kept so this enquiry can be answered.', 'ar' => 'أوافق على حفظ بياناتي ليتمكّن الاستوديو من الرد على هذا الطلب.', 'type' => 'text', 'group' => 'contact'],
         ['key' => 'contact.consent_detail', 'value' => 'Your message is stored in this studio\'s own admin and emailed to the studio. It is not passed to anyone else, never used for marketing, and deleted on request.', 'ar' => 'تُحفَظ رسالتك في لوحة الاستوديو نفسها وتُرسَل إليه بالبريد. لا تُعطى لأي جهة أخرى، ولا تُستخدم للتسويق أبدًا، وتُحذَف عند الطلب.', 'type' => 'text', 'group' => 'contact'],
-        ['key' => 'contact.recipient', 'value' => 'studio@example.com', 'type' => 'string', 'group' => 'contact'],
+        // Empty until the owner sets it (Site settings → Contact). It shipped as
+        // studio@example.com, which a fresh install then published and mailed.
+        ['key' => 'contact.recipient', 'value' => null, 'type' => 'string', 'group' => 'contact'],
 
         /*
          * The brief, which is now the first and largest thing on the form.
@@ -187,7 +189,7 @@ final class SiteCopy
 
         // --- the about page ------------------------------------------------
         ['key' => 'about.heading', 'value' => 'About the studio', 'ar' => 'عن الاستوديو', 'type' => 'string', 'group' => 'about'],
-    /*
+        /*
      * ───────────────────────────────────────────────────────────────────────
      * 34e — THE ARABIC PARAGRAPHS WERE SINGLE-QUOTED.
      *
@@ -322,7 +324,6 @@ final class SiteCopy
         ['key' => 'shared.video_cta', 'value' => 'Watch the video', 'ar' => 'مشاهدة المقطع', 'type' => 'string', 'group' => 'shared'],
         ['key' => 'shared.embed_cta', 'value' => 'Open on', 'ar' => 'افتح على', 'type' => 'string', 'group' => 'shared'],
 
-
         /*
          * The paginator's own words.
          *
@@ -367,7 +368,6 @@ final class SiteCopy
         ['key' => 'contact.required_marker', 'value' => 'required', 'ar' => 'مطلوب', 'type' => 'string', 'group' => 'contact_form'],
         ['key' => 'contact.optional_marker', 'value' => 'optional', 'ar' => 'اختياري', 'type' => 'string', 'group' => 'contact_form'],
         ['key' => 'contact.sent_at_label', 'value' => 'Sent', 'ar' => 'أُرسلت', 'type' => 'string', 'group' => 'contact'],
-
 
         /*
          * --- the contact form's own fields -----------------------------------

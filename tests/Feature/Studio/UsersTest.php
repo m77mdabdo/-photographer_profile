@@ -6,9 +6,13 @@ namespace Tests\Feature\Studio;
 
 use App\Enums\UserRole;
 use App\Filament\Resources\Users\Pages\ManageUsers;
+use App\Filament\Resources\Users\UserResource;
 use App\Models\User;
 use Filament\Actions\Testing\TestAction;
+use Filament\Forms\Components\Field;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
@@ -48,7 +52,7 @@ class UsersTest extends TestCase
         $this->assertNotContains('role', (new User)->getFillable());
 
         [$column] = array_values(array_filter(
-            \Illuminate\Support\Facades\DB::select('SHOW COLUMNS FROM users'),
+            DB::select('SHOW COLUMNS FROM users'),
             fn (object $c): bool => $c->Field === 'role',
         ));
 
@@ -127,10 +131,10 @@ class UsersTest extends TestCase
          */
         $paths = [];
 
-        foreach (\App\Filament\Resources\Users\UserResource::form(
+        foreach (UserResource::form(
             \Filament\Schemas\Schema::make(Livewire::test(ManageUsers::class)->instance())
         )->getComponents() as $component) {
-            if ($component instanceof \Filament\Forms\Components\Field) {
+            if ($component instanceof Field) {
                 $paths[] = $component->getName();
             }
         }
@@ -141,7 +145,7 @@ class UsersTest extends TestCase
     /** You cannot delete yourself, and the refusal says why. */
     public function test_you_cannot_delete_your_own_account(): void
     {
-        $response = \Illuminate\Support\Facades\Gate::inspect('delete', $this->owner);
+        $response = Gate::inspect('delete', $this->owner);
 
         $this->assertTrue($response->denied());
         $this->assertStringContainsString('your own account', (string) $response->message());
@@ -150,7 +154,7 @@ class UsersTest extends TestCase
         $other = User::factory()->create(['role' => UserRole::Owner]);
 
         $this->assertTrue(
-            \Illuminate\Support\Facades\Gate::forUser($other)->inspect('delete', $this->owner)->allowed()
+            Gate::forUser($other)->inspect('delete', $this->owner)->allowed()
         );
     }
 

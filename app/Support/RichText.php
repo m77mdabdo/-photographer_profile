@@ -7,6 +7,7 @@ namespace App\Support;
 use DOMDocument;
 use DOMElement;
 use DOMNode;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 /**
@@ -119,7 +120,7 @@ final class RichText
      * the page would keep rendering a body the editor deleted.
      * ───────────────────────────────────────────────────────────────────────
      *
-     * @param  \Illuminate\Database\Eloquent\Model  $record
+     * @param  Model  $record
      */
     public static function syncHtmlLocales(object $record, string $source, string $target): void
     {
@@ -130,7 +131,7 @@ final class RichText
         $markdown = $record->translations($source);
         $html = [];
 
-        foreach (\App\Support\Locale::codes() as $code) {
+        foreach (Locale::codes() as $code) {
             $rendered = self::toHtml($markdown[$code] ?? null);
 
             if ($rendered !== null) {
@@ -146,7 +147,7 @@ final class RichText
                  * — `php artisan content:rerender-html` rebuilds all of it
                  * from the markdown beside it.
                  */
-                $html[$code] = \App\Support\Fallback::isolateForeignHtml($rendered, $code) ?? $rendered;
+                $html[$code] = Fallback::isolateForeignHtml($rendered, $code) ?? $rendered;
             }
         }
 
@@ -204,7 +205,7 @@ final class RichText
             return '';
         }
 
-        $document = new DOMDocument();
+        $document = new DOMDocument;
 
         /*
          * libxml chatters about HTML5 elements it does not recognise. The

@@ -1,4 +1,4 @@
-@props(['title' => 'Sign in'])
+@props(['title' => null])
 <!DOCTYPE html>
 {{--
     THE FRONT DOOR GETS ITS OWN LAYOUT.
@@ -25,7 +25,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     {{-- Never indexed, under any circumstances. --}}
-    <x-seo :page="\App\Support\SeoData::make(title: $title, robots: 'noindex, nofollow, noarchive')" />
+    <x-seo :page="\App\Support\SeoData::make(title: $title ?? __('studio.login.heading'), robots: 'noindex, nofollow, noarchive')" />
 
     @vite(['resources/css/auth.css'])
 </head>

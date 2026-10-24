@@ -1379,20 +1379,43 @@ function inPageAudit(isAdmin, isReducedMotion, expectedDir, expectsLocaleSwitche
    * they contain spaces. Splitting it is the whole fix.
    * ───────────────────────────────────────────────────────────────────────
    */
+  /*
+   * ───────────────────────────────────────────────────────────────────────
+   * THE PRIMARY FACE OF A STACK, NOT EVERY FACE NAMED IN IT. Oct 2026.
+   *
+   * The same mistake as A11's, one step further down the stack. The Arabic
+   * stacks name the full Archivo and Inter Tight as LAST-RESORT fallbacks,
+   * behind 'Archivo Figures' / 'Inter Tight Basic' (fonts.css), so that a
+   * real Latin word in Arabic text still renders in them. A page with no such
+   * word correctly never downloads them — that is the whole performance fix
+   * (Arabic LCP 2.64 → 2.41 s) — and this check, counting every family named
+   * anywhere in a stack as "requested", reported all 400 Arabic checks as
+   * "fonts requested but not applied: Inter Tight, Archivo".
+   *
+   * What a page asks for is the face its text is designed in: the FIRST of
+   * these families in each element's stack. That one must be loaded. And
+   * separately, any face the browser actually tried to fetch must have
+   * arrived — a 404 or a corrupt file is a failure whatever its position.
+   * ───────────────────────────────────────────────────────────────────────
+   */
   for (const el of document.querySelectorAll('*')) {
     const stack = getComputedStyle(el).fontFamily
       .split(',')
       .map((name) => name.trim().replace(/^["']|["']$/g, ''))
 
-    for (const family of families) {
-      if (stack.includes(family)) requested.add(family)
-    }
+    const primary = stack.find((name) => families.includes(name))
+    if (primary) requested.add(primary)
   }
 
   const missing = [...requested].filter((f) => !document.fonts.check(`16px "${f}"`))
+  const broken = [...document.fonts].filter((face) => face.status === 'error').map((face) => face.family.replace(/^["']|["']$/g, ''))
 
   if (missing.length) {
     problems.push(`fonts requested but not applied: ${missing.join(', ')}`)
+  }
+
+  if (broken.length) {
+    problems.push(`fonts failed to load: ${[...new Set(broken)].join(', ')}`)
   }
 
   /*

@@ -12,8 +12,10 @@ use App\Models\CinematicSection;
 use App\Models\Media;
 use App\Models\User;
 use App\Support\Settings;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -34,7 +36,7 @@ class CinematicSectionsTest extends TestCase
 
         Storage::fake('media_public', config('filesystems.disks.media_public'));
         Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
     }
 
@@ -276,7 +278,9 @@ class CinematicSectionsTest extends TestCase
         $this->get('/');
 
         $count = 0;
-        \Illuminate\Support\Facades\DB::listen(function () use (&$count): void { $count++; });
+        DB::listen(function () use (&$count): void {
+            $count++;
+        });
         $this->get('/')->assertOk();
         $one = $count;
 

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Models\Concerns\Translatable;
 use App\Enums\PublishStatus;
+use App\Models\Concerns\Translatable;
+use App\Support\PageLinks;
 use App\Support\RichText;
+use Database\Factories\PageFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,10 +17,11 @@ use Illuminate\Support\Str;
 
 class Page extends Model
 {
-    /** @use HasFactory<\Database\Factories\PageFactory> */
+    /** @use HasFactory<PageFactory> */
     use HasFactory;
-    use Translatable;
+
     use SoftDeletes;
+    use Translatable;
 
     /**
      * The slugs other parts of the site link to by name. A locked page cannot
@@ -121,8 +124,8 @@ class Page extends Model
 
         // The footer asks which legal pages are published; that answer is
         // cached, so any write to a page drops it.
-        static::saved(fn () => \App\Support\PageLinks::forget());
-        static::deleted(fn () => \App\Support\PageLinks::forget());
+        static::saved(fn () => PageLinks::forget());
+        static::deleted(fn () => PageLinks::forget());
     }
 
     /**

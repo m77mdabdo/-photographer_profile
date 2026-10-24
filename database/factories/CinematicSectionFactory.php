@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\MediaStatus;
 use App\Models\CinematicSection;
+use App\Models\Media;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,7 +22,7 @@ class CinematicSectionFactory extends Factory
             // A VALID section by default: a featured image with a ready photograph.
             // A gallery needs four photographs; use ->gallery().
             'type' => CinematicSection::TYPE_IMAGE,
-            'featured_media_id' => fn () => \App\Models\Media::factory()->create(['status' => \App\Enums\MediaStatus::Ready])->getKey(),
+            'featured_media_id' => fn () => Media::factory()->create(['status' => MediaStatus::Ready])->getKey(),
             'title' => ['en' => 'Light, placed with intent.', 'ar' => 'ضوءٌ يوضع بقصد.'],
             'description' => ['en' => 'A short line beneath the title.', 'ar' => 'سطر قصير تحت العنوان.'],
             'is_active' => true,
@@ -50,7 +52,7 @@ class CinematicSectionFactory extends Factory
             ->afterCreating(function (CinematicSection $section) use ($count): void {
                 foreach (range(0, $count - 1) as $i) {
                     $section->items()->create([
-                        'media_id' => \App\Models\Media::factory()->create(['status' => \App\Enums\MediaStatus::Ready])->getKey(),
+                        'media_id' => Media::factory()->create(['status' => MediaStatus::Ready])->getKey(),
                         'sort_order' => $i,
                     ]);
                 }

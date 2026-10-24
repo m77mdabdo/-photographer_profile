@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Seo;
 
+use App\Enums\PublishStatus;
 use App\Models\Article;
 use App\Models\Page;
 use App\Models\Project;
@@ -11,6 +12,7 @@ use App\Models\Service;
 use App\Services\Seo\SitemapBuilder;
 use App\Support\Settings;
 use App\Support\Sitemap;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -31,11 +33,11 @@ class SitemapTest extends TestCase
         Storage::fake('media_public', config('filesystems.disks.media_public'));
 
         Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
         Sitemap::forget();
 
-        $this->world = new DemoWorld();
+        $this->world = new DemoWorld;
     }
 
     /**
@@ -337,7 +339,7 @@ class SitemapTest extends TestCase
         );
 
         // And unpublishing takes it away again.
-        $article->forceFill(['status' => \App\Enums\PublishStatus::Draft])->save();
+        $article->forceFill(['status' => PublishStatus::Draft])->save();
 
         $this->assertNotContains(
             route('journal.show', $article),

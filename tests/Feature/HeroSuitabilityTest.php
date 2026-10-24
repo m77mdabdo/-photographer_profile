@@ -7,12 +7,14 @@ namespace Tests\Feature;
 use App\Enums\MediaStatus;
 use App\Enums\UserRole;
 use App\Filament\Resources\Projects\Pages\CreateProject;
-use Filament\Facades\Filament;
 use App\Models\Media;
 use App\Models\Project;
 use App\Models\User;
 use App\Support\HeroSuitability;
 use App\Support\PaletteExtractor;
+use App\Support\Settings;
+use Database\Seeders\SettingsSeeder;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -33,9 +35,9 @@ class HeroSuitabilityTest extends TestCase
             'visibility' => 'public',
         ]);
 
-        \App\Support\Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
-        \App\Support\Settings::flush();
+        Settings::flush();
+        $this->seed(SettingsSeeder::class);
+        Settings::flush();
     }
 
     /**

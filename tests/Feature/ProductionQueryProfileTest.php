@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\PublishStatus;
+use App\Models\Article;
+use App\Models\ArticleCategory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\DemoWorld;
 use Tests\TestCase;
 
@@ -60,7 +64,7 @@ class ProductionQueryProfileTest extends TestCase
     }
 
     /**
-     * @return array<string, array{0: string, 1: int}>  path => content queries
+     * @return array<string, array{0: string, 1: int}> path => content queries
      */
     public static function pages(): array
     {
@@ -72,7 +76,7 @@ class ProductionQueryProfileTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('pages')]
+    #[DataProvider('pages')]
     public function test_the_content_queries_hold_in_production_mode(string $path, int $expected): void
     {
         /*
@@ -87,13 +91,13 @@ class ProductionQueryProfileTest extends TestCase
         $this->world->story('arch-two', DemoWorld::simpleScore(2), ['architecture']);
         $this->world->story('field-notes', DemoWorld::simpleScore(3), ['landscape']);
 
-        $category = \App\Models\ArticleCategory::factory()->create();
+        $category = ArticleCategory::factory()->create();
 
-        \App\Models\Article::factory()
+        Article::factory()
             ->count(3)
             ->for($category, 'category')
             ->create([
-                'status' => \App\Enums\PublishStatus::Published,
+                'status' => PublishStatus::Published,
                 'published_at' => now()->subDay(),
             ]);
 

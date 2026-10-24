@@ -11,9 +11,14 @@ use App\Models\Project;
 use App\Models\ProjectBlock;
 use App\Support\ReturnPath;
 use App\Support\SeoData;
+use App\Support\Settings;
+use App\Support\SiteCopy;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The archive: a contact sheet of every frame that reached a published page.
@@ -85,7 +90,7 @@ class ArchiveController extends Controller
      * usable_type holds the fully qualified class name — there is no morph map
      * on this project — so the class constants are the literal stored values.
      *
-     * @return \Illuminate\Database\Query\Builder
+     * @return Builder
      */
     private function usedMediaIds(?Category $category, ?int $year)
     {
@@ -101,14 +106,14 @@ class ArchiveController extends Controller
 
         $projectIds = $projects->toBase();
 
-        return \Illuminate\Support\Facades\DB::table('media_usages')
+        return DB::table('media_usages')
             ->select('media_usages.media_id')
             ->leftJoin('project_blocks', function ($join): void {
                 $join->on('project_blocks.id', '=', 'media_usages.usable_id')
                     ->where('media_usages.usable_type', '=', ProjectBlock::class);
             })
             ->whereIn(
-                \Illuminate\Support\Facades\DB::raw('coalesce(project_blocks.project_id, media_usages.usable_id)'),
+                DB::raw('coalesce(project_blocks.project_id, media_usages.usable_id)'),
                 $projectIds
             )
             ->whereIn('media_usages.usable_type', [Project::class, ProjectBlock::class]);
@@ -119,8 +124,8 @@ class ArchiveController extends Controller
      * per frame. Keyed by media id; a frame used by two projects resolves to
      * the first, which is enough for a caption.
      *
-     * @param  \Illuminate\Support\Collection<int, Media>  $frames
-     * @return \Illuminate\Support\Collection<int, Project>
+     * @param  Collection<int, Media>  $frames
+     * @return Collection<int, Project>
      */
     private function ownersFor($frames)
     {
@@ -130,7 +135,7 @@ class ArchiveController extends Controller
 
         $ids = $frames->pluck('id')->all();
 
-        $rows = \Illuminate\Support\Facades\DB::table('media_usages')
+        $rows = DB::table('media_usages')
             ->leftJoin('project_blocks', function ($join): void {
                 $join->on('project_blocks.id', '=', 'media_usages.usable_id')
                     ->where('media_usages.usable_type', '=', ProjectBlock::class);
@@ -157,7 +162,7 @@ class ArchiveController extends Controller
         return $map;
     }
 
-    /** @return \Illuminate\Support\Collection<int, Category> */
+    /** @return Collection<int, Category> */
     private function categories()
     {
         return Category::query()
@@ -188,12 +193,12 @@ class ArchiveController extends Controller
         $parts = array_filter([$category?->name, $year === null ? null : (string) $year]);
 
         // As on the portfolio: the owner's label, in the page's language.
-        $title = \App\Support\Settings::get('nav.archive').($parts === [] ? '' : ' — '.implode(', ', $parts));
+        $title = Settings::get('nav.archive').($parts === [] ? '' : ' — '.implode(', ', $parts));
 
         $page = (int) $frames->currentPage();
 
         if ($page > 1) {
-            $title .= ' — '.\App\Support\SiteCopy::line('shared.pagination_position', ['current' => $page, 'total' => $frames->lastPage()]);
+            $title .= ' — '.SiteCopy::line('shared.pagination_position', ['current' => $page, 'total' => $frames->lastPage()]);
         }
 
         /*

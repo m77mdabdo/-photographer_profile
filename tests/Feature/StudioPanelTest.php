@@ -12,15 +12,34 @@ use App\Filament\Widgets\RecentEnquiries;
 use App\Filament\Widgets\RecentlyEdited;
 use App\Filament\Widgets\StudioFigures;
 use App\Filament\Widgets\UntranslatedContent;
+use App\Http\Middleware\EnsureTwoFactorEnabled;
+use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\SetLocale;
 use App\Models\Article;
 use App\Models\Inquiry;
 use App\Models\Media;
+use App\Models\Page;
 use App\Models\Project;
+use App\Models\Service;
+use App\Models\Setting;
 use App\Models\User;
+use App\Policies\ArticlePolicy;
+use App\Policies\CategoryPolicy;
+use App\Policies\ClientPolicy;
+use App\Policies\InquiryPolicy;
+use App\Policies\MediaPolicy;
+use App\Policies\PagePolicy;
+use App\Policies\ProjectPolicy;
+use App\Policies\RedirectPolicy;
+use App\Policies\ServicePolicy;
+use App\Policies\SettingPolicy;
 use App\Support\Locale;
+use App\Support\Settings;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -65,7 +84,7 @@ class StudioPanelTest extends TestCase
          * IP, and losing that would be invisible.
          */
         $this->assertFalse(
-            \Illuminate\Support\Facades\Route::has('filament.studio.auth.login'),
+            Route::has('filament.studio.auth.login'),
             'the panel must not register its own login page'
         );
     }
@@ -88,7 +107,7 @@ class StudioPanelTest extends TestCase
          * whose role is neither is refused by canAccessPanel, and that is
          * asserted directly rather than through a role that cannot exist.
          */
-        $panel = \Filament\Facades\Filament::getPanel('studio');
+        $panel = Filament::getPanel('studio');
 
         $imposter = new User(['role' => null]);
 
@@ -135,7 +154,7 @@ class StudioPanelTest extends TestCase
     /** The middleware stack is the existing one, in order. */
     public function test_the_panel_carries_the_existing_guards(): void
     {
-        $route = collect(\Illuminate\Support\Facades\Route::getRoutes())
+        $route = collect(Route::getRoutes())
             ->first(fn ($r): bool => $r->getName() === 'filament.studio.pages.dashboard');
 
         $this->assertNotNull($route, 'the dashboard route should exist');
@@ -143,10 +162,10 @@ class StudioPanelTest extends TestCase
         $stack = $route->gatherMiddleware();
 
         foreach ([
-            \App\Http\Middleware\EnsureUserIsAdmin::class,
-            \App\Http\Middleware\EnsureTwoFactorEnabled::class,
+            EnsureUserIsAdmin::class,
+            EnsureTwoFactorEnabled::class,
             'throttle:admin',
-            \App\Http\Middleware\SetLocale::class,
+            SetLocale::class,
         ] as $expected) {
             $this->assertContains($expected, $stack, "the panel should be guarded by $expected");
         }
@@ -226,16 +245,16 @@ class StudioPanelTest extends TestCase
     public function test_every_policy_answers_every_bulk_ability(): void
     {
         $policies = [
-            \App\Policies\ArticlePolicy::class,
-            \App\Policies\CategoryPolicy::class,
-            \App\Policies\ClientPolicy::class,
-            \App\Policies\InquiryPolicy::class,
-            \App\Policies\MediaPolicy::class,
-            \App\Policies\PagePolicy::class,
-            \App\Policies\ProjectPolicy::class,
-            \App\Policies\RedirectPolicy::class,
-            \App\Policies\ServicePolicy::class,
-            \App\Policies\SettingPolicy::class,
+            ArticlePolicy::class,
+            CategoryPolicy::class,
+            ClientPolicy::class,
+            InquiryPolicy::class,
+            MediaPolicy::class,
+            PagePolicy::class,
+            ProjectPolicy::class,
+            RedirectPolicy::class,
+            ServicePolicy::class,
+            SettingPolicy::class,
         ];
 
         $this->assertCount(10, $policies, 'all ten policies are covered');
@@ -256,7 +275,7 @@ class StudioPanelTest extends TestCase
         $owner = $this->admin(UserRole::Owner);
         $editor = $this->admin(UserRole::Editor);
 
-        foreach ([Project::class, Article::class, \App\Models\Service::class, \App\Models\Page::class] as $model) {
+        foreach ([Project::class, Article::class, Service::class, Page::class] as $model) {
             // Both roles may bulk delete and bulk restore.
             $this->assertTrue(Gate::forUser($owner)->allows('deleteAny', $model), "$model deleteAny for Owner");
             $this->assertTrue(Gate::forUser($editor)->allows('deleteAny', $model), "$model deleteAny for Editor");
@@ -293,7 +312,7 @@ class StudioPanelTest extends TestCase
         $owner = $this->admin(UserRole::Owner);
 
         foreach (['deleteAny', 'forceDeleteAny', 'restoreAny'] as $ability) {
-            $this->assertFalse(Gate::forUser($owner)->allows($ability, \App\Models\Setting::class));
+            $this->assertFalse(Gate::forUser($owner)->allows($ability, Setting::class));
         }
     }
 
@@ -501,12 +520,15 @@ class StudioPanelTest extends TestCase
         // Help Center pass, 24 Oct 2026: +636 bytes — two @font-face rules
         // for the Arabic pages' figures subsets of Archivo and Inter Tight
         // (Arabic LCP 2.64–2.71 → 2.36–2.45 s, PERFORMANCE_REPORT.md).
-        $this->assertSame('assets/public-Bur1UoT1.css', $publicCss, 'the public stylesheet changed');
+        // Engineering pass, 24 Oct 2026: +373 bytes — the Arabic hero's portrait
+        // voice placed before the plate, as in English; 900px breakpoints made
+        // exclusive (max-width 899px).
+        $this->assertSame('assets/public-B5UqbslX.css', $publicCss, 'the public stylesheet changed');
         $this->assertSame('assets/public-1o_v3AtE.js', $publicJs, 'the public entry changed');
 
         $cssBytes = (int) filesize(public_path('build/'.$publicCss));
 
-        $this->assertSame(100_535, $cssBytes, 'the public stylesheet is a different size');
+        $this->assertSame(100_908, $cssBytes, 'the public stylesheet is a different size');
 
         /*
          * 90,000 -> 91,000 in Task 42 item 4, for fifteen @font-face blocks:
@@ -643,8 +665,8 @@ class StudioPanelTest extends TestCase
     /** The brand comes from settings, never a hardcoded string. */
     public function test_the_brand_comes_from_settings(): void
     {
-        \App\Support\Settings::set('site.name', 'Hallveien Studio');
-        \App\Support\Settings::flush();
+        Settings::set('site.name', 'Hallveien Studio');
+        Settings::flush();
 
         $this->actingAs($this->admin())
             ->get(self::PANEL)
@@ -655,8 +677,8 @@ class StudioPanelTest extends TestCase
     /** The login page carries the studio's identity, not Filament's. */
     public function test_the_login_page_is_the_studio_s_own(): void
     {
-        \App\Support\Settings::set('site.name', 'Hallveien Studio');
-        \App\Support\Settings::flush();
+        Settings::set('site.name', 'Hallveien Studio');
+        Settings::flush();
 
         $html = $this->get('/login')->assertOk()->getContent();
 
@@ -1030,5 +1052,4 @@ class StudioPanelTest extends TestCase
             ->assertSee($stuck->original_filename)
             ->assertDontSee($fresh->original_filename);
     }
-
 }

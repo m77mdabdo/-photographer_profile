@@ -128,7 +128,6 @@ Route::get('/work/{project:slug}/preview', [ProjectController::class, 'preview']
     ->middleware('signed')
     ->name('projects.preview');
 
-
 /*
  * FLAT EDITORIAL PAGES — privacy, terms, and whatever the studio adds.
  *

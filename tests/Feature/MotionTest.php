@@ -8,8 +8,11 @@ use App\Models\Article;
 use App\Models\Project;
 use App\Models\Service;
 use App\Support\Settings;
+use Database\Seeders\LegalPagesSeeder;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\AssertsNoJavaScript;
 use Tests\Support\DemoWorld;
@@ -48,10 +51,10 @@ class MotionTest extends TestCase
         Storage::fake('media_public', config('filesystems.disks.media_public'));
 
         Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
 
-        $this->world = new DemoWorld();
+        $this->world = new DemoWorld;
     }
 
     private function homepage(): string
@@ -97,7 +100,7 @@ class MotionTest extends TestCase
     /** The same contract, on every public page that carries motion. */
     public function test_no_public_page_sends_a_hidden_initial_state(): void
     {
-        $this->seed(\Database\Seeders\LegalPagesSeeder::class);
+        $this->seed(LegalPagesSeeder::class);
 
         $this->world->story('salt-line', DemoWorld::simpleScore(4), ['landscape'], year: 2025);
         Article::factory()->create();
@@ -188,7 +191,7 @@ class MotionTest extends TestCase
     {
         $registrations = [];
 
-        foreach (\Illuminate\Support\Facades\File::allFiles(resource_path('views')) as $view) {
+        foreach (File::allFiles(resource_path('views')) as $view) {
             // Comments stripped first: a note explaining the removal is not a registration.
             $markup = (string) preg_replace('/\{\{--.*?--\}\}/s', '', $view->getContents());
 
@@ -482,7 +485,9 @@ class MotionTest extends TestCase
         $rules = [];
 
         foreach ($matches as $match) {
-            if (str_contains($match[1], $target)) $rules[] = $match[0];
+            if (str_contains($match[1], $target)) {
+                $rules[] = $match[0];
+            }
         }
 
         return $rules;

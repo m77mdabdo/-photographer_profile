@@ -4,11 +4,19 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Studio;
 
+use App\Enums\MediaStatus;
 use App\Enums\UserRole;
+use App\Filament\Resources\Media\MediaResource;
+use App\Filament\Resources\Projects\ProjectResource;
+use App\Http\Controllers\PageController;
+use App\Models\Media;
+use App\Models\Project;
 use App\Models\User;
+use App\Support\Locale;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -124,18 +132,18 @@ class AddressesTest extends TestCase
     {
         $owner = $this->owner();
 
-        $project = \App\Models\Project::factory()->create();
-        $media = \App\Models\Media::factory()->create(['status' => \App\Enums\MediaStatus::Ready]);
+        $project = Project::factory()->create();
+        $media = Media::factory()->create(['status' => MediaStatus::Ready]);
 
         $this->actingAs($owner)
             ->get('/legacy/projects/'.$project->getRouteKey().'/edit')
             ->assertStatus(301)
-            ->assertRedirect(\App\Filament\Resources\Projects\ProjectResource::getUrl('edit', ['record' => $project]));
+            ->assertRedirect(ProjectResource::getUrl('edit', ['record' => $project]));
 
         $this->actingAs($owner)
             ->get('/legacy/media/'.$media->getRouteKey())
             ->assertStatus(301)
-            ->assertRedirect(\App\Filament\Resources\Media\MediaResource::getUrl('view', ['record' => $media]));
+            ->assertRedirect(MediaResource::getUrl('view', ['record' => $media]));
     }
 
     /**
@@ -220,7 +228,7 @@ class AddressesTest extends TestCase
      * and lands on the dashboard is only half a redirect, and the client's
      * bookmarks are deep ones.
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('movedPaths')]
+    #[DataProvider('movedPaths')]
     public function test_studio_redirects_permanently(string $from, string $to): void
     {
         $this->actingAs($this->owner())
@@ -327,7 +335,7 @@ class AddressesTest extends TestCase
     {
         foreach (['en', 'ar'] as $locale) {
             $html = $this->actingAs($this->owner())
-                ->withUnencryptedCookie(\App\Support\Locale::COOKIE, $locale)
+                ->withUnencryptedCookie(Locale::COOKIE, $locale)
                 ->get('/admin')
                 ->assertOk()
                 ->getContent();
@@ -373,9 +381,9 @@ class AddressesTest extends TestCase
      */
     public function test_every_reserved_segment_is_refused_by_the_page_wildcard(): void
     {
-        $pattern = '/'.\App\Http\Controllers\PageController::slugPattern().'/';
+        $pattern = '/'.PageController::slugPattern().'/';
 
-        foreach (\App\Http\Controllers\PageController::RESERVED as $segment) {
+        foreach (PageController::RESERVED as $segment) {
             $this->assertDoesNotMatchRegularExpression(
                 $pattern,
                 $segment,

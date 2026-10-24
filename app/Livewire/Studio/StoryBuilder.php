@@ -9,6 +9,7 @@ use App\Actions\Projects\ValidateBlock;
 use App\Enums\BlockType;
 use App\Models\Media;
 use App\Models\Project;
+use App\Models\ProjectBlock;
 use App\Support\Locale;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -258,7 +259,7 @@ class StoryBuilder extends Component
      *
      * @return array<string, mixed>
      */
-    private function textFor(\App\Models\ProjectBlock $block): array
+    private function textFor(ProjectBlock $block): array
     {
         $raw = $block->rawData();
         $translatable = $block->type->translatableDataKeys();

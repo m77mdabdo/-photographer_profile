@@ -24,7 +24,7 @@ use Laravel\Fortify\Actions\GenerateNewRecoveryCodes;
  */
 class AccountSecurity extends Page
 {
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-shield-check';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-shield-check';
 
     protected static ?int $navigationSort = 90;
 

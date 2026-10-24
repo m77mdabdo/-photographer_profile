@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mail;
 
+use App\Filament\Resources\Enquiries\InquiryResource;
 use App\Models\Inquiry;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -65,7 +66,7 @@ class InquiryReceived extends Mailable implements ShouldQueue
                  * but sending somebody a link that needs a redirect is a link
                  * that breaks the day the redirect is tidied away.
                  */
-                'url' => \App\Filament\Resources\Enquiries\InquiryResource::getUrl(
+                'url' => InquiryResource::getUrl(
                     'view',
                     ['record' => $this->inquiry],
                 ),

@@ -33,7 +33,7 @@ class RecentEnquiries extends TableWidget
 {
     protected static ?int $sort = 3;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     public static function canView(): bool
     {
@@ -78,7 +78,7 @@ class RecentEnquiries extends TableWidget
              * the query and the sortable columns remain available.
              */
             ->modifyQueryUsing(fn (Builder $query): Builder => $query
-                ->orderByRaw("CASE WHEN status = ? THEN 0 ELSE 1 END", [InquiryStatus::New->value])
+                ->orderByRaw('CASE WHEN status = ? THEN 0 ELSE 1 END', [InquiryStatus::New->value])
                 ->orderBy('created_at'))
             ->recordUrl(fn (Inquiry $record): string => InquiryResource::getUrl('view', ['record' => $record]))
             ->emptyStateHeading(__('studio.enquiries.empty'))

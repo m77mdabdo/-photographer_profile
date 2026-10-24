@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 class AccentColorTest extends TestCase
 {
     private const DARK = '#0b0b0c';
+
     private const LIGHT = '#f4f1ea';
 
     /**

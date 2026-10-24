@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Support\PageTransition;
 use App\Support\Settings;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\DemoWorld;
@@ -27,18 +29,18 @@ class PageTransitionTest extends TestCase
         Storage::fake('media_public', ['url' => 'http://localhost/storage/media', 'visibility' => 'public']);
 
         Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
 
-        (new DemoWorld())->story('salt-line', DemoWorld::simpleScore(3), ['landscape'], year: 2025);
+        (new DemoWorld)->story('salt-line', DemoWorld::simpleScore(3), ['landscape'], year: 2025);
     }
 
     private function optsIn(string $url): bool
     {
         $html = (string) $this->get($url)->assertOk()->getContent();
 
-        return str_contains($html, '<style>'.\App\Support\PageTransition::RULE.'</style>')
-            && str_contains($html, ' data-page-transition>'.\App\Support\PageTransition::SCRIPT.'</script>');
+        return str_contains($html, '<style>'.PageTransition::RULE.'</style>')
+            && str_contains($html, ' data-page-transition>'.PageTransition::SCRIPT.'</script>');
     }
 
     /** Both documents must opt in: the pages a project is reached from, and the project. */

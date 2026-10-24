@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Clients\Pages;
 
 use App\Filament\Resources\Clients\ClientResource;
+use App\Filament\Support\NamesPlaces;
 use App\Filament\Support\Translatable;
 use Filament\Resources\Pages\ManageRecords;
 
@@ -17,7 +18,7 @@ use Filament\Resources\Pages\ManageRecords;
  */
 class ManageClients extends ManageRecords
 {
-    use \App\Filament\Support\NamesPlaces;
+    use NamesPlaces;
 
     protected static string $resource = ClientResource::class;
 

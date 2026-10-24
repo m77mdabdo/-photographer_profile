@@ -10,9 +10,7 @@ use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\Translatable;
 use App\Models\Client;
 use BackedEnum;
-use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -29,10 +27,9 @@ class ClientResource extends Resource
 
     protected static ?string $model = Client::class;
 
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-identification';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-identification';
 
     protected static ?int $navigationSort = 2;
-
 
     public const TRANSLATED = ['name'];
 
@@ -45,7 +42,6 @@ class ClientResource extends Resource
     {
         return __('studio.nav.clients');
     }
-
 
     /**
      * The noun Filament puts in its own sentences.

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature\Studio;
 
 use App\Enums\UserRole;
+use App\Models\ArticleCategory;
+use App\Models\MediaVariant;
+use App\Models\Tag;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
@@ -61,7 +64,7 @@ class ResourceGovernanceTest extends TestCase
         Filament::setCurrentPanel('studio');
     }
 
-    /** @return list<class-string<Resource>> */
+    /** @return list<class-string<resource>> */
     private function resources(): array
     {
         return array_values(Filament::getPanel('studio')->getResources());
@@ -151,10 +154,10 @@ class ResourceGovernanceTest extends TestCase
          * deliberately has no policy: MediaVariant is a rendition row, created
          * and destroyed by the queue, never by a person.
          */
-        $this->assertNull(Gate::getPolicyFor(\App\Models\MediaVariant::class));
+        $this->assertNull(Gate::getPolicyFor(MediaVariant::class));
 
         try {
-            \Filament\get_authorization_response('viewAny', \App\Models\MediaVariant::class, false);
+            \Filament\get_authorization_response('viewAny', MediaVariant::class, false);
 
             $this->fail('strict mode did not throw for a model with no policy');
         } catch (LogicException $e) {
@@ -221,9 +224,9 @@ class ResourceGovernanceTest extends TestCase
     public function test_the_three_formerly_ungoverned_models_are_governed(): void
     {
         foreach ([
-            \App\Models\Tag::class,
-            \App\Models\ArticleCategory::class,
-            \App\Models\User::class,
+            Tag::class,
+            ArticleCategory::class,
+            User::class,
         ] as $model) {
             $this->assertNotNull(
                 Gate::getPolicyFor($model),

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Seo;
 
 use App\Support\SeoData;
+use App\Support\SiteImages;
 
 /**
  * Turns a page's partial SEO intent into a complete, renderable set of values.
@@ -38,7 +39,7 @@ class SeoResolver
          * A page's own image still wins: a project shares its cover, not the
          * studio's default.
          */
-        $image = $page->ogImage ?? \App\Support\SiteImages::openGraph();
+        $image = $page->ogImage ?? SiteImages::openGraph();
 
         return new SeoData(
             title: $title,

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -30,7 +31,7 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             // Mirrors the column default, so a freshly made model matches the
             // row that was just inserted.
-            'role' => \App\Enums\UserRole::Editor,
+            'role' => UserRole::Editor,
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];

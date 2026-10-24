@@ -8,6 +8,7 @@ use App\Console\Commands\DisposableAdmin;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -165,7 +166,7 @@ class DisposableAdminCommandTest extends TestCase
         $this->assertSame('0600', substr(sprintf('%o', fileperms($this->credentialsPath())), -4));
 
         // --- and none of it on stdout ---------------------------------------
-        $output = \Illuminate\Support\Facades\Artisan::output();
+        $output = Artisan::output();
 
         $this->assertStringNotContainsString($credentials['password'], $output);
         $this->assertStringNotContainsString($credentials['totp_secret'], $output);

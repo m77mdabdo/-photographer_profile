@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Console\Commands\UpgradeSiteCopy;
 use App\Models\Client;
+use App\Models\Project;
 use App\Models\Service;
 use App\Models\Setting;
 use App\Support\Settings;
@@ -134,11 +135,11 @@ class CommercialContentTest extends TestCase
 
         // Called directly: `db:seed` in production stops for a confirmation,
         // and what is under test is the seeder's own refusal.
-        (new DemoServicesSeeder())->run();
-        (new DemoContentSeeder())->run();
+        (new DemoServicesSeeder)->run();
+        (new DemoContentSeeder)->run();
 
         $this->assertSame(0, Service::query()->count(), 'demo services reached a production database');
-        $this->assertSame(0, \App\Models\Project::query()->count(), 'demo projects reached a production database');
+        $this->assertSame(0, Project::query()->count(), 'demo projects reached a production database');
     }
 
     public function test_no_demo_client_list_is_seeded(): void

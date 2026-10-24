@@ -23,6 +23,7 @@ use App\Support\Locale;
 use Filament\Actions\Testing\TestAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -168,7 +169,7 @@ class GuardedColumnsTest extends TestCase
     }
 
     /** Publishing from the panel publishes, and dates it. */
-    #[\PHPUnit\Framework\Attributes\DataProvider('publishables')]
+    #[DataProvider('publishables')]
     public function test_publishing_from_the_panel_works(string $page, string $model): void
     {
         $record = $model::factory()->create();

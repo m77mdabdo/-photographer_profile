@@ -4,44 +4,55 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Filament\Resources\CinematicSections\CinematicSectionResource;
 use App\Http\Middleware\RejectUninstalledFeature;
+use App\Models\ActivityLog;
 use App\Models\Article;
 use App\Models\ArticleCategory;
 use App\Models\Category;
-use App\Models\Page;
-use App\Models\Redirect;
-use App\Models\Service;
+use App\Models\CinematicSection;
 use App\Models\Client;
 use App\Models\Inquiry;
 use App\Models\Media;
+use App\Models\Menu;
+use App\Models\Page;
 use App\Models\Project;
+use App\Models\Redirect;
+use App\Models\Service;
 use App\Models\Setting;
 use App\Models\Tag;
+use App\Models\Testimonial;
 use App\Models\User;
+use App\Policies\ActivityLogPolicy;
+use App\Policies\ArticleCategoryPolicy;
 use App\Policies\ArticlePolicy;
 use App\Policies\CategoryPolicy;
-use App\Policies\PagePolicy;
-use App\Policies\ArticleCategoryPolicy;
-use App\Policies\RedirectPolicy;
-use App\Policies\TagPolicy;
-use App\Policies\UserPolicy;
-use App\Policies\ServicePolicy;
+use App\Policies\CinematicSectionPolicy;
 use App\Policies\ClientPolicy;
 use App\Policies\InquiryPolicy;
 use App\Policies\MediaPolicy;
+use App\Policies\MenuPolicy;
+use App\Policies\PagePolicy;
 use App\Policies\ProjectPolicy;
+use App\Policies\RedirectPolicy;
+use App\Policies\ServicePolicy;
 use App\Policies\SettingPolicy;
+use App\Policies\TagPolicy;
+use App\Policies\TestimonialPolicy;
+use App\Policies\UserPolicy;
 use App\Routing\LocaleUrlGenerator;
-use Illuminate\Routing\UrlGenerator;
-use Illuminate\Support\Facades\Blade;
 use App\Support\Settings;
-use App\Support\TwoFactorEnforcement;
 use App\Support\Sitemap;
 use App\Support\Theme;
+use App\Support\TwoFactorEnforcement;
+use Illuminate\Routing\UrlGenerator;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -162,7 +173,7 @@ class AppServiceProvider extends ServiceProvider
              * bytes), so widening this gate admits nothing new there.
              */
             'mimes:'.implode(',', [...(array) config('media.accepted_extensions'), 'mp4', 'webm']),
-            'max:'.max((int) config('media.max_upload_kb'), \App\Filament\Resources\CinematicSections\CinematicSectionResource::VIDEO_MAX_KB),
+            'max:'.max((int) config('media.max_upload_kb'), CinematicSectionResource::VIDEO_MAX_KB),
         ]);
 
         /*
@@ -196,7 +207,7 @@ class AppServiceProvider extends ServiceProvider
          * already asked for 12; Fortify's reset and the panel's profile page read
          * Password::default(), which was Laravel's 8. One rule now.
          */
-        \Illuminate\Validation\Rules\Password::defaults(fn () => \Illuminate\Validation\Rules\Password::min(12));
+        Password::defaults(fn () => Password::min(12));
 
         /*
          * DEBUG NEVER REACHES A VISITOR IN PRODUCTION (master directive, Part 8).
@@ -206,11 +217,11 @@ class AppServiceProvider extends ServiceProvider
          */
         if ($this->app->isProduction() && config('app.debug')) {
             config(['app.debug' => false]);
-            \Illuminate\Support\Facades\Log::critical('APP_DEBUG was true in production and has been forced off. Set APP_DEBUG=false in .env.');
+            Log::critical('APP_DEBUG was true in production and has been forced off. Set APP_DEBUG=false in .env.');
         }
 
         Gate::policy(Media::class, MediaPolicy::class);
-        Gate::policy(\App\Models\CinematicSection::class, \App\Policies\CinematicSectionPolicy::class);
+        Gate::policy(CinematicSection::class, CinematicSectionPolicy::class);
         Gate::policy(Project::class, ProjectPolicy::class);
         Gate::policy(Category::class, CategoryPolicy::class);
         Gate::policy(Client::class, ClientPolicy::class);
@@ -223,13 +234,13 @@ class AppServiceProvider extends ServiceProvider
 
         // Task 34 D1. A menu is edited and never created or destroyed; the
         // policy says so in words rather than by omitting the methods.
-        Gate::policy(\App\Models\Menu::class, \App\Policies\MenuPolicy::class);
+        Gate::policy(Menu::class, MenuPolicy::class);
 
         // Task 34 D2.
-        Gate::policy(\App\Models\Testimonial::class, \App\Policies\TestimonialPolicy::class);
+        Gate::policy(Testimonial::class, TestimonialPolicy::class);
 
         // Task 34 D3. Read-only: every write ability is refused in words.
-        Gate::policy(\App\Models\ActivityLog::class, \App\Policies\ActivityLogPolicy::class);
+        Gate::policy(ActivityLog::class, ActivityLogPolicy::class);
 
         /*
          * THE THREE THAT WERE MISSING, FOUND IN TASK 31.
@@ -262,7 +273,7 @@ class AppServiceProvider extends ServiceProvider
          * hard as one being published.
          */
         foreach ([Project::class, Article::class, Service::class, Page::class,
-                  Category::class, ArticleCategory::class, Media::class] as $model) {
+            Category::class, ArticleCategory::class, Media::class] as $model) {
             $model::saved(fn () => Sitemap::forget());
             $model::deleted(fn () => Sitemap::forget());
         }

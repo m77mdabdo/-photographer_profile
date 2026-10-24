@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Models\Concerns\Translatable;
+use App\Actions\Articles\SyncArticleMedia;
 use App\Enums\PublishStatus;
+use App\Models\Concerns\Translatable;
 use App\Support\RichText;
+use Database\Factories\ArticleFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,11 +20,12 @@ use Illuminate\Support\Str;
 
 class Article extends Model
 {
-    /** @use HasFactory<\Database\Factories\ArticleFactory> */
-    use HasFactory;
-    use Translatable;
     use Concerns\RedirectsOnSlugChange;
+
+    /** @use HasFactory<ArticleFactory> */
+    use HasFactory;
     use SoftDeletes;
+    use Translatable;
 
     /**
      * Four columns are deliberately absent, for the same reasons they are
@@ -97,7 +100,7 @@ class Article extends Model
          */
         static::saved(function (self $record): void {
             if ($record->wasChanged(['featured_media_id']) || $record->wasRecentlyCreated) {
-                app(\App\Actions\Articles\SyncArticleMedia::class)($record);
+                app(SyncArticleMedia::class)($record);
             }
         });
 

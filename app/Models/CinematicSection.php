@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Actions\Cinematic\SyncCinematicMedia;
 use App\Models\Concerns\Translatable;
+use App\Support\Locale;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -33,13 +36,16 @@ class CinematicSection extends Model
     use Translatable;
 
     public const TYPE_GALLERY = 'gallery';
+
     public const TYPE_IMAGE = 'image';
+
     public const TYPE_VIDEO = 'video';
 
     public const TYPES = [self::TYPE_GALLERY, self::TYPE_IMAGE, self::TYPE_VIDEO];
 
     /** A gallery holds four or five photographs. */
     public const GALLERY_MIN = 4;
+
     public const GALLERY_MAX = 5;
 
     /** preset => [highlight strength 0-1] */
@@ -52,6 +58,7 @@ class CinematicSection extends Model
      * because there every photograph ends lit.
      */
     public const DARKNESS = ['subtle' => 0.85, 'deep' => 0.95, 'night' => 0.98];
+
     public const DARKNESS_SWEEP = ['subtle' => 0.45, 'deep' => 0.62, 'night' => 0.78];
 
     /** preset => scroll distance per photograph, in viewport heights */
@@ -92,7 +99,7 @@ class CinematicSection extends Model
     protected static function booted(): void
     {
         static::saved(function (self $section): void {
-            app(\App\Actions\Cinematic\SyncCinematicMedia::class)($section);
+            app(SyncCinematicMedia::class)($section);
         });
 
         /*
@@ -101,7 +108,7 @@ class CinematicSection extends Model
          * claims them back.
          */
         static::deleted(fn (self $section) => $section->mediaUsages()->delete());
-        static::restored(fn (self $section) => app(\App\Actions\Cinematic\SyncCinematicMedia::class)($section));
+        static::restored(fn (self $section) => app(SyncCinematicMedia::class)($section));
     }
 
     /** @return HasMany<CinematicSectionItem, $this> */
@@ -161,8 +168,8 @@ class CinematicSection extends Model
         };
     }
 
-    /** @return \Illuminate\Support\Collection<int, Media> */
-    public function readyItems(): \Illuminate\Support\Collection
+    /** @return Collection<int, Media> */
+    public function readyItems(): Collection
     {
         return $this->items
             ->map(fn (CinematicSectionItem $item): ?Media => $item->media)
@@ -181,7 +188,7 @@ class CinematicSection extends Model
             return $this->light_direction;
         }
 
-        return $pageDirection ?? \App\Support\Locale::direction();
+        return $pageDirection ?? Locale::direction();
     }
 
     /**

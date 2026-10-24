@@ -95,7 +95,7 @@ class StoreUploadedMedia
         }
 
         // 7. Record it.
-        $media = new Media();
+        $media = new Media;
         $media->uuid = $uuid;
         $media->checksum = $checksum;
         $media->fill([

@@ -30,8 +30,8 @@ use Illuminate\Database\Seeder;
  */
 class DemoServicesSeeder extends Seeder
 {
-    use Concerns\SeedsDemoContent;
     use Concerns\ProtectsEditedContent;
+    use Concerns\SeedsDemoContent;
 
     public function run(): void
     {

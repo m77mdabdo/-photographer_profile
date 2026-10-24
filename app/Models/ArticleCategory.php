@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\Translatable;
+use Database\Factories\ArticleCategoryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,10 +13,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ArticleCategory extends Model
 {
-    /** @use HasFactory<\Database\Factories\ArticleCategoryFactory> */
+    /** @use HasFactory<ArticleCategoryFactory> */
     use HasFactory;
-    use Translatable;
+
     use SoftDeletes;
+    use Translatable;
 
     /**
      * The slug is the permanent address of a landing page, so it is set

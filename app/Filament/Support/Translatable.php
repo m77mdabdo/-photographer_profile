@@ -63,7 +63,7 @@ final class Translatable
 
             foreach ($fields as $attribute => $build) {
                 $components[] = $build($attribute.'.'.$locale)
-                    ->label(static::label($attribute))
+                    ->label(self::label($attribute))
                     /*
                      * dir and lang per field, so Arabic types right-to-left
                      * inside a left-to-right panel without any script.
@@ -221,10 +221,10 @@ final class Translatable
     {
         return EditAction::make()
             ->mutateRecordDataUsing(
-                fn (Model $record, array $data): array => static::fill($record, $attributes, $data)
+                fn (Model $record, array $data): array => self::fill($record, $attributes, $data)
             )
             ->mutateDataUsing(
-                fn (array $data): array => static::save($attributes, $data)
+                fn (array $data): array => self::save($attributes, $data)
             )
             /*
              * And the guarded columns, which $record->update() would drop in
@@ -238,7 +238,7 @@ final class Translatable
     {
         return CreateAction::make()
             ->mutateDataUsing(
-                fn (array $data): array => static::save($attributes, $data)
+                fn (array $data): array => self::save($attributes, $data)
             )
             ->using(fn (CreateAction $action, array $data): Model => RecordWriter::create($action->getModel(), $data));
     }
@@ -407,7 +407,7 @@ final class Translatable
         bool $fallback = true,
     ): TextColumn {
         return TextColumn::make($attribute)
-            ->label(static::label($attribute))
+            ->label(self::label($attribute))
             ->weight('semibold')
             ->when(
                 ! $fallback,
@@ -425,7 +425,7 @@ final class Translatable
                 }
             ))
             ->sortable(query: fn (Builder $query, string $direction): Builder => $query
-                ->orderBy(static::displayExpression($query->getModel(), $attribute, $fallback), $direction));
+                ->orderBy(self::displayExpression($query->getModel(), $attribute, $fallback), $direction));
     }
 
     /**
@@ -445,7 +445,7 @@ final class Translatable
         }
 
         return array_map(
-            fn (string $locale): string|Expression => static::expression($model, $attribute, $locale),
+            fn (string $locale): string|Expression => self::expression($model, $attribute, $locale),
             Locale::codes(),
         );
     }
@@ -466,18 +466,18 @@ final class Translatable
             return $model->qualifyColumn($attribute);
         }
 
-        $active = static::expression($model, $attribute, Locale::current());
+        $active = self::expression($model, $attribute, Locale::current());
 
         if (! $fallback || Locale::isDefault()) {
             return $active;
         }
 
-        $default = static::expression($model, $attribute, Locale::DEFAULT);
+        $default = self::expression($model, $attribute, Locale::DEFAULT);
 
         return new Expression(sprintf(
             'COALESCE(%s, %s)',
-            static::sql($active),
-            static::sql($default),
+            self::sql($active),
+            self::sql($default),
         ));
     }
 

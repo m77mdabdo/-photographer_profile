@@ -4,37 +4,38 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Projects;
 
+use App\Filament\Forms\Components\MediaPickerField;
 use App\Filament\Resources\Projects\Pages\CreateProject;
 use App\Filament\Resources\Projects\Pages\EditProject;
 use App\Filament\Resources\Projects\Pages\ListProjects;
 use App\Filament\Resources\Projects\Pages\ProjectPreviewRedirect;
 use App\Filament\Resources\Projects\Pages\ProjectStory;
 use App\Filament\Support\AddressesRecordsById;
-use App\Filament\Forms\Components\MediaPickerField;
+use App\Filament\Support\HelpHint;
 use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\Translatable;
-use App\Support\HeroSuitability;
 use App\Models\Media;
 use App\Models\Project;
+use App\Support\HeroSuitability;
 use BackedEnum;
-use Filament\Forms\Components\TextInput;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\HtmlString;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\HtmlString;
 
 class ProjectResource extends Resource
 {
@@ -66,13 +67,12 @@ class ProjectResource extends Resource
 
     protected static ?string $model = Project::class;
 
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-photo';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-photo';
 
     protected static ?int $navigationSort = 1;
 
     /** The columns this resource edits in every locale. */
     public const TRANSLATED = ['slug', 'title', 'subtitle', 'excerpt', 'description', 'location', 'client'];
-
 
     public static function getNavigationGroup(): ?string
     {
@@ -83,7 +83,6 @@ class ProjectResource extends Resource
     {
         return __('studio.nav.projects');
     }
-
 
     /**
      * The noun Filament puts in its own sentences.
@@ -254,7 +253,7 @@ class ProjectResource extends Resource
                         ->rule('integer')
                         ->extraInputAttributes(['inputmode' => 'numeric', 'maxlength' => 4]),
                     Toggle::make('is_featured')->label(__('studio.filter.featured'))->live()
-                        ->hintAction(\App\Filament\Support\HelpHint::action('featured')),
+                        ->hintAction(HelpHint::action('featured')),
                 ]),
         ]);
     }

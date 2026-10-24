@@ -4,18 +4,27 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Media;
 
+use App\Actions\Media\StoreUploadedMedia;
 use App\Enums\MediaStatus;
 use App\Enums\PublishStatus;
 use App\Enums\UserRole;
+use App\Filament\Resources\Media\Pages\ListMedia;
+use App\Filament\Resources\Media\Pages\ViewMedia;
+use App\Models\Category;
 use App\Models\Media;
+use App\Models\MediaUsage;
 use App\Models\Project;
 use App\Models\User;
 use App\Support\EditorialLayout;
+use App\Support\Theme;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use Tests\Support\DemoWorld;
 use Tests\TestCase;
 
 class DemoContentTest extends TestCase
@@ -177,8 +186,8 @@ class DemoContentTest extends TestCase
         // at the level the command depends on.
         $bytes = $this->jpegBytes();
 
-        $first = app(\App\Actions\Media\StoreUploadedMedia::class)($this->upload($bytes));
-        $second = app(\App\Actions\Media\StoreUploadedMedia::class)($this->upload($bytes));
+        $first = app(StoreUploadedMedia::class)($this->upload($bytes));
+        $second = app(StoreUploadedMedia::class)($this->upload($bytes));
 
         $this->assertTrue($first->is($second), 'identical bytes must resolve to the same row');
         $this->assertSame(1, Media::count());
@@ -225,16 +234,16 @@ class DemoContentTest extends TestCase
          * Both were built in the panel to make this pass again.
          * ───────────────────────────────────────────────────────────────────
          */
-        \Filament\Facades\Filament::setCurrentPanel('studio');
+        Filament::setCurrentPanel('studio');
 
         $grid = Livewire::actingAs($this->admin())
-            ->test(\App\Filament\Resources\Media\Pages\ListMedia::class)
+            ->test(ListMedia::class)
             ->html();
 
         $this->assertStringContainsString(__('studio.media.demo_note'), $grid, 'the library does not mark stock images');
 
         $detail = $this->actingAs($this->admin())
-            ->get(\App\Filament\Resources\Media\Pages\ViewMedia::getUrl(['record' => $demo]))
+            ->get(ViewMedia::getUrl(['record' => $demo]))
             ->assertOk()
             ->getContent();
 
@@ -242,7 +251,7 @@ class DemoContentTest extends TestCase
         $this->assertStringContainsString('media:purge-demo', $detail);
 
         $realDetail = $this->actingAs($this->admin())
-            ->get(\App\Filament\Resources\Media\Pages\ViewMedia::getUrl(['record' => $real]))
+            ->get(ViewMedia::getUrl(['record' => $real]))
             ->assertOk()
             ->getContent();
 
@@ -260,17 +269,17 @@ class DemoContentTest extends TestCase
         ];
 
         $projects = new Collection(array_map(function (array $shape): Project {
-            $media = new Media();
+            $media = new Media;
             $media->width = $shape[0];
             $media->height = $shape[1];
 
-            $project = new Project();
+            $project = new Project;
             $project->setRelation('cover', $media);
 
             return $project;
         }, $shapes));
 
-        $plan = (new EditorialLayout())->plan($projects);
+        $plan = (new EditorialLayout)->plan($projects);
 
         $spans = array_column($plan, 'span');
         $starts = array_column($plan, 'start');
@@ -298,7 +307,7 @@ class DemoContentTest extends TestCase
 
     public function test_the_homepage_query_count_is_stable_across_themes(): void
     {
-        $categories = \App\Models\Category::factory()->count(3)->create();
+        $categories = Category::factory()->count(3)->create();
 
         foreach (range(0, 7) as $i) {
             $project = Project::factory()->published()->create([
@@ -325,7 +334,7 @@ class DemoContentTest extends TestCase
              * forever, so the very first request of a process is a number no
              * running site pays twice.
              */
-            $request = $theme === null ? $this : $this->withCookie(\App\Support\Theme::COOKIE, $theme);
+            $request = $theme === null ? $this : $this->withCookie(Theme::COOKIE, $theme);
             $request->get('/');
 
             $queries = [];
@@ -368,18 +377,18 @@ class DemoContentTest extends TestCase
      */
     public function test_purge_still_refuses_when_hundreds_of_usages_exist(): void
     {
-        $world = new \Tests\Support\DemoWorld();
+        $world = new DemoWorld;
 
         // Twelve published series of fifteen frames: 180 usages.
         for ($i = 0; $i < 12; $i++) {
-            $world->story('series-'.$i, \Tests\Support\DemoWorld::simpleScore(15), ['landscape']);
+            $world->story('series-'.$i, DemoWorld::simpleScore(15), ['landscape']);
         }
 
         // Plus one draft, whose frames are NOT protected by publication.
-        $world->story('a-draft', \Tests\Support\DemoWorld::simpleScore(4), status: \App\Enums\PublishStatus::Draft);
+        $world->story('a-draft', DemoWorld::simpleScore(4), status: PublishStatus::Draft);
 
-        $usages = \App\Models\MediaUsage::query()->count();
-        $demo = \App\Models\Media::query()->where('is_demo', true)->count();
+        $usages = MediaUsage::query()->count();
+        $demo = Media::query()->where('is_demo', true)->count();
 
         $this->assertGreaterThan(180, $usages, 'the fixture must actually be at scale');
 
@@ -388,8 +397,8 @@ class DemoContentTest extends TestCase
             ->assertFailed();
 
         // Nothing was touched, not one row.
-        $this->assertSame($demo, \App\Models\Media::query()->where('is_demo', true)->count());
-        $this->assertSame($usages, \App\Models\MediaUsage::query()->count());
+        $this->assertSame($demo, Media::query()->where('is_demo', true)->count());
+        $this->assertSame($usages, MediaUsage::query()->count());
 
         /*
          * And the refusal is specific rather than a blanket no: it names the
@@ -401,11 +410,11 @@ class DemoContentTest extends TestCase
             ->assertFailed();
     }
 
-    private function upload(string $bytes): \Illuminate\Http\UploadedFile
+    private function upload(string $bytes): UploadedFile
     {
         $path = (string) tempnam(sys_get_temp_dir(), 'demo-');
         file_put_contents($path, $bytes);
 
-        return new \Illuminate\Http\UploadedFile($path, 'frame.jpg', 'image/jpeg', null, true);
+        return new UploadedFile($path, 'frame.jpg', 'image/jpeg', null, true);
     }
 }

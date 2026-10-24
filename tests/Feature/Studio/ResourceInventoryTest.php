@@ -5,13 +5,19 @@ declare(strict_types=1);
 namespace Tests\Feature\Studio;
 
 use App\Enums\UserRole;
+use App\Filament\Pages\Settings;
+use App\Filament\Resources\Users\UserResource;
+use App\Filament\Support\Translatable;
 use App\Models\User;
 use App\Support\Locale;
 use App\Support\TranslatableSchema;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Field;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -63,7 +69,7 @@ class ResourceInventoryTest extends TestCase
         ]));
     }
 
-    /** @return list<class-string<Resource>> */
+    /** @return list<class-string<resource>> */
     private function resources(): array
     {
         return array_values(Filament::getPanel('studio')->getResources());
@@ -95,7 +101,7 @@ class ResourceInventoryTest extends TestCase
 
         // And the Settings page is a Page, not a Resource — Part C.
         $this->assertContains(
-            \App\Filament\Pages\Settings::class,
+            Settings::class,
             Filament::getPanel('studio')->getPages(),
         );
 
@@ -164,7 +170,7 @@ class ResourceInventoryTest extends TestCase
     /** An Editor cannot reach the Users list; an Owner can. */
     public function test_the_users_resource_is_the_owners_alone(): void
     {
-        $this->assertTrue(\App\Filament\Resources\Users\UserResource::canViewAny());
+        $this->assertTrue(UserResource::canViewAny());
 
         $this->actingAs(User::factory()->create([
             'role' => UserRole::Editor,
@@ -172,7 +178,7 @@ class ResourceInventoryTest extends TestCase
             'two_factor_confirmed_at' => now(),
         ]));
 
-        $this->assertFalse(\App\Filament\Resources\Users\UserResource::canViewAny());
+        $this->assertFalse(UserResource::canViewAny());
         $this->get('/admin/users')->assertForbidden();
     }
 
@@ -255,14 +261,14 @@ class ResourceInventoryTest extends TestCase
         $page = $resource::getPages()['create'] ?? $resource::getPages()['index'];
 
         $schema = $resource::form(
-            \Filament\Schemas\Schema::make(Livewire::test($page->getPage())->instance())
+            Schema::make(Livewire::test($page->getPage())->instance())
         );
 
         $paths = [];
 
         $walk = function (array $components) use (&$walk, &$paths): void {
             foreach ($components as $component) {
-                if ($component instanceof \Filament\Forms\Components\Field) {
+                if ($component instanceof Field) {
                     $paths[] = $component->getName();
                 }
 
@@ -281,8 +287,8 @@ class ResourceInventoryTest extends TestCase
      */
     public function test_the_arabic_fields_carry_dir_rtl(): void
     {
-        $tabs = \App\Filament\Support\Translatable::tabs([
-            'title' => \App\Filament\Support\Translatable::text(),
+        $tabs = Translatable::tabs([
+            'title' => Translatable::text(),
         ]);
 
         $directions = [];
@@ -361,7 +367,6 @@ class ResourceInventoryTest extends TestCase
         }
     }
 
-
     /**
      * Give every row every foreign key the model declares.
      *
@@ -428,7 +433,7 @@ class ResourceInventoryTest extends TestCase
          */
         $measured = $count;
 
-        DB::getEventDispatcher()->forget(\Illuminate\Database\Events\QueryExecuted::class);
+        DB::getEventDispatcher()->forget(QueryExecuted::class);
 
         return $measured;
     }

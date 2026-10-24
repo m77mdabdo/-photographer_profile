@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Models\Menu;
 use App\Models\MenuItem;
+use App\Models\Setting;
 use App\Support\Locale;
 use Database\Seeders\Concerns\ProtectsEditedContent;
 use Illuminate\Database\Seeder;
@@ -90,7 +91,7 @@ class NavigationSeeder extends Seeder
          * resolves to one locale by design. Seeding needs every locale at
          * once.
          */
-        $setting = \App\Models\Setting::query()->where('key', $key)->first();
+        $setting = Setting::query()->where('key', $key)->first();
 
         $label = [];
 

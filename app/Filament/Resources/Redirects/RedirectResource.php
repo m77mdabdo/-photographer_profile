@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Redirects;
 
 use App\Filament\Resources\Redirects\Pages\ManageRedirects;
-use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\AddressesRecordsById;
+use App\Filament\Support\ResourceDefaults;
 use App\Models\Redirect;
 use App\Support\Locale;
 use BackedEnum;
+use Closure;
 use Filament\Actions\CreateAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -24,7 +23,6 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
-use Closure;
 
 /**
  * The redirect map.
@@ -44,10 +42,9 @@ class RedirectResource extends Resource
 
     protected static ?string $model = Redirect::class;
 
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-arrow-path-rounded-square';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-arrow-path-rounded-square';
 
     protected static ?int $navigationSort = 2;
-
 
     public static function getNavigationGroup(): ?string
     {
@@ -58,7 +55,6 @@ class RedirectResource extends Resource
     {
         return __('studio.nav.redirects');
     }
-
 
     /**
      * The noun Filament puts in its own sentences.
@@ -129,8 +125,8 @@ class RedirectResource extends Resource
                          * ever fire.
                          */
                         ->rule(fn (?Model $record): Closure => function (string $attribute, mixed $value, Closure $fail) use ($record): void {
-                            $clash = \App\Models\Redirect::query()
-                                ->where('from_path', \App\Models\Redirect::normalise((string) $value))
+                            $clash = Redirect::query()
+                                ->where('from_path', Redirect::normalise((string) $value))
                                 ->when($record, fn ($query) => $query->whereKeyNot($record->getKey()))
                                 ->exists();
 
@@ -146,7 +142,7 @@ class RedirectResource extends Resource
                          */
                         ->dehydrateStateUsing(fn (?string $state): ?string => $state === null
                             ? null
-                            : \App\Models\Redirect::normalise($state))
+                            : Redirect::normalise($state))
                         ->validationMessages([
                             'regex' => __('studio.redirects.rule_path'),
                             'not_regex' => __('studio.redirects.rule_not_admin_from'),
@@ -162,7 +158,7 @@ class RedirectResource extends Resource
                         ->different('from_path')
                         ->dehydrateStateUsing(fn (?string $state): ?string => $state === null
                             ? null
-                            : \App\Models\Redirect::normalise($state))
+                            : Redirect::normalise($state))
                         ->validationMessages([
                             'regex' => __('studio.redirects.rule_path'),
                             'not_regex' => __('studio.redirects.rule_not_admin_to'),

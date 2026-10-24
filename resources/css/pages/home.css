@@ -476,7 +476,7 @@
  * stack — data, wordmark, plate, words — deliberately, rather than letting the
  * letters collide with the picture.
  */
-@media (max-width: 900px) {
+@media (max-width: 899px) {
     .hero {
         grid-template-columns: 1fr;
         grid-template-rows: repeat(7, auto);
@@ -867,7 +867,7 @@
 
 /* ---------------- Recomposed for narrow screens, not shrunk ------------- */
 
-@media (max-width: 900px) {
+@media (max-width: 899px) {
     /*
      * ONE COLUMN, not twelve with everything spanning them.
      *
@@ -1386,15 +1386,21 @@
  * 14px under the plate. The table reproduces the browser to three decimals.
  *
  * --split-clear is the room between a word and the plate's edge, in the
- * word's own em: 0.18em, about the width of the space the plate replaces.
+ * word's own em. It was 0.18em — the width of the space the plate replaces —
+ * and on the page that read as two words parked either side of a picture
+ * (≈45px at 1440) rather than one name crossed by it, which is what the
+ * English does. Engineering pass, Oct 2026: 0.06em, the words TUCKED against
+ * the photograph's edges. Still never under it — a covered letter is the cut
+ * ADR 0003 rules out — and the freed width goes to the type, which grows.
  * tests/Support/hero-interlock.mjs reads every character's rendered box
- * against the plate rather than trusting any of this arithmetic.
+ * against the plate rather than trusting any of this arithmetic, and now
+ * also fails a gap wider than 0.1em.
  * ═══════════════════════════════════════════════════════════════════════
  */
 @media (min-width: 900px) {
     .hero--split {
         container-type: inline-size;
-        --split-clear: 0.18;
+        --split-clear: 0.06;
         --hero-col: calc(100cqi / 12);
         --wordmark-size: min(
             30vh,
@@ -1443,6 +1449,33 @@
     .hero--split .hero__voice {
         margin-top: 0;
     }
+
+    /*
+     * A PORTRAIT PHOTOGRAPH: THE VOICE GOES BEFORE THE PLATE, AS IN ENGLISH.
+     *
+     * English sets a portrait hero's statement and link in the columns
+     * BEFORE the plate (`.hero--portrait .hero__voice`: 1 / span 5), under
+     * the first word, aligned to the photograph. The split composition put
+     * them after the plate whatever the photograph, so in Arabic they sat
+     * under the SECOND word, on the opposite side from the English. Here they
+     * mirror it: the space before the plate, measured exactly as the plate
+     * is placed (--side-start columns, a fraction — so the text ends the same
+     * --hero-plate-gap from the photograph as in English, not at the last
+     * whole column), the gap on the side facing the picture, the text aligned
+     * toward it. Logical properties, so "before" is the right in Arabic.
+     */
+    .hero--split.hero--portrait .hero__voice,
+    .hero--split.hero--portrait .hero__aside {
+        grid-column: 1 / -1;
+        justify-self: start;
+        box-sizing: border-box;
+        inline-size: calc(var(--hero-col) * var(--side-start));
+        padding-inline-start: 0;
+        padding-inline-end: var(--hero-plate-gap);
+    }
+
+    .hero--split.hero--portrait .hero__voice { text-align: end; }
+    .hero--split.hero--portrait .hero__aside { justify-items: end; }
 }
 
 /*

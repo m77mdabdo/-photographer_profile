@@ -91,8 +91,10 @@ The site is checked at 320, 360, 375, 390, 414, 768, 1024, 1280, 1440 and
   deliberately: the English wordmark is crossed by the photograph mid-word;
   Arabic cannot be read with a hidden middle (connected letters, no written
   short vowels), so the photograph sits over the space between the two words,
-  each tucked against its edge (`.hero--split`, `App\Support\HeroSplit`, ADR
-  0003). Names that are not two words take the vertical composition
+  each tucked against its edge — 0.06em, never under it (`.hero--split`,
+  `App\Support\HeroSplit`, ADR 0003). The statement and link follow the
+  English rule by photograph orientation, mirrored: before the plate for a
+  portrait photograph, 32px from it in both languages. Names that are not two words take the vertical composition
   (`.hero--vertical`).
 
 ## Components to reuse

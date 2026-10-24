@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Security;
 
+use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
 /**
@@ -71,7 +72,7 @@ class DependencySurfaceTest extends TestCase
          */
         $offenders = [];
 
-        foreach (\Illuminate\Support\Facades\File::allFiles(resource_path()) as $file) {
+        foreach (File::allFiles(resource_path()) as $file) {
             if (! in_array($file->getExtension(), ['js', 'mjs', 'ts', 'css'], true)) {
                 continue;
             }

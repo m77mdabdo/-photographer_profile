@@ -7,6 +7,8 @@ namespace Tests\Feature\Security;
 use App\Support\ReturnPath;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\DemoWorld;
 use Tests\TestCase;
 
 /**
@@ -54,7 +56,7 @@ class ReflectionTest extends TestCase
 
     private const PROBE = 'REFLECTME';
 
-    private \Tests\Support\DemoWorld $world;
+    private DemoWorld $world;
 
     protected function setUp(): void
     {
@@ -64,10 +66,10 @@ class ReflectionTest extends TestCase
          * Content, because a pager that has only one page emits no links and
          * would make the pager half of this test vacuous.
          */
-        $this->world = new \Tests\Support\DemoWorld;
+        $this->world = new DemoWorld;
 
         for ($i = 0; $i < 16; $i++) {
-            $this->world->story('reflect-'.$i, \Tests\Support\DemoWorld::simpleScore(1), ['landscape']);
+            $this->world->story('reflect-'.$i, DemoWorld::simpleScore(1), ['landscape']);
         }
     }
 
@@ -85,7 +87,7 @@ class ReflectionTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('publicSurfaces')]
+    #[DataProvider('publicSurfaces')]
     public function test_a_public_page_echoes_nothing_the_caller_chose(string $path): void
     {
         $body = (string) $this->get($path)->getContent();
@@ -102,7 +104,7 @@ class ReflectionTest extends TestCase
      * something. If the token had been removed instead, every assertion here
      * would pass for the wrong reason.
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('publicSurfaces')]
+    #[DataProvider('publicSurfaces')]
     public function test_those_same_pages_still_carry_the_csrf_token(string $path): void
     {
         $body = (string) $this->get($path)->getContent();
@@ -167,7 +169,7 @@ class ReflectionTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('errorPages')]
+    #[DataProvider('errorPages')]
     public function test_an_error_page_names_no_canonical_and_no_alternates(string $path, int $status): void
     {
         $response = $this->get($path);
@@ -228,7 +230,7 @@ class ReflectionTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('returnPaths')]
+    #[DataProvider('returnPaths')]
     public function test_the_return_path_keeps_only_what_the_site_reads(string $path, string $query, string $expected): void
     {
         $request = Request::create($path.($query === '' ? '' : '?'.$query));
@@ -250,7 +252,7 @@ class ReflectionTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('privatePaths')]
+    #[DataProvider('privatePaths')]
     public function test_a_private_path_keeps_its_whole_query(string $uri): void
     {
         $request = Request::create($uri);

@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Support\Settings;
 use App\Support\WordmarkMetrics;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
 use Tests\TestCase;
@@ -27,7 +28,7 @@ class HeroCompositionTest extends TestCase
         parent::setUp();
 
         Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
     }
 

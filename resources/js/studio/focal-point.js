@@ -56,7 +56,8 @@ export function initFocalPoint() {
         inputY.dispatchEvent(new Event('input', { bubbles: true }));
 
         if (readout) {
-            readout.textContent = `Focal point: ${round(x).toFixed(3)}, ${round(y).toFixed(3)}`;
+            // The sentence comes from the page (studio.media.focal_readout), in the dashboard's language.
+            readout.textContent = (readout.dataset.template || 'Focal point: :x, :y').replace(':x', round(x).toFixed(3)).replace(':y', round(y).toFixed(3));
         }
     }
 

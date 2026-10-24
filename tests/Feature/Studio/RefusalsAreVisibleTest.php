@@ -5,6 +5,12 @@ declare(strict_types=1);
 namespace Tests\Feature\Studio;
 
 use App\Enums\UserRole;
+use App\Filament\Resources\ArticleCategories\ArticleCategoryResource;
+use App\Filament\Resources\Categories\CategoryResource;
+use App\Filament\Resources\Media\MediaResource;
+use App\Filament\Resources\Tags\TagResource;
+use App\Filament\Resources\Users\UserResource;
+use App\Models\Article;
 use App\Models\ArticleCategory;
 use App\Models\Category;
 use App\Models\Media;
@@ -14,6 +20,8 @@ use App\Models\Tag;
 use App\Models\User;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Filament\Resources\Resource;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
@@ -125,7 +133,7 @@ class RefusalsAreVisibleTest extends TestCase
         }
 
         $this->assertDeleteRefusedVisibly(
-            \App\Filament\Resources\Media\MediaResource::class,
+            MediaResource::class,
             $media,
             '2 places',
         );
@@ -143,7 +151,7 @@ class RefusalsAreVisibleTest extends TestCase
         );
 
         $this->assertDeleteRefusedVisibly(
-            \App\Filament\Resources\Categories\CategoryResource::class,
+            CategoryResource::class,
             $category,
             '3 projects',
         );
@@ -154,10 +162,10 @@ class RefusalsAreVisibleTest extends TestCase
     {
         $category = ArticleCategory::factory()->create();
 
-        \App\Models\Article::factory()->count(2)->create(['article_category_id' => $category->getKey()]);
+        Article::factory()->count(2)->create(['article_category_id' => $category->getKey()]);
 
         $this->assertDeleteRefusedVisibly(
-            \App\Filament\Resources\ArticleCategories\ArticleCategoryResource::class,
+            ArticleCategoryResource::class,
             $category,
             '2 articles',
         );
@@ -171,7 +179,7 @@ class RefusalsAreVisibleTest extends TestCase
         $me = auth()->user();
 
         $this->assertDeleteRefusedVisibly(
-            \App\Filament\Resources\Users\UserResource::class,
+            UserResource::class,
             $me,
             'your own account',
         );
@@ -190,12 +198,12 @@ class RefusalsAreVisibleTest extends TestCase
     {
         $tag = Tag::factory()->create();
 
-        \App\Models\Article::factory()->count(2)->create()->each(
+        Article::factory()->count(2)->create()->each(
             fn ($article) => $article->tags()->attach($tag)
         );
 
         $this->assertDeleteRefusedVisibly(
-            \App\Filament\Resources\Tags\TagResource::class,
+            TagResource::class,
             $tag,
             '2 articles',
         );
@@ -234,7 +242,7 @@ class RefusalsAreVisibleTest extends TestCase
             }
 
             $instance = Livewire::test($resource::getPages()['index']->getPage())->instance();
-            $table = $resource::table(\Filament\Tables\Table::make($instance));
+            $table = $resource::table(Table::make($instance));
 
             foreach ($table->getRecordActions() as $action) {
                 if ($action->getName() !== 'delete') {

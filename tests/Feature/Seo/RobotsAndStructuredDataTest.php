@@ -11,14 +11,18 @@ use App\Models\Project;
 use App\Models\Service;
 use App\Support\Settings;
 use App\Support\Sitemap;
+use Database\Seeders\LegalPagesSeeder;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
+use Tests\Support\AssertsNoJavaScript;
 use Tests\Support\DemoWorld;
 use Tests\TestCase;
 
 class RobotsAndStructuredDataTest extends TestCase
 {
-    use \Tests\Support\AssertsNoJavaScript;
+    use AssertsNoJavaScript;
     use RefreshDatabase;
 
     private DemoWorld $world;
@@ -31,11 +35,11 @@ class RobotsAndStructuredDataTest extends TestCase
         Storage::fake('media_public', config('filesystems.disks.media_public'));
 
         Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
         Sitemap::forget();
 
-        $this->world = new DemoWorld();
+        $this->world = new DemoWorld;
     }
 
     private function asProduction(): void
@@ -111,7 +115,7 @@ class RobotsAndStructuredDataTest extends TestCase
      */
     public function test_the_whole_site_is_noindex_outside_production(): void
     {
-        $this->seed(\Database\Seeders\LegalPagesSeeder::class);
+        $this->seed(LegalPagesSeeder::class);
 
         $project = Project::factory()->published()->create();
         $article = Article::factory()->create();
@@ -146,7 +150,7 @@ class RobotsAndStructuredDataTest extends TestCase
          * ConfirmableTrait and stops to ask in production, which blows up on a
          * mocked console rather than telling you anything useful.
          */
-        $this->seed(\Database\Seeders\LegalPagesSeeder::class);
+        $this->seed(LegalPagesSeeder::class);
 
         $this->asProduction();
 
@@ -206,7 +210,7 @@ class RobotsAndStructuredDataTest extends TestCase
 
     public function test_every_structured_data_block_parses_and_holds_no_empty_field(): void
     {
-        $this->seed(\Database\Seeders\LegalPagesSeeder::class);
+        $this->seed(LegalPagesSeeder::class);
 
         $category = new ArticleCategory(['name' => 'Process']);
         $category->slug = 'process';
@@ -382,7 +386,7 @@ class RobotsAndStructuredDataTest extends TestCase
     {
         $project = Project::factory()->create(['title' => 'Not finished']);
 
-        $url = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+        $url = URL::temporarySignedRoute(
             'projects.preview',
             now()->addHour(),
             ['project' => $project->slug]

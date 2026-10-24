@@ -157,7 +157,7 @@ final class AccentPalette
     }
 
     /**
-     * @return array{0: float, 1: float, 2: float}|null  hue, saturation, lightness
+     * @return array{0: float, 1: float, 2: float}|null hue, saturation, lightness
      */
     private static function toHsl(string $colour): ?array
     {

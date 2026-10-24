@@ -7,16 +7,26 @@ namespace Tests\Feature;
 use App\Actions\Projects\SyncProjectMedia;
 use App\Enums\MediaStatus;
 use App\Models\Category;
+use App\Models\Client;
 use App\Models\Media;
 use App\Models\Project;
+use App\Models\Service;
+use App\Models\Setting;
+use App\Models\Testimonial;
+use App\Support\AccentColor;
+use App\Support\Settings;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Tests\Support\AssertsNoJavaScript;
 use Tests\TestCase;
 
 class HomepageTest extends TestCase
 {
-    use \Tests\Support\AssertsNoJavaScript;
+    use AssertsNoJavaScript;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -42,13 +52,12 @@ class HomepageTest extends TestCase
      */
     private function seedSettings(): void
     {
-        \App\Support\Settings::flush();
+        Settings::flush();
 
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
 
-        \App\Support\Settings::flush();
+        Settings::flush();
     }
-
 
     private function media(int $width = 4000, int $height = 2667): Media
     {
@@ -109,7 +118,7 @@ class HomepageTest extends TestCase
         $html = $response->getContent();
 
         foreach (['class="hero', 'class="intro"', 'class="works"',
-                  'class="story"', 'class="sheet"', 'class="closing"'] as $section) {
+            'class="story"', 'class="sheet"', 'class="closing"'] as $section) {
             $this->assertStringContainsString($section, $html, "missing {$section}");
         }
 
@@ -202,7 +211,7 @@ class HomepageTest extends TestCase
 
             // The demo seeder's titles must not have leaked into any view.
             foreach (['Coastline in Winter', 'The Quiet Hours', 'Studio Portraits',
-                      'Salt and Iron', 'After the Harvest', 'Lorem ipsum'] as $forbidden) {
+                'Salt and Iron', 'After the Harvest', 'Lorem ipsum'] as $forbidden) {
                 $this->assertStringNotContainsString(
                     $forbidden,
                     $source,
@@ -267,8 +276,8 @@ class HomepageTest extends TestCase
 
         // And every face is actually self-hosted, with its licence beside it.
         foreach (['archivo-latin', 'archivo-latin-ext',
-                  'inter-tight-latin', 'inter-tight-latin-ext',
-                  'jetbrains-mono-latin', 'jetbrains-mono-latin-ext'] as $file) {
+            'inter-tight-latin', 'inter-tight-latin-ext',
+            'jetbrains-mono-latin', 'jetbrains-mono-latin-ext'] as $file) {
             $this->assertFileExists(public_path("fonts/{$file}.woff2"));
         }
 
@@ -668,16 +677,16 @@ class HomepageTest extends TestCase
                 $this->assertNotEmpty($found, "{$shape}/{$mode}: no accent was emitted");
 
                 $colour = $found[1];
-                [$low, $high] = \App\Support\AccentColor::bandFor($background);
-                $lightness = \App\Support\AccentColor::lightnessOf($colour);
+                [$low, $high] = AccentColor::bandFor($background);
+                $lightness = AccentColor::lightnessOf($colour);
 
                 $this->assertNotNull($lightness, "{$shape}/{$mode}: {$colour} did not parse");
                 $this->assertGreaterThanOrEqual($low, $lightness, "{$shape}/{$mode}: {$colour} is below the band");
                 $this->assertLessThanOrEqual($high, $lightness, "{$shape}/{$mode}: {$colour} is above the band");
 
                 $this->assertGreaterThanOrEqual(
-                    \App\Support\AccentColor::TARGET,
-                    \App\Support\AccentColor::contrastAgainst($colour, $background),
+                    AccentColor::TARGET,
+                    AccentColor::contrastAgainst($colour, $background),
                     "{$shape}/{$mode}: {$colour} fails the contrast floor"
                 );
             }
@@ -752,7 +761,7 @@ class HomepageTest extends TestCase
 
         $html = $this->get('/')->assertOk()->getContent();
 
-        $statement = \App\Support\Settings::get('site.statement');
+        $statement = Settings::get('site.statement');
         $this->assertNotNull($statement);
 
         $hero = substr($html, (int) strpos($html, 'class="hero'), 6000);
@@ -820,7 +829,7 @@ class HomepageTest extends TestCase
          * Every seeded value, plus the reference's own vocabulary. A literal
          * hit means a string a client cannot change without a deploy.
          */
-        $forbidden = \App\Models\Setting::query()->pluck('value')->filter()->all();
+        $forbidden = Setting::query()->pluck('value')->filter()->all();
 
         foreach ($views as $view) {
             $source = (string) file_get_contents($view);
@@ -849,14 +858,14 @@ class HomepageTest extends TestCase
          */
         foreach (['site.name', 'site.statement', 'stage.1.label', 'stage.4.label'] as $key) {
             $this->assertStringContainsString(
-                e((string) \App\Support\Settings::get($key)),
+                e((string) Settings::get($key)),
                 $html,
                 "{$key} did not reach the page"
             );
         }
 
         // Change the table, change the page. No deploy, no cache clear.
-        \App\Support\Settings::set('stage.1.label', 'Latent', 'string', 'hero');
+        Settings::set('stage.1.label', 'Latent', 'string', 'hero');
 
         $this->assertStringContainsString('Latent', $this->get('/')->getContent());
     }
@@ -1137,7 +1146,7 @@ class HomepageTest extends TestCase
          * that it does not exist anywhere that is not a developer's machine.
          */
         $this->assertFalse(app()->environment('local'), 'the suite runs as testing');
-        $this->assertFalse(\Illuminate\Support\Facades\Route::has('dev.hero'));
+        $this->assertFalse(Route::has('dev.hero'));
 
         $this->get('/_dev/hero')->assertNotFound();
 
@@ -1156,7 +1165,7 @@ class HomepageTest extends TestCase
 
     public function test_the_marquee_is_static_under_reduced_motion(): void
     {
-        \App\Models\Client::factory()->count(3)->create();
+        Client::factory()->count(3)->create();
 
         $html = $this->get('/')->assertOk()->getContent();
         $this->assertStringContainsString('class="marquee"', $html);
@@ -1181,7 +1190,7 @@ class HomepageTest extends TestCase
 
     public function test_the_marquee_duplicate_is_hidden_from_assistive_tech_and_the_tab_order(): void
     {
-        \App\Models\Client::factory()->create(['name' => 'Meridian Press', 'url' => 'https://example.com/m']);
+        Client::factory()->create(['name' => 'Meridian Press', 'url' => 'https://example.com/m']);
 
         $html = $this->get('/')->assertOk()->getContent();
 
@@ -1197,8 +1206,8 @@ class HomepageTest extends TestCase
 
     public function test_an_inactive_client_never_appears(): void
     {
-        \App\Models\Client::factory()->create(['name' => 'Shown Client']);
-        \App\Models\Client::factory()->inactive()->create(['name' => 'Hidden Client']);
+        Client::factory()->create(['name' => 'Shown Client']);
+        Client::factory()->inactive()->create(['name' => 'Hidden Client']);
 
         $html = $this->get('/')->assertOk()->getContent();
 
@@ -1239,7 +1248,7 @@ class HomepageTest extends TestCase
         $this->assertAlternates($this->mainChildren($this->get('/')->assertOk()->getContent()), 'with every section');
 
         // Without testimonials — the case that broke fixed positions.
-        \App\Models\Testimonial::query()->delete();
+        Testimonial::query()->delete();
 
         $this->assertAlternates($this->mainChildren($this->get('/')->assertOk()->getContent()), 'without testimonials');
     }
@@ -1307,14 +1316,14 @@ class HomepageTest extends TestCase
      */
     public function test_the_numbered_grid_scales_with_the_services(): void
     {
-        \App\Models\Service::factory()->count(5)->sequence(fn ($s) => ['sort_order' => $s->index])->create();
+        Service::factory()->count(5)->sequence(fn ($s) => ['sort_order' => $s->index])->create();
 
         $html = (string) $this->get('/')->assertOk()->getContent();
         preg_match_all('#<span class="services-strip__number" aria-hidden="true">(\d+)</span>#', $html, $m);
         $this->assertSame(['01', '02', '03', '04', '05'], $m[1]);
 
-        \App\Models\Service::factory()->count(3)->create();
-        \Illuminate\Support\Facades\Cache::flush();
+        Service::factory()->count(3)->create();
+        Cache::flush();
 
         preg_match_all('#<span class="services-strip__number" aria-hidden="true">(\d+)</span>#', (string) $this->get('/')->getContent(), $m);
         $this->assertSame(['01', '02', '03', '04', '05', '06'], $m[1]);

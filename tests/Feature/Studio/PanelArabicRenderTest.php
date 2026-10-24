@@ -7,8 +7,13 @@ namespace Tests\Feature\Studio;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Support\Locale;
+use App\Support\Settings;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -87,7 +92,7 @@ class PanelArabicRenderTest extends TestCase
      */
     private function brandWords(): array
     {
-        $name = (string) (\App\Support\Settings::get('site.name') ?: config('app.name'));
+        $name = (string) (Settings::get('site.name') ?: config('app.name'));
 
         preg_match_all('/[A-Za-z][A-Za-z\'’-]{2,}/', $name, $matches);
 
@@ -169,7 +174,7 @@ class PanelArabicRenderTest extends TestCase
     {
         $screens = [];
 
-        /** @var class-string<Resource> $resource */
+        /** @var class-string<resource> $resource */
         foreach (Filament::getPanel('studio')->getResources() as $resource) {
             foreach ($resource::getPages() as $name => $registration) {
                 // Pages needing a record are covered by the record scan below.
@@ -425,8 +430,8 @@ class PanelArabicRenderTest extends TestCase
     /**
      * Every Select in a resource's form and filters.
      *
-     * @param  class-string<Resource>  $resource
-     * @return list<\Filament\Forms\Components\Select>
+     * @param  class-string<resource>  $resource
+     * @return list<Select>
      */
     private function selects(string $resource): array
     {
@@ -437,7 +442,7 @@ class PanelArabicRenderTest extends TestCase
 
         $walk = function (array $components) use (&$walk, &$found): void {
             foreach ($components as $component) {
-                if ($component instanceof \Filament\Forms\Components\Select) {
+                if ($component instanceof Select) {
                     $found[] = $component;
                 }
 
@@ -445,14 +450,14 @@ class PanelArabicRenderTest extends TestCase
             }
         };
 
-        $walk($resource::form(\Filament\Schemas\Schema::make($instance))->getComponents());
+        $walk($resource::form(Schema::make($instance))->getComponents());
 
-        foreach ($resource::table(\Filament\Tables\Table::make($instance))->getFilters() as $filter) {
+        foreach ($resource::table(Table::make($instance))->getFilters() as $filter) {
             if (method_exists($filter, 'getSchema')) {
                 continue;   // a custom filter's own fields are its business
             }
 
-            if ($filter instanceof \Filament\Tables\Filters\SelectFilter) {
+            if ($filter instanceof SelectFilter) {
                 // A SelectFilter owns a Select internally; ask it directly.
                 $found[] = $filter->getSelect();
             }

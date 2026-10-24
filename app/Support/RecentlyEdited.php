@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Filament\Resources\Articles\ArticleResource;
+use App\Filament\Resources\Pages\PageResource;
+use App\Filament\Resources\Projects\ProjectResource;
+use App\Filament\Resources\Services\ServiceResource;
 use App\Models\Article;
 use App\Models\Page;
 use App\Models\Project;
@@ -77,10 +81,10 @@ final class RecentlyEdited
     public static function editUrl(string $type, int $id): ?string
     {
         $resource = match ($type) {
-            Project::class => \App\Filament\Resources\Projects\ProjectResource::class,
-            Article::class => \App\Filament\Resources\Articles\ArticleResource::class,
-            Service::class => \App\Filament\Resources\Services\ServiceResource::class,
-            Page::class => \App\Filament\Resources\Pages\PageResource::class,
+            Project::class => ProjectResource::class,
+            Article::class => ArticleResource::class,
+            Service::class => ServiceResource::class,
+            Page::class => PageResource::class,
             default => null,
         };
 

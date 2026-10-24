@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Menus\Pages;
 
 use App\Filament\Resources\Menus\MenuResource;
+use App\Filament\Support\NamesPlaces;
 use Filament\Resources\Pages\ManageRecords;
 
 /**
@@ -13,7 +14,7 @@ use Filament\Resources\Pages\ManageRecords;
  */
 class ManageMenus extends ManageRecords
 {
-    use \App\Filament\Support\NamesPlaces;
+    use NamesPlaces;
 
     protected static string $resource = MenuResource::class;
 

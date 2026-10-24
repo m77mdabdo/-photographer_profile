@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Projects\Pages;
 
 use App\Filament\Resources\Projects\ProjectResource;
+use App\Filament\Support\NamesPlaces;
 use App\Filament\Support\RecordWriter;
 use App\Filament\Support\Translatable;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Database\Eloquent\Model;
 
 class CreateProject extends CreateRecord
 {
-    use \App\Filament\Support\NamesPlaces;
+    use NamesPlaces;
 
     protected static string $resource = ProjectResource::class;
 
@@ -25,7 +27,7 @@ class CreateProject extends CreateRecord
     }
 
     /** See EditProject::handleRecordUpdate() — the same three guarded columns. */
-    protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
+    protected function handleRecordCreation(array $data): Model
     {
         return RecordWriter::create($this->getModel(), $data);
     }

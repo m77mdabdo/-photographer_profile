@@ -4,11 +4,23 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\PublishStatus;
 use App\Enums\UserRole;
+use App\Models\Article;
+use App\Models\Category;
+use App\Models\Page;
+use App\Models\Service;
 use App\Models\User;
+use App\Support\Locale;
+use Database\Seeders\LegalPagesSeeder;
+use Database\Seeders\SettingsSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
 use Livewire\Livewire;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\Support\DemoWorld;
 use Tests\TestCase;
 
@@ -72,8 +84,8 @@ class EnglishRenderTest extends TestCase
      */
     private function withoutLanguageNames(string $html): string
     {
-        foreach (\App\Support\Locale::codes() as $code) {
-            $native = \App\Support\Locale::native($code);
+        foreach (Locale::codes() as $code) {
+            $native = Locale::native($code);
 
             if (preg_match('/[\p{Arabic}]/u', $native)) {
                 $html = str_replace($native, '', $html);
@@ -89,19 +101,19 @@ class EnglishRenderTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
-        $this->seed(\Database\Seeders\LegalPagesSeeder::class);
+        $this->seed(SettingsSeeder::class);
+        $this->seed(LegalPagesSeeder::class);
 
         $this->world = new DemoWorld;
         $this->world->story('salt-line', DemoWorld::simpleScore(3), ['landscape']);
 
-        \App\Models\Service::factory()->create([
-            'status' => \App\Enums\PublishStatus::Published,
+        Service::factory()->create([
+            'status' => PublishStatus::Published,
             'published_at' => now()->subDay(),
         ]);
 
-        \App\Models\Article::factory()->create([
-            'status' => \App\Enums\PublishStatus::Published,
+        Article::factory()->create([
+            'status' => PublishStatus::Published,
             'published_at' => now()->subDay(),
         ]);
     }
@@ -188,10 +200,10 @@ class EnglishRenderTest extends TestCase
 
         $values = [
             'project' => 'salt-line',
-            'slug' => \App\Models\Page::query()->value('slug') ?? 'privacy',
-            'category' => \App\Models\Category::query()->value('slug'),
-            'article' => \App\Models\Article::query()->value('slug'),
-            'service' => \App\Models\Service::query()->value('slug'),
+            'slug' => Page::query()->value('slug') ?? 'privacy',
+            'category' => Category::query()->value('slug'),
+            'article' => Article::query()->value('slug'),
+            'service' => Service::query()->value('slug'),
             'path' => null,
             'rest' => null,
             'any' => null,
@@ -272,12 +284,12 @@ class EnglishRenderTest extends TestCase
      * asking it for a status throws. A scan that crashed on the first
      * download route would have covered nothing after it.
      */
-    private function htmlOf(\Illuminate\Testing\TestResponse $response): ?string
+    private function htmlOf(TestResponse $response): ?string
     {
         $base = $response->baseResponse;
 
-        if ($base instanceof \Symfony\Component\HttpFoundation\BinaryFileResponse
-            || $base instanceof \Symfony\Component\HttpFoundation\StreamedResponse) {
+        if ($base instanceof BinaryFileResponse
+            || $base instanceof StreamedResponse) {
             return null;
         }
 
@@ -431,7 +443,7 @@ class EnglishRenderTest extends TestCase
     /** One error page, rendered the way the handler renders it. */
     private function renderErrorPage(int $status): string
     {
-        return view('errors.'.$status, ['exception' => new \Symfony\Component\HttpKernel\Exception\HttpException($status)])->render();
+        return view('errors.'.$status, ['exception' => new HttpException($status)])->render();
     }
 
     // ----------------------------------------------------------------- H7

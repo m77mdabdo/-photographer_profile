@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Support\Locale;
-use App\Support\TranslationBackfill;
 use App\Support\TranslatableSchema;
+use App\Support\TranslationBackfill;
 use Illuminate\Console\Command;
 
 /**

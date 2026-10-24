@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Articles;
 
+use App\Filament\Forms\Components\MediaPickerField;
 use App\Filament\Resources\Articles\Pages\CreateArticle;
 use App\Filament\Resources\Articles\Pages\EditArticle;
 use App\Filament\Resources\Articles\Pages\ListArticles;
 use App\Filament\Support\AddressesRecordsById;
-use App\Filament\Forms\Components\MediaPickerField;
+use App\Filament\Support\HelpHint;
 use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\Translatable;
 use App\Models\Article;
 use BackedEnum;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -56,13 +56,12 @@ class ArticleResource extends Resource
 
     protected static ?string $model = Article::class;
 
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-pencil-square';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-pencil-square';
 
     protected static ?int $navigationSort = 1;
 
     /** The columns this resource edits in every locale. */
     public const TRANSLATED = ['slug', 'title', 'subtitle', 'excerpt', 'body', 'seo_title', 'seo_description'];
-
 
     public static function getNavigationGroup(): ?string
     {
@@ -73,7 +72,6 @@ class ArticleResource extends Resource
     {
         return __('studio.nav.journal');
     }
-
 
     /**
      * The noun Filament puts in its own sentences.
@@ -104,8 +102,8 @@ class ArticleResource extends Resource
                     'subtitle' => fn (string $p) => TextInput::make($p)->maxLength(255),
                     'excerpt' => fn (string $p) => Textarea::make($p)->rows(3),
                     'body' => fn (string $p) => Textarea::make($p)->rows(8),
-                    'seo_title' => fn (string $p) => TextInput::make($p)->maxLength(255)->hintAction(\App\Filament\Support\HelpHint::action('seo_title')),
-                    'seo_description' => fn (string $p) => Textarea::make($p)->rows(3)->hintAction(\App\Filament\Support\HelpHint::action('seo_description')),
+                    'seo_title' => fn (string $p) => TextInput::make($p)->maxLength(255)->hintAction(HelpHint::action('seo_title')),
+                    'seo_description' => fn (string $p) => Textarea::make($p)->rows(3)->hintAction(HelpHint::action('seo_description')),
                 ]),
             ]),
 

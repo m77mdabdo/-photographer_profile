@@ -13,12 +13,16 @@ use App\Models\Media;
 use App\Models\MediaUsage;
 use App\Models\Project;
 use App\Models\User;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\Testing\TestAction;
+use Filament\Tables\Table;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Testing\File;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -61,7 +65,7 @@ class MediaUploadTest extends TestCase
     }
 
     /** Drive the panel's own upload modal with one file. */
-    private function uploadThroughThePanel(UploadedFile $file): \Livewire\Features\SupportTesting\Testable
+    private function uploadThroughThePanel(UploadedFile $file): Testable
     {
         return Livewire::test(ListMedia::class)
             ->mountAction('upload')
@@ -126,7 +130,7 @@ class MediaUploadTest extends TestCase
 
         // A different NAME, identical bytes — the dedupe is on content.
         $this->uploadThroughThePanel(
-            new \Illuminate\Http\Testing\File('renamed-copy.jpg', fopen($path, 'rb'))
+            new File('renamed-copy.jpg', fopen($path, 'rb'))
         );
 
         $this->assertSame(1, Media::query()->count(), 'the sha256 dedupe did not hold');
@@ -267,7 +271,7 @@ class MediaUploadTest extends TestCase
         $names = [];
 
         foreach ($this->table()->getToolbarActions() as $action) {
-            foreach ($action instanceof \Filament\Actions\ActionGroup ? $action->getActions() : [$action] as $inner) {
+            foreach ($action instanceof ActionGroup ? $action->getActions() : [$action] as $inner) {
                 $names[] = $inner->getName();
             }
         }
@@ -316,10 +320,10 @@ class MediaUploadTest extends TestCase
         return $this->table()->getPollingInterval();
     }
 
-    private function table(): \Filament\Tables\Table
+    private function table(): Table
     {
         return MediaResource::table(
-            \Filament\Tables\Table::make(Livewire::test(ListMedia::class)->instance())
+            Table::make(Livewire::test(ListMedia::class)->instance())
         );
     }
 }

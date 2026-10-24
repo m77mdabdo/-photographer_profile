@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Support\AbsoluteUrl;
+use App\Support\Settings;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\DemoWorld;
@@ -45,11 +48,11 @@ class ImageUrlTest extends TestCase
          */
         Storage::fake('media_public', config('filesystems.disks.media_public'));
 
-        \App\Support\Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
-        \App\Support\Settings::flush();
+        Settings::flush();
+        $this->seed(SettingsSeeder::class);
+        Settings::flush();
 
-        $this->world = new DemoWorld();
+        $this->world = new DemoWorld;
     }
 
     private function populate(): void
@@ -184,16 +187,16 @@ class ImageUrlTest extends TestCase
          */
         $this->assertSame(
             'https://cdn.example.com/media/x.jpg',
-            \App\Support\AbsoluteUrl::for('https://cdn.example.com/media/x.jpg')
+            AbsoluteUrl::for('https://cdn.example.com/media/x.jpg')
         );
 
         $this->assertSame(
             '//cdn.example.com/media/x.jpg',
-            \App\Support\AbsoluteUrl::for('//cdn.example.com/media/x.jpg')
+            AbsoluteUrl::for('//cdn.example.com/media/x.jpg')
         );
 
-        $this->assertStringStartsWith('http', (string) \App\Support\AbsoluteUrl::for('/storage/media/x.jpg'));
-        $this->assertNull(\App\Support\AbsoluteUrl::for(null));
+        $this->assertStringStartsWith('http', (string) AbsoluteUrl::for('/storage/media/x.jpg'));
+        $this->assertNull(AbsoluteUrl::for(null));
     }
 
     /**

@@ -587,3 +587,30 @@ words *beside* the plate, which 390px cannot hold at any size worth setting.
 
 A7 (parallax) exists; A8 (scroll prompt) and A9 (index rows) remain declined
 for the reasons above.
+
+---
+
+## Addendum, engineering pass (24 Oct 2026) — tucked, and the voice mirrored
+
+**Status:** accepted; refines the "cut at the word boundary" composition, does
+not replace it.
+
+The owner compared `/` and `/ar` side by side and read the Arabic hero as two
+words parked either side of a picture. Two measured causes, two changes:
+
+1. **The gap.** `--split-clear` was 0.18em — the width of the space the plate
+   replaces — which at 1440 left 33–39px of empty ground between each word and
+   the photograph. It is now **0.06em** (12–18px at 1440, 8–13px at 1024): the
+   words tuck against the plate's edges and the type grows into the freed
+   width. The rule that killed mid-word occlusion stands — no letter is ever
+   under the plate — and `hero-interlock.mjs` now also fails a gap wider than
+   0.1em.
+2. **The voice.** English puts a portrait hero's statement, attribution and
+   project link *before* the plate, under the first word, aligned toward the
+   photograph. The split composition put them after the plate whatever the
+   photograph, i.e. under the second word. With a portrait photograph they now
+   mirror the English: the space before the plate, sized exactly as the plate
+   is placed (`--side-start` columns), so the text stands the same 32px from
+   the photograph in both languages (asserted by `hero-interlock.mjs`).
+
+Before/after: `docs/screenshots/parity/`.

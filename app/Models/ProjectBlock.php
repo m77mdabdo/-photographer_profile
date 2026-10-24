@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Support\Locale;
-
 use App\Actions\Projects\SyncBlockMedia;
 use App\Enums\BlockType;
-use Illuminate\Database\Eloquent\Casts\Attribute;
+use App\Support\Locale;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

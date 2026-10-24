@@ -9,6 +9,7 @@ use App\Filament\Resources\ArticleCategories\ArticleCategoryResource;
 use App\Filament\Resources\ArticleCategories\Pages\ManageArticleCategories;
 use App\Filament\Resources\Articles\ArticleResource;
 use App\Filament\Resources\Articles\Pages\EditArticle;
+use App\Filament\Resources\Articles\Pages\ListArticles;
 use App\Filament\Resources\Categories\CategoryResource;
 use App\Filament\Resources\Categories\Pages\ManageCategories;
 use App\Filament\Resources\Clients\ClientResource;
@@ -17,18 +18,25 @@ use App\Filament\Resources\Media\MediaResource;
 use App\Filament\Resources\Media\Pages\ListMedia;
 use App\Filament\Resources\Pages\PageResource;
 use App\Filament\Resources\Pages\Pages\EditPage;
+use App\Filament\Resources\Pages\Pages\ListPages;
+use App\Filament\Resources\Projects\Pages\CreateProject;
 use App\Filament\Resources\Projects\Pages\EditProject;
+use App\Filament\Resources\Projects\Pages\ListProjects;
 use App\Filament\Resources\Projects\ProjectResource;
 use App\Filament\Resources\Services\Pages\EditService;
+use App\Filament\Resources\Services\Pages\ListServices;
 use App\Filament\Resources\Services\ServiceResource;
 use App\Filament\Resources\Tags\Pages\ManageTags;
 use App\Filament\Resources\Tags\TagResource;
+use App\Filament\Support\Translatable;
+use App\Models\Project;
 use App\Models\User;
 use App\Support\Locale;
 use Filament\Actions\Testing\TestAction;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -170,7 +178,7 @@ class TranslatableSaveTest extends TestCase
     /**
      * @param  array<int, string>  $translated
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('pageEditors')]
+    #[DataProvider('pageEditors')]
     public function test_the_edit_page_cannot_destroy_the_other_locale(
         string $page,
         string $resource,
@@ -218,17 +226,17 @@ class TranslatableSaveTest extends TestCase
             'Media' => [ListMedia::class, MediaResource::class, MediaResource::TRANSLATED, 'alt'],
 
             // And the row action on the resources that ALSO have a page.
-            'Project row' => [\App\Filament\Resources\Projects\Pages\ListProjects::class, ProjectResource::class, ProjectResource::TRANSLATED, 'title'],
-            'Article row' => [\App\Filament\Resources\Articles\Pages\ListArticles::class, ArticleResource::class, ArticleResource::TRANSLATED, 'title'],
-            'Service row' => [\App\Filament\Resources\Services\Pages\ListServices::class, ServiceResource::class, ServiceResource::TRANSLATED, 'name'],
-            'Page row' => [\App\Filament\Resources\Pages\Pages\ListPages::class, PageResource::class, PageResource::TRANSLATED, 'title'],
+            'Project row' => [ListProjects::class, ProjectResource::class, ProjectResource::TRANSLATED, 'title'],
+            'Article row' => [ListArticles::class, ArticleResource::class, ArticleResource::TRANSLATED, 'title'],
+            'Service row' => [ListServices::class, ServiceResource::class, ServiceResource::TRANSLATED, 'name'],
+            'Page row' => [ListPages::class, PageResource::class, PageResource::TRANSLATED, 'title'],
         ];
     }
 
     /**
      * @param  array<int, string>  $translated
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('modalEditors')]
+    #[DataProvider('modalEditors')]
     public function test_the_edit_modal_cannot_destroy_the_other_locale(
         string $listPage,
         string $resource,
@@ -281,7 +289,7 @@ class TranslatableSaveTest extends TestCase
      */
     public function test_a_create_carries_every_locale_and_copies_nothing(): void
     {
-        $prepared = \App\Filament\Support\Translatable::save(
+        $prepared = Translatable::save(
             ProjectResource::TRANSLATED,
             ['title' => [Locale::DEFAULT => 'A new commission']],
         );
@@ -290,7 +298,7 @@ class TranslatableSaveTest extends TestCase
             $this->assertArrayHasKey($locale, $prepared['title'], "save() dropped the $locale key");
         }
 
-        Livewire::test(\App\Filament\Resources\Projects\Pages\CreateProject::class)
+        Livewire::test(CreateProject::class)
             ->fillForm([
                 'title.'.Locale::DEFAULT => 'A new commission',
                 'slug.'.Locale::DEFAULT => 'a-new-commission',
@@ -300,7 +308,7 @@ class TranslatableSaveTest extends TestCase
             ->call('create')
             ->assertHasNoFormErrors();
 
-        $project = \App\Models\Project::query()->latest('id')->firstOrFail();
+        $project = Project::query()->latest('id')->firstOrFail();
 
         $this->assertSame('A new commission', $project->getTranslation('title', Locale::DEFAULT, fallback: false));
 

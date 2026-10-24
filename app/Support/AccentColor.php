@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Models\Project;
+
 /**
  * Takes a colour sampled from a photograph and makes it usable as an accent.
  *
@@ -50,8 +52,8 @@ final class AccentColor
     private const MAX_LIGHTNESS_SHIFT = 0.45;
 
     /**
-     * @return string|null  A hex colour, or null when nothing usable was given
-     *                      or the source cannot be made into a usable accent.
+     * @return string|null A hex colour, or null when nothing usable was given
+     *                     or the source cannot be made into a usable accent.
      */
     public static function derive(?string $source, string $background, float $target = self::TARGET): ?string
     {
@@ -120,7 +122,7 @@ final class AccentColor
      *
      * @return array{dark: ?string, light: ?string}
      */
-    public static function pairForProject(?\App\Models\Project $project): array
+    public static function pairForProject(?Project $project): array
     {
         $source = $project?->cover?->accentSource() ?? $project?->hero?->accentSource();
 

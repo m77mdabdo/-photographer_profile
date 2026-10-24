@@ -99,7 +99,7 @@ class PageController extends Controller
     public function show(Page $page): View
     {
         if (! $page->isPubliclyVisible()) {
-            throw new NotFoundHttpException();
+            throw new NotFoundHttpException;
         }
 
         return view('pages.show', [

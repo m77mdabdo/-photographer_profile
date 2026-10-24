@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Support\Settings;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+use Tests\Support\DemoWorld;
 use Tests\TestCase;
 
 /**
@@ -26,7 +29,7 @@ class StatementTest extends TestCase
         parent::setUp();
 
         Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
     }
 
@@ -44,9 +47,9 @@ class StatementTest extends TestCase
      */
     public function test_no_page_puts_two_statements_in_a_section_or_in_adjacent_sections(): void
     {
-        \Illuminate\Support\Facades\Storage::fake('media_originals');
-        \Illuminate\Support\Facades\Storage::fake('media_public', ['url' => 'http://localhost/storage/media', 'visibility' => 'public']);
-        (new \Tests\Support\DemoWorld())->story('two-quotes', [
+        Storage::fake('media_originals');
+        Storage::fake('media_public', ['url' => 'http://localhost/storage/media', 'visibility' => 'public']);
+        (new DemoWorld)->story('two-quotes', [
             ['type' => 'full_width_image', 'n' => 1],
             ['type' => 'quote', 'n' => 0, 'data' => ['quote' => 'The first line worth pulling out.']],
             ['type' => 'quote', 'n' => 0, 'data' => ['quote' => 'A second, straight after it.']],

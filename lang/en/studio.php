@@ -289,7 +289,6 @@ return [
         'note' => 'Two-factor authentication is required.',
     ],
 
-
     /*
      * A5 — the one link to the custom admin, labelled for what it is.
      *
@@ -330,7 +329,7 @@ return [
         // not exist anywhere yet.
     ],
 
-        /*
+    /*
      * 34d B2 — a badge never carries its meaning in a colour or a glyph
      * alone. These are the words the counts and the translation state say
      * for themselves; the colour stays underneath as the glance.

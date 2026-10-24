@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace Tests\Feature\Security;
 
 use App\Http\Middleware\SecurityHeaders;
+use App\Models\Redirect;
 use App\Models\User;
+use App\Support\PageTransition;
+use Filament\Facades\Filament;
+use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -73,7 +78,7 @@ class SecurityHeadersTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('surfaces')]
+    #[DataProvider('surfaces')]
     public function test_the_headers_are_on_every_response(string $path): void
     {
         $response = $this->get($path);
@@ -104,7 +109,7 @@ class SecurityHeadersTest extends TestCase
      */
     public function test_the_headers_are_on_a_response_a_middleware_returns_by_itself(): void
     {
-        \App\Models\Redirect::query()->create([
+        Redirect::query()->create([
             'from_path' => '/old-name',
             'to_path' => '/work',
             'status' => 301,
@@ -126,7 +131,7 @@ class SecurityHeadersTest extends TestCase
      */
     public function test_the_security_headers_middleware_is_first_in_the_global_stack(): void
     {
-        $kernel = app(\Illuminate\Contracts\Http\Kernel::class);
+        $kernel = app(Kernel::class);
 
         $stack = (new \ReflectionClass($kernel))->getProperty('middleware')->getValue($kernel);
 
@@ -238,7 +243,7 @@ class SecurityHeadersTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('publicSurfaces')]
+    #[DataProvider('publicSurfaces')]
     public function test_the_public_policy_permits_neither_inline_script_nor_eval(string $path): void
     {
         $policy = $this->csp($this->get($path));
@@ -258,7 +263,7 @@ class SecurityHeadersTest extends TestCase
          * drifting from what the policy names.
          */
         $this->assertSame(
-            "'self' ".\App\Support\PageTransition::hash(),
+            "'self' ".PageTransition::hash(),
             $this->directive($policy, 'style-src')
         );
 
@@ -323,7 +328,7 @@ class SecurityHeadersTest extends TestCase
      */
     public function test_the_panel_policy_follows_the_panel_path(): void
     {
-        $this->assertSame('admin', \Filament\Facades\Filament::getPanel('studio')->getPath());
+        $this->assertSame('admin', Filament::getPanel('studio')->getPath());
 
         // A path that merely starts with the same letters is not the panel.
         $this->assertStringNotContainsString(

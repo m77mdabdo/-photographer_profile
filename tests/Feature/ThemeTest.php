@@ -4,13 +4,21 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\MediaStatus;
+use App\Models\Category;
+use App\Models\Media;
+use App\Models\Project;
 use App\Support\Theme;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+use Tests\Support\AssertsNoJavaScript;
 use Tests\TestCase;
 
 class ThemeTest extends TestCase
 {
-    use \Tests\Support\AssertsNoJavaScript;
+    use AssertsNoJavaScript;
     use RefreshDatabase;
 
     // ----------------------------------------------------------------- 1
@@ -126,7 +134,7 @@ class ThemeTest extends TestCase
          * route sits in the web group — which is what applies the middleware in
          * a real request — and that the form actually sends a token.
          */
-        $route = collect(\Illuminate\Support\Facades\Route::getRoutes()->getRoutes())
+        $route = collect(Route::getRoutes()->getRoutes())
             ->first(fn ($r): bool => $r->getName() === 'theme.store');
 
         $this->assertNotNull($route);
@@ -221,7 +229,7 @@ class ThemeTest extends TestCase
          * twice — 8 becomes 16, which looks like a regression and is not one.
          */
         $queries = [];
-        \Illuminate\Support\Facades\DB::listen(function ($query) use (&$queries): void {
+        DB::listen(function ($query) use (&$queries): void {
             $queries[] = $query->sql;
         });
 
@@ -252,7 +260,7 @@ class ThemeTest extends TestCase
             $this->assertCount(
                 13,
                 $queries,
-                "theme=".($cookie ?? 'system')." issued ".count($queries).' queries'
+                'theme='.($cookie ?? 'system').' issued '.count($queries).' queries'
             );
         }
     }
@@ -271,7 +279,6 @@ class ThemeTest extends TestCase
         );
     }
 
-
     /**
      * Eight published projects with covers and heroes, so the homepage does
      * the work it does in production. Without this the page is an empty state
@@ -279,19 +286,19 @@ class ThemeTest extends TestCase
      */
     private function seedPublishedWork(): void
     {
-        \Illuminate\Support\Facades\Storage::fake('media_originals');
-        \Illuminate\Support\Facades\Storage::fake('media_public', [
+        Storage::fake('media_originals');
+        Storage::fake('media_public', [
             'url' => 'http://localhost/storage/media',
             'visibility' => 'public',
         ]);
 
-        $media = function (): \App\Models\Media {
-            $item = \App\Models\Media::factory()->create([
-                'status' => \App\Enums\MediaStatus::Ready, 'width' => 4000, 'height' => 2667,
+        $media = function (): Media {
+            $item = Media::factory()->create([
+                'status' => MediaStatus::Ready, 'width' => 4000, 'height' => 2667,
             ]);
 
             $path = sprintf('2026/09/%s/768.webp', $item->uuid);
-            \Illuminate\Support\Facades\Storage::disk('media_public')->put($path, 'x');
+            Storage::disk('media_public')->put($path, 'x');
             $item->variants()->create([
                 'format' => 'webp', 'width' => 768, 'height' => 512,
                 'disk' => 'media_public', 'path' => $path, 'size_bytes' => 1024,
@@ -300,10 +307,10 @@ class ThemeTest extends TestCase
             return $item->refresh();
         };
 
-        $categories = \App\Models\Category::factory()->count(3)->create();
+        $categories = Category::factory()->count(3)->create();
 
         for ($i = 0; $i < 8; $i++) {
-            $project = \App\Models\Project::factory()->published()->create([
+            $project = Project::factory()->published()->create([
                 'title' => 'Series '.($i + 1), 'slug' => 'series-'.($i + 1),
                 'is_featured' => $i === 0, 'sort_order' => $i,
                 'cover_media_id' => $media()->id, 'hero_media_id' => $media()->id,

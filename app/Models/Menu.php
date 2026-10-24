@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Support\Navigation;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -34,8 +36,8 @@ class Menu extends Model
      */
     protected static function booted(): void
     {
-        static::saved(fn () => \App\Support\Navigation::forget());
-        static::deleted(fn () => \App\Support\Navigation::forget());
+        static::saved(fn () => Navigation::forget());
+        static::deleted(fn () => Navigation::forget());
     }
 
     /** @var list<string> */
@@ -73,9 +75,9 @@ class Menu extends Model
      * the whole menu rather than one per item — this runs on every public
      * page, in the layout, above the fold.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, MenuItem>
+     * @return Collection<int, MenuItem>
      */
-    public function visibleItems(): \Illuminate\Database\Eloquent\Collection
+    public function visibleItems(): Collection
     {
         return $this->items()
             ->where('is_active', true)

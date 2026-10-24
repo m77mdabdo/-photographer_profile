@@ -5,13 +5,18 @@ declare(strict_types=1);
 namespace Tests\Feature\Studio;
 
 use App\Enums\UserRole;
+use App\Filament\Resources\Projects\Pages\CreateProject;
+use App\Filament\Resources\Projects\ProjectResource;
 use App\Models\User;
 use App\Support\Locale;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
-use Filament\Tables\Table;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -191,7 +196,7 @@ class PanelLocaleSwitcherTest extends TestCase
      * and asking a resource for its address there is "A facade root has not
      * been set" — the same trap CrudPathsTest's provider documents.
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('panelScreens')]
+    #[DataProvider('panelScreens')]
     public function test_direction_and_language_agree_on_every_panel_screen(string $screen): void
     {
         Filament::setCurrentPanel('studio');
@@ -342,9 +347,9 @@ class PanelLocaleSwitcherTest extends TestCase
         Filament::setCurrentPanel('studio');
         $this->actingAs($this->owner());
 
-        $schema = \App\Filament\Resources\Projects\ProjectResource::form(
-            \Filament\Schemas\Schema::make(
-                Livewire::test(\App\Filament\Resources\Projects\Pages\CreateProject::class)->instance()
+        $schema = ProjectResource::form(
+            Schema::make(
+                Livewire::test(CreateProject::class)->instance()
             )
         );
 
@@ -376,10 +381,10 @@ class PanelLocaleSwitcherTest extends TestCase
         }
     }
 
-    private function findLocaleTabs(array $components): ?\Filament\Schemas\Components\Tabs
+    private function findLocaleTabs(array $components): ?Tabs
     {
         foreach ($components as $component) {
-            if ($component instanceof \Filament\Schemas\Components\Tabs) {
+            if ($component instanceof Tabs) {
                 return $component;
             }
 
@@ -397,6 +402,6 @@ class PanelLocaleSwitcherTest extends TestCase
 
     private function iconName(mixed $icon): string
     {
-        return $icon instanceof \Filament\Support\Icons\Heroicon ? $icon->value : (string) $icon;
+        return $icon instanceof Heroicon ? $icon->value : (string) $icon;
     }
 }

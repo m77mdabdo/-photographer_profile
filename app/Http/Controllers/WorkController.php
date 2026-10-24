@@ -6,9 +6,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Project;
-use App\Support\ReturnPath;
 use App\Support\EditorialLayout;
+use App\Support\ReturnPath;
 use App\Support\SeoData;
+use App\Support\Settings;
+use App\Support\SiteCopy;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\View\View;
 
@@ -89,10 +91,10 @@ class WorkController extends Controller
 
         // The owner's own label for the page, in the page's language — a
         // literal 'Work' titled the Arabic portfolio in English.
-        $title = $category?->name ?? \App\Support\Settings::get('nav.work');
+        $title = $category?->name ?? Settings::get('nav.work');
 
         if ($page > 1) {
-            $title .= ' — '.\App\Support\SiteCopy::line('shared.pagination_position', ['current' => $page, 'total' => $projects->lastPage()]);
+            $title .= ' — '.SiteCopy::line('shared.pagination_position', ['current' => $page, 'total' => $projects->lastPage()]);
         }
 
         /*

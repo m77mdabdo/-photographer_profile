@@ -5,15 +5,20 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\PublishStatus;
+use App\Models\Media;
+use App\Models\Project;
+use App\Support\Settings;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Tests\Support\AssertsNoJavaScript;
 use Tests\Support\DemoWorld;
 use Tests\TestCase;
 
 class ArchiveTest extends TestCase
 {
-    use \Tests\Support\AssertsNoJavaScript;
+    use AssertsNoJavaScript;
     use RefreshDatabase;
 
     private DemoWorld $world;
@@ -28,11 +33,11 @@ class ArchiveTest extends TestCase
             'visibility' => 'public',
         ]);
 
-        \App\Support\Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
-        \App\Support\Settings::flush();
+        Settings::flush();
+        $this->seed(SettingsSeeder::class);
+        Settings::flush();
 
-        $this->world = new DemoWorld();
+        $this->world = new DemoWorld;
     }
 
     private function fill(): void
@@ -397,7 +402,7 @@ class ArchiveTest extends TestCase
         // have a hole in it.
         $this->assertSame(
             0,
-            \App\Models\Project::query()->published()->whereNull('cover_media_id')->count(),
+            Project::query()->published()->whereNull('cover_media_id')->count(),
             'a published project has no cover'
         );
 
@@ -448,12 +453,12 @@ class ArchiveTest extends TestCase
          * never be empty again, and the count is asserted before the loop.
          * ───────────────────────────────────────────────────────────────────
          */
-        $synthetic = \App\Models\Media::factory()->real()->create([
+        $synthetic = Media::factory()->real()->create([
             'credit' => null,
             'alt' => null,
         ]);
 
-        $uncredited = \App\Models\Media::query()
+        $uncredited = Media::query()
             ->where(fn ($q) => $q->whereNull('credit')->orWhere('credit', ''))
             ->pluck('id');
 
@@ -466,7 +471,7 @@ class ArchiveTest extends TestCase
         $leaked = [];
 
         foreach ($uncredited as $id) {
-            $media = \App\Models\Media::find($id);
+            $media = Media::find($id);
 
             $this->assertNotNull($media);
 
@@ -501,7 +506,7 @@ class ArchiveTest extends TestCase
             $this->assertMatchesRegularExpression('/alt="[^"]+"/', $img, 'an image has no alt: '.$img);
         }
 
-        foreach (\App\Models\Media::query()->where('is_demo', true)->get() as $media) {
+        foreach (Media::query()->where('is_demo', true)->get() as $media) {
             $this->assertNotEmpty($media->alt, "media {$media->id} has no alt");
             $this->assertNotEmpty($media->credit, "media {$media->id} has no credit");
         }

@@ -8,12 +8,13 @@ use App\Filament\Resources\Pages\Pages\CreatePage;
 use App\Filament\Resources\Pages\Pages\EditPage;
 use App\Filament\Resources\Pages\Pages\ListPages;
 use App\Filament\Support\AddressesRecordsById;
+use App\Filament\Support\HelpHint;
 use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\Translatable;
 use App\Models\Page;
 use BackedEnum;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -53,13 +54,12 @@ class PageResource extends Resource
 
     protected static ?string $model = Page::class;
 
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-document-text';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
 
     protected static ?int $navigationSort = 2;
 
     /** The columns this resource edits in every locale. */
     public const TRANSLATED = ['slug', 'title', 'standfirst', 'body', 'seo_title', 'seo_description'];
-
 
     public static function getNavigationGroup(): ?string
     {
@@ -70,7 +70,6 @@ class PageResource extends Resource
     {
         return __('studio.nav.pages');
     }
-
 
     /**
      * The noun Filament puts in its own sentences.
@@ -100,8 +99,8 @@ class PageResource extends Resource
                     'title' => fn (string $p) => TextInput::make($p)->maxLength(255),
                     'standfirst' => fn (string $p) => Textarea::make($p)->rows(3),
                     'body' => fn (string $p) => Textarea::make($p)->rows(8),
-                    'seo_title' => fn (string $p) => TextInput::make($p)->maxLength(255)->hintAction(\App\Filament\Support\HelpHint::action('seo_title')),
-                    'seo_description' => fn (string $p) => Textarea::make($p)->rows(3)->hintAction(\App\Filament\Support\HelpHint::action('seo_description')),
+                    'seo_title' => fn (string $p) => TextInput::make($p)->maxLength(255)->hintAction(HelpHint::action('seo_title')),
+                    'seo_description' => fn (string $p) => Textarea::make($p)->rows(3)->hintAction(HelpHint::action('seo_description')),
                 ]),
             ]),
 

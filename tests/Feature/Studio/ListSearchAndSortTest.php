@@ -32,6 +32,7 @@ use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -493,7 +494,7 @@ class ListSearchAndSortTest extends TestCase
      * A resource whose records are fixed — Navigation's two places in the
      * design — is a different kind of screen from one that accumulates.
      *
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
     private function canGrow(string $resource): bool
     {
@@ -538,7 +539,7 @@ class ListSearchAndSortTest extends TestCase
                 continue;
             }
 
-            $response = \Illuminate\Support\Facades\Gate::forUser(auth()->user())
+            $response = Gate::forUser(auth()->user())
                 ->inspect('create', $resource::getModel());
 
             $this->assertFalse($response->allowed());

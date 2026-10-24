@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Mail;
 
 use App\Models\Inquiry;
+use App\Support\ContactAddress;
 use App\Support\Settings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -44,7 +45,7 @@ class InquiryAcknowledged extends Mailable implements ShouldQueue
     {
         $studio = Settings::get('site.name', 'the studio');
 
-        $from = Settings::get('contact.recipient');
+        $from = ContactAddress::recipient();
 
         return new Envelope(
             /*

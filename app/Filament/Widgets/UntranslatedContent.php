@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Filament\Widgets;
 
+use App\Models\UntranslatedRecord;
 use App\Support\Locale;
 use App\Support\UntranslatedContent as Finder;
 use Filament\Actions\Action;
+use Filament\Facades\Filament;
+use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
@@ -35,7 +38,7 @@ class UntranslatedContent extends TableWidget
 {
     protected static ?int $sort = 4;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     /**
      * Hidden when there is nothing to translate.
@@ -156,7 +159,7 @@ class UntranslatedContent extends TableWidget
      */
     private function records(): Builder
     {
-        return \App\Models\UntranslatedRecord::query()
+        return UntranslatedRecord::query()
             ->fromSub(Finder::query(self::locale()), 'untranslated');
     }
 
@@ -234,7 +237,7 @@ class UntranslatedContent extends TableWidget
      */
     private static function resourceFor(string $model): ?string
     {
-        foreach (\Filament\Facades\Filament::getCurrentOrDefaultPanel()?->getResources() ?? [] as $resource) {
+        foreach (Filament::getCurrentOrDefaultPanel()?->getResources() ?? [] as $resource) {
             if ($resource::getModel() !== $model || ! $resource::canViewAny()) {
                 continue;
             }

@@ -9,6 +9,7 @@ use App\Filament\Support\Translatable;
 use App\Models\Menu;
 use App\Models\MenuItem;
 use App\Models\Page;
+use App\Support\Locale;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Repeater;
@@ -87,7 +88,7 @@ class MenuResource extends Resource
                 ->collapsible()
                 ->addActionLabel(__('studio.menus.add'))
                 ->itemLabel(fn (array $state): ?string => $state['label'][app()->getLocale()]
-                    ?? $state['label'][\App\Support\Locale::DEFAULT]
+                    ?? $state['label'][Locale::DEFAULT]
                     ?? null)
 
                 /*

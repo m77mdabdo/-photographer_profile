@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
-use App\Models\Setting;
 use App\Filament\Forms\Components\MediaPickerField;
+use App\Models\Setting;
 use App\Support\Locale;
 use App\Support\SettingGroups;
 use App\Support\Settings as SettingsStore;
@@ -45,7 +45,7 @@ use Illuminate\Support\Facades\DB;
  */
 class Settings extends Page
 {
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-cog-6-tooth';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
     protected static ?int $navigationSort = 1;
 
@@ -243,7 +243,7 @@ class Settings extends Page
 
     public function save(): void
     {
-        $this->authorize('update', Setting::query()->first() ?? new Setting());
+        $this->authorize('update', Setting::query()->first() ?? new Setting);
 
         /*
          * ONE TRANSACTION, and every locale written together.

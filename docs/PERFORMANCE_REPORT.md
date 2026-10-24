@@ -24,7 +24,9 @@ for example with PageSpeed Insights.
 | Lighthouse performance score | — | **97** | **97** |
 | Page weight | — | 297 kB | **274 kB** |
 
-Both languages are now within every budget. Reproduce with `bin/perf-budgets.sh LABEL 3`
+Both languages are now within every budget. Re-measured on the final code of
+the engineering pass: en LCP 2.43 / 2.49 / 2.48 s, score 97; ar 2.45 / 2.42 /
+1.76 s, score 97 / 97 / 100; CLS ≤ 0.0009. Reproduce with `bin/perf-budgets.sh LABEL 3`
 (production rig, three Lighthouse runs per language, CLS after scrolling with
 `bin/cls-after-scroll.mjs`); results are written to `storage/app/lighthouse/`.
 

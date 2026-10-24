@@ -6,18 +6,23 @@ namespace Tests\Feature;
 
 use App\Enums\PublishStatus;
 use App\Enums\UserRole;
+use App\Filament\Resources\Redirects\Pages\ManageRedirects;
 use App\Http\Middleware\HandleRedirects;
 use App\Models\Article;
 use App\Models\Project;
 use App\Models\Redirect;
-use App\Support\Locale;
-use Illuminate\Support\Facades\App;
 use App\Models\Service;
 use App\Models\User;
+use App\Support\Locale;
 use App\Support\Settings;
+use Database\Seeders\SettingsSeeder;
+use Filament\Actions\Testing\TestAction;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class RedirectTest extends TestCase
@@ -32,7 +37,7 @@ class RedirectTest extends TestCase
         Storage::fake('media_public', config('filesystems.disks.media_public'));
 
         Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
 
         Redirect::forgetMap();
@@ -303,11 +308,11 @@ class RedirectTest extends TestCase
          * the studio out of its own site, and the rule is enforced by the
          * request's validation rather than by whichever screen submits it.
          */
-        \Filament\Facades\Filament::setCurrentPanel('studio');
+        Filament::setCurrentPanel('studio');
 
-        \Livewire\Livewire::actingAs($user)
-            ->test(\App\Filament\Resources\Redirects\Pages\ManageRedirects::class)
-            ->callAction(\Filament\Actions\Testing\TestAction::make('create')->table(), [
+        Livewire::actingAs($user)
+            ->test(ManageRedirects::class)
+            ->callAction(TestAction::make('create')->table(), [
                 'from_path' => '/admin/projects',
                 'to_path' => '/work',
                 'status_code' => 301,

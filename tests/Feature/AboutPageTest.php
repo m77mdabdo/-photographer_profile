@@ -6,14 +6,16 @@ namespace Tests\Feature;
 
 use App\Models\Client;
 use App\Support\Settings;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Tests\Support\AssertsNoJavaScript;
 use Tests\Support\DemoWorld;
 use Tests\TestCase;
 
 class AboutPageTest extends TestCase
 {
-    use \Tests\Support\AssertsNoJavaScript;
+    use AssertsNoJavaScript;
     use RefreshDatabase;
 
     private DemoWorld $world;
@@ -26,10 +28,10 @@ class AboutPageTest extends TestCase
         Storage::fake('media_public', config('filesystems.disks.media_public'));
 
         Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
 
-        $this->world = new DemoWorld();
+        $this->world = new DemoWorld;
     }
 
     // ----------------------------------------------------------------- 13
@@ -41,7 +43,7 @@ class AboutPageTest extends TestCase
         $html = $this->get('/about')->assertOk()->getContent();
 
         foreach (['about.heading', 'about.approach_heading', 'about.clients_heading',
-                  'about.cta', 'site.location', 'site.disciplines'] as $key) {
+            'about.cta', 'site.location', 'site.disciplines'] as $key) {
             $this->assertStringContainsString(
                 e((string) Settings::get($key)),
                 $html,

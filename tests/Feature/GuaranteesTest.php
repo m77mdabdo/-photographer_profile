@@ -5,9 +5,19 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
+use App\Filament\Resources\Pages\Pages\ListPages;
+use App\Filament\Resources\Projects\Pages\ListProjects;
+use App\Filament\Support\Translatable;
+use App\Models\Article;
 use App\Models\Page;
+use App\Models\Project;
+use App\Models\Service;
 use App\Models\User;
+use App\Support\Locale;
+use App\Support\PageLinks;
+use App\Support\RichText;
 use App\Support\TranslatableSchema;
+use Database\Seeders\LegalPagesSeeder;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -204,7 +214,7 @@ class GuaranteesTest extends TestCase
      */
     public function test_a_locked_pages_address_cannot_be_moved_by_any_path(): void
     {
-        $this->seed(\Database\Seeders\LegalPagesSeeder::class);
+        $this->seed(LegalPagesSeeder::class);
 
         $page = Page::query()->where('slug', Page::PRIVACY)->sole();
         $this->assertTrue($page->is_locked);
@@ -283,7 +293,7 @@ class GuaranteesTest extends TestCase
 
         $action = TestAction::make('delete')->table($page);
 
-        Livewire::test(\App\Filament\Resources\Pages\Pages\ListPages::class)
+        Livewire::test(ListPages::class)
             ->assertActionVisible($action)
             ->callAction($action)
             ->assertNotified((string) $response->message());
@@ -299,7 +309,7 @@ class GuaranteesTest extends TestCase
 
         $page = Page::factory()->create(['is_locked' => false]);
 
-        Livewire::test(\App\Filament\Resources\Pages\Pages\ListPages::class)
+        Livewire::test(ListPages::class)
             ->callAction(TestAction::make('delete')->table($page));
 
         $this->assertTrue($page->fresh()->trashed());
@@ -319,9 +329,9 @@ class GuaranteesTest extends TestCase
     public function test_every_public_path_comes_from_the_router(): void
     {
         $cases = [
-            \App\Models\Article::class => ['journal.show', 'a-piece'],
-            \App\Models\Project::class => ['projects.show', 'a-project'],
-            \App\Models\Service::class => ['services.show', 'a-service'],
+            Article::class => ['journal.show', 'a-piece'],
+            Project::class => ['projects.show', 'a-project'],
+            Service::class => ['services.show', 'a-service'],
         ];
 
         foreach ($cases as $model => [$route, $slug]) {
@@ -391,7 +401,7 @@ class GuaranteesTest extends TestCase
          * proved nothing. These are vectors embedded in prose.
          */
         $cases = [
-            'a script tag' => ["Prose with <script>alert(1)</script> inside.", '<script'],
+            'a script tag' => ['Prose with <script>alert(1)</script> inside.', '<script'],
             'a javascript: link' => ['[a link](javascript:alert(2)) in prose.', 'javascript:'],
             'mixed case' => ['[mixed](JaVaScRiPt:alert(3)) case.', 'avaScRiPt:'],
             'a data: uri' => ['[data](data:text/html;base64,PHNjcmlwdD4=) link.', 'data:text/html'],
@@ -402,7 +412,7 @@ class GuaranteesTest extends TestCase
         ];
 
         foreach ($cases as $name => [$markdown, $vector]) {
-            $clean = (string) \App\Support\RichText::toHtml($markdown);
+            $clean = (string) RichText::toHtml($markdown);
 
             $this->assertStringNotContainsString(
                 $vector,
@@ -416,9 +426,9 @@ class GuaranteesTest extends TestCase
          * "every on* handler by construction rather than by blocklist", so
          * this looks for the SHAPE rather than for named handlers.
          */
-        $clean = (string) \App\Support\RichText::toHtml(
+        $clean = (string) RichText::toHtml(
             "A [link](https://example.com) and **bold**.\n\n".
-            "<p class=\"x\" onmouseenter=\"a()\" data-evil=\"1\" style=\"x\">styled</p>"
+            '<p class="x" onmouseenter="a()" data-evil="1" style="x">styled</p>'
         );
 
         $this->assertDoesNotMatchRegularExpression(
@@ -433,11 +443,10 @@ class GuaranteesTest extends TestCase
         // And it is not simply deleting everything.
         $this->assertStringContainsString('<a href="https://example.com"', $clean);
         $this->assertStringContainsString('<strong>bold</strong>', $clean);
-        $this->assertStringContainsString('<p>', \App\Support\RichText::toHtml('A paragraph.'));
+        $this->assertStringContainsString('<p>', RichText::toHtml('A paragraph.'));
     }
 
     // ----------------------------------------------------------------- 7
-
 
     // ----------------------------------------------------------------- 12
 
@@ -488,7 +497,7 @@ class GuaranteesTest extends TestCase
         $this->actingAs($this->owner());
         Filament::setCurrentPanel('studio');
 
-        $sql = Livewire::test(\App\Filament\Resources\Projects\Pages\ListProjects::class)
+        $sql = Livewire::test(ListProjects::class)
             ->set('tableSort', 'title:asc')
             ->instance()
             ->getFilteredSortedTableQuery()
@@ -520,13 +529,13 @@ class GuaranteesTest extends TestCase
         $this->actingAs($this->owner());
         Filament::setCurrentPanel('studio');
 
-        $sql = Livewire::test(\App\Filament\Resources\Projects\Pages\ListProjects::class)
+        $sql = Livewire::test(ListProjects::class)
             ->set('tableSearch', 'anything')
             ->instance()
             ->getFilteredTableQuery()
             ->toRawSql();
 
-        foreach (\App\Support\Locale::codes() as $locale) {
+        foreach (Locale::codes() as $locale) {
             $this->assertStringContainsString(
                 'title_'.$locale,
                 $sql,
@@ -551,12 +560,12 @@ class GuaranteesTest extends TestCase
      */
     public function test_a_condition_inside_a_closure_is_still_localised(): void
     {
-        $sql = \App\Models\Project::query()
+        $sql = Project::query()
             ->where(fn ($query) => $query->where('slug', 'salt-line')->orWhere('slug', 'other'))
             ->toRawSql();
 
         $this->assertStringContainsString('slug_en', $sql);
-        $this->assertStringNotContainsString("`slug` =", $sql);
+        $this->assertStringNotContainsString('`slug` =', $sql);
     }
 
     /**
@@ -572,16 +581,16 @@ class GuaranteesTest extends TestCase
     {
         $keys = [];
 
-        foreach (\App\Support\Locale::codes() as $locale) {
-            $key = \App\Support\PageLinks::CACHE_KEY.'.'.$locale;
+        foreach (Locale::codes() as $locale) {
+            $key = PageLinks::CACHE_KEY.'.'.$locale;
             Cache::put($key, ['stale'], 60);
             $keys[] = $key;
         }
 
-        Cache::put(\App\Support\PageLinks::CACHE_KEY, ['stale'], 60);
-        $keys[] = \App\Support\PageLinks::CACHE_KEY;
+        Cache::put(PageLinks::CACHE_KEY, ['stale'], 60);
+        $keys[] = PageLinks::CACHE_KEY;
 
-        \App\Support\PageLinks::forget();
+        PageLinks::forget();
 
         foreach ($keys as $key) {
             $this->assertFalse(Cache::has($key), "$key survived PageLinks::forget()");
@@ -600,7 +609,7 @@ class GuaranteesTest extends TestCase
      */
     public function test_the_translatable_helper_cannot_emit_a_partial_map(): void
     {
-        $locales = \App\Support\Locale::codes();
+        $locales = Locale::codes();
 
         foreach ([
             ['title' => 'only english'],
@@ -608,7 +617,7 @@ class GuaranteesTest extends TestCase
             ['title' => []],
             [],
         ] as $input) {
-            $out = \App\Filament\Support\Translatable::save(['title'], $input);
+            $out = Translatable::save(['title'], $input);
 
             if (! array_key_exists('title', $out)) {
                 // An absent key is left absent — nothing to make partial.

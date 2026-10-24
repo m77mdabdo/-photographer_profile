@@ -7,11 +7,13 @@ namespace App\Filament\Resources\Media\Pages;
 use App\Actions\Media\ReprocessMedia;
 use App\Enums\MediaStatus;
 use App\Filament\Resources\Media\MediaResource;
+use App\Filament\Support\NamesPlaces;
 use App\Models\Media;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
+use Illuminate\Support\Collection;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
@@ -42,8 +44,8 @@ class ViewMedia extends Page
      * the screen type after it. The trait wins; it calls the page's own
      * parent for the trail and adds the record itself.
      */
-    use InteractsWithRecord, \App\Filament\Support\NamesPlaces {
-        \App\Filament\Support\NamesPlaces::getBreadcrumbs insteadof InteractsWithRecord;
+    use \App\Filament\Support\NamesPlaces, InteractsWithRecord {
+        NamesPlaces::getBreadcrumbs insteadof InteractsWithRecord;
     }
 
     protected static string $resource = MediaResource::class;
@@ -144,7 +146,7 @@ class ViewMedia extends Page
     }
 
     /** A4 — the renditions, newest format first, largest first within it. */
-    public function variants(): \Illuminate\Support\Collection
+    public function variants(): Collection
     {
         return $this->getRecord()
             ->variants

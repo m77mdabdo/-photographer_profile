@@ -10,6 +10,7 @@ use App\Support\SeoData;
 use App\Support\Settings;
 use App\Support\StructuredData;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class JournalController extends Controller
@@ -79,7 +80,7 @@ class JournalController extends Controller
     public function show(Article $article): View
     {
         if (! $article->isPubliclyVisible()) {
-            throw new NotFoundHttpException();
+            throw new NotFoundHttpException;
         }
 
         $article->load(['featured.variants', 'category:id,name,slug', 'tags:id,name,slug', 'author:id,name']);
@@ -128,7 +129,7 @@ class JournalController extends Controller
      * it offers a page and delivers "nothing here". The same rule the work
      * index already follows.
      *
-     * @return \Illuminate\Support\Collection<int, ArticleCategory>
+     * @return Collection<int, ArticleCategory>
      */
     private function categoriesWithWork()
     {

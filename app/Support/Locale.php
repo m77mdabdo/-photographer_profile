@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\App;
 
 /**
@@ -306,7 +307,7 @@ final class Locale
      * generator leaves an already-prefixed name alone, so asking for
      * `ar.work.index` from an Arabic page does not produce `ar.ar.work.index`.
      *
-     * @param  array<string, mixed>|\Illuminate\Database\Eloquent\Model  $parameters
+     * @param  array<string, mixed>|Model  $parameters
      */
     public static function route(string $code, string $name, mixed $parameters = [], bool $absolute = true): string
     {

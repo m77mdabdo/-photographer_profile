@@ -63,7 +63,8 @@ final class HeroSplit
             'word-start' => round($first, 3),
             'word-end' => round($second, 3),
             // The statement and the link sit beyond the plate, in the whole
-            // columns left after it.
+            // columns left after it — or, with a portrait photograph, before
+            // it, sized by --side-start in the stylesheet (home.css).
             'voice-start' => (int) ceil($start + $span) + 1,
         ];
     }

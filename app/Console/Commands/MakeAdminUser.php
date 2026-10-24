@@ -80,7 +80,7 @@ class MakeAdminUser extends Command
             return self::FAILURE;
         }
 
-        $user = new User();
+        $user = new User;
         $user->fill([
             'name' => $name,
             'email' => $email,

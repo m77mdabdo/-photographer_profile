@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\MediaStatus;
 use App\Models\Article;
+use App\Models\CinematicSection;
 use App\Models\Client;
 use App\Models\Media;
 use App\Models\Project;
@@ -95,13 +96,13 @@ class HomeController extends Controller
              * show — a gallery short of four ready photographs, a video whose
              * file is missing — is dropped here rather than rendered empty.
              */
-            'cinematic' => \App\Models\CinematicSection::query()
+            'cinematic' => CinematicSection::query()
                 ->visible()
                 ->orderBy('sort_order')
                 ->orderBy('id')
                 ->with(['items.media.variants', 'featured.variants', 'poster.variants'])
                 ->get()
-                ->filter(fn (\App\Models\CinematicSection $section): bool => $section->isRenderable())
+                ->filter(fn (CinematicSection $section): bool => $section->isRenderable())
                 ->values(),
 
             /*
@@ -125,7 +126,6 @@ class HomeController extends Controller
             ),
         ]);
     }
-
 
     /**
      * The hero accent, taken from the featured photograph and made legible.

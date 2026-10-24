@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Support\Settings;
+use Database\Seeders\NavigationSeeder;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -24,8 +26,8 @@ class HeaderControlsTest extends TestCase
         parent::setUp();
 
         Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
-        $this->seed(\Database\Seeders\NavigationSeeder::class);
+        $this->seed(SettingsSeeder::class);
+        $this->seed(NavigationSeeder::class);
         Settings::flush();
     }
 

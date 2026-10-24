@@ -14,9 +14,12 @@ use App\Models\Category;
 use App\Models\Client;
 use App\Models\Service;
 use App\Models\User;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -63,7 +66,7 @@ class ReorderTest extends TestCase
     }
 
     /** Dragging the last row to the front reorders the list, and persists. */
-    #[\PHPUnit\Framework\Attributes\DataProvider('reorderable')]
+    #[DataProvider('reorderable')]
     public function test_a_drag_reorders_and_persists(string $page, string $model): void
     {
         $records = $model::factory()->count(5)->create();
@@ -186,7 +189,7 @@ class ReorderTest extends TestCase
     public function test_reordering_is_authorised(): void
     {
         foreach ([Category::class, ArticleCategory::class, Client::class, Service::class] as $model) {
-            $policy = \Illuminate\Support\Facades\Gate::getPolicyFor($model);
+            $policy = Gate::getPolicyFor($model);
 
             $this->assertNotNull($policy, "$model has no policy");
             $this->assertTrue(
@@ -202,7 +205,7 @@ class ReorderTest extends TestCase
     {
         $updates = 0;
 
-        DB::listen(function (\Illuminate\Database\Events\QueryExecuted $query) use (&$updates): void {
+        DB::listen(function (QueryExecuted $query) use (&$updates): void {
             if (str_starts_with(strtolower(ltrim($query->sql)), 'update')) {
                 $updates++;
             }
@@ -210,7 +213,7 @@ class ReorderTest extends TestCase
 
         $work();
 
-        DB::getEventDispatcher()->forget(\Illuminate\Database\Events\QueryExecuted::class);
+        DB::getEventDispatcher()->forget(QueryExecuted::class);
 
         return $updates;
     }

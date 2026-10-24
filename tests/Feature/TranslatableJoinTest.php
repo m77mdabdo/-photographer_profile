@@ -7,8 +7,12 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Support\Fallback;
 use App\Support\Locale;
+use Database\Seeders\DemoArabicSeeder;
+use Database\Seeders\DemoContentSeeder;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -62,7 +66,7 @@ class TranslatableJoinTest extends TestCase
     private function category(array $translations): Category
     {
         $category = new Category;
-        $category->setTranslation('slug', 'en', 'c-'.strtolower(\Illuminate\Support\Str::random(10)));
+        $category->setTranslation('slug', 'en', 'c-'.strtolower(Str::random(10)));
 
         foreach ($translations as $locale => $name) {
             $category->setTranslation('name', $locale, $name);
@@ -393,9 +397,9 @@ class TranslatableJoinTest extends TestCase
      */
     public function test_no_latin_comma_separates_arabic_names_on_the_public_pages(): void
     {
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
-        $this->seed(\Database\Seeders\DemoContentSeeder::class);
-        $this->seed(\Database\Seeders\DemoArabicSeeder::class);
+        $this->seed(SettingsSeeder::class);
+        $this->seed(DemoContentSeeder::class);
+        $this->seed(DemoArabicSeeder::class);
 
         foreach (['/ar', '/ar/work'] as $path) {
             $html = $this->get($path)->assertOk()->getContent();

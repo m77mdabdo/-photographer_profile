@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Enquiries\Pages;
 
 use App\Filament\Resources\Enquiries\InquiryResource;
+use App\Filament\Support\NamesPlaces;
 use Filament\Resources\Pages\ListRecords;
 
 class ListInquiries extends ListRecords
 {
-    use \App\Filament\Support\NamesPlaces;
+    use NamesPlaces;
 
     protected static string $resource = InquiryResource::class;
 

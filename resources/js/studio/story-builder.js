@@ -30,6 +30,40 @@ let suspendHistory = false;
 // ---------------------------------------------------------------- plumbing
 
 const root = () => document.querySelector('[data-story-builder]');
+
+/*
+ * The words this script puts on the page, in the dashboard's language. The
+ * Blade view hands them over as JSON in data-strings (studio.story.js); a
+ * missing key shows the key, which a test would see, rather than English.
+ * Counts choose a plural form by Laravel's own rule for the language — Arabic
+ * has six (zero, one, two, 3–10, 11–99, other).
+ */
+let words = null;
+
+function t(key, replace = {}, count = null) {
+    words ??= JSON.parse(root()?.dataset.strings || '{}');
+
+    let text = words[key] ?? key;
+
+    if (count !== null && text.includes('|')) {
+        const forms = text.split('|');
+        text = forms[pluralIndex(count)] ?? forms[forms.length - 1];
+    }
+
+    return Object.entries(replace).reduce((out, [name, value]) => out.replaceAll(`:${name}`, String(value)), text);
+}
+
+function pluralIndex(n) {
+    if ((document.documentElement.lang || 'en').startsWith('ar')) {
+        const m = n % 100;
+
+        return n === 0 ? 0 : n === 1 ? 1 : n === 2 ? 2 : m >= 3 && m <= 10 ? 3 : m >= 11 ? 4 : 5;
+    }
+
+    return n === 1 ? 0 : 1;
+}
+
+const escapeHtml = (text) => String(text).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const list = () => root()?.querySelector('[data-block-list]');
 const blocks = () => Array.from(list()?.querySelectorAll('[data-block]') ?? []);
 const projectKey = () => `story-draft:${root()?.dataset.projectId ?? 'unknown'}`;
@@ -167,7 +201,7 @@ function undo() {
 
     future.push(JSON.stringify(snapshot()));
     restore(JSON.parse(history.pop()));
-    announce('Undone');
+    announce(t('undone'));
 }
 
 function redo() {
@@ -177,7 +211,7 @@ function redo() {
 
     history.push(JSON.stringify(snapshot()));
     restore(JSON.parse(future.pop()));
-    announce('Redone');
+    announce(t('redone'));
 }
 
 function announce(text) {
@@ -285,7 +319,7 @@ function offerDraft() {
         remember();
         restore({ blocks: draft.blocks });
         prompt.hidden = true;
-        announce('Draft restored');
+        announce(t('draft_restored'));
     }, { once: true });
 
     prompt.querySelector('[data-draft-discard]').addEventListener('click', () => {
@@ -307,18 +341,18 @@ function problemsFor(card) {
     const count = card.querySelectorAll('[data-media-item]').length;
 
     if (count < min) {
-        problems.push(`${label} needs ${min} image${min === 1 ? '' : 's'}; it has ${count}.`);
+        problems.push(t('needs_images', { label, min, count }, min));
     }
 
     if (max !== null && count > max) {
-        problems.push(`${label} takes at most ${max} image${max === 1 ? '' : 's'}; it has ${count}.`);
+        problems.push(t('too_many_images', { label, max, count }, max));
     }
 
     (card.dataset.required || '').split(',').filter(Boolean).forEach((key) => {
         const field = card.querySelector(`[data-field="${key}"]`);
 
         if (!field || field.value.trim() === '') {
-            problems.push(`${label} needs ${key === 'quote' ? 'the quote itself' : key === 'body' ? 'some body text' : `a ${key}`}.`);
+            problems.push(key === 'quote' ? t('needs_quote', { label }) : key === 'body' ? t('needs_body', { label }) : t('needs_field', { label, field: key }));
         }
     });
 
@@ -354,8 +388,7 @@ function validate() {
 
     if (notice) {
         notice.hidden = invalid === 0;
-        notice.querySelector('[data-invalid-count]').textContent =
-            `${invalid} block${invalid === 1 ? '' : 's'} need${invalid === 1 ? 's' : ''} attention`;
+        notice.querySelector('[data-invalid-count]').textContent = t('invalid', { count: invalid }, invalid);
         notice.dataset.target = first?.dataset.key ?? '';
     }
 
@@ -496,7 +529,7 @@ function removeBlock(card) {
     remember();
     card.remove();
     refresh();
-    announce('Block removed. Press Control or Command Z to undo.');
+    announce(t('block_removed'));
 }
 
 // ---------------------------------------------------------------- media
@@ -517,13 +550,13 @@ function appendMediaItem(card, entry) {
     li.innerHTML = `
         <img alt="" class="block-media__image" loading="lazy">
         <label class="block-media__alt">
-            <span class="sr-only">Alt text for this image</span>
+            <span class="sr-only">${escapeHtml(t('alt_for_image'))}</span>
             <input type="text" data-description>
         </label>
         <span class="block-media__controls">
-            <button type="button" class="admin-link" data-media-move="-1" aria-label="Move image earlier">←</button>
-            <button type="button" class="admin-link" data-media-move="1" aria-label="Move image later">→</button>
-            <button type="button" class="admin-link" data-media-remove aria-label="Remove image">×</button>
+            <button type="button" class="admin-link" data-media-move="-1" aria-label="${escapeHtml(t('move_earlier'))}">←</button>
+            <button type="button" class="admin-link" data-media-move="1" aria-label="${escapeHtml(t('move_later'))}">→</button>
+            <button type="button" class="admin-link" data-media-remove aria-label="${escapeHtml(t('remove_image'))}">×</button>
         </span>
     `;
 
@@ -536,7 +569,7 @@ function appendMediaItem(card, entry) {
     }
 
     const description = li.querySelector('[data-description]');
-    description.placeholder = entry.placeholder ?? (entry.alt ? `Using: ${entry.alt}` : 'Describe this image');
+    description.placeholder = entry.placeholder ?? (entry.alt ? t('using', { alt: entry.alt }) : t('describe'));
     description.value = entry.description ?? '';
 
     items.append(li);
@@ -921,7 +954,7 @@ export function initStoryBuilder() {
                  * means the work needs changing rather than retrying.
                  */
                 network?.removeAttribute('hidden');
-                announce('Your work is safe. Nothing was lost.');
+                announce(t('work_safe'));
                 container.querySelectorAll('[data-save]').forEach((b) => { b.disabled = false; });
                 writeDraft();
             }
@@ -988,6 +1021,6 @@ export function initStoryBuilder() {
         future = [];
         clearDraft();
         sync();
-        announce('Story saved');
+        announce(t('saved'));
     });
 }

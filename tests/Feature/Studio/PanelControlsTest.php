@@ -4,17 +4,33 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Studio;
 
+use App\Enums\MediaStatus;
 use App\Enums\UserRole;
+use App\Filament\Resources\Categories\CategoryResource;
+use App\Filament\Resources\Media\MediaResource;
+use App\Filament\Resources\Pages\PageResource;
+use App\Filament\Resources\Pages\Pages\EditPage;
+use App\Filament\Resources\Projects\Pages\CreateProject;
+use App\Filament\Resources\Projects\ProjectResource;
+use App\Filament\Resources\Redirects\RedirectResource;
+use App\Filament\Resources\Users\UserResource;
 use App\Models\Media;
+use App\Models\Page;
 use App\Models\User;
 use App\Support\Locale;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Field;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -59,7 +75,7 @@ class PanelControlsTest extends TestCase
         ]));
     }
 
-    /** @return array<string, array{class-string<Resource>}> */
+    /** @return array<string, array{class-string<resource>}> */
     public static function resources(): array
     {
         $resources = [];
@@ -97,9 +113,9 @@ class PanelControlsTest extends TestCase
      * which cannot be hovered on a phone, is not in the page's text, and is
      * not in what a screen reader reads out.
      *
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    #[DataProvider('resources')]
     public function test_no_column_says_it_in_an_icon_alone(string $resource): void
     {
         $icons = [];
@@ -145,9 +161,9 @@ class PanelControlsTest extends TestCase
      * The rule is the one thing that keeps that fixed as columns are added:
      * ->wrap() without ->lineClamp() is how it happened.
      *
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    #[DataProvider('resources')]
     public function test_every_wrapped_column_is_clamped(string $resource): void
     {
         $unclamped = [];
@@ -205,9 +221,9 @@ class PanelControlsTest extends TestCase
      * Asserted on the real form schemas, so a new resource that takes a date
      * the easy way fails here.
      *
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    #[DataProvider('resources')]
     public function test_no_form_control_is_drawn_by_the_browser(string $resource): void
     {
         $pages = $resource::getPages();
@@ -215,7 +231,7 @@ class PanelControlsTest extends TestCase
 
         $instance = Livewire::test($page->getPage())->instance();
 
-        $schema = $resource::form(\Filament\Schemas\Schema::make($instance));
+        $schema = $resource::form(Schema::make($instance));
 
         /*
          * THE SOURCE AS WELL AS THE SCHEMA, because two resources cannot be
@@ -242,14 +258,14 @@ class PanelControlsTest extends TestCase
         }
 
         foreach ($this->fieldsOf($schema->getComponents()) as $field) {
-            if ($field instanceof \Filament\Forms\Components\DateTimePicker) {
+            if ($field instanceof DateTimePicker) {
                 $this->assertFalse(
                     $field->isNative(),
                     class_basename($resource).': '.$field->getName().' is the browser\'s date control',
                 );
             }
 
-            if ($field instanceof \Filament\Forms\Components\TextInput) {
+            if ($field instanceof TextInput) {
                 $this->assertNotSame(
                     'number',
                     $field->getType(),
@@ -267,14 +283,14 @@ class PanelControlsTest extends TestCase
      * ->numeric(). A rule that cannot be written about in a comment is a rule
      * nobody can explain.
      *
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
     private function codeOf(string $resource): string
     {
         $source = (string) file_get_contents((new \ReflectionClass($resource))->getFileName());
 
         return implode('', array_map(
-            fn (array | string $token): string => is_array($token)
+            fn (array|string $token): string => is_array($token)
                 ? (in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true) ? '' : $token[1])
                 : $token,
             token_get_all($source),
@@ -282,15 +298,15 @@ class PanelControlsTest extends TestCase
     }
 
     /**
-     * @param  array<\Filament\Schemas\Components\Component>  $components
-     * @return list<\Filament\Forms\Components\Field>
+     * @param  array<Component>  $components
+     * @return list<Field>
      */
     private function fieldsOf(array $components): array
     {
         $fields = [];
 
         foreach ($components as $component) {
-            if ($component instanceof \Filament\Forms\Components\Field) {
+            if ($component instanceof Field) {
                 $fields[] = $component;
             }
 
@@ -319,9 +335,9 @@ class PanelControlsTest extends TestCase
      * the same kind of screen. An index shows none now; a record screen
      * names the record.
      *
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    #[DataProvider('resources')]
     public function test_an_index_has_no_breadcrumb_trail(string $resource): void
     {
         $page = Livewire::test($resource::getPages()['index']->getPage())->instance();
@@ -336,10 +352,10 @@ class PanelControlsTest extends TestCase
     /** A record screen names the record, and never the screen. */
     public function test_a_record_screen_names_the_record(): void
     {
-        $page = \App\Models\Page::factory()->create(['title' => ['en' => 'Terms', 'ar' => 'الشروط']]);
+        $page = Page::factory()->create(['title' => ['en' => 'Terms', 'ar' => 'الشروط']]);
 
         $crumbs = Livewire::test(
-            \App\Filament\Resources\Pages\Pages\EditPage::class,
+            EditPage::class,
             ['record' => $page->getKey()],
         )->instance()->getBreadcrumbs();
 
@@ -357,13 +373,13 @@ class PanelControlsTest extends TestCase
     public function test_a_create_screen_names_the_thing_being_made(): void
     {
         $crumbs = array_values(
-            Livewire::test(\App\Filament\Resources\Projects\Pages\CreateProject::class)
+            Livewire::test(CreateProject::class)
                 ->instance()
                 ->getBreadcrumbs(),
         );
 
         $this->assertContains(
-            __('studio.breadcrumb.new', ['thing' => \App\Filament\Resources\Projects\ProjectResource::getModelLabel()]),
+            __('studio.breadcrumb.new', ['thing' => ProjectResource::getModelLabel()]),
             $crumbs,
         );
         $this->assertNotContains('Create', $crumbs);
@@ -382,7 +398,7 @@ class PanelControlsTest extends TestCase
      */
     public function test_the_translation_badge_is_in_one_script(): void
     {
-        $page = \App\Models\Page::factory()->create([
+        $page = Page::factory()->create([
             'title' => ['en' => 'Terms', 'ar' => null],
             'standfirst' => ['en' => 'Only English', 'ar' => null],
         ]);
@@ -396,7 +412,7 @@ class PanelControlsTest extends TestCase
              * English badge under the Arabic locale and the test read as if
              * the fix had not worked.
              */
-            $column = collect($this->tableFor(\App\Filament\Resources\Pages\PageResource::class)->getColumns())
+            $column = collect($this->tableFor(PageResource::class)->getColumns())
                 ->first(fn ($c): bool => $c->getName() === 'translation_status');
 
             $this->assertNotNull($column);
@@ -429,10 +445,10 @@ class PanelControlsTest extends TestCase
     {
         $media = Media::factory()->create([
             'is_demo' => true,
-            'status' => \App\Enums\MediaStatus::Ready,
+            'status' => MediaStatus::Ready,
         ]);
 
-        $columns = collect($this->tableFor(\App\Filament\Resources\Media\MediaResource::class)->getColumns())
+        $columns = collect($this->tableFor(MediaResource::class)->getColumns())
             ->keyBy(fn ($c) => $c->getName());
 
         $this->assertSame(__('studio.media.demo'), $columns['is_demo']->formatState(true));
@@ -443,20 +459,20 @@ class PanelControlsTest extends TestCase
             $columns['usages_count']->formatState(0),
         );
 
-        $redirects = collect($this->tableFor(\App\Filament\Resources\Redirects\RedirectResource::class)->getColumns())
+        $redirects = collect($this->tableFor(RedirectResource::class)->getColumns())
             ->keyBy(fn ($c) => $c->getName());
 
         $this->assertSame(__('studio.redirects.permanent'), $redirects['status_code']->formatState(301));
         $this->assertSame(__('studio.redirects.live'), $redirects['is_active']->formatState(true));
         $this->assertSame(__('studio.redirects.paused'), $redirects['is_active']->formatState(false));
 
-        $users = collect($this->tableFor(\App\Filament\Resources\Users\UserResource::class)->getColumns())
+        $users = collect($this->tableFor(UserResource::class)->getColumns())
             ->keyBy(fn ($c) => $c->getName());
 
         $this->assertSame(__('studio.users.two_factor_on'), $users['two_factor_confirmed_at']->formatState(true));
         $this->assertSame(__('studio.users.two_factor_off'), $users['two_factor_confirmed_at']->formatState(false));
 
-        $categories = collect($this->tableFor(\App\Filament\Resources\Categories\CategoryResource::class)->getColumns())
+        $categories = collect($this->tableFor(CategoryResource::class)->getColumns())
             ->keyBy(fn ($c) => $c->getName());
 
         $this->assertSame(

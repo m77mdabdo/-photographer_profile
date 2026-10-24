@@ -49,7 +49,7 @@ final class RecordWriter
 
     /**
      * @param  array<string, mixed>  $data
-     * @return array{0: Model, 1: array<string, mixed>}  the record, and the data minus what was set here
+     * @return array{0: Model, 1: array<string, mixed>} the record, and the data minus what was set here
      */
     public static function apply(Model $record, array $data): array
     {
@@ -88,7 +88,7 @@ final class RecordWriter
     /** Create a record from form data, guarded columns included. */
     public static function create(string $model, array $data): Model
     {
-        $record = new $model();
+        $record = new $model;
 
         [$record, $data] = self::apply($record, $data);
 

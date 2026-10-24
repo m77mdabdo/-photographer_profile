@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Services;
 
+use App\Filament\Forms\Components\MediaPickerField;
 use App\Filament\Resources\Services\Pages\CreateService;
 use App\Filament\Resources\Services\Pages\EditService;
 use App\Filament\Resources\Services\Pages\ListServices;
 use App\Filament\Support\AddressesRecordsById;
-use App\Filament\Forms\Components\MediaPickerField;
+use App\Filament\Support\HelpHint;
 use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\Translatable;
 use App\Models\Service;
 use BackedEnum;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -54,13 +54,12 @@ class ServiceResource extends Resource
 
     protected static ?string $model = Service::class;
 
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-briefcase';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-briefcase';
 
     protected static ?int $navigationSort = 1;
 
     /** The columns this resource edits in every locale. */
     public const TRANSLATED = ['slug', 'name', 'summary', 'description', 'price_note', 'cta_label', 'seo_title', 'seo_description'];
-
 
     public static function getNavigationGroup(): ?string
     {
@@ -71,7 +70,6 @@ class ServiceResource extends Resource
     {
         return __('studio.nav.services');
     }
-
 
     /**
      * The noun Filament puts in its own sentences.
@@ -103,8 +101,8 @@ class ServiceResource extends Resource
                     'description' => fn (string $p) => Textarea::make($p)->rows(8),
                     'price_note' => fn (string $p) => TextInput::make($p)->maxLength(255),
                     'cta_label' => fn (string $p) => TextInput::make($p)->maxLength(255),
-                    'seo_title' => fn (string $p) => TextInput::make($p)->maxLength(255)->hintAction(\App\Filament\Support\HelpHint::action('seo_title')),
-                    'seo_description' => fn (string $p) => Textarea::make($p)->rows(3)->hintAction(\App\Filament\Support\HelpHint::action('seo_description')),
+                    'seo_title' => fn (string $p) => TextInput::make($p)->maxLength(255)->hintAction(HelpHint::action('seo_title')),
+                    'seo_description' => fn (string $p) => Textarea::make($p)->rows(3)->hintAction(HelpHint::action('seo_description')),
                 ]),
             ]),
 
@@ -136,7 +134,7 @@ class ServiceResource extends Resource
                         ->rules(['integer', 'min:0'])
                         ->extraInputAttributes(['inputmode' => 'numeric'])
                         ->helperText(__('studio.field.price_hint'))
-                        ->hintAction(\App\Filament\Support\HelpHint::action('price')),
+                        ->hintAction(HelpHint::action('price')),
 
                     TextInput::make('canonical_url')
                         ->label(__('studio.field.canonical'))

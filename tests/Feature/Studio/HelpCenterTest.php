@@ -7,6 +7,7 @@ namespace Tests\Feature\Studio;
 use App\Enums\UserRole;
 use App\Filament\Pages\Help;
 use App\Models\User;
+use App\Support\Help\KnowledgeBase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -91,7 +92,7 @@ class HelpCenterTest extends TestCase
         foreach (['en', 'ar'] as $locale) {
             $this->signIn($locale);
 
-            foreach (array_keys(\App\Support\Help\KnowledgeBase::all()) as $id) {
+            foreach (array_keys(KnowledgeBase::all()) as $id) {
                 Livewire::withQueryParams(['article' => $id])->test(Help::class)->assertOk()->assertSee(__('studio.help.steps'));
             }
         }

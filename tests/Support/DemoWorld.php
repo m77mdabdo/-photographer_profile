@@ -112,7 +112,7 @@ final class DemoWorld
          * Project, so mass assignment cannot change a project's address or
          * publish it. A fixture builder is allowed to say so explicitly.
          */
-        $project = (new Project())->forceFill([
+        $project = (new Project)->forceFill([
             'slug' => $slug,
             'title' => ucwords(str_replace('-', ' ', $slug)),
             'subtitle' => 'A subtitle for '.$slug,

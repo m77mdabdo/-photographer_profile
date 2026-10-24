@@ -18,9 +18,9 @@ use Illuminate\Support\Str;
 use Intervention\Image\Encoders\AvifEncoder;
 use Intervention\Image\Encoders\JpegEncoder;
 use Intervention\Image\Encoders\WebpEncoder;
+use Intervention\Image\ImageManager;
 use Intervention\Image\Interfaces\EncoderInterface;
 use Intervention\Image\Interfaces\ImageInterface;
-use Intervention\Image\ImageManager;
 use RuntimeException;
 use Throwable;
 
@@ -188,7 +188,6 @@ class ProcessMediaVariants implements ShouldBeUnique, ShouldQueue
 
         return $temporaryPath;
     }
-
 
     /**
      * A decoded-and-scaled copy of the source, written once.

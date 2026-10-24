@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Tests\Fixtures\Models\LateTranslatableModel;
 use Tests\TestCase;
 
@@ -547,7 +548,7 @@ class UntranslatedDiscoveryTest extends TestCase
         $slug = TranslatableSchema::slugColumn($table);
 
         if ($slug !== null && ! array_key_exists($slug, $english)) {
-            $record->setTranslation($slug, 'en', 'fixture-'.strtolower(\Illuminate\Support\Str::random(10)));
+            $record->setTranslation($slug, 'en', 'fixture-'.strtolower(Str::random(10)));
         }
 
         foreach ($this->requiredTranslatableColumns($table) as $column) {

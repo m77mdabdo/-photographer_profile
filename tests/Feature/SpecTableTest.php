@@ -6,8 +6,10 @@ namespace Tests\Feature;
 
 use App\Models\Media;
 use App\Support\Settings;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Storage;
 use Tests\Support\DemoWorld;
 use Tests\TestCase;
 
@@ -27,17 +29,17 @@ class SpecTableTest extends TestCase
     {
         parent::setUp();
 
-        \Illuminate\Support\Facades\Storage::fake('media_originals');
-        \Illuminate\Support\Facades\Storage::fake('media_public', [
+        Storage::fake('media_originals');
+        Storage::fake('media_public', [
             'url' => 'http://localhost/storage/media',
             'visibility' => 'public',
         ]);
 
         Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
 
-        $this->world = new DemoWorld();
+        $this->world = new DemoWorld;
     }
 
     public function test_no_exif_renders_nothing_at_all(): void

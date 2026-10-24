@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 
 use App\Models\ActivityLog;
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
@@ -78,9 +79,9 @@ class PruneActivityLog extends Command
     /**
      * Delete in batches, so a long-overdue first run does not lock the table.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<ActivityLog>  $query
+     * @param  Builder<ActivityLog>  $query
      */
-    private function chunkDelete(\Illuminate\Database\Eloquent\Builder $query): int
+    private function chunkDelete(Builder $query): int
     {
         $removed = 0;
 

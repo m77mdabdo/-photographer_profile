@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\Translatable;
+use App\Support\Navigation;
+use App\Support\Settings;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,7 +34,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class MenuItem extends Model
 {
     use HasFactory;
-
     use Translatable;
 
     public const TYPE_ROUTE = 'route';
@@ -50,8 +51,8 @@ class MenuItem extends Model
      */
     protected static function booted(): void
     {
-        static::saved(fn () => \App\Support\Navigation::forget());
-        static::deleted(fn () => \App\Support\Navigation::forget());
+        static::saved(fn () => Navigation::forget());
+        static::deleted(fn () => Navigation::forget());
     }
 
     /** @var list<string> */
@@ -113,7 +114,7 @@ class MenuItem extends Model
                 continue;
             }
 
-            $routes[$name] = \App\Support\Settings::get($settingKey) ?: $name;
+            $routes[$name] = Settings::get($settingKey) ?: $name;
         }
 
         return $routes;

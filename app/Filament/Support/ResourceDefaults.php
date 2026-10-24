@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Support;
 
+use App\Enums\PublishStatus;
 use App\Support\Locale;
 use Closure;
 use Filament\Actions\BulkActionGroup;
@@ -43,10 +44,10 @@ final class ResourceDefaults
         return [
             Select::make('status')
                 ->label(__('studio.table.status'))
-                ->hintAction(\App\Filament\Support\HelpHint::action('status'))
-                ->options(fn (): array => collect(\App\Enums\PublishStatus::cases())
+                ->hintAction(HelpHint::action('status'))
+                ->options(fn (): array => collect(PublishStatus::cases())
                     ->mapWithKeys(fn ($s): array => [$s->value => $s->label()])->all())
-                ->default(\App\Enums\PublishStatus::Draft->value)
+                ->default(PublishStatus::Draft->value)
                 ->required()
                 ->native(false)
                 /*
@@ -124,7 +125,7 @@ final class ResourceDefaults
     {
         return SelectFilter::make('status')
             ->label(__('studio.table.status'))
-            ->options(fn (): array => collect(\App\Enums\PublishStatus::cases())
+            ->options(fn (): array => collect(PublishStatus::cases())
                 ->mapWithKeys(fn ($s): array => [$s->value => $s->label()])->all());
     }
 
@@ -191,10 +192,10 @@ final class ResourceDefaults
      * @param  class-string<Model>  $model
      * @param  array<int, string>  $translated
      * @param  array<int, mixed>  $lead  Actions BEFORE Edit, because they are
-     *         what the screen is for — a project's story builder.
+     *                                   what the screen is for — a project's story builder.
      * @param  EditAction|false|null  $edit  null for the canonical one, an
-     *         EditAction to replace it, false for a record that is read and
-     *         never edited.
+     *                                       EditAction to replace it, false for a record that is read and
+     *                                       never edited.
      * @return array<int, mixed>
      */
     public static function rowActionsFor(
@@ -328,7 +329,7 @@ final class ResourceDefaults
                     string $attribute,
                     mixed $value,
                     Closure $fail,
-                ) use ($model, $table, $column, $record): void {
+                ) use ($model, $column, $record): void {
                     if (! is_string($value) || $value === '') {
                         return;   // `required` has already said so
                     }

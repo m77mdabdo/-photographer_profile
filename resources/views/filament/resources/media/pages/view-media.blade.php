@@ -39,7 +39,7 @@
                             style="left: {{ $media->focal_x * 100 }}%; top: {{ $media->focal_y * 100 }}%"></button>
                 </div>
 
-                <p class="studio-media-detail__hint" data-focal-readout aria-live="polite">
+                <p class="studio-media-detail__hint" data-focal-readout data-template="{{ __('studio.media.focal_readout') }}" aria-live="polite">
                     {{ __('studio.media.focal_readout', [
                         'x' => number_format((float) $media->focal_x, 3),
                         'y' => number_format((float) $media->focal_y, 3),

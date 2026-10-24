@@ -10,7 +10,9 @@ use App\Models\Redirect;
 use App\Models\User;
 use Filament\Actions\Testing\TestAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -43,7 +45,7 @@ class RedirectsTest extends TestCase
     }
 
     /** @param array<string, mixed> $data */
-    private function create(array $data): \Livewire\Features\SupportTesting\Testable
+    private function create(array $data): Testable
     {
         return Livewire::test(ManageRedirects::class)
             ->mountAction(TestAction::make('create')->table())
@@ -88,7 +90,7 @@ class RedirectsTest extends TestCase
     /**
      * @param  array<string, string>  $data
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('refusals')]
+    #[DataProvider('refusals')]
     public function test_the_form_refuses(array $data, string $field): void
     {
         $this->create($data)->assertHasFormErrors([$field]);

@@ -6,8 +6,8 @@ namespace App\Filament\Resources\Activity;
 
 use App\Filament\Resources\Activity\Pages\ListActivity;
 use App\Models\ActivityLog;
-use App\Models\User;
 use BackedEnum;
+use Filament\Forms\Components\DatePicker;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -144,7 +144,7 @@ class ActivityLogResource extends Resource
                  */
                 Filter::make('since')
                     ->schema([
-                        \Filament\Forms\Components\DatePicker::make('since')
+                        DatePicker::make('since')
                             ->label(__('studio.activity.since')),
                     ])
                     ->query(fn (Builder $query, array $data): Builder => $query->when(

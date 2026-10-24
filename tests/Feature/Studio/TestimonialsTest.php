@@ -11,7 +11,11 @@ use App\Filament\Resources\Testimonials\Pages\ManageTestimonials;
 use App\Models\Media;
 use App\Models\Testimonial;
 use App\Models\User;
+use App\Support\Locale;
+use App\Support\SiteCopy;
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -93,7 +97,7 @@ class TestimonialsTest extends TestCase
         $html = (string) $this->get('/')->assertOk()->getContent();
 
         $this->assertStringNotContainsString('voices__title', $html);
-        $this->assertStringNotContainsString(\App\Support\SiteCopy::get('testimonials.heading'), $html);
+        $this->assertStringNotContainsString(SiteCopy::get('testimonials.heading'), $html);
     }
 
     /** It renders in Arabic, in Arabic. */
@@ -104,7 +108,7 @@ class TestimonialsTest extends TestCase
             'attribution' => ['en' => 'Imogen Hartley', 'ar' => 'إيموجين هارتلي'],
         ]);
 
-        $html = (string) $this->withUnencryptedCookie(\App\Support\Locale::COOKIE, 'ar')
+        $html = (string) $this->withUnencryptedCookie(Locale::COOKIE, 'ar')
             ->get('/ar')
             ->assertOk()
             ->getContent();
@@ -155,7 +159,7 @@ class TestimonialsTest extends TestCase
             $this->get('/')->assertOk();
 
             $measured = $queries;
-            DB::getEventDispatcher()->forget(\Illuminate\Database\Events\QueryExecuted::class);
+            DB::getEventDispatcher()->forget(QueryExecuted::class);
 
             return $measured;
         };
@@ -196,7 +200,7 @@ class TestimonialsTest extends TestCase
         Filament::setCurrentPanel('studio');
 
         Livewire::test(ManageTestimonials::class)
-            ->callAction(\Filament\Actions\Testing\TestAction::make('create')->table(), [
+            ->callAction(TestAction::make('create')->table(), [
                 'quote.en' => 'They photographed the day we actually had.',
                 'quote.ar' => 'صوّروا اليوم كما كان.',
                 'attribution.en' => 'Imogen Hartley',

@@ -7,6 +7,7 @@ namespace Tests\Feature\Auth;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Support\Locale;
+use App\Support\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -147,8 +148,8 @@ class FrontDoorDirectionTest extends TestCase
     /** Each page is RTL and carries no interface English. */
     public function test_no_front_door_page_mixes_rtl_with_english_copy(): void
     {
-        \App\Support\Settings::set('site.name', 'استوديو الجوهرة');
-        \App\Support\Settings::flush();
+        Settings::set('site.name', 'استوديو الجوهرة');
+        Settings::flush();
 
         $pages = self::PAGES;
 
@@ -193,8 +194,8 @@ class FrontDoorDirectionTest extends TestCase
     /** The two-factor challenge too, which needs a half-signed-in session. */
     public function test_the_two_factor_challenge_is_arabic_under_the_ar_cookie(): void
     {
-        \App\Support\Settings::set('site.name', 'استوديو الجوهرة');
-        \App\Support\Settings::flush();
+        Settings::set('site.name', 'استوديو الجوهرة');
+        Settings::flush();
 
         $user = User::factory()->create([
             'role' => UserRole::Owner,

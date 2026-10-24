@@ -7,22 +7,22 @@ namespace App\Filament\Resources\Enquiries;
 use App\Enums\InquiryStatus;
 use App\Filament\Resources\Enquiries\Pages\ListInquiries;
 use App\Filament\Resources\Enquiries\Pages\ViewInquiry;
-use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\AddressesRecordsById;
+use App\Filament\Support\ResourceDefaults;
 use App\Models\Inquiry;
+use App\Models\InquiryNote;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Filament\Infolists\Components\RepeatableEntry;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -30,6 +30,7 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Str;
 
 /**
  * Enquiries — the CRM shape, kept.
@@ -80,10 +81,9 @@ class InquiryResource extends Resource
 
     protected static ?string $model = Inquiry::class;
 
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-envelope';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-envelope';
 
     protected static ?int $navigationSort = 1;
-
 
     /*
      * SET EXPLICITLY, because the derived one was wrong twice over.
@@ -118,7 +118,6 @@ class InquiryResource extends Resource
         return 'danger';
     }
 
-
     /**
      * The noun Filament puts in its own sentences.
      *
@@ -144,7 +143,7 @@ class InquiryResource extends Resource
             Section::make(__('studio.enquiries.handling'))
                 ->description(__('studio.enquiries.handling_hint'))
                 ->schema([
-                    \Filament\Forms\Components\Select::make('status')
+                    Select::make('status')
                         ->label(__('studio.table.status'))
                         ->options(fn (): array => collect(InquiryStatus::cases())
                             ->mapWithKeys(fn (InquiryStatus $s): array => [$s->value => $s->label()])->all())
@@ -161,7 +160,7 @@ class InquiryResource extends Resource
                          */
                         ->selectablePlaceholder(false),
 
-                    \Filament\Forms\Components\TextInput::make('heard_from')
+                    TextInput::make('heard_from')
                         ->label(__('studio.enquiries.heard_from'))
                         ->maxLength(255),
                 ]),
@@ -256,7 +255,7 @@ class InquiryResource extends Resource
                                      * what it is costs nothing and cannot be
                                      * wrong.
                                      */
-                                    $note = $record instanceof \App\Models\InquiryNote ? $record : null;
+                                    $note = $record instanceof InquiryNote ? $record : null;
 
                                     if ($note === null) {
                                         return '';
@@ -303,7 +302,7 @@ class InquiryResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->weight(fn (Inquiry $record): string => $record->status === InquiryStatus::New ? 'bold' : 'normal')
-                    ->description(fn (Inquiry $record): string => \Illuminate\Support\Str::limit((string) $record->message, 70)),
+                    ->description(fn (Inquiry $record): string => Str::limit((string) $record->message, 70)),
 
                 TextColumn::make('email')->label(__('studio.users.email'))->searchable()->toggleable(),
 

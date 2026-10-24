@@ -1,8 +1,13 @@
 <?php
 
+use App\Providers\ActivityLogServiceProvider;
+use App\Providers\AppServiceProvider;
+use App\Providers\Filament\StudioPanelProvider;
+use App\Providers\FortifyServiceProvider;
+
 return [
-    App\Providers\ActivityLogServiceProvider::class,
-    App\Providers\AppServiceProvider::class,
-    App\Providers\Filament\StudioPanelProvider::class,
-    App\Providers\FortifyServiceProvider::class,
+    ActivityLogServiceProvider::class,
+    AppServiceProvider::class,
+    StudioPanelProvider::class,
+    FortifyServiceProvider::class,
 ];

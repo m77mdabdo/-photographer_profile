@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Support\AccentColor;
 use App\Support\SeoData;
 use App\Support\Settings;
 use App\Support\StructuredData;
@@ -23,7 +24,7 @@ class ProjectController extends Controller
     public function show(Project $project): View
     {
         if (! $project->isPubliclyVisible()) {
-            throw new NotFoundHttpException();
+            throw new NotFoundHttpException;
         }
 
         return view('projects.show', $this->payload($project));
@@ -64,7 +65,7 @@ class ProjectController extends Controller
             'preview' => $preview,
 
             // Task 38 F4: the page transition's rule draws in this.
-            'accent' => \App\Support\AccentColor::pairForProject($project),
+            'accent' => AccentColor::pairForProject($project),
 
             /*
              * CreativeWork with every photograph the page shows as an

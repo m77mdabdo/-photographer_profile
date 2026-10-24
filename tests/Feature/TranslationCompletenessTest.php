@@ -9,10 +9,15 @@ use App\Enums\InquiryStatus;
 use App\Enums\MediaStatus;
 use App\Enums\PublishStatus;
 use App\Enums\UserRole;
+use App\Mail\InquiryAcknowledged;
+use App\Mail\InquiryReceived;
 use App\Models\Inquiry;
+use App\Models\UntranslatedRecord;
 use App\Support\Locale;
+use App\Support\UntranslatedContent;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Validator;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 /**
@@ -52,7 +57,7 @@ class TranslationCompletenessTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
     }
 
     /** Does this string carry Arabic script? */
@@ -158,8 +163,8 @@ class TranslationCompletenessTest extends TestCase
             $this->app->setLocale($locale);
 
             foreach ([
-                \App\Mail\InquiryAcknowledged::class,
-                \App\Mail\InquiryReceived::class,
+                InquiryAcknowledged::class,
+                InquiryReceived::class,
             ] as $mailable) {
                 $mail = new $mailable($inquiry);
 
@@ -448,7 +453,7 @@ class TranslationCompletenessTest extends TestCase
                 $this->app->setLocale($locale);
 
                 $html = view('errors.'.$status, [
-                    'exception' => new \Symfony\Component\HttpKernel\Exception\HttpException($status),
+                    'exception' => new HttpException($status),
                 ])->render();
 
                 /*
@@ -494,8 +499,8 @@ class TranslationCompletenessTest extends TestCase
      */
     public function test_the_untranslated_content_count_is_readable(): void
     {
-        $rows = \App\Models\UntranslatedRecord::query()
-            ->fromSub(\App\Support\UntranslatedContent::query('ar'), 'untranslated')
+        $rows = UntranslatedRecord::query()
+            ->fromSub(UntranslatedContent::query('ar'), 'untranslated')
             ->get();
 
         $perModel = [];

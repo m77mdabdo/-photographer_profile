@@ -6,11 +6,13 @@ namespace Tests\Feature\Studio;
 
 use App\Enums\MediaStatus;
 use App\Enums\UserRole;
+use App\Filament\Resources\Media\Pages\ListMedia;
 use App\Filament\Resources\Media\Pages\ViewMedia;
 use App\Jobs\ProcessMediaVariants;
 use App\Models\Media;
 use App\Models\MediaVariant;
 use App\Models\User;
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -294,9 +296,9 @@ class MediaDetailTest extends TestCase
         $media = $this->processed(['original_filename' => 'salt-line-0091.jpeg']);
         $media->delete();
 
-        Livewire::test(\App\Filament\Resources\Media\Pages\ListMedia::class)
+        Livewire::test(ListMedia::class)
             ->callAction(
-                \Filament\Actions\Testing\TestAction::make('forceDelete')->table($media),
+                TestAction::make('forceDelete')->table($media),
                 ['confirmation' => 'something-else.jpeg'],
             )
             ->assertHasActionErrors(['confirmation']);
@@ -313,9 +315,9 @@ class MediaDetailTest extends TestCase
         $media = $this->processed(['original_filename' => 'salt-line-0091.jpeg']);
         $media->delete();
 
-        Livewire::test(\App\Filament\Resources\Media\Pages\ListMedia::class)
+        Livewire::test(ListMedia::class)
             ->callAction(
-                \Filament\Actions\Testing\TestAction::make('forceDelete')->table($media),
+                TestAction::make('forceDelete')->table($media),
                 ['confirmation' => 'salt-line-0091.jpeg'],
             )
             ->assertHasNoActionErrors();

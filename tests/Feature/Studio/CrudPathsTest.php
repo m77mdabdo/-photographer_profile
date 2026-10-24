@@ -4,14 +4,34 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Studio;
 
+use App\Enums\MediaStatus;
 use App\Enums\UserRole;
+use App\Filament\Forms\Components\MediaPickerField;
+use App\Models\ArticleCategory;
+use App\Models\Category;
+use App\Models\Media;
+use App\Models\MenuItem;
+use App\Models\Tag;
 use App\Models\User;
+use App\Support\Locale;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Field;
+use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -51,7 +71,7 @@ class CrudPathsTest extends TestCase
         ]));
     }
 
-    /** @return list<class-string<Resource>> */
+    /** @return list<class-string<resource>> */
     public static function resources(): array
     {
         /*
@@ -83,7 +103,7 @@ class CrudPathsTest extends TestCase
     private function tableActions(string $resource): array
     {
         $instance = Livewire::test($resource::getPages()['index']->getPage())->instance();
-        $table = $resource::table(\Filament\Tables\Table::make($instance));
+        $table = $resource::table(Table::make($instance));
 
         return [
             'row' => array_map(fn ($a) => $a->getName(), $table->getRecordActions()),
@@ -120,7 +140,7 @@ class CrudPathsTest extends TestCase
      * "edited1234" and was refused by the rule that a path begins with a
      * slash. The application was right; the test was writing nonsense.
      */
-    private function valueFor(\Filament\Forms\Components\Field $field, string $marker): mixed
+    private function valueFor(Field $field, string $marker): mixed
     {
         $name = $field->getName();
 
@@ -128,73 +148,71 @@ class CrudPathsTest extends TestCase
             // A slug has a per-locale unique index and must be URL-safe.
             str_contains($name, 'slug') => $marker.'-'.str_replace('.', '-', $name),
 
-            $field instanceof \Filament\Forms\Components\Toggle => false,
+            $field instanceof Toggle => false,
 
-                /*
-                 * A repeater with a minimum gets that many rows, each filled
-                 * the way this method fills any field. The cinematic gallery
-                 * (lighting brief, 22 Oct 2026) requires four photographs, and
-                 * an empty list was refused — correctly.
-                 */
-            $field instanceof \Filament\Forms\Components\Repeater => collect(range(1, max(0, (int) $field->getMinItems())))
+            /*
+             * A repeater with a minimum gets that many rows, each filled
+             * the way this method fills any field. The cinematic gallery
+             * (lighting brief, 22 Oct 2026) requires four photographs, and
+             * an empty list was refused — correctly.
+             */
+            $field instanceof Repeater => collect(range(1, max(0, (int) $field->getMinItems())))
                 ->mapWithKeys(fn (int $i): array => ['row'.$i => collect($field->getDefaultChildComponents())
-                    ->filter(fn ($child): bool => $child instanceof \Filament\Forms\Components\Field)
+                    ->filter(fn ($child): bool => $child instanceof Field)
                     ->mapWithKeys(fn ($child): array => [$child->getName() => $this->valueFor($child, $marker.$i)])
                     ->all()])
                 ->all(),
 
             // A radio's value has to be one of its options, like a select's.
-            $field instanceof \Filament\Forms\Components\Radio => array_key_first($field->getOptions()),
+            $field instanceof Radio => array_key_first($field->getOptions()),
 
-                /*
-                 * A date picker needs a date. The first version of this sent
-                 * the marker string and four resources failed with "The
-                 * published at field must be a valid date" — the APPLICATION
-                 * being right and the payload being wrong, which is the only
-                 * kind of test failure worth fixing in the test.
-                 */
-            $field instanceof \Filament\Forms\Components\DateTimePicker
-                => now()->subDay()->format('Y-m-d H:i:s'),
+            /*
+             * A date picker needs a date. The first version of this sent
+             * the marker string and four resources failed with "The
+             * published at field must be a valid date" — the APPLICATION
+             * being right and the payload being wrong, which is the only
+             * kind of test failure worth fixing in the test.
+             */
+            $field instanceof DateTimePicker => now()->subDay()->format('Y-m-d H:i:s'),
 
             // A select's value has to be one it offers.
-            $field instanceof \Filament\Forms\Components\Select => $this->selectValue($field),
+            $field instanceof Select => $this->selectValue($field),
 
-                /*
-                 * ───────────────────────────────────────────────────────────
-                 * A MEDIA FIELD HOLDS AN ID, AND USED TO BE A SELECT.
-                 *
-                 * Task 34 A1 replaced the filename Select with the real
-                 * picker, which is a custom Field — so it stopped matching
-                 * the Select arm above and fell through to the generic string
-                 * marker, and three resources failed with
-                 *
-                 *     Incorrect integer value: 'created9853 cover media id'
-                 *     for column 'cover_media_id'
-                 *
-                 * The application was right and the payload was nonsense,
-                 * which is the only kind of test failure worth fixing in the
-                 * test. A real processed image, because that is the only
-                 * thing the field is ever allowed to hold.
-                 * ───────────────────────────────────────────────────────────
-                 */
-            $field instanceof \App\Filament\Forms\Components\MediaPickerField
-                => \App\Models\Media::factory()->create([
-                    'status' => \App\Enums\MediaStatus::Ready,
-                ])->getKey(),
+            /*
+             * ───────────────────────────────────────────────────────────
+             * A MEDIA FIELD HOLDS AN ID, AND USED TO BE A SELECT.
+             *
+             * Task 34 A1 replaced the filename Select with the real
+             * picker, which is a custom Field — so it stopped matching
+             * the Select arm above and fell through to the generic string
+             * marker, and three resources failed with
+             *
+             *     Incorrect integer value: 'created9853 cover media id'
+             *     for column 'cover_media_id'
+             *
+             * The application was right and the payload was nonsense,
+             * which is the only kind of test failure worth fixing in the
+             * test. A real processed image, because that is the only
+             * thing the field is ever allowed to hold.
+             * ───────────────────────────────────────────────────────────
+             */
+            $field instanceof MediaPickerField => Media::factory()->create([
+                'status' => MediaStatus::Ready,
+            ])->getKey(),
 
             str_contains($name, 'email') => $marker.'@example.com',
             str_contains($name, 'url') => 'https://example.com/'.$marker,
 
-                /*
-                 * from_path and to_path must DIFFER — a redirect to itself is
-                 * a loop and RedirectResource refuses it, correctly. The
-                 * generic payload gave both the same value and the refusal
-                 * was the application working.
-                 */
-                str_contains($name, 'path') => '/'.$marker.'-'.str_replace('_', '-', $name),
-                str_contains($name, 'focal') => 0.5,
-                str_contains($name, 'year') => 2026,
-                str_contains($name, 'pence') => 150000,
+            /*
+             * from_path and to_path must DIFFER — a redirect to itself is
+             * a loop and RedirectResource refuses it, correctly. The
+             * generic payload gave both the same value and the refusal
+             * was the application working.
+             */
+            str_contains($name, 'path') => '/'.$marker.'-'.str_replace('_', '-', $name),
+            str_contains($name, 'focal') => 0.5,
+            str_contains($name, 'year') => 2026,
+            str_contains($name, 'pence') => 150000,
             str_contains($name, 'status_code') => 301,
 
             default => $marker.' '.str_replace(['.', '_'], ' ', $name),
@@ -219,7 +237,7 @@ class CrudPathsTest extends TestCase
      * exercised rather than left null.
      * ───────────────────────────────────────────────────────────────────────
      */
-    private function selectValue(\Filament\Forms\Components\Select $field): mixed
+    private function selectValue(Select $field): mixed
     {
         $multiple = false;
 
@@ -254,34 +272,34 @@ class CrudPathsTest extends TestCase
     private function relatedKeyFor(string $name): int|string|null
     {
         $model = match ($name) {
-            'categories' => \App\Models\Category::class,
-            'tags' => \App\Models\Tag::class,
-            'article_category_id' => \App\Models\ArticleCategory::class,
+            'categories' => Category::class,
+            'tags' => Tag::class,
+            'article_category_id' => ArticleCategory::class,
             default => null,
         };
 
         return $model === null ? null : $model::factory()->create()->getKey();
     }
 
-    /** @return list<\Filament\Forms\Components\Field> */
+    /** @return list<Field> */
     private function fields(string $resource): array
     {
         $pages = $resource::getPages();
         $page = ($pages['create'] ?? $pages['index'])->getPage();
 
         $schema = $resource::form(
-            \Filament\Schemas\Schema::make(Livewire::test($page)->instance())
+            Schema::make(Livewire::test($page)->instance())
         );
 
         $fields = [];
 
         $walk = function (array $components) use (&$walk, &$fields): void {
             foreach ($components as $component) {
-                if ($component instanceof \Filament\Forms\Components\Field) {
+                if ($component instanceof Field) {
                     $fields[] = $component;
 
                     // A repeater's children belong to the related model.
-                    if ($component instanceof \Filament\Forms\Components\Repeater) {
+                    if ($component instanceof Repeater) {
                         continue;
                     }
                 }
@@ -298,9 +316,9 @@ class CrudPathsTest extends TestCase
     // ----------------------------------------------------------------- CREATE
 
     /**
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    #[DataProvider('resources')]
     public function test_create(string $resource): void
     {
         $model = $resource::getModel();
@@ -350,7 +368,7 @@ class CrudPathsTest extends TestCase
              * a form. Asserting a refusal there would have been asserting the
              * wrong thing about the right resource.
              */
-            $refusal = \Illuminate\Support\Facades\Gate::forUser(auth()->user())
+            $refusal = Gate::forUser(auth()->user())
                 ->inspect('create', $model);
 
             /*
@@ -394,9 +412,9 @@ class CrudPathsTest extends TestCase
     // ------------------------------------------------------------------- EDIT
 
     /**
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    #[DataProvider('resources')]
     public function test_edit(string $resource): void
     {
         $model = $resource::getModel();
@@ -422,7 +440,7 @@ class CrudPathsTest extends TestCase
              * fails here.
              * ───────────────────────────────────────────────────────────────
              */
-            $refusal = \Illuminate\Support\Facades\Gate::forUser(auth()->user())
+            $refusal = Gate::forUser(auth()->user())
                 ->inspect('update', $record);
 
             if ($refusal->denied()) {
@@ -500,9 +518,9 @@ class CrudPathsTest extends TestCase
     /**
      * Edit the first row of the first repeater, and prove it saved.
      *
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
-    private function editThroughRepeater(string $resource, \Illuminate\Database\Eloquent\Model $record): void
+    private function editThroughRepeater(string $resource, Model $record): void
     {
         $pages = $resource::getPages();
         $page = $pages['index']->getPage();
@@ -548,24 +566,24 @@ class CrudPathsTest extends TestCase
          * then asserting the other survived, is the guarantee that matters
          * for any translatable field in this application.
          */
-        $other = collect(\App\Support\Locale::codes())
-            ->first(fn (string $code): bool => $code !== \App\Support\Locale::DEFAULT);
+        $other = collect(Locale::codes())
+            ->first(fn (string $code): bool => $code !== Locale::DEFAULT);
 
         $before = $rows[$rowKey]['label'][$other] ?? null;
 
         Livewire::test($page)
             ->mountAction(TestAction::make('edit')->table($record))
-            ->set("mountedActions.0.data.{$repeaterKey}.{$rowKey}.label.".\App\Support\Locale::DEFAULT, $marker)
+            ->set("mountedActions.0.data.{$repeaterKey}.{$rowKey}.label.".Locale::DEFAULT, $marker)
             ->call('callMountedAction')
             ->assertHasNoFormErrors();
 
-        $item = \App\Models\MenuItem::query()->find($rows[$rowKey]['id'] ?? null);
+        $item = MenuItem::query()->find($rows[$rowKey]['id'] ?? null);
 
         $this->assertNotNull($item, class_basename($resource).': the repeater row vanished on save');
 
         $this->assertSame(
             $marker,
-            $item->getTranslation('label', \App\Support\Locale::DEFAULT, fallback: false),
+            $item->getTranslation('label', Locale::DEFAULT, fallback: false),
             class_basename($resource).': editing a repeater row reported success and changed nothing'
         );
 
@@ -579,14 +597,14 @@ class CrudPathsTest extends TestCase
     /**
      * The name of the first repeater in a resource's form, if it has one.
      *
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
     private function firstRepeaterName(string $resource): ?string
     {
         $page = $resource::getPages()['index']->getPage();
 
         $schema = $resource::form(
-            \Filament\Schemas\Schema::make(Livewire::test($page)->instance())
+            Schema::make(Livewire::test($page)->instance())
         );
 
         $found = null;
@@ -597,7 +615,7 @@ class CrudPathsTest extends TestCase
                     return;
                 }
 
-                if ($component instanceof \Filament\Forms\Components\Repeater) {
+                if ($component instanceof Repeater) {
                     $found = $component->getName();
 
                     return;
@@ -613,7 +631,7 @@ class CrudPathsTest extends TestCase
     }
 
     /** The first field we can safely overwrite. */
-    private function editableTextField(string $resource): ?\Filament\Forms\Components\Field
+    private function editableTextField(string $resource): ?Field
     {
         foreach ($this->fields($resource) as $field) {
             $name = $field->getName();
@@ -622,8 +640,8 @@ class CrudPathsTest extends TestCase
                 continue;   // uniquely indexed; changed in the validation tests
             }
 
-            if (! $field instanceof \Filament\Forms\Components\TextInput
-                && ! $field instanceof \Filament\Forms\Components\Textarea) {
+            if (! $field instanceof TextInput
+                && ! $field instanceof Textarea) {
                 continue;
             }
 
@@ -635,7 +653,7 @@ class CrudPathsTest extends TestCase
              * type — Testimonials leads with the quote, which is a Textarea
              * because a client's sentence is not rich text.
              */
-            if ($field instanceof \Filament\Forms\Components\TextInput && $field->isNumeric()) {
+            if ($field instanceof TextInput && $field->isNumeric()) {
                 continue;
             }
 
@@ -648,9 +666,9 @@ class CrudPathsTest extends TestCase
     // ----------------------------------------------------------------- DELETE
 
     /**
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    #[DataProvider('resources')]
     public function test_delete(string $resource): void
     {
         $model = $resource::getModel();
@@ -672,7 +690,7 @@ class CrudPathsTest extends TestCase
          * ───────────────────────────────────────────────────────────────────
          */
         if (! in_array('delete', $actions['row'], true)) {
-            $refusal = \Illuminate\Support\Facades\Gate::forUser(auth()->user())
+            $refusal = Gate::forUser(auth()->user())
                 ->inspect('delete', $record);
 
             $this->assertTrue(
@@ -712,9 +730,9 @@ class CrudPathsTest extends TestCase
      * "Portraits", could not find it, and could not create "Portraits" again
      * either. Fixed rather than excused.
      *
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    #[DataProvider('resources')]
     public function test_restore(string $resource): void
     {
         $model = $resource::getModel();
@@ -752,9 +770,9 @@ class CrudPathsTest extends TestCase
     // ----------------------------------------------------------- FORCE DELETE
 
     /**
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    #[DataProvider('resources')]
     public function test_force_delete(string $resource): void
     {
         $model = $resource::getModel();
@@ -821,9 +839,9 @@ class CrudPathsTest extends TestCase
      * Read off the ACTION rather than hardcoded, so a guard added to a second
      * resource is covered without editing this file.
      *
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
-    private function forceDeleteConfirmation(string $resource, \Illuminate\Database\Eloquent\Model $record): ?string
+    private function forceDeleteConfirmation(string $resource, Model $record): ?string
     {
         $table = Livewire::test($resource::getPages()['index']->getPage())->instance()->getTable();
 
@@ -847,7 +865,7 @@ class CrudPathsTest extends TestCase
             $components = is_array($declared) ? $declared : [];
 
             foreach ($components as $component) {
-                if ($component instanceof \Filament\Forms\Components\Field
+                if ($component instanceof Field
                     && $component->getName() === 'confirmation') {
                     // Media is the only one so far, and it wants the filename.
                     return $record->original_filename;
@@ -876,9 +894,9 @@ class CrudPathsTest extends TestCase
      * do is change when somebody edited the other language.
      * ───────────────────────────────────────────────────────────────────────
      *
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    #[DataProvider('resources')]
     public function test_restoring_does_not_touch_any_translation(string $resource): void
     {
         if (! defined($resource.'::TRANSLATED')) {
@@ -913,9 +931,9 @@ class CrudPathsTest extends TestCase
     /**
      * A create then an edit: the two save routines in sequence.
      *
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('resources')]
+    #[DataProvider('resources')]
     public function test_editing_one_locale_after_a_create_leaves_the_other_untouched(string $resource): void
     {
         if (! defined($resource.'::TRANSLATED')) {

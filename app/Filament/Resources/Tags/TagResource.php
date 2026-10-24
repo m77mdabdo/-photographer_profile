@@ -12,13 +12,12 @@ use App\Models\Tag;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
-use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Article tags. The shortest vocabulary on the site: a name and an address.
@@ -30,10 +29,9 @@ class TagResource extends Resource
 
     protected static ?string $model = Tag::class;
 
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-hashtag';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-hashtag';
 
     protected static ?int $navigationSort = 4;
-
 
     public const TRANSLATED = ['slug', 'name'];
 
@@ -46,7 +44,6 @@ class TagResource extends Resource
     {
         return __('studio.nav.tags');
     }
-
 
     /**
      * The noun Filament puts in its own sentences.
@@ -152,7 +149,7 @@ class TagResource extends Resource
      * query per row into one query for the page — see the policy, which reads
      * the attribute when it is there.
      */
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->withCount('articles');
     }

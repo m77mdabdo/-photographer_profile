@@ -337,6 +337,7 @@ class PanelStylesheetTest extends TestCase
     /**
      * Every rule in a stylesheet, as [selectors, body]. At-rules are flattened
      * rather than skipped: the responsive block at the foot of theme.css is a
+     *
      * @media, and a tracked label inside one still tracks.
      *
      * @return list<array{0: list<string>, 1: string}>

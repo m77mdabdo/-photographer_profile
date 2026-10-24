@@ -110,7 +110,7 @@ class FontMetricsTest extends TestCase
      * blocks — and this used to read only the first, so it parsed a
      * neighbouring value and asserted against it.
      *
-     * @return list<array<string, float>>  one property => declared percentage map per face
+     * @return list<array<string, float>> one property => declared percentage map per face
      */
     private function declaredFaces(string $family): array
     {
@@ -183,40 +183,40 @@ class FontMetricsTest extends TestCase
             $metrics = $measured[$path];
 
             foreach ($this->declaredFaces($family) as $declared) {
-            $scale = $declared['size-adjust'] / 100;
+                $scale = $declared['size-adjust'] / 100;
 
-            $expectedAscent = ($metrics['ascender'] / $scale) * 100;
-            $expectedDescent = ($metrics['descender'] / $scale) * 100;
-            $expectedGap = ($metrics['lineGap'] / $scale) * 100;
+                $expectedAscent = ($metrics['ascender'] / $scale) * 100;
+                $expectedDescent = ($metrics['descender'] / $scale) * 100;
+                $expectedGap = ($metrics['lineGap'] / $scale) * 100;
 
-            $report[] = sprintf(
-                '%s: ascent declared %.1f%% measured %.2f%% | descent declared %.1f%% measured %.2f%%',
-                $family, $declared['ascent-override'], $expectedAscent,
-                $declared['descent-override'], $expectedDescent,
-            );
+                $report[] = sprintf(
+                    '%s: ascent declared %.1f%% measured %.2f%% | descent declared %.1f%% measured %.2f%%',
+                    $family, $declared['ascent-override'], $expectedAscent,
+                    $declared['descent-override'], $expectedDescent,
+                );
 
-            $this->assertEqualsWithDelta(
-                $expectedAscent,
-                $declared['ascent-override'],
-                self::TOLERANCE,
-                "{$family}: ascent-override drifted from the font. Measured ascender "
-                .$metrics['ascender'].'em at size-adjust '.$declared['size-adjust'].'% gives '
-                .round($expectedAscent, 2).'%, but '.$declared['ascent-override'].'% is declared.'
-            );
+                $this->assertEqualsWithDelta(
+                    $expectedAscent,
+                    $declared['ascent-override'],
+                    self::TOLERANCE,
+                    "{$family}: ascent-override drifted from the font. Measured ascender "
+                    .$metrics['ascender'].'em at size-adjust '.$declared['size-adjust'].'% gives '
+                    .round($expectedAscent, 2).'%, but '.$declared['ascent-override'].'% is declared.'
+                );
 
-            $this->assertEqualsWithDelta(
-                $expectedDescent,
-                $declared['descent-override'],
-                self::TOLERANCE,
-                "{$family}: descent-override drifted from the font."
-            );
+                $this->assertEqualsWithDelta(
+                    $expectedDescent,
+                    $declared['descent-override'],
+                    self::TOLERANCE,
+                    "{$family}: descent-override drifted from the font."
+                );
 
-            $this->assertEqualsWithDelta(
-                $expectedGap,
-                $declared['line-gap-override'],
-                self::TOLERANCE,
-                "{$family}: line-gap-override drifted from the font."
-            );
+                $this->assertEqualsWithDelta(
+                    $expectedGap,
+                    $declared['line-gap-override'],
+                    self::TOLERANCE,
+                    "{$family}: line-gap-override drifted from the font."
+                );
             }
         }
 

@@ -5,16 +5,18 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Pages\Pages;
 
 use App\Filament\Resources\Pages\PageResource;
+use App\Filament\Support\NamesPlaces;
 use App\Filament\Support\RecordWriter;
 use App\Filament\Support\Translatable;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Database\Eloquent\Model;
 
 class EditPage extends EditRecord
 {
-    use \App\Filament\Support\NamesPlaces;
+    use NamesPlaces;
 
     protected static string $resource = PageResource::class;
 
@@ -45,7 +47,7 @@ class EditPage extends EditRecord
      * $record->update() drops a guarded key without a word. RecordWriter
      * assigns them deliberately — and applies the published-with-no-date rule.
      */
-    protected function handleRecordUpdate(\Illuminate\Database\Eloquent\Model $record, array $data): \Illuminate\Database\Eloquent\Model
+    protected function handleRecordUpdate(Model $record, array $data): Model
     {
         return RecordWriter::update($record, $data);
     }

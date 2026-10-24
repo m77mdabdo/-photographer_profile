@@ -6,11 +6,16 @@ namespace Tests\Feature\Studio;
 
 use App\Enums\MediaStatus;
 use App\Enums\UserRole;
+use App\Filament\Resources\Media\MediaResource;
+use App\Filament\Resources\Media\Pages\ListMedia;
+use App\Filament\Support\InitialsAvatar;
 use App\Models\Media;
 use App\Models\MediaVariant;
 use App\Models\User;
 use Filament\Facades\Filament;
+use Filament\Tables\Table;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
@@ -73,7 +78,7 @@ class NoThirdPartyTest extends TestCase
     /** The avatar is drawn here, as a data URI. */
     public function test_the_avatar_is_local(): void
     {
-        $url = app(\App\Filament\Support\InitialsAvatar::class)->get($this->user);
+        $url = app(InitialsAvatar::class)->get($this->user);
 
         $this->assertStringStartsWith('data:image/svg+xml;base64,', $url);
 
@@ -84,8 +89,8 @@ class NoThirdPartyTest extends TestCase
 
         // And the panel is actually using it.
         $this->assertInstanceOf(
-            \App\Filament\Support\InitialsAvatar::class,
-            Filament::getPanel('studio')->getDefaultAvatarProvider() instanceof \App\Filament\Support\InitialsAvatar
+            InitialsAvatar::class,
+            Filament::getPanel('studio')->getDefaultAvatarProvider() instanceof InitialsAvatar
                 ? Filament::getPanel('studio')->getDefaultAvatarProvider()
                 : app(Filament::getPanel('studio')->getDefaultAvatarProvider()),
         );
@@ -113,9 +118,9 @@ class NoThirdPartyTest extends TestCase
          * it built here. A copy would assert that this test's code is right,
          * which is not the question.
          */
-        $table = \App\Filament\Resources\Media\MediaResource::table(
-            \Filament\Tables\Table::make(
-                \Livewire\Livewire::test(\App\Filament\Resources\Media\Pages\ListMedia::class)->instance()
+        $table = MediaResource::table(
+            Table::make(
+                Livewire::test(ListMedia::class)->instance()
             )
         );
 

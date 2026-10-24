@@ -12,8 +12,8 @@ use Illuminate\Database\Eloquent\Model;
 class Client extends Model
 {
     use HasFactory;
-
     use Translatable;
+
     /** @var list<string> */
     protected $fillable = ['name', 'url', 'sort_order', 'is_active'];
 

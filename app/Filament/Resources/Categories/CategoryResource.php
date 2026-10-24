@@ -10,15 +10,14 @@ use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\Translatable;
 use App\Models\Category;
 use BackedEnum;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 /**
  * Work categories. A flat vocabulary the work index filters by.
@@ -30,10 +29,9 @@ class CategoryResource extends Resource
 
     protected static ?string $model = Category::class;
 
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-tag';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-tag';
 
     protected static ?int $navigationSort = 3;
-
 
     public const TRANSLATED = ['slug', 'name', 'description'];
 
@@ -46,7 +44,6 @@ class CategoryResource extends Resource
     {
         return __('studio.nav.categories');
     }
-
 
     /**
      * The noun Filament puts in its own sentences.
@@ -163,10 +160,10 @@ class CategoryResource extends Resource
      * query per row into one query for the page — see the policy, which reads
      * the attribute when it is there.
      */
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->withoutGlobalScopes([\Illuminate\Database\Eloquent\SoftDeletingScope::class])
+            ->withoutGlobalScopes([SoftDeletingScope::class])
             ->withCount('projects');
     }
 

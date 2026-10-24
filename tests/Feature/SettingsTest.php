@@ -6,14 +6,19 @@ namespace Tests\Feature;
 
 use App\Enums\UserRole;
 use App\Filament\Pages\Settings as SettingsPage;
-use App\Support\Locale;
 use App\Models\Setting;
 use App\Models\User;
+use App\Providers\AppServiceProvider;
+use App\Support\Locale;
+use App\Support\SettingGroups;
 use App\Support\Settings;
+use App\Support\SiteCopy;
+use Database\Seeders\SettingsSeeder;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -26,7 +31,7 @@ class SettingsTest extends TestCase
         parent::setUp();
 
         Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
     }
 
@@ -51,7 +56,6 @@ class SettingsTest extends TestCase
         $this->assertGreaterThan(15, Setting::query()->count(), 'there are enough keys for this to matter');
     }
 
-
     /**
      * The seeded value of a key, read from the defaults rather than written
      * out here.
@@ -64,7 +68,7 @@ class SettingsTest extends TestCase
      */
     private function seeded(string $key): string
     {
-        $row = collect(\App\Support\SiteCopy::defaults())->firstWhere('key', $key);
+        $row = collect(SiteCopy::defaults())->firstWhere('key', $key);
 
         return (string) $row['value'];
     }
@@ -177,7 +181,7 @@ class SettingsTest extends TestCase
         $this->assertSame($this->seeded('site.name'), Settings::get('site.name'), 'the memo serves the request it was filled in');
 
         // A fresh boot must drop it.
-        (new \App\Providers\AppServiceProvider($this->app))->boot();
+        (new AppServiceProvider($this->app))->boot();
 
         $this->assertSame(
             'Changed Elsewhere',
@@ -193,7 +197,7 @@ class SettingsTest extends TestCase
     {
         Settings::get('site.name');
 
-        (new \App\Providers\AppServiceProvider($this->app))->boot();
+        (new AppServiceProvider($this->app))->boot();
 
         /*
          * forgetMemo() is not flush(). Clearing the shared cache on every boot
@@ -231,12 +235,12 @@ class SettingsTest extends TestCase
          * whole reason the token exists.
          * ───────────────────────────────────────────────────────────────────
          */
-        \Filament\Facades\Filament::setCurrentPanel('studio');
+        Filament::setCurrentPanel('studio');
 
         Livewire::actingAs($owner)
             ->test(SettingsPage::class)
-            ->assertSee(\App\Support\SettingGroups::title('identity'))
-            ->assertSee(\App\Support\SettingGroups::title('navigation'))
+            ->assertSee(SettingGroups::title('identity'))
+            ->assertSee(SettingGroups::title('navigation'))
             ->assertSee('site.name')
             ->set('values.'.SettingsPage::token('site.statement').'.'.Locale::DEFAULT, 'A new sentence about the work.')
             ->call('save')
@@ -257,7 +261,7 @@ class SettingsTest extends TestCase
     {
         $owner = User::factory()->create(['role' => UserRole::Owner]);
 
-        \Filament\Facades\Filament::setCurrentPanel('studio');
+        Filament::setCurrentPanel('studio');
 
         Livewire::actingAs($owner)
             ->test(SettingsPage::class)

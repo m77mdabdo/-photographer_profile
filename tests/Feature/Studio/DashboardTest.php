@@ -7,11 +7,14 @@ namespace Tests\Feature\Studio;
 use App\Enums\InquiryStatus;
 use App\Enums\MediaStatus;
 use App\Enums\PublishStatus;
+use App\Enums\UserRole;
+use App\Filament\Resources\Projects\ProjectResource;
 use App\Filament\Widgets\MediaNeedingAttention;
 use App\Filament\Widgets\RecentEnquiries;
 use App\Filament\Widgets\RecentlyEdited;
 use App\Filament\Widgets\StudioFigures;
 use App\Filament\Widgets\UntranslatedContent;
+use App\Jobs\ProcessMediaVariants;
 use App\Models\Article;
 use App\Models\Inquiry;
 use App\Models\Media;
@@ -19,10 +22,12 @@ use App\Models\Page;
 use App\Models\Project;
 use App\Models\Service;
 use App\Models\User;
-use App\Enums\UserRole;
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -156,7 +161,7 @@ class DashboardTest extends TestCase
     /** Media needing attention names the reason and offers a way to act. */
     public function test_the_attention_table_offers_a_retry(): void
     {
-        \Illuminate\Support\Facades\Queue::fake();
+        Queue::fake();
 
         $broken = Media::factory()->create([
             'status' => MediaStatus::Failed,
@@ -166,7 +171,7 @@ class DashboardTest extends TestCase
         Livewire::test(MediaNeedingAttention::class)
             ->assertOk()
             ->assertSee('Unsupported colour profile.')
-            ->callAction(\Filament\Actions\Testing\TestAction::make('reprocess')->table($broken))
+            ->callAction(TestAction::make('reprocess')->table($broken))
             ->assertNotified();
 
         $broken->refresh();
@@ -174,7 +179,7 @@ class DashboardTest extends TestCase
         $this->assertSame(MediaStatus::Pending, $broken->status);
         $this->assertNull($broken->failure_reason, 'the old reason survived the retry');
 
-        \Illuminate\Support\Facades\Queue::assertPushed(\App\Jobs\ProcessMediaVariants::class);
+        Queue::assertPushed(ProcessMediaVariants::class);
     }
 
     // ----------------------------------------------------------------- B3
@@ -184,7 +189,7 @@ class DashboardTest extends TestCase
     {
         $translated = Project::factory()->create();
 
-        foreach (\App\Filament\Resources\Projects\ProjectResource::TRANSLATED as $i => $column) {
+        foreach (ProjectResource::TRANSLATED as $i => $column) {
             $translated->setTranslation($column, 'en', "english $column");
             $translated->setTranslation($column, 'ar', str_contains($column, 'slug') ? "ar-$i" : "عربي $column");
         }
@@ -213,7 +218,7 @@ class DashboardTest extends TestCase
     {
         $project = Project::factory()->create();
 
-        foreach (\App\Filament\Resources\Projects\ProjectResource::TRANSLATED as $i => $column) {
+        foreach (ProjectResource::TRANSLATED as $i => $column) {
             $project->setTranslation($column, 'en', "english $column");
             $project->setTranslation($column, 'ar', str_contains($column, 'slug') ? "ar-$i" : 'عربي');
         }
@@ -326,7 +331,7 @@ class DashboardTest extends TestCase
 
         $measured = $count;
 
-        DB::getEventDispatcher()->forget(\Illuminate\Database\Events\QueryExecuted::class);
+        DB::getEventDispatcher()->forget(QueryExecuted::class);
 
         return $measured;
     }

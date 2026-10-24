@@ -62,7 +62,7 @@ final class TwoFactorEnforcement
             return;
         }
 
-        if (static::required()) {
+        if (self::required()) {
             return;
         }
 

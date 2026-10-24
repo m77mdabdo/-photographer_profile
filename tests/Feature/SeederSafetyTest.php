@@ -10,7 +10,13 @@ use App\Models\Category;
 use App\Models\Client;
 use App\Models\Project;
 use App\Models\Setting;
+use App\Models\User;
 use App\Support\Settings;
+use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\DemoArabicSeeder;
+use Database\Seeders\DemoContentSeeder;
+use Database\Seeders\DemoJournalSeeder;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -110,14 +116,14 @@ class SeederSafetyTest extends TestCase
      */
     public function test_reseeding_settings_never_reverts_an_edit(): void
     {
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
 
         Settings::flush();
         Settings::set('site.name', 'Marsden & Co', 'string', 'identity');
         Settings::set('about.portrait_media_id', '42', 'string', 'about');
         Settings::flush();
 
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
 
         $this->assertSame('Marsden & Co', Settings::get('site.name'));
@@ -128,7 +134,7 @@ class SeederSafetyTest extends TestCase
         Setting::query()->where('key', 'journal.heading')->delete();
         Settings::flush();
 
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
 
         $this->assertNotNull(Settings::get('journal.heading'));
@@ -143,7 +149,7 @@ class SeederSafetyTest extends TestCase
         Storage::fake('media_originals');
         Storage::fake('media_public', config('filesystems.disks.media_public'));
 
-        $this->seed(\Database\Seeders\DemoJournalSeeder::class);
+        $this->seed(DemoJournalSeeder::class);
 
         $edited = Article::query()->where('slug', 'one-camera')->sole();
         $edited->forceFill([
@@ -156,7 +162,7 @@ class SeederSafetyTest extends TestCase
 
         $untouched = Article::query()->where('slug', 'the-edit-is-the-work')->sole();
 
-        $this->seed(\Database\Seeders\DemoJournalSeeder::class);
+        $this->seed(DemoJournalSeeder::class);
 
         // The studio's title survives.
         $this->assertSame('A title the studio wrote', $edited->fresh()->title);
@@ -250,7 +256,7 @@ class SeederSafetyTest extends TestCase
         $owned->setTranslation('client', 'ar', 'مِريديان الصحفيّة');
         $owned->save();
 
-        $this->seed(\Database\Seeders\DemoArabicSeeder::class);
+        $this->seed(DemoArabicSeeder::class);
 
         $after = $generated->fresh()->getTranslation('client', 'ar', fallback: false);
 
@@ -272,7 +278,7 @@ class SeederSafetyTest extends TestCase
         );
 
         // And a second run changes neither.
-        $this->seed(\Database\Seeders\DemoArabicSeeder::class);
+        $this->seed(DemoArabicSeeder::class);
 
         $this->assertSame($after, $generated->fresh()->getTranslation('client', 'ar', fallback: false));
         $this->assertSame('مِريديان الصحفيّة', $owned->fresh()->getTranslation('client', 'ar', fallback: false));
@@ -301,7 +307,7 @@ class SeederSafetyTest extends TestCase
         $project->setTranslation('client', 'ar', "\u{2068}Nord & Vale\u{2069}");
         $project->save();
 
-        $this->seed(\Database\Seeders\DemoArabicSeeder::class);
+        $this->seed(DemoArabicSeeder::class);
 
         $inTheList = $client->fresh()->getTranslation('name', 'ar', fallback: false);
         $inTheCredit = $project->fresh()->getTranslation('client', 'ar', fallback: false);
@@ -354,11 +360,11 @@ class SeederSafetyTest extends TestCase
         foreach (['production', 'staging'] as $environment) {
             $this->app->detectEnvironment(fn (): string => $environment);
 
-            (new \Database\Seeders\DatabaseSeeder())->run();
+            (new DatabaseSeeder)->run();
 
             $this->assertSame(
                 0,
-                \App\Models\User::query()->count(),
+                User::query()->count(),
                 "DatabaseSeeder created an account in {$environment}"
             );
         }
@@ -366,10 +372,10 @@ class SeederSafetyTest extends TestCase
         // And locally it still does its job, idempotently.
         $this->app->detectEnvironment(fn (): string => 'local');
 
-        (new \Database\Seeders\DatabaseSeeder())->run();
-        (new \Database\Seeders\DatabaseSeeder())->run();
+        (new DatabaseSeeder)->run();
+        (new DatabaseSeeder)->run();
 
-        $this->assertSame(1, \App\Models\User::query()->where('email', 'test@example.com')->count());
+        $this->assertSame(1, User::query()->where('email', 'test@example.com')->count());
     }
 
     /**
@@ -382,7 +388,7 @@ class SeederSafetyTest extends TestCase
         Storage::fake('media_originals');
         Storage::fake('media_public', config('filesystems.disks.media_public'));
 
-        $this->seed(\Database\Seeders\DemoContentSeeder::class);
+        $this->seed(DemoContentSeeder::class);
     }
 
     /**

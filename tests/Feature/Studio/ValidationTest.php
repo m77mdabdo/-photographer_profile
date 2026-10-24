@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace Tests\Feature\Studio;
 
 use App\Enums\UserRole;
-use App\Filament\Resources\Projects\Pages\CreateProject;
 use App\Filament\Resources\Projects\Pages\EditProject;
+use App\Filament\Resources\Projects\ProjectResource;
+use App\Filament\Resources\Users\Pages\ManageUsers;
 use App\Models\Project;
 use App\Models\User;
 use App\Support\Locale;
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -54,7 +58,7 @@ class ValidationTest extends TestCase
         ]));
     }
 
-    /** @return list<array{class-string<Resource>}> every resource with a slug */
+    /** @return list<array{class-string<resource>}> every resource with a slug */
     public static function slugResources(): array
     {
         $resources = [];
@@ -80,7 +84,7 @@ class ValidationTest extends TestCase
     }
 
     /** Mount the create path for a resource, whichever shape it has. */
-    private function create(string $resource, array $data): \Livewire\Features\SupportTesting\Testable
+    private function create(string $resource, array $data): Testable
     {
         $pages = $resource::getPages();
 
@@ -91,7 +95,7 @@ class ValidationTest extends TestCase
         }
 
         return Livewire::test($pages['index']->getPage())
-            ->mountAction(\Filament\Actions\Testing\TestAction::make('create')->table())
+            ->mountAction(TestAction::make('create')->table())
             ->fillForm($data)
             ->call('callMountedAction');
     }
@@ -141,9 +145,9 @@ class ValidationTest extends TestCase
      * columns and a form that only required the default locale would still
      * hand the database a null.
      *
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('slugResources')]
+    #[DataProvider('slugResources')]
     public function test_a_blank_slug_is_refused_in_every_locale(string $resource): void
     {
         $model = $resource::getModel();
@@ -178,9 +182,9 @@ class ValidationTest extends TestCase
      * project's English slug and another's Arabic one. The rule checks the
      * generated column the index is on, which is why the two cannot disagree.
      *
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('slugResources')]
+    #[DataProvider('slugResources')]
     public function test_a_duplicate_slug_is_refused_per_locale(string $resource): void
     {
         $model = $resource::getModel();
@@ -220,9 +224,9 @@ class ValidationTest extends TestCase
      * that refused this would be stricter than the database and would stop an
      * owner reusing a word that is free.
      *
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('slugResources')]
+    #[DataProvider('slugResources')]
     public function test_the_same_slug_in_a_different_locale_is_allowed(string $resource): void
     {
         $model = $resource::getModel();
@@ -267,11 +271,11 @@ class ValidationTest extends TestCase
 
         $this->assertSoftDeleted('projects', ['id' => $existing->getKey()]);
 
-        $data = $this->baseData(\App\Filament\Resources\Projects\ProjectResource::class);
+        $data = $this->baseData(ProjectResource::class);
         $data['slug.en'] = 'deleted-but-held';
         $data['slug.ar'] = 'free-'.random_int(1000, 9999);
 
-        $this->create(\App\Filament\Resources\Projects\ProjectResource::class, $data)
+        $this->create(ProjectResource::class, $data)
             ->assertHasFormErrors(['slug.en']);
     }
 
@@ -305,14 +309,14 @@ class ValidationTest extends TestCase
      * 301s a non-canonical address, so an owner who typed "Salt-Line" would
      * save it and then watch their URL change on the next visit.
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('slugFormats')]
+    #[DataProvider('slugFormats')]
     public function test_the_slug_format_rule(string $slug, bool $valid): void
     {
-        $data = $this->baseData(\App\Filament\Resources\Projects\ProjectResource::class);
+        $data = $this->baseData(ProjectResource::class);
         $data['slug.en'] = $slug;
         $data['slug.ar'] = 'valid-arabic-'.random_int(1000, 9999);
 
-        $component = $this->create(\App\Filament\Resources\Projects\ProjectResource::class, $data);
+        $component = $this->create(ProjectResource::class, $data);
 
         if ($valid) {
             $component->assertHasNoFormErrors();
@@ -349,8 +353,8 @@ class ValidationTest extends TestCase
     public function test_required_fields_are_required(): void
     {
         // Users: name, email and role are all required.
-        Livewire::test(\App\Filament\Resources\Users\Pages\ManageUsers::class)
-            ->mountAction(\Filament\Actions\Testing\TestAction::make('create')->table())
+        Livewire::test(ManageUsers::class)
+            ->mountAction(TestAction::make('create')->table())
             ->fillForm(['name' => '', 'email' => '', 'role' => null])
             ->call('callMountedAction')
             ->assertHasFormErrors(['name', 'email', 'role']);
@@ -358,14 +362,14 @@ class ValidationTest extends TestCase
         // And an email has to be an email, and unique.
         $existing = User::factory()->create(['email' => 'taken@example.com']);
 
-        Livewire::test(\App\Filament\Resources\Users\Pages\ManageUsers::class)
-            ->mountAction(\Filament\Actions\Testing\TestAction::make('create')->table())
+        Livewire::test(ManageUsers::class)
+            ->mountAction(TestAction::make('create')->table())
             ->fillForm(['name' => 'Someone', 'email' => 'not-an-email', 'role' => UserRole::Editor->value])
             ->call('callMountedAction')
             ->assertHasFormErrors(['email']);
 
-        Livewire::test(\App\Filament\Resources\Users\Pages\ManageUsers::class)
-            ->mountAction(\Filament\Actions\Testing\TestAction::make('create')->table())
+        Livewire::test(ManageUsers::class)
+            ->mountAction(TestAction::make('create')->table())
             ->fillForm(['name' => 'Someone', 'email' => 'taken@example.com', 'role' => UserRole::Editor->value])
             ->call('callMountedAction')
             ->assertHasFormErrors(['email']);
@@ -389,11 +393,11 @@ class ValidationTest extends TestCase
     {
         $this->app->setLocale('ar');
 
-        $data = $this->baseData(\App\Filament\Resources\Projects\ProjectResource::class);
+        $data = $this->baseData(ProjectResource::class);
         $data['slug.en'] = '';
         $data['slug.ar'] = 'valid-'.random_int(1000, 9999);
 
-        $component = $this->create(\App\Filament\Resources\Projects\ProjectResource::class, $data);
+        $component = $this->create(ProjectResource::class, $data);
 
         $errors = $component->errors()->get('data.slug.en');
 

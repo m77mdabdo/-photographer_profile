@@ -21,11 +21,11 @@ class EditorialLayoutTest extends TestCase
      */
     private function project(int $width, int $height, string $title = 'Untitled'): Project
     {
-        $media = new Media();
+        $media = new Media;
         $media->width = $width;
         $media->height = $height;
 
-        $project = new Project();
+        $project = new Project;
         $project->title = $title;
         $project->setRelation('cover', $media);
 
@@ -38,7 +38,7 @@ class EditorialLayoutTest extends TestCase
      */
     private function plan(array $projects): array
     {
-        return (new EditorialLayout())->plan(new Collection($projects));
+        return (new EditorialLayout)->plan(new Collection($projects));
     }
 
     private function landscape(string $title = 'L'): Project
@@ -187,7 +187,7 @@ class EditorialLayoutTest extends TestCase
 
     public function test_a_project_without_a_cover_still_places(): void
     {
-        $orphan = new Project();
+        $orphan = new Project;
         $orphan->title = 'No cover';
         $orphan->setRelation('cover', null);
 

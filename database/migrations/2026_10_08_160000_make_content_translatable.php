@@ -65,7 +65,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $backfill = new TranslationBackfill();
+        $backfill = new TranslationBackfill;
 
         // --- 0. REFUSE TO START ON DIRTY DATA ---------------------------------
         /*

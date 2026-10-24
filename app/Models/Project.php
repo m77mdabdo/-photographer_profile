@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Models\Concerns\Translatable;
+use App\Actions\Projects\SyncProjectMedia;
 use App\Enums\PublishStatus;
+use App\Models\Concerns\Translatable;
+use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,11 +19,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Project extends Model
 {
-    /** @use HasFactory<\Database\Factories\ProjectFactory> */
-    use HasFactory;
-    use Translatable;
     use Concerns\RedirectsOnSlugChange;
+
+    /** @use HasFactory<ProjectFactory> */
+    use HasFactory;
     use SoftDeletes;
+    use Translatable;
 
     /**
      * Four columns are deliberately absent.
@@ -188,7 +191,7 @@ class Project extends Model
          */
         static::saved(function (self $record): void {
             if ($record->wasChanged(['cover_media_id', 'hero_media_id']) || $record->wasRecentlyCreated) {
-                app(\App\Actions\Projects\SyncProjectMedia::class)($record);
+                app(SyncProjectMedia::class)($record);
             }
         });
 

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Filament\Support;
 
+use App\Enums\MediaStatus;
 use App\Models\Media;
 use Filament\Forms\Components\Select;
+use Illuminate\Support\Str;
 
 /**
  * Choosing an image, in a panel that does not have the picker yet.
@@ -39,24 +41,24 @@ final class MediaField
              * the queue is where that is decided, not the form.
              */
             ->options(fn (): array => Media::query()
-                ->where('status', \App\Enums\MediaStatus::Ready)
+                ->where('status', MediaStatus::Ready)
                 ->orderByDesc('created_at')
                 ->limit(200)
                 ->get()
-                ->mapWithKeys(fn (Media $m): array => [$m->id => static::describe($m)])
+                ->mapWithKeys(fn (Media $m): array => [$m->id => self::describe($m)])
                 ->all())
             ->getSearchResultsUsing(fn (string $search): array => Media::query()
-                ->where('status', \App\Enums\MediaStatus::Ready)
+                ->where('status', MediaStatus::Ready)
                 ->where(function ($query) use ($search): void {
                     $query->where('original_filename', 'like', "%{$search}%")
                         ->orWhere('alt', 'like', "%{$search}%");
                 })
                 ->limit(50)
                 ->get()
-                ->mapWithKeys(fn (Media $m): array => [$m->id => static::describe($m)])
+                ->mapWithKeys(fn (Media $m): array => [$m->id => self::describe($m)])
                 ->all())
             ->getOptionLabelUsing(fn ($value): ?string => ($m = Media::query()->find($value))
-                ? static::describe($m)
+                ? self::describe($m)
                 : null);
     }
 
@@ -70,7 +72,7 @@ final class MediaField
             $media->original_filename,
             (int) $media->width,
             (int) $media->height,
-            $alt ? ' · '.\Illuminate\Support\Str::limit($alt, 40) : '',
+            $alt ? ' · '.Str::limit($alt, 40) : '',
         ));
     }
 }

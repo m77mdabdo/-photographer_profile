@@ -9,16 +9,19 @@ use App\Models\ArticleCategory;
 use App\Models\Media;
 use App\Models\Tag;
 use App\Models\User;
+use App\Support\RichText;
 use App\Support\Settings;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Tests\Support\AssertsNoJavaScript;
 use Tests\Support\DemoWorld;
 use Tests\TestCase;
 
 class JournalTest extends TestCase
 {
-    use \Tests\Support\AssertsNoJavaScript;
+    use AssertsNoJavaScript;
     use RefreshDatabase;
 
     private DemoWorld $world;
@@ -31,10 +34,10 @@ class JournalTest extends TestCase
         Storage::fake('media_public', config('filesystems.disks.media_public'));
 
         Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
 
-        $this->world = new DemoWorld();
+        $this->world = new DemoWorld;
     }
 
     /**
@@ -314,7 +317,7 @@ class JournalTest extends TestCase
         // Counted, not estimated.
         $this->assertGreaterThan(0, $data['wordCount']);
         $this->assertSame(
-            str_word_count(\App\Support\RichText::toText($article->body_html)),
+            str_word_count(RichText::toText($article->body_html)),
             $data['wordCount']
         );
     }

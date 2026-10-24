@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Actions\Projects\SyncProjectMedia;
 use App\Enums\MediaStatus;
 use App\Models\Media;
 use App\Models\Project;
 use App\Support\ExifReader;
 use App\Support\ExposureLine;
+use App\Support\Settings;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -30,9 +33,9 @@ class ExifTest extends TestCase
             'visibility' => 'public',
         ]);
 
-        \App\Support\Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
-        \App\Support\Settings::flush();
+        Settings::flush();
+        $this->seed(SettingsSeeder::class);
+        Settings::flush();
     }
 
     private function fixtureFile(string $bytes): string
@@ -276,7 +279,7 @@ class ExifTest extends TestCase
 
         $this->assertSame(
             ['exif_aperture', 'exif_shutter', 'exif_iso', 'exif_focal_length',
-             'exif_camera', 'exif_lens', 'captured_at'],
+                'exif_camera', 'exif_lens', 'captured_at'],
             array_keys($read),
             'the reader returns exactly the whitelist, in order'
         );
@@ -339,7 +342,7 @@ class ExifTest extends TestCase
             'hero_media_id' => $media->id,
         ]);
 
-        app(\App\Actions\Projects\SyncProjectMedia::class)($project);
+        app(SyncProjectMedia::class)($project);
 
         return $media->refresh();
     }

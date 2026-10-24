@@ -40,7 +40,7 @@ within 2.5 s in the lab; re-measure on the real host after deployment.
 | Security | `SECURITY_AUDIT.md`; Security tests; `composer audit`; `npm audit --omit=dev` | no open critical/high; 0 advisories |
 | Accessibility and SEO | harness (en, ar, reduced motion) | 416/416 ×3 |
 | Performance | `PERFORMANCE_REPORT.md` | both languages within every budget |
-| Automated tests | `php artisan test` | 1391 passed, 2 skipped by design |
+| Automated tests | `php artisan test` | 1452 passed, 2 skipped by design (24 Oct, final code) |
 
 ## Found and fixed in the final pass
 

@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models\Concerns;
 
+use App\Enums\PublishStatus;
 use App\Models\Redirect;
 use App\Support\Locale;
 use App\Support\SlugRedirects;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -58,7 +61,7 @@ trait RedirectsOnSlugChange
 
     public static function bootRedirectsOnSlugChange(): void
     {
-        static::updating(function (self|\Illuminate\Database\Eloquent\Model $model): void {
+        static::updating(function (self|Model $model): void {
             if (SlugRedirects::suppressed()) {
                 return;
             }
@@ -117,7 +120,7 @@ trait RedirectsOnSlugChange
 
         $statusValue = $status instanceof \BackedEnum ? $status->value : $status;
 
-        if ($statusValue !== \App\Enums\PublishStatus::Published->value) {
+        if ($statusValue !== PublishStatus::Published->value) {
             return false;
         }
 
@@ -125,7 +128,7 @@ trait RedirectsOnSlugChange
             return false;
         }
 
-        return \Illuminate\Support\Carbon::parse($publishedAt)->lessThanOrEqualTo(now());
+        return Carbon::parse($publishedAt)->lessThanOrEqualTo(now());
     }
 
     /**

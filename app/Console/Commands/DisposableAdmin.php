@@ -101,9 +101,9 @@ class DisposableAdmin extends Command
         }
 
         $password = Str::random(32);
-        $secret = (new Google2FA())->generateSecretKey();
+        $secret = (new Google2FA)->generateSecretKey();
 
-        $user = new User();
+        $user = new User;
         $user->fill([
             'name' => 'Browser Harness',
             'email' => $email,

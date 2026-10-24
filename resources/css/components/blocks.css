@@ -80,7 +80,7 @@ main h1[tabindex='-1']:focus { outline: none; }
     .block__grid-item:nth-child(3) { margin-block-start: var(--sp-6); }
 }
 .block--split { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-7); align-items: center; }
-@media (max-width: 900px) { .block--split { grid-template-columns: 1fr; } }
+@media (max-width: 899px) { .block--split { grid-template-columns: 1fr; } }
 .block__heading { font-size: var(--fs-h2); margin-bottom: var(--sp-4); }
 .block__body { max-width: var(--container-text); }
 .block__body p + p { margin-top: var(--sp-4); }

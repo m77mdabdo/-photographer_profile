@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Enquiries\Pages;
 
+use App\Enums\InquiryStatus;
 use App\Filament\Resources\Enquiries\InquiryResource;
+use App\Filament\Support\NamesPlaces;
+use App\Models\InquiryNote;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewInquiry extends ViewRecord
 {
-    use \App\Filament\Support\NamesPlaces;
+    use NamesPlaces;
 
     protected static string $resource = InquiryResource::class;
 
@@ -53,16 +57,16 @@ class ViewInquiry extends ViewRecord
                 ->authorize(fn (): bool => auth()->user()?->can('update', $this->getRecord()) ?? false)
                 ->fillForm(fn (): array => ['status' => $this->getRecord()->status->value])
                 ->schema([
-                    \Filament\Forms\Components\Select::make('status')
+                    Select::make('status')
                         ->label(__('studio.enquiries.status'))
-                        ->options(collect(\App\Enums\InquiryStatus::cases())->mapWithKeys(fn (\App\Enums\InquiryStatus $s): array => [$s->value => $s->label()])->all())
-                        ->in(array_map(fn (\App\Enums\InquiryStatus $s): string => $s->value, \App\Enums\InquiryStatus::cases()))
+                        ->options(collect(InquiryStatus::cases())->mapWithKeys(fn (InquiryStatus $s): array => [$s->value => $s->label()])->all())
+                        ->in(array_map(fn (InquiryStatus $s): string => $s->value, InquiryStatus::cases()))
                         ->required()
                         ->selectablePlaceholder(false),
                 ])
                 ->action(function (array $data): void {
                     $record = $this->getRecord();
-                    $record->status = \App\Enums\InquiryStatus::from($data['status']);
+                    $record->status = InquiryStatus::from($data['status']);
                     $record->save();
 
                     Notification::make()->title(__('studio.enquiries.status_changed', ['status' => $record->status->label()]))->success()->send();
@@ -91,7 +95,7 @@ class ViewInquiry extends ViewRecord
                      * been wrong: the one thing that must never be true of
                      * an author stamp is that a request can choose it.
                      */
-                    $note = new \App\Models\InquiryNote(['body' => $data['body']]);
+                    $note = new InquiryNote(['body' => $data['body']]);
                     $note->user_id = auth()->id();
 
                     $this->getRecord()->notes()->save($note);
@@ -108,15 +112,15 @@ class ViewInquiry extends ViewRecord
      * has looked at this", so looking at it is what clears it. Doing it here
      * rather than behind a button means the count is always true.
      */
-    public function mount(int | string $record): void
+    public function mount(int|string $record): void
     {
         parent::mount($record);
 
         $inquiry = $this->getRecord();
 
-        if ($inquiry->status === \App\Enums\InquiryStatus::New) {
+        if ($inquiry->status === InquiryStatus::New) {
             $inquiry->forceFill([
-                'status' => \App\Enums\InquiryStatus::Read,
+                'status' => InquiryStatus::Read,
                 'read_at' => now(),
             ])->save();
         }

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Http\Middleware\EnsureTwoFactorEnabled;
 use App\Http\Middleware\CompressResponse;
-use App\Http\Middleware\SecurityHeaders;
-use App\Http\Middleware\HandleRedirects;
+use App\Http\Middleware\EnsureTwoFactorEnabled;
 use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\HandleRedirects;
 use App\Http\Middleware\ResolveTheme;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
 use App\Support\Locale;
 use Illuminate\Foundation\Application;
@@ -195,6 +195,6 @@ return Application::configure(basePath: dirname(__DIR__))
          * And it is not worth a line in the log either, for the same reason a
          * 404 is not: the only thing it records is that somebody guessed.
          */
-        $exceptions->dontReportWhen(fn (\Throwable $e): bool => $e instanceof ComponentNotFoundException
+        $exceptions->dontReportWhen(fn (Throwable $e): bool => $e instanceof ComponentNotFoundException
             && $isComponentAssetRequest(request()));
     })->create();

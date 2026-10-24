@@ -48,7 +48,7 @@ return [
     // mime type (for originals) and by variant format (for renditions).
     'extensions' => [
         'image/jpeg' => 'jpg',
-        'image/png'  => 'png',
+        'image/png' => 'png',
         'image/webp' => 'webp',
         'avif' => 'avif',
         'webp' => 'webp',

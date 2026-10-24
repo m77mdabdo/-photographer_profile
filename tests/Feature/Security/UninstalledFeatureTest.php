@@ -6,7 +6,12 @@ namespace Tests\Feature\Security;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
+use Livewire\Exceptions\ComponentNotFoundException;
+use Livewire\Mechanisms\HandleRequests\EndpointResolver;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -49,7 +54,7 @@ class UninstalledFeatureTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('routes')]
+    #[DataProvider('routes')]
     public function test_a_guest_gets_a_404_and_not_a_database_error(string $path): void
     {
         $this->get($path)->assertNotFound();
@@ -60,7 +65,7 @@ class UninstalledFeatureTest extends TestCase
      * for everyone, and a 404 that turned into a 500 once somebody signed in
      * would be a worse defect than the one being fixed.
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('routes')]
+    #[DataProvider('routes')]
     public function test_a_signed_in_owner_gets_the_same_404(string $path): void
     {
         $owner = User::factory()->create(['role' => 'owner']);
@@ -77,7 +82,7 @@ class UninstalledFeatureTest extends TestCase
     {
         foreach (['exports', 'imports', 'failed_import_rows'] as $table) {
             $this->assertFalse(
-                \Illuminate\Support\Facades\Schema::hasTable($table),
+                Schema::hasTable($table),
                 "The `{$table}` table now exists, so the export/import feature may be in use. "
                 .'Reconsider App\Http\Middleware\RejectUninstalledFeature, which 404s its routes.'
             );
@@ -138,10 +143,10 @@ class UninstalledFeatureTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('componentAssetRoutes')]
+    #[DataProvider('componentAssetRoutes')]
     public function test_an_unknown_livewire_component_asset_is_a_404(string $suffix): void
     {
-        $prefix = \Livewire\Mechanisms\HandleRequests\EndpointResolver::prefix();
+        $prefix = EndpointResolver::prefix();
 
         $this->get($prefix.$suffix)->assertNotFound();
     }
@@ -154,8 +159,8 @@ class UninstalledFeatureTest extends TestCase
     public function test_a_misspelled_component_in_a_view_is_not_turned_into_a_404(): void
     {
         $this->assertThrows(
-            fn () => \Illuminate\Support\Facades\Blade::render('<livewire:no-such-component />'),
-            \Livewire\Exceptions\ComponentNotFoundException::class,
+            fn () => Blade::render('<livewire:no-such-component />'),
+            ComponentNotFoundException::class,
         );
     }
 
@@ -165,7 +170,7 @@ class UninstalledFeatureTest extends TestCase
      */
     public function test_the_asset_prefix_is_installation_specific(): void
     {
-        $prefix = \Livewire\Mechanisms\HandleRequests\EndpointResolver::prefix();
+        $prefix = EndpointResolver::prefix();
 
         $this->assertMatchesRegularExpression('#^/livewire-[0-9a-f]{8}$#', $prefix);
 
@@ -173,7 +178,7 @@ class UninstalledFeatureTest extends TestCase
 
         $this->assertNotSame(
             $prefix,
-            \Livewire\Mechanisms\HandleRequests\EndpointResolver::prefix(),
+            EndpointResolver::prefix(),
             'the Livewire endpoint prefix does not move with APP_KEY, so a literal would do'
         );
     }

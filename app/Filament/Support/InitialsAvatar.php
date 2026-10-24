@@ -39,7 +39,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class InitialsAvatar implements AvatarProvider
 {
-    public function get(Model | Authenticatable $record): string
+    public function get(Model|Authenticatable $record): string
     {
         $initials = str(Filament::getNameForDefaultAvatar($record))
             ->trim()

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\CinematicSections\Pages;
 
+use App\Actions\Cinematic\SyncCinematicMedia;
 use App\Filament\Resources\CinematicSections\CinematicSectionResource;
+use App\Filament\Support\NamesPlaces;
 use App\Filament\Support\Translatable;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
@@ -13,7 +15,7 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditCinematicSection extends EditRecord
 {
-    use \App\Filament\Support\NamesPlaces;
+    use NamesPlaces;
 
     protected static string $resource = CinematicSectionResource::class;
 
@@ -34,6 +36,6 @@ class EditCinematicSection extends EditRecord
 
     protected function afterSave(): void
     {
-        app(\App\Actions\Cinematic\SyncCinematicMedia::class)($this->getRecord());
+        app(SyncCinematicMedia::class)($this->getRecord());
     }
 }

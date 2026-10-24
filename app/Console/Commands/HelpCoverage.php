@@ -223,7 +223,7 @@ class HelpCoverage extends Command
 
         $md = "# Help Center coverage\n\n";
         $md .= "Measured, not estimated: `php artisan help:coverage`, from the live dashboard inventory taken by `tests/Support/dashboard-inventory.mjs` (commit {$inventory['commit']}, {$inventory['generated']}). Regenerate both after any dashboard change.\n\n";
-        $md .= "**".count($articles)." articles** in English and Arabic; **".count($workflow)." performed end to end** in the real dashboard by a browser check; the rest have every on-screen word they quote checked against the dashboard's own strings (`HelpKnowledgeBaseTest`).\n\n";
+        $md .= '**'.count($articles).' articles** in English and Arabic; **'.count($workflow)." performed end to end** in the real dashboard by a browser check; the rest have every on-screen word they quote checked against the dashboard's own strings (`HelpKnowledgeBaseTest`).\n\n";
         $md .= "**Controls named in Help: {$totals['documented']} of {$totals['controls']} ({$percent}%)**, counting English and Arabic separately. This is **not 100%**: see *What is not covered* below.\n\n";
         $lessons = count(KnowledgeBase::path());
         $topics = count(KnowledgeBase::categories());
@@ -231,8 +231,8 @@ class HelpCoverage extends Command
         $kinds = array_count_values(array_column($articles, 'kind'));
         $md .= "## What the Help Center is\n\n";
         $md .= "- **Where:** System → Help (`/admin/help`), in the dashboard's language. Every view has its own address: `?q=` search, `?topic=`, `?article=`, `?guide=1`.\n";
-        $md .= "- **Home:** “What would you like to do?” / «تحب تعمل إيه في موقعك؟», a large search box, ".count(KnowledgeBase::popular())." popular tasks, {$topics} topics, a {$lessons}-lesson path *Learn to manage your website from zero*, the troubleshooting list, and the full guide.\n";
-        $md .= "- **Articles:** ".count($articles)." — ".($kinds['task'] ?? 0)." tasks, ".($kinds['lesson'] ?? 0)." lessons, ".($kinds['trouble'] ?? 0)." problems. Each has, in English and Arabic: what you will accomplish, before you begin, where, numbered steps (with a keyboard-accessible *Guide me step by step* mode), what the fields mean, a check-that-it-worked list, problems and fixes, warnings, related tasks, time, level and who may do it. Words on screen are marked and must exist in the dashboard in that language.\n";
+        $md .= '- **Home:** “What would you like to do?” / «تحب تعمل إيه في موقعك؟», a large search box, '.count(KnowledgeBase::popular())." popular tasks, {$topics} topics, a {$lessons}-lesson path *Learn to manage your website from zero*, the troubleshooting list, and the full guide.\n";
+        $md .= '- **Articles:** '.count($articles).' — '.($kinds['task'] ?? 0).' tasks, '.($kinds['lesson'] ?? 0).' lessons, '.($kinds['trouble'] ?? 0)." problems. Each has, in English and Arabic: what you will accomplish, before you begin, where, numbered steps (with a keyboard-accessible *Guide me step by step* mode), what the fields mean, a check-that-it-worked list, problems and fixes, warnings, related tasks, time, level and who may do it. Words on screen are marked and must exist in the dashboard in that language.\n";
         $md .= "- **Search:** English, Arabic and Egyptian Arabic; Arabic letter forms and diacritics normalised; request filler dropped (“how do I”, «ازاي», «عايز»); light stemming; partial words and typos; meanings through a synonym table; specific tasks rank above the long guide; *remove* / «شيل» is answered with a choice between hiding, deleting, deleting for good and restoring. Tested by `tests/Unit/HelpSearchTest.php` (26 real queries) and in the browser by `tests/Support/help-check.mjs`.\n";
         $md .= "- **Contextual help:** {$hints} **?** buttons beside the fields most often misread (status, publish date, slug, SEO title and description, alt text, featured, price, and the seven lighting controls); each explains the field and opens its article.\n";
         $md .= "- **Generated, so it cannot drift:** *Every sentence in Site settings, section by section* is built from the same registry and labels as the Settings page.\n\n";
@@ -257,7 +257,7 @@ class HelpCoverage extends Command
                 continue;
             }
             $show = fn (array $list): string => $list === [] ? '—' : implode(' · ', array_slice($list, 0, 14)).(count($list) > 14 ? ' · … ('.(count($list) - 14).' more)' : '');
-            $md .= "- **{$module}** — en: ".$show($en)."; ar: ".$show($ar)."\n";
+            $md .= "- **{$module}** — en: ".$show($en).'; ar: '.$show($ar)."\n";
         }
 
         $md .= "\n## Other limits\n\n";

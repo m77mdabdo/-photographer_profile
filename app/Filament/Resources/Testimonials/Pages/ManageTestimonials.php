@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Testimonials\Pages;
 
 use App\Filament\Resources\Testimonials\TestimonialResource;
+use App\Filament\Support\NamesPlaces;
 use App\Filament\Support\Translatable;
 use Filament\Resources\Pages\ManageRecords;
 
@@ -14,7 +15,7 @@ use Filament\Resources\Pages\ManageRecords;
  */
 class ManageTestimonials extends ManageRecords
 {
-    use \App\Filament\Support\NamesPlaces;
+    use NamesPlaces;
 
     protected static string $resource = TestimonialResource::class;
 

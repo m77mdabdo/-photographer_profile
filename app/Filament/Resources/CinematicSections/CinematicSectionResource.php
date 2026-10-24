@@ -9,6 +9,7 @@ use App\Filament\Resources\CinematicSections\Pages\CreateCinematicSection;
 use App\Filament\Resources\CinematicSections\Pages\EditCinematicSection;
 use App\Filament\Resources\CinematicSections\Pages\ListCinematicSections;
 use App\Filament\Support\AddressesRecordsById;
+use App\Filament\Support\HelpHint;
 use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\Translatable;
 use App\Models\CinematicSection;
@@ -17,8 +18,8 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -46,7 +47,7 @@ class CinematicSectionResource extends Resource
 
     protected static ?string $model = CinematicSection::class;
 
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-sparkles';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-sparkles';
 
     protected static ?int $navigationSort = 3;
 
@@ -153,7 +154,7 @@ class CinematicSectionResource extends Resource
                 ->visible($is(CinematicSection::TYPE_VIDEO))
                 ->schema([
                     FileUpload::make('video_path')
-                        ->hintAction(\App\Filament\Support\HelpHint::action('video'))
+                        ->hintAction(HelpHint::action('video'))
                         ->label(__('studio.cinematic.video'))
                         ->disk('media_public')
                         ->directory('cinematic')
@@ -173,7 +174,7 @@ class CinematicSectionResource extends Resource
                 ->columns(2)
                 ->schema([
                     Radio::make('light_direction')
-                        ->hintAction(\App\Filament\Support\HelpHint::action('direction'))
+                        ->hintAction(HelpHint::action('direction'))
                         ->label(__('studio.cinematic.direction_label'))
                         ->options(self::options('direction', CinematicSection::DIRECTIONS))
                         ->helperText(__('studio.cinematic.direction_hint'))
@@ -182,7 +183,7 @@ class CinematicSectionResource extends Resource
                         ->required(),
 
                     Toggle::make('spotlight')
-                        ->hintAction(\App\Filament\Support\HelpHint::action('spotlight'))
+                        ->hintAction(HelpHint::action('spotlight'))
                         ->label(__('studio.cinematic.spotlight'))
                         ->helperText(__('studio.cinematic.spotlight_hint'))
                         ->visible($is(CinematicSection::TYPE_GALLERY))
@@ -201,7 +202,7 @@ class CinematicSectionResource extends Resource
                         ->default('balanced')->selectablePlaceholder(false)->required(),
 
                     Select::make('darkness')
-                        ->hintAction(\App\Filament\Support\HelpHint::action('darkness'))
+                        ->hintAction(HelpHint::action('darkness'))
                         ->label(__('studio.cinematic.darkness_label'))
                         ->helperText(__('studio.cinematic.darkness_hint'))
                         ->options(self::options('darkness', array_keys(CinematicSection::DARKNESS)))
@@ -209,14 +210,14 @@ class CinematicSectionResource extends Resource
                         ->default('deep')->selectablePlaceholder(false)->required(),
 
                     Select::make('pace')
-                        ->hintAction(\App\Filament\Support\HelpHint::action('pace'))
+                        ->hintAction(HelpHint::action('pace'))
                         ->label(__('studio.cinematic.pace_label'))
                         ->options(self::options('pace', array_keys(CinematicSection::PACE)))
                         ->in(array_keys(CinematicSection::PACE))
                         ->default('natural')->selectablePlaceholder(false)->required(),
 
                     Select::make('softness')
-                        ->hintAction(\App\Filament\Support\HelpHint::action('softness'))
+                        ->hintAction(HelpHint::action('softness'))
                         ->label(__('studio.cinematic.softness_label'))
                         ->options(self::options('softness', array_keys(CinematicSection::SOFTNESS)))
                         ->in(array_keys(CinematicSection::SOFTNESS))
@@ -230,7 +231,7 @@ class CinematicSectionResource extends Resource
                         ->default('none')->selectablePlaceholder(false)->required(),
 
                     Select::make('mobile_layout')
-                        ->hintAction(\App\Filament\Support\HelpHint::action('mobile'))
+                        ->hintAction(HelpHint::action('mobile'))
                         ->label(__('studio.cinematic.mobile_label'))
                         ->options(self::options('mobile', CinematicSection::MOBILE_LAYOUTS))
                         ->in(CinematicSection::MOBILE_LAYOUTS)

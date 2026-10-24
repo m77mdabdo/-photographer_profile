@@ -20,6 +20,7 @@ use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
@@ -148,7 +149,7 @@ class ActivityLogServiceProvider extends ServiceProvider
             Activity::record($soft ? 'deleted' : 'destroyed', $record);
         });
 
-        if (in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive($model), true)) {
+        if (in_array(SoftDeletes::class, class_uses_recursive($model), true)) {
             $model::restored(fn (Model $record) => Activity::record('restored', $record));
         }
     }

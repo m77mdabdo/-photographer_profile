@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Actions\Projects;
 
 use App\Enums\BlockType;
-use App\Support\Locale;
 use App\Models\Project;
 use App\Models\ProjectBlock;
+use App\Support\Locale;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -38,7 +38,7 @@ class SaveStory
                 $block = $id !== null ? $existing->get($id) : null;
 
                 if ($block === null) {
-                    $block = new ProjectBlock();
+                    $block = new ProjectBlock;
                     $block->project_id = $project->id;
                 }
 

@@ -6,19 +6,19 @@ namespace App\Filament\Resources\ArticleCategories;
 
 use App\Filament\Resources\ArticleCategories\Pages\ManageArticleCategories;
 use App\Filament\Support\AddressesRecordsById;
+use App\Filament\Support\HelpHint;
 use App\Filament\Support\ResourceDefaults;
 use App\Filament\Support\Translatable;
 use App\Models\ArticleCategory;
 use BackedEnum;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 /**
  * Journal subjects. Each one is an indexable landing page, which is why it carries its own SEO fields.
@@ -30,10 +30,9 @@ class ArticleCategoryResource extends Resource
 
     protected static ?string $model = ArticleCategory::class;
 
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-folder';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-folder';
 
     protected static ?int $navigationSort = 3;
-
 
     public const TRANSLATED = ['slug', 'name', 'description', 'seo_title', 'seo_description'];
 
@@ -46,7 +45,6 @@ class ArticleCategoryResource extends Resource
     {
         return __('studio.nav.article_categories');
     }
-
 
     /**
      * The noun Filament puts in its own sentences.
@@ -74,8 +72,8 @@ class ArticleCategoryResource extends Resource
                 'slug' => ResourceDefaults::slugField(ArticleCategory::class),
                 'name' => fn (string $p) => TextInput::make($p)->maxLength(255),
                 'description' => fn (string $p) => Textarea::make($p)->rows(3),
-                'seo_title' => fn (string $p) => TextInput::make($p)->maxLength(255)->hintAction(\App\Filament\Support\HelpHint::action('seo_title')),
-                'seo_description' => fn (string $p) => Textarea::make($p)->rows(3)->hintAction(\App\Filament\Support\HelpHint::action('seo_description')),
+                'seo_title' => fn (string $p) => TextInput::make($p)->maxLength(255)->hintAction(HelpHint::action('seo_title')),
+                'seo_description' => fn (string $p) => Textarea::make($p)->rows(3)->hintAction(HelpHint::action('seo_description')),
             ]),
         ]);
     }
@@ -160,10 +158,10 @@ class ArticleCategoryResource extends Resource
      * query per row into one query for the page — see the policy, which reads
      * the attribute when it is there.
      */
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->withoutGlobalScopes([\Illuminate\Database\Eloquent\SoftDeletingScope::class])
+            ->withoutGlobalScopes([SoftDeletingScope::class])
             ->withCount('articles');
     }
 

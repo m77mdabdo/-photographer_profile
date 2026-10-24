@@ -7,6 +7,8 @@ namespace Tests\Feature;
 use App\Actions\Projects\SaveStory;
 use App\Enums\BlockType;
 use App\Enums\UserRole;
+use App\Filament\Resources\Projects\Pages\EditProject;
+use App\Filament\Resources\Projects\Pages\ListProjects;
 use App\Livewire\Studio\StoryBuilder;
 use App\Models\Article;
 use App\Models\Category;
@@ -21,10 +23,14 @@ use App\Support\Settings;
 use App\Support\SlugRedirects;
 use App\Support\TranslatableSchema;
 use App\Support\TranslationBackfill;
+use Filament\Facades\Filament;
+use Illuminate\Database\QueryException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
+use Tests\Support\DemoWorld;
 use Tests\TestCase;
 
 /**
@@ -64,7 +70,7 @@ class TranslatableContentTest extends TestCase
         $this->assertSame(255, mb_strlen((string) $before['excerpt']), 'the long value survived the write');
 
         // Re-running the backfill must change nothing: it is idempotent.
-        $moved = (new TranslationBackfill())->run();
+        $moved = (new TranslationBackfill)->run();
 
         $project->refresh();
 
@@ -136,7 +142,7 @@ class TranslatableContentTest extends TestCase
                     ]);
 
                     $this->fail("$table accepted a slug with no '$missing' value");
-                } catch (\Illuminate\Database\QueryException $e) {
+                } catch (QueryException $e) {
                     $this->assertStringContainsString(
                         'cannot be null',
                         $e->getMessage(),
@@ -168,7 +174,7 @@ class TranslatableContentTest extends TestCase
         $third = Category::factory()->make();
         $third->setTranslations('slug', ['en' => 'architecture', 'ar' => 'something-else']);
 
-        $this->expectException(\Illuminate\Database\UniqueConstraintViolationException::class);
+        $this->expectException(UniqueConstraintViolationException::class);
 
         $third->save();
     }
@@ -205,10 +211,10 @@ class TranslatableContentTest extends TestCase
         // And the admin list renders that state rather than hiding it.
         $owner = User::factory()->create(['role' => UserRole::Owner]);
 
-        \Filament\Facades\Filament::setCurrentPanel('studio');
+        Filament::setCurrentPanel('studio');
 
         $html = Livewire::actingAs($owner)
-            ->test(\App\Filament\Resources\Projects\Pages\ListProjects::class)
+            ->test(ListProjects::class)
             ->html();
 
         /*
@@ -242,7 +248,7 @@ class TranslatableContentTest extends TestCase
         }
 
         // Convert, exactly as the migration does.
-        [$blocks, $values] = (new TranslationBackfill())->runBlocks();
+        [$blocks, $values] = (new TranslationBackfill)->runBlocks();
 
         $this->assertSame(3, $blocks);
         $this->assertSame(3, $values);
@@ -261,7 +267,7 @@ class TranslatableContentTest extends TestCase
             'data' => ['height' => 120],
         ]);
 
-        (new TranslationBackfill())->runBlocks();
+        (new TranslationBackfill)->runBlocks();
 
         $this->assertSame(['height' => 120], $spacer->fresh()->rawData());
     }
@@ -438,10 +444,10 @@ class TranslatableContentTest extends TestCase
         $owner = User::factory()->create(['role' => UserRole::Owner, 'two_factor_confirmed_at' => now()]);
         $project = Project::factory()->published()->create(['title' => 'Salt Line']);
 
-        \Filament\Facades\Filament::setCurrentPanel('studio');
+        Filament::setCurrentPanel('studio');
 
         Livewire::actingAs($owner)
-            ->test(\App\Filament\Resources\Projects\Pages\EditProject::class, ['record' => $project->getKey()])
+            ->test(EditProject::class, ['record' => $project->getKey()])
             ->fillForm(['title.ar' => 'خط الملح', 'excerpt.ar' => 'نص عربي'])
             ->call('save')
             ->assertHasNoFormErrors();
@@ -592,8 +598,8 @@ class TranslatableContentTest extends TestCase
 
     private function seedWorld(): void
     {
-        $world = new \Tests\Support\DemoWorld();
-        $world->story('salt-line', \Tests\Support\DemoWorld::simpleScore(6), ['landscape'], year: 2025);
+        $world = new DemoWorld;
+        $world->story('salt-line', DemoWorld::simpleScore(6), ['landscape'], year: 2025);
 
         Project::query()->first()?->forceFill(['is_featured' => true])->save();
 

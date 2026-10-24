@@ -12,8 +12,9 @@ use App\Filament\Pages\Settings;
 use App\Filament\Resources\Enquiries\Pages\ViewInquiry;
 use App\Models\Inquiry;
 use App\Models\User;
+use App\Support\Help\KnowledgeBase;
 use App\Support\SiteCopy;
-use Filament\Actions\Testing\TestAction;
+use Database\Seeders\SettingsSeeder;
 use Filament\Auth\Pages\EditProfile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -64,7 +65,7 @@ class DashboardCompletionTest extends TestCase
     public function test_the_settings_page_shows_labels_not_keys(): void
     {
         $this->admin();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
 
         $this->get(Settings::getUrl())->assertOk()
             ->assertSee('Studio name')
@@ -143,7 +144,7 @@ class DashboardCompletionTest extends TestCase
         $this->assertStringContainsString('Cinematic sections (home page)', $html);
         $this->assertStringNotContainsString('<div dir="rtl"', $html);
 
-        $sections = \App\Support\Help\KnowledgeBase::guide('ar');
+        $sections = KnowledgeBase::guide('ar');
         $this->assertGreaterThan(10, count($sections));
         $this->assertSame('1. تسجيل الدخول', $sections[0]['title']);
         foreach ($sections as $section) {

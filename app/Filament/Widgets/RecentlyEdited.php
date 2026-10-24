@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Widgets;
 
+use App\Enums\PublishStatus;
 use App\Models\RecentlyEditedRecord;
 use App\Support\RecentlyEdited as Finder;
 use Filament\Tables\Columns\TextColumn;
@@ -32,7 +33,7 @@ class RecentlyEdited extends TableWidget
 {
     protected static ?int $sort = 5;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     public function table(Table $table): Table
     {
@@ -72,8 +73,8 @@ class RecentlyEdited extends TableWidget
                     ->badge()
                     ->formatStateUsing(fn (?string $state): string => $state === null
                         ? '—'
-                        : (\App\Enums\PublishStatus::tryFrom($state)?->label() ?? $state))
-                    ->color(fn (?string $state): string => $state === \App\Enums\PublishStatus::Published->value
+                        : (PublishStatus::tryFrom($state)?->label() ?? $state))
+                    ->color(fn (?string $state): string => $state === PublishStatus::Published->value
                         ? 'success'
                         : 'gray')
                     ->sortable(),

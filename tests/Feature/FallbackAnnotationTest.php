@@ -11,11 +11,14 @@ use App\Models\Client;
 use App\Models\Page;
 use App\Models\Project;
 use App\Models\Service;
+use App\Models\Setting;
 use App\Models\Tag;
 use App\Models\Testimonial;
 use App\Support\Fallback;
 use App\Support\Locale;
 use App\Support\Settings;
+use App\Support\UntranslatedContent;
+use Database\Seeders\SettingsSeeder;
 use DOMDocument;
 use DOMElement;
 use DOMNode;
@@ -78,7 +81,7 @@ class FallbackAnnotationTest extends TestCase
         parent::setUp();
 
         Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
     }
 
@@ -91,7 +94,7 @@ class FallbackAnnotationTest extends TestCase
      */
     private function partlyTranslatedWorld(): Project
     {
-        foreach (\App\Models\Setting::query()->get() as $setting) {
+        foreach (Setting::query()->get() as $setting) {
             if (str_ends_with($setting->key, '_url') || str_ends_with($setting->key, '_media_id')) {
                 continue;
             }
@@ -394,7 +397,7 @@ class FallbackAnnotationTest extends TestCase
     {
         $this->partlyTranslatedWorld();
 
-        $waiting = \App\Support\UntranslatedContent::count('ar');
+        $waiting = UntranslatedContent::count('ar');
 
         $this->assertGreaterThan(
             0,

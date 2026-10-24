@@ -8,26 +8,35 @@ use App\Enums\InquiryStatus;
 use App\Mail\InquiryAcknowledged;
 use App\Mail\InquiryReceived;
 use App\Models\Inquiry;
+use App\Models\Setting;
+use App\Support\Settings;
 use App\Support\SpamGuard;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
+use Tests\Support\AssertsNoJavaScript;
 use Tests\TestCase;
 
 class ContactFormTest extends TestCase
 {
-    use \Tests\Support\AssertsNoJavaScript;
+    private const STUDIO = 'enquiries@anasfareed.co';
+
+    use AssertsNoJavaScript;
     use RefreshDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        \App\Support\Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
-        \App\Support\Settings::flush();
+        Settings::flush();
+        $this->seed(SettingsSeeder::class);
+        // A fresh install has no enquiry address (it used to ship example.com);
+        // these tests are about a studio that has set a real one.
+        Setting::query()->where('key', 'contact.recipient')->update(['value' => json_encode(['en' => self::STUDIO])]);
+        Settings::flush();
 
         Mail::fake();
 
@@ -204,7 +213,7 @@ class ContactFormTest extends TestCase
         $html = $this->get('/contact')->assertOk()->getContent();
 
         foreach (['name', 'email', 'phone', 'company', 'project_type', 'shoot_date_text',
-                  'location', 'budget_range', 'message', 'consent'] as $field) {
+            'location', 'budget_range', 'message', 'consent'] as $field) {
             $this->assertMatchesRegularExpression(
                 '/<label[^>]*for="field-'.$field.'"/',
                 $html,
@@ -424,7 +433,7 @@ class ContactFormTest extends TestCase
         // --- the studio's notification fails --------------------------------
         Mail::shouldReceive('to')
             ->once()
-            ->with('studio@example.com')
+            ->with(self::STUDIO)
             ->andThrow(new \RuntimeException('the studio mailbox is refusing'));
 
         $acknowledged = false;
@@ -455,7 +464,7 @@ class ContactFormTest extends TestCase
 
         Mail::shouldReceive('to')
             ->once()
-            ->with('studio@example.com')
+            ->with(self::STUDIO)
             ->andReturnUsing(function () use (&$notified) {
                 $notified = true;
 
@@ -487,7 +496,7 @@ class ContactFormTest extends TestCase
         $this->post('/contact', $this->payload(['message' => $message]))
             ->assertRedirect(route('contact.sent'));
 
-        Mail::assertQueued(InquiryAcknowledged::class, function (InquiryAcknowledged $mail) use ($message): bool {
+        Mail::assertQueued(InquiryAcknowledged::class, function (InquiryAcknowledged $mail): bool {
             // Addressed to the person who wrote it, not to the studio.
             if (! $mail->hasTo('frances@example.com')) {
                 return false;
@@ -552,7 +561,7 @@ class ContactFormTest extends TestCase
             $this->assertStringNotContainsString('© '.date('Y').' Laravel', $html);
 
             // The studio's own name, from the settings table.
-            $this->assertStringContainsString((string) \App\Support\Settings::get('site.name'), $html);
+            $this->assertStringContainsString((string) Settings::get('site.name'), $html);
         }
     }
 
@@ -594,7 +603,7 @@ class ContactFormTest extends TestCase
 
         // --- 3. every control still has a label that points at it -----------
         foreach (['message', 'name', 'email', 'phone', 'company',
-                  'project_type', 'shoot_date_text', 'location', 'budget_range', 'consent'] as $field) {
+            'project_type', 'shoot_date_text', 'location', 'budget_range', 'consent'] as $field) {
             $this->assertMatchesRegularExpression('/<label[^>]*for="field-'.$field.'"/', $html, "{$field} lost its label");
             $this->assertMatchesRegularExpression('/id="field-'.$field.'"/', $html, "{$field} lost its id");
         }
@@ -779,5 +788,21 @@ class ContactFormTest extends TestCase
             ['contact' => $contact, 'about' => $about],
             'query counts moved: '.json_encode(['contact' => $contact, 'about' => $about])
         );
+    }
+
+    /**
+     * A placeholder address counts as not set: the enquiry is kept, nothing is
+     * mailed to a documentation domain, and the visitor still gets their copy.
+     */
+    public function test_a_placeholder_studio_address_is_never_mailed(): void
+    {
+        Setting::query()->where('key', 'contact.recipient')->update(['value' => json_encode(['en' => 'studio@example.com'])]);
+        Settings::flush();
+
+        $this->post('/contact', $this->payload())->assertRedirect(route('contact.sent'));
+
+        $this->assertSame(1, Inquiry::query()->count());
+        Mail::assertNotQueued(InquiryReceived::class);
+        $this->assertStringNotContainsString('example.com', (string) $this->get('/')->getContent(), 'a placeholder reached the structured data');
     }
 }

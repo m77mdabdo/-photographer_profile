@@ -7,6 +7,10 @@ namespace App\Filament\Widgets;
 use App\Enums\InquiryStatus;
 use App\Enums\MediaStatus;
 use App\Enums\PublishStatus;
+use App\Filament\Resources\Articles\ArticleResource;
+use App\Filament\Resources\Enquiries\InquiryResource;
+use App\Filament\Resources\Media\MediaResource;
+use App\Filament\Resources\Projects\ProjectResource;
 use App\Models\Article;
 use App\Models\Inquiry;
 use App\Models\Media;
@@ -44,7 +48,7 @@ class StudioFigures extends Widget
 {
     protected string $view = 'filament.widgets.studio-figures';
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected static ?int $sort = 1;
 
@@ -191,10 +195,10 @@ class StudioFigures extends Widget
     private function url(string $resource, array $filters = []): ?string
     {
         $class = match ($resource) {
-            'enquiries' => \App\Filament\Resources\Enquiries\InquiryResource::class,
-            'projects' => \App\Filament\Resources\Projects\ProjectResource::class,
-            'articles' => \App\Filament\Resources\Articles\ArticleResource::class,
-            'media' => \App\Filament\Resources\Media\MediaResource::class,
+            'enquiries' => InquiryResource::class,
+            'projects' => ProjectResource::class,
+            'articles' => ArticleResource::class,
+            'media' => MediaResource::class,
             default => null,
         };
 

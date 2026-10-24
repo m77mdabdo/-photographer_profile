@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Support\Locale;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Testing\TestResponse;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -43,7 +45,7 @@ class FrontDoorLocaleSwitcherTest extends TestCase
      * enrolment page is this project's own route, outside both admins, which
      * is why Part B gave it its own address.
      *
-     * @return array<string, array{0: string, 1: bool}>  [path, needs a signed-in user]
+     * @return array<string, array{0: string, 1: bool}> [path, needs a signed-in user]
      */
     public static function frontDoorPages(): array
     {
@@ -63,7 +65,7 @@ class FrontDoorLocaleSwitcherTest extends TestCase
      * that state in the session rather than in the guard, so this is how a
      * test stands where a person stands.
      */
-    private function visit(string $path, bool $authenticated): \Illuminate\Testing\TestResponse
+    private function visit(string $path, bool $authenticated): TestResponse
     {
         if ($path === '/two-factor-challenge') {
             $user = $this->owner();
@@ -84,7 +86,7 @@ class FrontDoorLocaleSwitcherTest extends TestCase
     // ----------------------------------------------------------------- 1
 
     /** Test 1: it is on all of them. */
-    #[\PHPUnit\Framework\Attributes\DataProvider('frontDoorPages')]
+    #[DataProvider('frontDoorPages')]
     public function test_the_switcher_is_on_every_front_door_page(string $path, bool $authenticated): void
     {
         $html = $this->visit($path, $authenticated)->assertOk()->getContent();
@@ -133,7 +135,7 @@ class FrontDoorLocaleSwitcherTest extends TestCase
      * switcher that dropped the query would hand somebody a reset form with
      * an empty email field and no way to know what was lost.
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('frontDoorPages')]
+    #[DataProvider('frontDoorPages')]
     public function test_switching_preserves_the_page_and_its_token(string $path, bool $authenticated): void
     {
         $response = $this->post(route('locale.store'), ['locale' => 'ar', 'return_to' => $path]);
@@ -182,7 +184,7 @@ class FrontDoorLocaleSwitcherTest extends TestCase
     // ----------------------------------------------------------------- 3
 
     /** Test 3: direction and content agree, on all six, in both locales. */
-    #[\PHPUnit\Framework\Attributes\DataProvider('frontDoorPages')]
+    #[DataProvider('frontDoorPages')]
     public function test_direction_and_language_agree_after_switching(string $path, bool $authenticated): void
     {
         foreach (Locale::codes() as $code) {
@@ -251,7 +253,7 @@ class FrontDoorLocaleSwitcherTest extends TestCase
      * form. Anything automating this door can rely on that.
      * ═══════════════════════════════════════════════════════════════════════
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('frontDoorPages')]
+    #[DataProvider('frontDoorPages')]
     public function test_the_page_keeps_exactly_one_submit_of_its_own(string $path, bool $authenticated): void
     {
         $html = $this->visit($path, $authenticated)->assertOk()->getContent();

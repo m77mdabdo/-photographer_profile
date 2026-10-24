@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Actions\Projects\SyncBlockMedia;
 use App\Actions\Projects\SyncProjectMedia;
 use App\Enums\BlockType;
 use App\Enums\MediaStatus;
@@ -14,6 +15,7 @@ use App\Models\Project;
 use App\Models\ProjectBlock;
 use App\Support\AccentColor;
 use App\Support\AccentPalette;
+use Database\Seeders\Concerns\ProtectsEditedContent;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -41,7 +43,7 @@ use Illuminate\Support\Facades\DB;
 class DemoStoriesSeeder extends Seeder
 {
     use Concerns\SeedsDemoContent;
-    use \Database\Seeders\Concerns\ProtectsEditedContent;
+    use ProtectsEditedContent;
 
     /**
      * A block in a score: its type, how many frames it takes, and which
@@ -394,7 +396,7 @@ class DemoStoriesSeeder extends Seeder
                 // Through media_usages, never an id inside data.
                 $block->mediaUsages()->create([
                     'media_id' => $item->id,
-                    'role' => \App\Actions\Projects\SyncBlockMedia::ROLE,
+                    'role' => SyncBlockMedia::ROLE,
                     'sort_order' => $index,
                 ]);
             }

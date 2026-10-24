@@ -8,7 +8,10 @@ use App\Enums\UserRole;
 use App\Models\User;
 use App\Support\TwoFactorEnforcement;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
+use Laravel\Fortify\Features;
+use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -121,7 +124,7 @@ class TwoFactorEnforcementTest extends TestCase
 
         $outsider = $this->adminWithoutTwoFactor();
 
-        \Illuminate\Support\Facades\DB::table('users')
+        DB::table('users')
             ->where('id', $outsider->getKey())
             ->update(['role' => 'subscriber']);
 
@@ -199,7 +202,7 @@ class TwoFactorEnforcementTest extends TestCase
      * as false — so an operator who blanked the value rather than deleting the
      * line would have disabled enforcement.
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('envValues')]
+    #[DataProvider('envValues')]
     public function test_only_a_deliberate_false_switches_enforcement_off(?string $value, bool $expected): void
     {
         $this->assertSame(
@@ -356,7 +359,7 @@ class TwoFactorEnforcementTest extends TestCase
         config(['auth.require_two_factor' => false]);
 
         $this->assertTrue(
-            \Laravel\Fortify\Features::enabled(\Laravel\Fortify\Features::twoFactorAuthentication()),
+            Features::enabled(Features::twoFactorAuthentication()),
             "Fortify's two-factor feature must stay on: an editor who wants a second factor must be able to enrol"
         );
 

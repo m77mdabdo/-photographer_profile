@@ -120,6 +120,9 @@ try {
         const portrait = hero?.classList.contains('hero--portrait') ?? false
         const startSide = document.documentElement.dir === 'rtl' ? 'right' : 'left'
         const voiceSide = voice ? ((voice.left + voice.right) / 2 > (p.left + p.right) / 2 ? 'right' : 'left') : null
+        // …and how far its text stands from the photograph (English: the 32px --hero-plate-gap).
+        const st = document.querySelector('.hero__statement')?.getBoundingClientRect()
+        const statementGap = st ? Math.round(st.right <= p.left + 1 ? p.left - st.right : st.left - p.right) : null
 
         return {
           oneTextNode,
@@ -127,6 +130,7 @@ try {
           portrait,
           startSide,
           voiceSide,
+          statementGap,
           crossesLine: lineCrossed.x > 0 && lineCrossed.y > 0,
           coveredLetters: chars.filter((c) => c.covered && !c.space).map((c) => c.ch).join(''),
           coveredSpaces: chars.filter((c) => c.covered && c.space).length,
@@ -163,6 +167,9 @@ try {
         } else if ([m.clearLeft, m.clearRight].some((c) => c === null || c < 1 || c > m.fontSize * TUCK_MAX_EM)) {
           ok = false
           verdict = `the words are not tucked against the photograph — clear ${Math.round(m.clearLeft)}px | ${Math.round(m.clearRight)}px, allowed 1–${Math.round(m.fontSize * TUCK_MAX_EM)}px`
+        } else if (m.portrait && m.statementGap !== null && Math.abs(m.statementGap - 32) > 2) {
+          ok = false
+          verdict = `the statement stands ${m.statementGap}px from the photograph; the English composition holds it at 32px`
         } else if (m.portrait && m.voiceSide !== m.startSide) {
           ok = false
           verdict = `the statement sits on the ${m.voiceSide}; with a portrait photograph it belongs on the reading-start side (${m.startSide}), under the first word`

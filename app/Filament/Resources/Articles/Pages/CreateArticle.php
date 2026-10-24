@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Articles\Pages;
 
 use App\Filament\Resources\Articles\ArticleResource;
+use App\Filament\Support\NamesPlaces;
 use App\Filament\Support\RecordWriter;
 use App\Filament\Support\Translatable;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Database\Eloquent\Model;
 
 class CreateArticle extends CreateRecord
 {
-    use \App\Filament\Support\NamesPlaces;
+    use NamesPlaces;
 
     protected static string $resource = ArticleResource::class;
 
@@ -25,7 +27,7 @@ class CreateArticle extends CreateRecord
     }
 
     /** See EditProject::handleRecordUpdate() — the same three guarded columns. */
-    protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
+    protected function handleRecordCreation(array $data): Model
     {
         return RecordWriter::create($this->getModel(), $data);
     }

@@ -3,29 +3,35 @@
 declare(strict_types=1);
 
 use App\Enums\MediaStatus;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\LocaleController;
-use App\Http\Controllers\RobotsController;
-use App\Http\Controllers\SitemapController;
-use App\Http\Controllers\ThemeController;
-use App\Models\Media;
 use App\Filament\Resources\Articles\ArticleResource;
 use App\Filament\Resources\Enquiries\InquiryResource;
 use App\Filament\Resources\Media\MediaResource;
 use App\Filament\Resources\Projects\ProjectResource;
 use App\Filament\Resources\Services\ServiceResource;
-use App\Models\Article;
-use App\Models\Inquiry;
-use App\Models\Project;
-use App\Models\Service;
-use Illuminate\Support\Facades\Blade;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\RobotsController;
+use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\ThemeController;
 use App\Http\Middleware\EnsureCanonicalSlug;
 use App\Http\Middleware\SetLocale;
+use App\Models\Article;
+use App\Models\Inquiry;
+use App\Models\Media;
+use App\Models\Project;
+use App\Models\Service;
+use App\Support\AccentColor;
 use App\Support\Locale;
-use Illuminate\Support\Facades\Route;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Events\DiagnosingHealth;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Http\Request;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
-
+use Illuminate\Support\Facades\Route;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 /*
  * Theme preference. A POST because it changes state, from a real form with a
@@ -46,23 +52,23 @@ if (app()->environment('local')) {
      * judged against real pictures rather than from memory. Server-rendered
      * controls only — no JavaScript, same as every public page.
      */
-    Route::get('/_dev/hero', function (\Illuminate\Http\Request $request) {
+    Route::get('/_dev/hero', function (Request $request) {
         $shape = in_array($request->query('shape'), ['landscape', 'portrait', 'square'], true)
             ? $request->query('shape')
             : 'landscape';
 
         // A real project, re-pointed in memory at a cover of the chosen shape.
-        $project = \App\Models\Project::query()
+        $project = Project::query()
             ->published()
             ->with(['cover.variants', 'hero.variants', 'categories:id,name'])
             ->orderByDesc('is_featured')
             ->first();
 
-        $media = \App\Models\Media::query()
-            ->where('status', \App\Enums\MediaStatus::Ready)
+        $media = Media::query()
+            ->where('status', MediaStatus::Ready)
             ->with('variants')
             ->get()
-            ->first(function (\App\Models\Media $m) use ($shape): bool {
+            ->first(function (Media $m) use ($shape): bool {
                 if (! $m->width || ! $m->height) {
                     return false;
                 }
@@ -89,8 +95,8 @@ if (app()->environment('local')) {
             'media' => $media,
             'shape' => $shape,
             'accent' => [
-                'dark' => \App\Support\AccentColor::derive($source, '#0b0b0c'),
-                'light' => \App\Support\AccentColor::derive($source, '#f4f1ea'),
+                'dark' => AccentColor::derive($source, '#0b0b0c'),
+                'light' => AccentColor::derive($source, '#f4f1ea'),
             ],
             'source' => $source,
         ]);
@@ -119,7 +125,6 @@ if (app()->environment('local')) {
         ]);
     })->name('dev.media');
 }
-
 
 /*
  * ───────────────────────────────────────────────────────────────────────────
@@ -233,7 +238,6 @@ Route::get('/sitemap-{segment}.xml', [SitemapController::class, 'segment'])
     ->name('sitemap.segment');
 
 Route::get('/robots.txt', RobotsController::class)->name('robots');
-
 
 /*
  * ═══════════════════════════════════════════════════════════════════════════
@@ -374,7 +378,6 @@ Route::prefix('legacy')
         ));
     });
 
-
 /*
  * ═══════════════════════════════════════════════════════════════════════════
  * TASK 36 A6 — THE HEALTH CHECK, WHICH WAS LARAVEL'S ADVERTISEMENT.
@@ -413,15 +416,15 @@ Route::prefix('legacy')
  * ═══════════════════════════════════════════════════════════════════════════
  */
 Route::withoutMiddleware([
-    \Illuminate\Session\Middleware\StartSession::class,
-    \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-    \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
-    \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
-    \Illuminate\Cookie\Middleware\EncryptCookies::class,
+    StartSession::class,
+    ShareErrorsFromSession::class,
+    VerifyCsrfToken::class,
+    AddQueuedCookiesToResponse::class,
+    EncryptCookies::class,
 ])->get('/up', function () {
     try {
         Event::dispatch(new DiagnosingHealth);
-    } catch (\Throwable $e) {
+    } catch (Throwable $e) {
         if (app()->hasDebugModeEnabled()) {
             throw $e;
         }

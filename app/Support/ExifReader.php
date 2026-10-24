@@ -31,7 +31,7 @@ final class ExifReader
      *     exif_focal_length: int|null,
      *     exif_camera: string|null,
      *     exif_lens: string|null,
-     *     captured_at: \Illuminate\Support\Carbon|null,
+     *     captured_at: Carbon|null,
      * }
      */
     public static function read(string $path): array
@@ -125,7 +125,7 @@ final class ExifReader
      * unit the value is thought in, so the reciprocal is reconstructed rather
      * than a decimal printed.
      *
-     * @param array<string, mixed> $exif
+     * @param  array<string, mixed>  $exif
      */
     private static function shutter(array $exif): ?string
     {
@@ -205,8 +205,8 @@ final class ExifReader
     }
 
     /**
-     * @param array<string, mixed> $exif
-     * @param array<string, mixed> $ifd0
+     * @param  array<string, mixed>  $exif
+     * @param  array<string, mixed>  $ifd0
      */
     private static function capturedAt(array $exif, array $ifd0): ?Carbon
     {

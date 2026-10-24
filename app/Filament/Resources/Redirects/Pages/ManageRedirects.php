@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Redirects\Pages;
 
 use App\Filament\Resources\Redirects\RedirectResource;
+use App\Filament\Support\NamesPlaces;
 use App\Models\Redirect;
 use Filament\Resources\Pages\ManageRecords;
 
 class ManageRedirects extends ManageRecords
 {
-    use \App\Filament\Support\NamesPlaces;
+    use NamesPlaces;
 
     protected static string $resource = RedirectResource::class;
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Enums\MediaStatus;
 use App\Models\Media;
 
 /**
@@ -91,7 +92,7 @@ final class SiteImages
         }
 
         return Media::query()
-            ->where('status', \App\Enums\MediaStatus::Ready)
+            ->where('status', MediaStatus::Ready)
             ->with('variants')
             ->find((int) trim($id));
     }

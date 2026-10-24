@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Mail\InquiryAcknowledged;
+use App\Models\Inquiry;
 use App\Models\Setting;
 use App\Support\Settings;
 use App\Support\SiteCopy;
@@ -160,8 +162,8 @@ class StudioNameTest extends TestCase
         $this->assertSame('Zzyzx Quorum', (string) (Settings::get('site.name') ?: config('app.name')));
 
         // And the mail an enquirer receives.
-        $inquiry = \App\Models\Inquiry::factory()->create();
-        $mail = (new \App\Mail\InquiryAcknowledged($inquiry))->render();
+        $inquiry = Inquiry::factory()->create();
+        $mail = (new InquiryAcknowledged($inquiry))->render();
 
         $this->assertStringContainsString('Zzyzx Quorum', $mail);
     }
@@ -170,7 +172,7 @@ class StudioNameTest extends TestCase
     private function withoutComments(string $source): string
     {
         return implode('', array_map(
-            fn (array | string $token): string => is_array($token)
+            fn (array|string $token): string => is_array($token)
                 ? (in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true) ? '' : $token[1])
                 : $token,
             token_get_all($source),

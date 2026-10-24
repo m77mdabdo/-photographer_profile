@@ -4,23 +4,24 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Projects;
 
+use App\Actions\Projects\SyncBlockMedia;
+use App\Actions\Projects\ValidateBlock;
 use App\Enums\BlockType;
 use App\Enums\MediaStatus;
-use App\Enums\PublishStatus;
 use App\Enums\UserRole;
-use App\Actions\Projects\SyncBlockMedia;
 use App\Livewire\Studio\MediaPicker;
 use App\Livewire\Studio\StoryBuilder;
+use App\Models\Category;
 use App\Models\Media;
 use App\Models\MediaUsage;
 use App\Models\Project;
 use App\Models\ProjectBlock;
 use App\Models\User;
-use Illuminate\Support\Str;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -63,7 +64,6 @@ class StoryBuilderTest extends TestCase
 
         return $media->refresh();
     }
-
 
     /**
      * One block descriptor, as the browser assembles it from the DOM.
@@ -334,7 +334,7 @@ class StoryBuilderTest extends TestCase
             $needed = $type->isUnbounded() ? 3 : $type->minMedia();
 
             if ($needed > 0) {
-                app(\App\Actions\Projects\SyncBlockMedia::class)(
+                app(SyncBlockMedia::class)(
                     $block,
                     collect(range(1, $needed))->map(fn (): int => $this->media()->id)->all()
                 );
@@ -350,9 +350,9 @@ class StoryBuilderTest extends TestCase
 
         // Every type left a recognisable mark on the page.
         foreach (['block--full-width-image', 'block--contained-image', 'block--portrait-pair',
-                  'block--landscape-pair', 'block--grid', 'block--image-text', 'block--text-image',
-                  'block--text', 'block--quote', 'block--video', 'block--embed', 'block--spacer',
-                  'block--credits', 'block--gallery-strip'] as $marker) {
+            'block--landscape-pair', 'block--grid', 'block--image-text', 'block--text-image',
+            'block--text', 'block--quote', 'block--video', 'block--embed', 'block--spacer',
+            'block--credits', 'block--gallery-strip'] as $marker) {
             $this->assertStringContainsString($marker, $html, "missing {$marker}");
         }
     }
@@ -407,7 +407,7 @@ class StoryBuilderTest extends TestCase
     public function test_the_public_page_query_count_is_bounded(): void
     {
         $project = $this->publishedProject();
-        $project->categories()->attach(\App\Models\Category::factory()->count(2)->create()->pluck('id'));
+        $project->categories()->attach(Category::factory()->count(2)->create()->pluck('id'));
         $project->update(['cover_media_id' => $this->media()->id]);
 
         // 12 blocks, 30 images between them.
@@ -419,7 +419,7 @@ class StoryBuilderTest extends TestCase
             ]);
 
             $count = $i < 6 ? 3 : 2;   // 6*3 + 6*2 = 30
-            app(\App\Actions\Projects\SyncBlockMedia::class)(
+            app(SyncBlockMedia::class)(
                 $block,
                 collect(range(1, $count))->map(fn (): int => $this->media()->id)->all()
             );
@@ -464,7 +464,7 @@ class StoryBuilderTest extends TestCase
             'data' => ['caption' => 'Morning haze'],
         ]);
         $image = $this->media();
-        app(\App\Actions\Projects\SyncBlockMedia::class)($imageBlock, [$image->id]);
+        app(SyncBlockMedia::class)($imageBlock, [$image->id]);
 
         $video = $project->blocks()->create([
             'type' => BlockType::Video, 'sort_order' => 3,
@@ -554,7 +554,9 @@ class StoryBuilderTest extends TestCase
          * array manipulation. The component is asked to do exactly one thing.
          */
         $calls = 0;
-        DB::listen(function () use (&$calls): void { $calls++; });
+        DB::listen(function () use (&$calls): void {
+            $calls++;
+        });
 
         $component = Livewire::actingAs($this->admin())->test(StoryBuilder::class, ['project' => $project]);
 
@@ -612,8 +614,7 @@ class StoryBuilderTest extends TestCase
         $picker->assertSet('selected', $chosen)
             ->call('confirmSelection')
             // One confirm, carrying all forty.
-            ->assertDispatched('media-selected', fn (string $event, array $params): bool =>
-                count($params['media']) === 40
+            ->assertDispatched('media-selected', fn (string $event, array $params): bool => count($params['media']) === 40
                 && collect($params['media'])->pluck('id')->all() === $chosen);
 
         // And one save persists them with the order intact.
@@ -750,7 +751,7 @@ class StoryBuilderTest extends TestCase
     {
         $build = function (bool $withCredits): int {
             $project = Project::factory()->published()->create(['slug' => 'q-'.Str::random(8)]);
-            $project->categories()->attach(\App\Models\Category::factory()->count(2)->create()->pluck('id'));
+            $project->categories()->attach(Category::factory()->count(2)->create()->pluck('id'));
             $project->update(['cover_media_id' => $this->media()->id]);
             $project->credits()->create(['role' => 'Photographer', 'name' => 'A. Photographer', 'sort_order' => 0]);
 
@@ -788,7 +789,9 @@ class StoryBuilderTest extends TestCase
         };
 
         $queries = [];
-        DB::listen(function ($q) use (&$queries): void { $queries[] = $q->sql; });
+        DB::listen(function ($q) use (&$queries): void {
+            $queries[] = $q->sql;
+        });
 
         $without = $build(false);
         $with = $build(true);
@@ -999,7 +1002,7 @@ class StoryBuilderTest extends TestCase
         $this->assertSame(3, BlockType::ThreeImageGrid->minMedia());
         $this->assertSame(['quote'], BlockType::Quote->requiredDataKeys());
 
-        $validator = app(\App\Actions\Projects\ValidateBlock::class);
+        $validator = app(ValidateBlock::class);
 
         $short = $validator(['type' => BlockType::ThreeImageGrid->value, 'data' => [], 'media' => [1]]);
         $this->assertNotEmpty($short);
@@ -1173,8 +1176,8 @@ class StoryBuilderTest extends TestCase
 
         // Drafts are stamped, so a second tab is identifiable.
         $this->assertStringContainsString('const TAB_ID = crypto.randomUUID();', $js);
-        $this->assertStringContainsString("tab: TAB_ID", $js);
-        $this->assertStringContainsString("at: Date.now()", $js);
+        $this->assertStringContainsString('tab: TAB_ID', $js);
+        $this->assertStringContainsString('at: Date.now()', $js);
         $this->assertStringContainsString("addEventListener('storage'", $js);
 
         // And a restored draft still round-trips to an identical save.
@@ -1239,7 +1242,9 @@ class StoryBuilderTest extends TestCase
         // rather than leaving a disabled button and a silent page.
         $this->assertStringContainsString("await livewire()?.call('saveStory', collect());", $js);
         $this->assertStringContainsString('} catch {', $js);
-        $this->assertStringContainsString("announce('Your work is safe. Nothing was lost.');", $js);
+        // The words come from lang/ (studio.story.js) so the Arabic dashboard says them in Arabic.
+        $this->assertStringContainsString("announce(t('work_safe'));", $js);
+        $this->assertSame('Your work is safe. Nothing was lost.', __('studio.story.js.work_safe'));
         $this->assertStringContainsString('b.disabled = false;', $js);
 
         // The draft is rewritten on failure, so the work outlives the tab too.

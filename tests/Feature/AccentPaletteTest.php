@@ -9,6 +9,8 @@ use App\Models\Media;
 use App\Support\AccentColor;
 use App\Support\AccentPalette;
 use App\Support\PaletteExtractor;
+use App\Support\Settings;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\ImageFixture;
@@ -31,9 +33,9 @@ class AccentPaletteTest extends TestCase
             'visibility' => 'public',
         ]);
 
-        \App\Support\Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
-        \App\Support\Settings::flush();
+        Settings::flush();
+        $this->seed(SettingsSeeder::class);
+        Settings::flush();
     }
 
     /** @return list<array{color: string, share: float}> */

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\BlockType;
 use App\Models\Article;
 use App\Models\Media;
 use App\Models\Project;
+use App\Support\HarnessTargets;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -43,7 +45,7 @@ class HarnessTargetsTest extends TestCase
      */
     private function targets(): array
     {
-        return \App\Support\HarnessTargets::choose();
+        return HarnessTargets::choose();
     }
 
     /** And the writing half, once, so the path the harness reads is covered. */
@@ -53,17 +55,17 @@ class HarnessTargetsTest extends TestCase
 
         Project::factory()->published()->create();
 
-        \App\Support\HarnessTargets::write();
+        HarnessTargets::write();
 
-        Storage::disk('local')->assertExists(\App\Support\HarnessTargets::PATH);
+        Storage::disk('local')->assertExists(HarnessTargets::PATH);
 
-        $written = json_decode((string) Storage::disk('local')->get(\App\Support\HarnessTargets::PATH), true);
+        $written = json_decode((string) Storage::disk('local')->get(HarnessTargets::PATH), true);
 
-        $this->assertSame(\App\Support\HarnessTargets::choose(), $written);
+        $this->assertSame(HarnessTargets::choose(), $written);
 
         /* The harness reads this exact filename. */
         $this->assertStringContainsString(
-            \App\Support\HarnessTargets::PATH,
+            HarnessTargets::PATH,
             (string) file_get_contents(base_path('bin/browser-check.mjs')),
             'bin/browser-check.mjs does not read the file this writes'
         );
@@ -81,7 +83,7 @@ class HarnessTargetsTest extends TestCase
 
         foreach (range(1, 3) as $i) {
             $rich->blocks()->create([
-                'type' => \App\Enums\BlockType::FullWidthText,
+                'type' => BlockType::FullWidthText,
                 'sort_order' => $i,
                 'data' => ['heading' => ['en' => 'H'.$i], 'body' => ['en' => 'Body '.$i]],
             ]);

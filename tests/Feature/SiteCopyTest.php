@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\Setting;
 use App\Support\SettingGroups;
 use App\Support\Settings;
 use App\Support\SiteCopy;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -33,7 +35,7 @@ class SiteCopyTest extends TestCase
         parent::setUp();
 
         Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
     }
 
@@ -94,7 +96,7 @@ class SiteCopyTest extends TestCase
     /** And every key in the registry is seeded as a row an owner can edit. */
     public function test_every_registry_key_has_a_settings_row(): void
     {
-        $rows = \App\Models\Setting::query()->pluck('key')->all();
+        $rows = Setting::query()->pluck('key')->all();
 
         $this->assertSame(
             [],
@@ -167,7 +169,7 @@ class SiteCopyTest extends TestCase
         $this->assertSame('See the full portfolio', SiteCopy::get('work.see_all'));
 
         // And a deleted row behaves the same way.
-        \App\Models\Setting::query()->where('key', 'work.see_all')->delete();
+        Setting::query()->where('key', 'work.see_all')->delete();
         Settings::flush();
 
         $this->assertSame('See the full portfolio', SiteCopy::get('work.see_all'));
@@ -182,7 +184,7 @@ class SiteCopyTest extends TestCase
     /** An owner's wording wins over the default, in the active locale. */
     public function test_the_owners_wording_wins(): void
     {
-        $setting = \App\Models\Setting::query()->where('key', 'work.see_all')->firstOrFail();
+        $setting = Setting::query()->where('key', 'work.see_all')->firstOrFail();
         $setting->setTranslation('value', 'en', 'Browse the whole portfolio');
         $setting->setTranslation('value', 'ar', 'استعرض كل الأعمال');
         $setting->save();
@@ -286,7 +288,7 @@ class SiteCopyTest extends TestCase
     /** And the seeded Arabic really reaches the table. */
     public function test_the_arabic_defaults_reach_the_database(): void
     {
-        $untranslated = \App\Models\Setting::query()->get()
+        $untranslated = Setting::query()->get()
             ->reject(fn ($setting): bool => str_ends_with($setting->key, '_url')
                 || str_ends_with($setting->key, '_media_id')
                 || in_array($setting->key, ['attribution.name', 'contact.recipient', 'footer.social_3_label'], true))

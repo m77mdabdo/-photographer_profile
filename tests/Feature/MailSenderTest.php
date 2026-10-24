@@ -8,6 +8,7 @@ use App\Mail\InquiryAcknowledged;
 use App\Models\Inquiry;
 use App\Models\Setting;
 use App\Support\Settings;
+use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
@@ -50,7 +51,7 @@ class MailSenderTest extends TestCase
 
     public function test_the_sender_is_the_studio_not_the_framework(): void
     {
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
         Settings::flush();
         Settings::overlayConfig();
 
@@ -63,7 +64,7 @@ class MailSenderTest extends TestCase
     /** It follows a rename, like every other surface. */
     public function test_the_sender_follows_the_setting(): void
     {
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
 
         $setting = Setting::query()->where('key', 'site.name')->firstOrFail();
         $setting->setTranslations('value', ['en' => 'Zzyzx Quorum', 'ar' => 'زيزكس']);
@@ -86,7 +87,7 @@ class MailSenderTest extends TestCase
      */
     public function test_the_sender_is_translated(): void
     {
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
+        $this->seed(SettingsSeeder::class);
 
         $this->app->setLocale('ar');
         Settings::flush();

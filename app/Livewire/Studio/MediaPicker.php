@@ -8,7 +8,9 @@ use App\Enums\MediaStatus;
 use App\Models\Media;
 use App\Models\MediaUsage;
 use App\Models\Project;
+use App\Models\ProjectBlock;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -311,7 +313,7 @@ class MediaPicker extends Component
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<Media>
+     * @return Builder<Media>
      */
     private function query()
     {
@@ -328,8 +330,8 @@ class MediaPicker extends Component
                     ->select('media_id')
                     ->union(
                         MediaUsage::query()
-                            ->where('usable_type', \App\Models\ProjectBlock::class)
-                            ->whereIn('usable_id', \App\Models\ProjectBlock::query()
+                            ->where('usable_type', ProjectBlock::class)
+                            ->whereIn('usable_id', ProjectBlock::query()
                                 ->where('project_id', $this->projectId)
                                 ->select('id'))
                             ->select('media_id')

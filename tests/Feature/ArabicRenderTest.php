@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\PublishStatus;
 use App\Models\Article;
 use App\Models\Project;
 use App\Models\Service;
+use App\Models\Setting;
 use App\Support\Locale;
 use App\Support\Settings;
+use App\Support\TranslatableSchema;
+use Database\Seeders\LegalPagesSeeder;
+use Database\Seeders\SettingsSeeder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -59,8 +65,8 @@ class ArabicRenderTest extends TestCase
         parent::setUp();
 
         Settings::flush();
-        $this->seed(\Database\Seeders\SettingsSeeder::class);
-        $this->seed(\Database\Seeders\LegalPagesSeeder::class);
+        $this->seed(SettingsSeeder::class);
+        $this->seed(LegalPagesSeeder::class);
         Settings::flush();
     }
 
@@ -72,7 +78,7 @@ class ArabicRenderTest extends TestCase
      */
     private function makeEverythingArabic(): void
     {
-        foreach (\App\Models\Setting::query()->get() as $setting) {
+        foreach (Setting::query()->get() as $setting) {
             // A url or a media id is not prose; leave it alone.
             if (str_ends_with($setting->key, '_url') || str_ends_with($setting->key, '_media_id')) {
                 continue;
@@ -229,8 +235,8 @@ class ArabicRenderTest extends TestCase
         );
 
         // 3. CONTENT: a project title left in English survives into the page.
-        $project = \App\Models\Project::factory()->create([
-            'status' => \App\Enums\PublishStatus::Published,
+        $project = Project::factory()->create([
+            'status' => PublishStatus::Published,
             'published_at' => now()->subDay(),
         ]);
 
@@ -376,8 +382,8 @@ class ArabicRenderTest extends TestCase
          * the code's. Translating all of them is what makes any Latin left on
          * the page attributable to the templates.
          */
-        $arabicise = function (\Illuminate\Database\Eloquent\Model $record, string $slug): void {
-            foreach (\App\Support\TranslatableSchema::columnsFor($record->getTable()) as $column) {
+        $arabicise = function (Model $record, string $slug): void {
+            foreach (TranslatableSchema::columnsFor($record->getTable()) as $column) {
                 if (str_contains($column, 'slug')) {
                     $record->setTranslation($column, 'ar', $slug);
 

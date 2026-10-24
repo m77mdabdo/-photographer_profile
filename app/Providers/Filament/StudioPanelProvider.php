@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\AccountSecurity;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Support\InitialsAvatar;
 use App\Filament\Widgets\MediaNeedingAttention;
@@ -16,24 +17,25 @@ use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\SetLocale;
 use App\Support\Locale;
 use App\Support\Settings;
+use Filament\Actions\Action;
+use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationGroup;
-use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Width;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
-use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 /**
@@ -270,10 +272,10 @@ class StudioPanelProvider extends PanelProvider
              */
             ->profile(isSimple: false)
             ->userMenuItems([
-                \Filament\Actions\Action::make('accountSecurity')
+                Action::make('accountSecurity')
                     ->label(fn (): string => __('studio.security.nav'))
                     ->icon('heroicon-o-shield-check')
-                    ->url(fn (): string => \App\Filament\Pages\AccountSecurity::getUrl()),
+                    ->url(fn (): string => AccountSecurity::getUrl()),
             ])
 
             /*
@@ -424,7 +426,7 @@ class StudioPanelProvider extends PanelProvider
              *                hammer the application.
              */
             ->authMiddleware([
-                \Filament\Http\Middleware\Authenticate::class,
+                Authenticate::class,
                 'verified',
                 EnsureUserIsAdmin::class,
                 EnsureTwoFactorEnabled::class,
@@ -460,5 +462,4 @@ class StudioPanelProvider extends PanelProvider
             NavigationGroup::make(fn (): string => __('studio.nav.group_system')),
         ];
     }
-
 }

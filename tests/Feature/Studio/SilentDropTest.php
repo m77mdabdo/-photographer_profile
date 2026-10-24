@@ -8,7 +8,9 @@ use App\Enums\UserRole;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Field;
+use Filament\Forms\Components\Repeater;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -73,7 +75,7 @@ class SilentDropTest extends TestCase
         $checked = 0;
 
         foreach (Filament::getPanel('studio')->getResources() as $resource) {
-            /** @var class-string<Resource> $resource */
+            /** @var class-string<resource> $resource */
             $model = new ($resource::getModel());
             $fillable = $model->getFillable();
 
@@ -156,7 +158,7 @@ class SilentDropTest extends TestCase
     }
 
     /**
-     * @param  class-string<Resource>  $resource
+     * @param  class-string<resource>  $resource
      * @return list<Field>
      */
     private function fields(string $resource): array
@@ -165,7 +167,7 @@ class SilentDropTest extends TestCase
         $page = ($pages['create'] ?? $pages['index'])->getPage();
 
         $schema = $resource::form(
-            \Filament\Schemas\Schema::make(Livewire::test($page)->instance())
+            Schema::make(Livewire::test($page)->instance())
         );
 
         $fields = [];
@@ -182,7 +184,7 @@ class SilentDropTest extends TestCase
                      * The repeater itself is checked, which is the field that
                      * could be dropped.
                      */
-                    if ($component instanceof \Filament\Forms\Components\Repeater) {
+                    if ($component instanceof Repeater) {
                         continue;
                     }
                 }

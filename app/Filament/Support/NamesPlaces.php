@@ -7,6 +7,8 @@ namespace App\Filament\Support;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Pages\ManageRecords;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * ───────────────────────────────────────────────────────────────────────────
@@ -44,7 +46,7 @@ use Filament\Resources\Pages\ManageRecords;
 trait NamesPlaces
 {
     /**
-     * @return array<string | int, string | \Illuminate\Contracts\Support\Htmlable>
+     * @return array<string | int, string | Htmlable>
      */
     public function getBreadcrumbs(): array
     {
@@ -102,7 +104,7 @@ trait NamesPlaces
             ? $this->getRecord()
             : null;
 
-        if (! $record instanceof \Illuminate\Database\Eloquent\Model) {
+        if (! $record instanceof Model) {
             return null;
         }
 

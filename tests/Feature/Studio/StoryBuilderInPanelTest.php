@@ -7,14 +7,23 @@ namespace Tests\Feature\Studio;
 use App\Enums\BlockType;
 use App\Enums\MediaStatus;
 use App\Enums\UserRole;
+use App\Filament\Resources\Media\Pages\ListMedia;
+use App\Filament\Resources\Projects\Pages\EditProject;
+use App\Filament\Resources\Projects\Pages\ListProjects;
 use App\Filament\Resources\Projects\Pages\ProjectStory;
+use App\Filament\Resources\Projects\ProjectResource;
 use App\Livewire\Studio\StoryBuilder;
 use App\Models\Media;
+use App\Models\MediaUsage;
 use App\Models\Project;
+use App\Models\ProjectBlock;
 use App\Models\User;
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -121,7 +130,7 @@ class StoryBuilderInPanelTest extends TestCase
     }
 
     /** The mounted component, as the panel page mounts it. */
-    private function builder(): \Livewire\Features\SupportTesting\Testable
+    private function builder(): Testable
     {
         return Livewire::test(StoryBuilder::class, ['project' => $this->project]);
     }
@@ -138,14 +147,14 @@ class StoryBuilderInPanelTest extends TestCase
         $this->get($url)->assertOk();
 
         // The row's Story action, and the edit page's.
-        Livewire::test(\App\Filament\Resources\Projects\Pages\ListProjects::class)
+        Livewire::test(ListProjects::class)
             ->assertActionVisible(
-                \Filament\Actions\Testing\TestAction::make('story')->table($this->project)
+                TestAction::make('story')->table($this->project)
             );
 
-        Livewire::test(\App\Filament\Resources\Projects\Pages\EditProject::class,
+        Livewire::test(EditProject::class,
             ['record' => $this->project->getKey()])
-            ->assertActionVisible(\Filament\Actions\Testing\TestAction::make('story'));
+            ->assertActionVisible(TestAction::make('story'));
     }
 
     /** An editor who cannot update the project cannot open its story. */
@@ -166,7 +175,7 @@ class StoryBuilderInPanelTest extends TestCase
          * rather than by inventing a third role the enum does not have.
          */
         $outsider = User::factory()->create(['role' => UserRole::Editor]);
-        \Illuminate\Support\Facades\DB::table('users')
+        DB::table('users')
             ->where('id', $outsider->getKey())->update(['role' => 'subscriber']);
 
         $this->actingAs($outsider->fresh())
@@ -213,7 +222,7 @@ class StoryBuilderInPanelTest extends TestCase
 
         // And the way back is still there — Filament's breadcrumb and the notice.
         $this->assertStringContainsString(
-            \App\Filament\Resources\Projects\ProjectResource::getUrl('edit', ['record' => $this->project]),
+            ProjectResource::getUrl('edit', ['record' => $this->project]),
             $html,
             'there is no way back to the project from the story page'
         );
@@ -270,7 +279,7 @@ class StoryBuilderInPanelTest extends TestCase
      */
     public function test_preview_opens_a_signed_public_url(): void
     {
-        $url = \App\Filament\Resources\Projects\ProjectResource::getUrl('preview', ['record' => $this->project]);
+        $url = ProjectResource::getUrl('preview', ['record' => $this->project]);
 
         $response = $this->get($url);
 
@@ -292,7 +301,7 @@ class StoryBuilderInPanelTest extends TestCase
     public function test_an_unsigned_preview_is_refused(): void
     {
         $signed = (string) $this->get(
-            \App\Filament\Resources\Projects\ProjectResource::getUrl('preview', ['record' => $this->project])
+            ProjectResource::getUrl('preview', ['record' => $this->project])
         )->headers->get('Location');
 
         $unsigned = strtok($signed, '?');
@@ -490,8 +499,8 @@ class StoryBuilderInPanelTest extends TestCase
         // Nothing orphaned: every usage row still points at a real block.
         $this->assertSame(
             0,
-            \App\Models\MediaUsage::query()
-                ->where('usable_type', \App\Models\ProjectBlock::class)
+            MediaUsage::query()
+                ->where('usable_type', ProjectBlock::class)
                 ->whereNotIn('usable_id', $this->project->blocks()->pluck('id'))
                 ->count(),
             'an orphaned media_usages row survived the move'
@@ -529,8 +538,8 @@ class StoryBuilderInPanelTest extends TestCase
         // And its usage rows went with it.
         $this->assertSame(
             0,
-            \App\Models\MediaUsage::query()
-                ->where('usable_type', \App\Models\ProjectBlock::class)
+            MediaUsage::query()
+                ->where('usable_type', ProjectBlock::class)
                 ->whereNotIn('usable_id', $this->project->blocks()->pluck('id'))
                 ->count(),
         );
@@ -600,14 +609,14 @@ class StoryBuilderInPanelTest extends TestCase
 
         $this->assertSame(
             0,
-            \App\Models\ProjectBlock::query()->count(),
+            ProjectBlock::query()->count(),
             'the smuggled block reached project_blocks under another project'
         );
 
         // And the model refuses it outright if something bypasses SaveStory.
         $this->expectException(\InvalidArgumentException::class);
 
-        $block = new \App\Models\ProjectBlock([
+        $block = new ProjectBlock([
             'project_id' => $this->project->getKey(),
             'type' => BlockType::FullWidthImage,
             'sort_order' => 0,
@@ -627,7 +636,7 @@ class StoryBuilderInPanelTest extends TestCase
             foreach ($block->blockMedia as $item) {
                 $this->assertDatabaseHas('media_usages', [
                     'media_id' => $item->media_id,
-                    'usable_type' => \App\Models\ProjectBlock::class,
+                    'usable_type' => ProjectBlock::class,
                     'usable_id' => $block->id,
                 ]);
             }
@@ -649,8 +658,8 @@ class StoryBuilderInPanelTest extends TestCase
         $this->assertStringContainsString('1 place', (string) $response->message());
 
         // Through the panel's own media list, with the reason on screen.
-        Livewire::test(\App\Filament\Resources\Media\Pages\ListMedia::class)
-            ->callAction(\Filament\Actions\Testing\TestAction::make('delete')->table($inUse))
+        Livewire::test(ListMedia::class)
+            ->callAction(TestAction::make('delete')->table($inUse))
             ->assertNotified((string) $response->message());
 
         $this->assertFalse($inUse->fresh()->trashed());

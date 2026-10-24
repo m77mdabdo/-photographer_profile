@@ -12,8 +12,12 @@ use App\Models\Project;
 use App\Models\Setting;
 use App\Models\User;
 use App\Support\Activity;
+use Database\Seeders\SettingsSeeder;
 use Filament\Facades\Filament;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -136,7 +140,7 @@ class ActivityLogTest extends TestCase
          * created — so a test that wants one has to ask for the seeder, the
          * same way SettingsPageTest does.
          */
-        Activity::withoutLogging(fn () => $this->seed(\Database\Seeders\SettingsSeeder::class));
+        Activity::withoutLogging(fn () => $this->seed(SettingsSeeder::class));
 
         $setting = Setting::query()->firstOrFail();
         $setting->setTranslation('value', 'en', 'A new sentence.');
@@ -242,7 +246,7 @@ class ActivityLogTest extends TestCase
     {
         $this->actingAs($this->owner());
 
-        \Illuminate\Support\Facades\Schema::drop('activity_logs');
+        Schema::drop('activity_logs');
 
         $project = Project::factory()->create(['status' => PublishStatus::Draft]);
 
@@ -283,7 +287,7 @@ class ActivityLogTest extends TestCase
         $entry = ActivityLog::factory()->create();
 
         foreach (['create', 'update', 'delete', 'forceDelete'] as $ability) {
-            $response = \Illuminate\Support\Facades\Gate::forUser($owner)
+            $response = Gate::forUser($owner)
                 ->inspect($ability, $ability === 'create' ? ActivityLog::class : $entry);
 
             $this->assertTrue($response->denied(), "the log allows $ability");
@@ -359,7 +363,7 @@ class ActivityLogTest extends TestCase
     /** The retention window is scheduled, not left to somebody remembering. */
     public function test_pruning_is_scheduled(): void
     {
-        $events = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())
+        $events = collect(app(Schedule::class)->events())
             ->map(fn ($event): string => (string) $event->command);
 
         $this->assertTrue(

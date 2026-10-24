@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Actions\Projects\SyncBlockMedia;
 use App\Actions\Projects\SyncProjectMedia;
 use App\Enums\BlockType;
 use App\Enums\MediaStatus;
@@ -12,7 +13,9 @@ use App\Models\Category;
 use App\Models\Client;
 use App\Models\Media;
 use App\Models\Project;
+use Database\Seeders\Concerns\ProtectsEditedContent;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
@@ -26,7 +29,7 @@ use Illuminate\Support\Str;
 class DemoContentSeeder extends Seeder
 {
     use Concerns\SeedsDemoContent;
-    use \Database\Seeders\Concerns\ProtectsEditedContent;
+    use ProtectsEditedContent;
 
     public function run(): void
     {
@@ -295,7 +298,7 @@ class DemoContentSeeder extends Seeder
     /**
      * A short story for each project, so the project pages are worth opening.
      *
-     * @param  \Illuminate\Support\Collection<int, Media>  $media
+     * @param  Collection<int, Media>  $media
      */
     private function seedStory(Project $project, $media): void
     {
@@ -310,7 +313,7 @@ class DemoContentSeeder extends Seeder
             'sort_order' => 0,
             'data' => ['caption' => $project->location.', '.$project->year],
         ]);
-        app(\App\Actions\Projects\SyncBlockMedia::class)($opening, [$pick(0)->id]);
+        app(SyncBlockMedia::class)($opening, [$pick(0)->id]);
 
         $project->blocks()->create([
             'type' => BlockType::FullWidthText,
@@ -323,7 +326,7 @@ class DemoContentSeeder extends Seeder
             'sort_order' => 2,
             'data' => ['caption' => 'Two frames from the same morning.'],
         ]);
-        app(\App\Actions\Projects\SyncBlockMedia::class)($pair, [$pick(1)->id, $pick(2)->id]);
+        app(SyncBlockMedia::class)($pair, [$pick(1)->id, $pick(2)->id]);
 
         $project->blocks()->create([
             'type' => BlockType::Quote,

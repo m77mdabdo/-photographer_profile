@@ -8,6 +8,7 @@ use App\Models\CinematicSection;
 use App\Models\Media;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
 /**
@@ -41,7 +42,7 @@ class DemoCinematicSeeder extends Seeder
         $pick = fn (int $from, int $count) => $media->slice($from, $count)->values();
 
         $make = function (array $attributes, array $title, array $text = []) {
-            $section = new CinematicSection();
+            $section = new CinematicSection;
             $section->forceFill($attributes + ['is_demo' => true, 'is_active' => true]);
             $section->setTranslations('title', $title);
             if ($text) {
@@ -104,7 +105,7 @@ class DemoCinematicSeeder extends Seeder
         }
 
         // A PHP process's PATH often lacks Homebrew's; look there too.
-        $ffmpeg = (new \Symfony\Component\Process\ExecutableFinder())->find('ffmpeg', null, ['/opt/homebrew/bin', '/usr/local/bin']);
+        $ffmpeg = (new ExecutableFinder)->find('ffmpeg', null, ['/opt/homebrew/bin', '/usr/local/bin']);
         if ($ffmpeg === null) {
             $this->command?->warn('ffmpeg not found; the demo has no video section.');
 
